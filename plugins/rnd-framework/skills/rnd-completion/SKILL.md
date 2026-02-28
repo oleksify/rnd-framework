@@ -51,6 +51,8 @@ Summarize:
 - Final integration status
 - Branch/PR status
 
+**Use `AskUserQuestion` to present next steps as structured options** with a recommended choice. For example: "Create PR (Recommended)", "Commit without PR", "Review changes first". Never leave the user with open-ended text asking what to do.
+
 ## Related Skills
 
 - `rnd-framework:rnd-integration` — Integration testing and SHIP verdicts

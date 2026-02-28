@@ -95,4 +95,6 @@ Summarize results for the user:
 - Final integration status
 - Remaining concerns or recommendations
 
+**Present next steps as structured options** using `AskUserQuestion` — never leave the user with an open-ended "What would you like to do?". Include a recommended option.
+
 Use `TeamDelete` to clean up the `rnd-pipeline` team after the pipeline completes or is abandoned.

@@ -88,6 +88,23 @@ Dependencies: [list of task IDs]
 **Gate 3 (post-verify):** Verifier PASS on all criteria with evidence.
 **Gate 4 (post-integrate):** Integration tests pass. No regressions. System validation passes.
 
+## User Decision Points
+
+When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.
+
+Rules:
+- Always include 2-4 concrete options
+- Mark the recommended option first with "(Recommended)" in the label
+- Use short, action-oriented labels (e.g., "Fix P0 blockers first", "Verify wave-1", "Re-plan T3")
+- Put context in the `description` field, not the label
+- Never ask the user to type out what to do next — give them options to pick from
+
+Common decision points:
+- **Post-plan:** "Approve plan", "Revise criteria for T2", "Add more tasks"
+- **Post-build:** "Verify this wave", "Re-build T3", "Review findings first"
+- **Post-verify (mixed results):** "Fix P0 issues first (Recommended)", "Fix all issues", "Ship as-is with known issues"
+- **Post-integrate:** "Ship it", "Run another verification pass", "Fix integration failures"
+
 ## Scaling Rules
 
 - **Small tasks (<1hr):** Collapse — one Builder + one Verifier. Lightweight pre-registration.

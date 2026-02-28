@@ -3,7 +3,7 @@
   "description": "Claude Code plugins for structured multi-agent orchestration",
   "owner": {
     "name": "Oleksii Topolianskyi",
-    "url": "https://tangled.sh/oleksify.me/claude-plugins"
+    "url": "git@tangled.org:oleksify.me/claude-plugins.git"
   },
   "plugins": [
     {

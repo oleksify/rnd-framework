@@ -85,7 +85,7 @@ The plugin provides 14 skills that embed structured practices into every phase o
 |---|---|---|---|
 | `rnd-planner` | opus | Read, Grep, Glob | Decomposes tasks, writes pre-registration documents |
 | `rnd-builder` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Implements one task with TDD, produces verification artifacts |
-| `rnd-verifier` | opus | Read, Bash, Grep, Glob | Independent verification against pre-registered criteria |
+| `rnd-verifier` | opus | Read, Write, Bash, Grep, Glob | Independent verification against pre-registered criteria |
 | `rnd-integrator` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Merges verified outputs, runs integration tests |
 
 ## Pipeline Scaling

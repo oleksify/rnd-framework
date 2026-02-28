@@ -14,11 +14,20 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read",
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -q 'self-assessment'; then echo '{\"decision\": \"block\", \"reason\": \"INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.\"}'; fi"
+            "command": "if echo \"$TOOL_INPUT\" | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
           }
         ]
       },
@@ -27,7 +36,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git\\s+add.*\\.rnd'; then echo '{\"decision\": \"block\", \"reason\": \"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed. Add .rnd/ to .gitignore instead.\"}'; fi"
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git\\s+add.*\\.rnd'; then echo '{\"decision\": \"block\", \"reason\": \"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed. Add .rnd/ to .gitignore instead.\"}'; elif echo \"$TOOL_INPUT\" | grep -q '\\.rnd'; then echo '{\"decision\": \"allow\"}'; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -q 'self-assessment'; then echo '{\"decision\": \"block\", \"reason\": \"INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.\"}'; elif echo \"$TOOL_INPUT\" | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
           }
         ]
       }

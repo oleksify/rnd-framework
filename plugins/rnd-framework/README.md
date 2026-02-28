@@ -213,3 +213,13 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:status` to re-orient.
 - **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:quick` for small tasks.
 - **Cannot identify agents in hooks.** Claude Code hooks see tool inputs but not which agent is calling. Information barriers use path-based blocking (blocks ALL reads of self-assessment files) rather than agent-identity checks.
+
+## Acknowledgements
+
+Some ideas in this framework were drawn from established engineering and scientific methodologies:
+
+- [V-Model](https://en.wikipedia.org/wiki/V-model) — hierarchical decomposition with paired verification at each level
+- [Design Structure Matrix (DSM)](https://en.wikipedia.org/wiki/Design_structure_matrix) — dependency analysis and parallel scheduling
+- [NASA Independent Verification & Validation (IV&V)](https://www.nasa.gov/about-nasas-ivv-program/) — independent verification with strict information barriers
+- [Stage-Gate](https://en.wikipedia.org/wiki/Phase-gate_process) — quality checkpoints between phases
+- [Pre-Registration](https://en.wikipedia.org/wiki/Preregistration_(science)) — declaring intent and success criteria before execution

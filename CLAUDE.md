@@ -15,7 +15,7 @@ plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # 4 specialized agents (planner, builder, verifier, integrator)
 ├── commands/                    # 7 slash commands (/rnd-framework:start, etc.)
-├── skills/                      # 13 skills, each in its own dir with SKILL.md
+├── skills/                      # 15 skills, each in its own dir with SKILL.md
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse information barrier
 │   └── session-start            # Bash script injecting using-rnd-framework skill into context
@@ -34,9 +34,12 @@ plugins/rnd-framework/
 | `rnd-verifier` | opus | Independent verification — never sees builder reasoning |
 | `rnd-integrator` | sonnet | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
 
-### Information Barrier Enforcement
+### Information Barrier and Permission Hooks
 
-The `hooks.json` PreToolUse hook blocks any `Read` call where `TOOL_INPUT` contains `self-assessment`. This prevents the Verifier from anchoring on Builder reasoning. The barrier is path-based (hooks can't identify which agent is calling), so it blocks ALL reads of self-assessment files.
+The `hooks.json` PreToolUse hooks enforce several policies:
+- **Information barrier:** Blocks any `Read` call where `TOOL_INPUT` contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Commit protection:** Blocks `git add` of `.rnd/` — pipeline artifacts must never be committed
+- **Auto-allow `.rnd/` operations:** All `Read`, `Write`, `Edit`, and `Bash` operations targeting `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads and git-add
 
 ### Skill System
 
@@ -74,6 +77,8 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
 - **ESM modules** — `lib/skills-core.js` uses `import`/`export` syntax
 - **No test suite** — verification happens through the pipeline itself (build manifests + verification reports)
+- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort
+- **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)
 
 ## Working on This Codebase
 

@@ -34,6 +34,8 @@ Decide whether to keep or remove `.rnd/` directory:
 
 Stage all verified changes. Write a clear commit message summarizing the feature/fix.
 
+**Never commit `.rnd/` contents.** The `.rnd/` directory is for pipeline artifacts only. Ensure `.rnd/` is in `.gitignore` before staging.
+
 ### 4. Branch Management
 
 Options:

@@ -55,6 +55,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Do NOT run verification beyond "does it compile/pass linting." The Verifier does formal verification.
 - Be honest about uncertainties. Hiding doubts causes harder bugs later.
 - Run your own tests to make sure they execute, but the Verifier will evaluate their adequacy.
+- **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 
 ## Required Skills
 

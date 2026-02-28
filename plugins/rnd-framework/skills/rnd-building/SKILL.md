@@ -23,7 +23,10 @@ Implement ONE assigned task against its pre-registered success criteria. Write t
 1. NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 2. NO SILENT DEVIATIONS FROM THE PRE-REGISTERED APPROACH
 3. DO NOT VERIFY YOUR OWN WORK
+4. USE WRITE/EDIT TOOLS TO CREATE AND MODIFY FILES — NEVER BASH HEREDOCS
 ```
+
+**On file creation:** Always use the `Write` tool to create files and `Edit` to modify them. Never use `cat > file << 'EOF'`, `echo >`, or other Bash heredoc/redirect patterns to write file content. The dedicated tools are reviewable, diffable, and won't silently mangle content (quoting, escaping, whitespace).
 
 ## Process
 

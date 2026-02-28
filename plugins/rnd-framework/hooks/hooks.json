@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git\\s+add.*\\.rnd'; then echo '{\"decision\": \"block\", \"reason\": \"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed. Add .rnd/ to .gitignore instead.\"}'; elif echo \"$TOOL_INPUT\" | grep -q '\\.rnd'; then echo '{\"decision\": \"allow\"}'; fi"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools'"
           }
         ]
       },

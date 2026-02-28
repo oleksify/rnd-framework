@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Bash: blocks sed/grep/cat/find/etc when
+# dedicated Claude Code tools (Edit, Grep, Read, Glob) should be used instead.
+#
+# Only blocks when the tool is the LEADING command — piped usage is allowed.
+
+INPUT="$TOOL_INPUT"
+C='"command"[[:space:]]*:[[:space:]]*"[[:space:]]*'
+
+if echo "$INPUT" | grep -qE "${C}(sed|awk)[ \"]"; then
+  echo '{"decision":"block","reason":"Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly."}'
+elif echo "$INPUT" | grep -qE "${C}(cat|head|tail)[ \"]"; then
+  echo '{"decision":"block","reason":"Use the Read tool instead of cat/head/tail. Read supports line offsets and limits natively."}'
+elif echo "$INPUT" | grep -qE "${C}(grep|rg)[ \"]"; then
+  echo '{"decision":"block","reason":"Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes."}'
+elif echo "$INPUT" | grep -qE "${C}find[ \"]"; then
+  echo '{"decision":"block","reason":"Use the Glob tool instead of find. Glob supports patterns like **/*.ts."}'
+elif echo "$INPUT" | grep -qE 'git[[:space:]]+add.*\.rnd'; then
+  echo '{"decision":"block","reason":"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."}'
+elif echo "$INPUT" | grep -q '\.rnd'; then
+  echo '{"decision":"allow"}'
+fi

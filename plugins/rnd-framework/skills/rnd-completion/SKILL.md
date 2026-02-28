@@ -38,9 +38,11 @@ Stage all verified changes. Write a clear commit message summarizing the feature
 
 ### 4. Branch Management
 
+**Don't assume GitHub.** Check `git remote get-url origin` to determine the hosting platform. The remote could be GitLab, Gitea, Codeberg, Forgejo, Tangled, or any other host. Use the appropriate CLI or web workflow — `gh` is GitHub-only, `glab` is GitLab-only, etc. When in doubt, ask the user.
+
 Options:
 - **Merge to main** — If working on a feature branch, merge or rebase
-- **Create PR** — Push branch, create pull request with summary from integration report
+- **Create PR/MR** — Push branch, create pull/merge request with summary from integration report
 - **Keep branch** — If more work is planned on this branch
 
 ### 5. Report to User

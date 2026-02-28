@@ -15,6 +15,7 @@ description: Use when creating git commits — enforces commit message style, le
 6. **Be specific.** "Fix login redirect on expired session" — not "Fix bug" or "Update auth".
 7. **No filler words.** Drop "various", "some", "minor", "small". Every word must carry information.
 8. **Don't explain framework internals.** Never reference skills, hooks, pipeline phases, or orchestration mechanics. Describe the user-visible change.
+9. **Don't assume GitHub.** The remote could be GitLab, Gitea, Codeberg, Forgejo, Tangled, or any other host. Check `git remote get-url origin` before using platform-specific CLI tools (e.g., `gh` is GitHub-only). For PRs/MRs, ask the user or infer from the remote URL.
 
 ## Before Committing
 

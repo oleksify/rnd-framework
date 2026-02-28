@@ -60,7 +60,7 @@ After configuring, start a Claude Code session in the project and check:
 
 ## Skills
 
-The plugin provides 14 skills that embed structured practices into every phase of coding:
+The plugin provides 15 skills that embed structured practices into every phase of coding:
 
 | Skill | Purpose |
 |---|---|
@@ -76,6 +76,7 @@ The plugin provides 14 skills that embed structured practices into every phase o
 | `rnd-integration` | Merge verified outputs, integration/system validation |
 | `rnd-completion` | Post-SHIP workflow: branch management, PR creation, cleanup |
 | `rnd-isolation` | Git worktree isolation for parallel builders |
+| `prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `bun-scripting` | Prefer Bun (TypeScript) over Python for helper scripts when available |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
 

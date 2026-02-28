@@ -1,0 +1,16 @@
+{
+  "name": "rnd-framework-plugins",
+  "description": "Claude Code plugins for structured multi-agent orchestration",
+  "owner": {
+    "name": "rnd-framework",
+    "url": "https://github.com/rnd-framework"
+  },
+  "plugins": [
+    {
+      "name": "rnd-framework",
+      "description": "Multi-agent coding orchestration with structured decomposition, dependency-based scheduling, independent verification with information barriers, quality gates, and spec-first accountability.",
+      "category": "development",
+      "source": "./plugins/rnd-framework"
+    }
+  ]
+}

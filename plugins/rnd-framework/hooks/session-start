@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# SessionStart hook for rnd-framework plugin
+
+set -euo pipefail
+
+# Determine plugin root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Read using-rnd-framework content
+using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&1 || echo "Error reading using-rnd-framework skill")
+
+# Escape string for JSON embedding
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+using_rnd_escaped=$(escape_for_json "$using_rnd_content")
+session_context="<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your 'rnd-framework:using-rnd-framework' skill - your introduction to using the R&D framework. For all other skills, use the 'Skill' tool:**\n\n${using_rnd_escaped}\n\n</EXTREMELY_IMPORTANT>"
+
+# Output context injection as JSON
+cat <<EOF
+{
+  "additional_context": "${session_context}",
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "${session_context}"
+  }
+}
+EOF
+
+exit 0

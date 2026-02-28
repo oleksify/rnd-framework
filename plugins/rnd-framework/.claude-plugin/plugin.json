@@ -1,0 +1,5 @@
+{
+  "name": "rnd-framework",
+  "description": "Multi-agent coding orchestration with structured decomposition, dependency-based scheduling, independent verification with information barriers, quality gates, and spec-first accountability.",
+  "version": "0.2.0"
+}

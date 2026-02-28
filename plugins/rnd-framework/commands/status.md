@@ -4,16 +4,21 @@ description: "Show the current status of the R&D pipeline: which tasks are plann
 
 # R&D Framework: Status
 
-Read `.rnd/plan.md` and scan the `.rnd/` directory to build a status report.
+Use `TaskList` as the **primary status source** to get an overview of all tasks, their states, owners, and blockers.
 
-For each task in the plan, determine its state:
+Then supplement with `.rnd/` artifact details for richer context:
+- Check `.rnd/iteration-log.md` for iteration history
+- Check `.rnd/verifications/` for verdict details
+- Check `.rnd/integration/` for SHIP/NO-SHIP verdicts
 
-- **📋 Planned** — Pre-registration exists but no build yet
-- **🔨 Built** — Builder output exists in `.rnd/builds/T<id>-manifest.md`
-- **🔍 In Verification** — Verifier is working (no report yet)
-- **✅ Verified** — PASS verdict in `.rnd/verifications/T<id>-verification.md`
-- **🔄 Iterating** — FAIL/NEEDS ITERATION, check `.rnd/iteration-log.md` for cycle count
-- **⚠️ Escalated** — Exceeded iteration budget (3 cycles)
+Map task states to pipeline phases:
+
+- **📋 Planned** — Task is `pending` with no build artifacts
+- **🔨 Built** — Task is `completed` and `.rnd/builds/T<id>-manifest.md` exists, but no verification report yet
+- **🔍 In Verification** — Task is `in_progress` during verify phase
+- **✅ Verified** — Task is `completed` with PASS verdict in `.rnd/verifications/T<id>-verification.md`
+- **🔄 Iterating** — Task is `in_progress` with `iteration` metadata > 0
+- **⚠️ Escalated** — Iteration metadata shows 3+ cycles
 - **🚀 Integrated** — Part of a SHIP verdict in `.rnd/integration/`
 
 Display as a table:
@@ -30,6 +35,6 @@ Wave | Task ID | Name                    | Status        | Iterations
 
 Also show:
 - Current wave being worked on
-- Any blocked tasks (dependencies not yet verified)
+- Any blocked tasks (from `TaskList` blockedBy data)
 - Iteration log summary (which tasks needed rework and why)
 - Overall progress percentage

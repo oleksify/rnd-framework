@@ -22,11 +22,17 @@ Success criteria:
 
 Save to `.rnd/plan.md`.
 
+Use `TaskCreate` to create a single task with `subject` set to the task name, `description` set to the pre-registration content, and `activeForm` set to the present-continuous form (e.g., "Implementing quick fix").
+
 ## Step 2: Build
+
+Use `TaskUpdate` to mark the task `in_progress` (with `activeForm: "Building [task name]"`).
 
 Implement the task yourself. Write code + tests. Save a one-line self-assessment to `.rnd/builds/` noting any uncertainties.
 
 ## Step 3: Independent Verify
+
+Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
 
 Spawn the `rnd-verifier` agent with:
 - The pre-registration from step 1
@@ -35,7 +41,7 @@ Spawn the `rnd-verifier` agent with:
 
 ## Step 4: Iterate or Ship
 
-- PASS → Done. Report to user.
-- FAIL → Get feedback, fix, re-verify. Max 2 iterations in quick mode.
+- PASS → Use `TaskUpdate` to mark the task `completed`. Report to user.
+- FAIL → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle. Get feedback, fix, re-verify. Max 2 iterations in quick mode.
 
 Quick mode is faster, not less rigorous. The Verifier still applies full skepticism. Do not skip adversarial testing or accept soft evidence to save time.

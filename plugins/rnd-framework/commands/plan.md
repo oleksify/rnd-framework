@@ -14,6 +14,11 @@ Run ONLY the planning phase for: $ARGUMENTS
    - Testable success criteria (not vague)
    - Clear dependencies
    - Appropriate verification level
-5. Present the plan to the user for review before proceeding.
+5. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
+   - `subject`: Task name (e.g., "T1: Design API contracts")
+   - `description`: The full pre-registration content for that task
+   - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
+   - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
+6. Present the plan to the user for review before proceeding.
 
 Do NOT proceed to build/verify/integrate. The user will decide when to continue.

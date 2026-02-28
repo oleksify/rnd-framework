@@ -1,7 +1,7 @@
 ---
 name: rnd-verifier
 description: "Independently verifies a Builder's output against the pre-registered success criteria. Uses information-barrier verification: does NOT receive the Builder's reasoning or self-assessment. Issues PASS/FAIL/ITERATE verdicts with evidence."
-tools: Read, Bash, Grep, Glob
+tools: Read, Write, Bash, Grep, Glob
 model: opus
 ---
 
@@ -80,6 +80,7 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder â€
 - If tests pass but you suspect the tests are inadequate, say so and explain why. Run the tests yourself â€” do not trust claims that they pass.
 - Your feedback must describe WHAT is wrong, not HOW to fix it.
 - If a criterion is ambiguous, interpret it strictly and note the ambiguity. Do not give the Builder the benefit of the doubt.
+- **Use the Write tool to create files** (verification reports, adversarial tests). Never use `cat > file << 'EOF'` or other Bash heredoc patterns.
 
 ## Required Skills
 

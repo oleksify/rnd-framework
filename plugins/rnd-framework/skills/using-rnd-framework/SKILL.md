@@ -96,6 +96,17 @@ These thoughts mean STOP — you're rationalizing:
 | "I already know the approach" | Pre-registration prevents scope creep. |
 | "TDD will slow me down" | TDD is faster than debugging. |
 
+## User Interaction
+
+**MANDATORY: When presenting next steps or options to the user, ALWAYS use `AskUserQuestion` with structured choices.** Never write open-ended text like "Would you like me to...?" or "Want me to start fixing these?". This is not optional.
+
+- 2-4 concrete options, short action-oriented labels
+- Recommended option listed first with "(Recommended)" in the label
+- Context goes in the `description` field, not the label
+- The user picks — you don't ask them to explain what to do
+
+This applies at EVERY decision point: post-plan, post-build, post-verify, post-integrate, and any time you need user input on direction.
+
 ## User Instructions
 
 Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip the pipeline.

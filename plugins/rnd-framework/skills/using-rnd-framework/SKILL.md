@@ -39,6 +39,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-completion` | Post-SHIP branch management and PR creation |
 | `rnd-framework:rnd-isolation` | Using git worktrees for builder isolation |
 | `rnd-framework:writing-skills` | Creating new skills for the framework |
+| `rnd-framework:bun-scripting` | Writing helper scripts — prefer Bun over Python when available |
 
 ## Available Commands
 

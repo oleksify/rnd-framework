@@ -62,6 +62,16 @@ Verification level: unit | integration | system
 Dependencies: [list of task IDs]
 ```
 
+## Subagent Coordination
+
+**The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `.rnd/` files for progress. Spawn agents and process their results when the tool returns.
+
+- **Never** use `sleep` to wait for subagents
+- **Never** write bash loops to check if build artifacts exist yet
+- **Never** scan `.rnd/builds/` to see if a builder is done — the Agent tool tells you
+- **Do** spawn multiple agents in parallel (multiple Agent tool calls in one message) for independent tasks within a wave
+- **Do** use `run_in_background: true` on Agent calls if you want to continue working while agents run, then process results when notified
+
 ## Execution Phases
 
 1. **Plan** — Planner decomposes, writes pre-registrations, builds dependency matrix.

@@ -7,6 +7,10 @@ argument-hint: "<description of the feature, refactor, or bug fix>"
 
 You are orchestrating a complex coding task using the R&D framework. Follow the phases below in strict order. Use subagents for parallelizable work.
 
+## CRITICAL: No Polling
+
+**Never use `sleep`, polling loops, or manual file checks to wait for subagents.** The Agent tool is blocking — it returns only when the subagent finishes. Trust the tool. Spawn agents and process their results when they return. Do not write bash commands to check `.rnd/` for progress.
+
 ## Setup
 
 Create the `.rnd/` directory structure if it doesn't exist:

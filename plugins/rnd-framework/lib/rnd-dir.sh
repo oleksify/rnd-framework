@@ -8,8 +8,10 @@
 # The path is: <claude-config-dir>/.rnd/<project-slug>/
 # where project-slug = <basename>-<6char-sha256-of-pwd>
 #
-# Config dir is derived from CLAUDE_PLUGIN_ROOT when available,
-# otherwise falls back to ~/.claude.
+# Config dir priority:
+#   1. CLAUDE_PLUGIN_ROOT (strip /plugins/cache/... suffix)
+#   2. CLAUDE_CONFIG_DIR (set by Claude Code in shell environment)
+#   3. ~/.claude (last resort)
 
 set -euo pipefail
 
@@ -19,8 +21,10 @@ if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   CONFIG_DIR="${CLAUDE_PLUGIN_ROOT%%/plugins/cache/*}"
   # If stripping didn't change anything (unexpected layout), fall back
   if [ "$CONFIG_DIR" = "$CLAUDE_PLUGIN_ROOT" ]; then
-    CONFIG_DIR="$HOME/.claude"
+    CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
   fi
+elif [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
+  CONFIG_DIR="$CLAUDE_CONFIG_DIR"
 else
   CONFIG_DIR="$HOME/.claude"
 fi

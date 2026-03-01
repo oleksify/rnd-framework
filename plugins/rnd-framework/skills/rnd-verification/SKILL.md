@@ -74,6 +74,17 @@ Does the code actually implement the pre-registered approach? Check for:
 - Missing error handling at system boundaries
 - Deviation from the declared approach
 
+### 3.5. Cross-Criterion Sweep
+
+**Before writing any verdicts**, review all findings from step 3 together:
+
+1. **Systemic patterns:** Does the same defect type (e.g., missing validation, incorrect error handling) appear across multiple criteria? If so, report it as a systemic issue — not N independent failures.
+2. **Shared root causes:** Do multiple criterion failures trace back to the same underlying defect? Identify the root cause explicitly.
+3. **Fragile passes:** Does any passing criterion depend on an assumption invalidated by a failing criterion? Flag it as at-risk even if its tests currently pass.
+4. **Completeness check:** Confirm you have a verdict and evidence for EVERY criterion listed in the pre-registration. If any criterion lacks evidence, go back to step 3 for that criterion.
+
+**Do not proceed to step 4 until this sweep is complete.** Writing verdicts incrementally — some now, more in a later round — wastes the Builder's iteration budget and is a verification failure in itself.
+
 ### 4. Produce Verification Report
 
 > **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
@@ -130,6 +141,7 @@ If your evidence for PASS is "it looks right" — that is not evidence. Run it. 
 | "I'll suggest a fix to save time" | Your job is WHAT is wrong. Builder reasons about HOW to fix. |
 | "This clearly works, no need for adversarial tests" | If it clearly works, adversarial tests will confirm that quickly. Run them. |
 | "I already checked similar code before" | Each criterion gets fresh evidence. Prior checks don't transfer. |
+| "I'll catch the rest next round" | There is no next round for free. Every incomplete report burns an entire build-verify iteration cycle. Report ALL findings NOW. |
 
 ## Related Skills
 

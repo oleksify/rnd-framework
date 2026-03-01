@@ -36,9 +36,14 @@ Wait for the planner to produce `$RND_DIR/plan.md` with:
 **Gate 1:** Review the plan. Every criterion must be empirically verifiable — a skeptical Verifier must be able to produce a true/false result from evidence alone. Criteria like "works correctly", "handles errors", or "is performant" are automatic rejections. Send back to planner until every criterion specifies an observable outcome.
 
 **After Gate 1 passes:** Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
-- "Approve plan and start building (Recommended)" — proceed to Phase 2
+- "Approve plan and auto-continue (Recommended)" — approve and run the full pipeline automatically, pausing only for escalations (iteration budget exhaustion, NO-SHIP verdicts, final completion)
+- "Approve plan and start building" — proceed to Phase 2 with manual gates at each phase boundary
 - "Request plan revisions" — send feedback to the planner for changes
 - "Add more tasks" — extend the plan before building
+
+If the user selects "Approve plan and auto-continue", set **auto-continue mode = ON** for the remainder of this pipeline run. This skips happy-path `AskUserQuestion` gates in Phases 2, 3, and 5, proceeding with the recommended action automatically. Escalation gates (iteration budget exhaustion, NO-SHIP, final completion) are always preserved regardless of mode.
+
+> **Token awareness:** Auto-continue works best with standard iteration budgets (max 3 per task). The pipeline will still pause at budget exhaustion and NO-SHIP verdicts, so runaway token usage is bounded. For very large plans (5+ tasks), consider running with manual gates to review intermediate results.
 
 Once approved, create a `TaskCreate` entry for each task in the plan. Set `subject` to the task name, `description` to the pre-registration content, and `activeForm` to the present-continuous form (e.g., "Building OAuth handler"). Use `addBlockedBy` on each task to mirror the dependency matrix from the plan — if T3 depends on T1, then T3's `addBlockedBy` should include T1's task ID.
 
@@ -54,7 +59,11 @@ For each wave in the execution schedule:
 
 4. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
 
-**After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations. Use `AskUserQuestion` with options:
+**After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
+
+If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to verification (Phase 3).
+
+Otherwise, use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — spawn Verifiers for this wave
 - "Review build artifacts first" — let the user inspect code before verification
 
@@ -74,14 +83,18 @@ For each completed task in the wave:
 
 **After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed, which need iteration, key findings.
 
-If all tasks PASS, use `AskUserQuestion` with options:
-- "Proceed to integration (Recommended)" — spawn Integrator for this wave
-- "Review verification reports" — let the user inspect reports before integration
+If all tasks PASS:
+- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to integration (Phase 5).
+- Otherwise, use `AskUserQuestion` with options:
+  - "Proceed to integration (Recommended)" — spawn Integrator for this wave
+  - "Review verification reports" — let the user inspect reports before integration
 
-If any tasks NEED ITERATION, use `AskUserQuestion` with options:
-- "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
-- "Re-plan failing tasks" — send back to Planner for re-decomposition
-- "Skip failing tasks and continue" — proceed with passing tasks only
+If any tasks NEED ITERATION:
+- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 4 iteration on failing tasks.
+- Otherwise, use `AskUserQuestion` with options:
+  - "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
+  - "Re-plan failing tasks" — send back to Planner for re-decomposition
+  - "Skip failing tasks and continue" — proceed with passing tasks only
 
 ## Phase 4: Iterate (if needed)
 
@@ -109,9 +122,11 @@ Once ALL tasks in a wave pass verification:
 **After Gate 4:** Summarize integration results to the user.
 
 If SHIP:
-- If more waves remain, use `AskUserQuestion` with options:
-  - "Proceed to next wave (Recommended)" — start Phase 2 for the next wave
-  - "Review integration report" — let the user inspect the report first
+- If more waves remain:
+  - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 2 for the next wave.
+  - Otherwise, use `AskUserQuestion` with options:
+    - "Proceed to next wave (Recommended)" — start Phase 2 for the next wave
+    - "Review integration report" — let the user inspect the report first
 - If this was the last wave: "Pipeline complete." Use `AskUserQuestion` with options:
   - "Review all artifacts" — show the user a summary of everything produced
   - "Proceed to cleanup (Recommended)" — move to Phase 6

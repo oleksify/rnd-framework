@@ -67,6 +67,20 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Run your own tests to make sure they execute, but the Verifier will evaluate their adequacy.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 
+## Convergent Iteration
+
+When receiving a verification report with NEEDS ITERATION, address **every** failed criterion in a single pass — not just the primary failure. Fixing one criterion while leaving others broken causes "whack-a-mole" cycles that waste iteration budget.
+
+**Process:**
+
+1. **Inventory all failures.** List every criterion marked FAIL or NEEDS ITERATION in the verification report. This is your checklist — nothing ships until every item is addressed.
+2. **Diagnose root causes.** Multiple failures often share a root cause. Fix the root cause and you fix several criteria at once.
+3. **Check shared code paths.** After making fixes, identify code paths that are shared between fixed (previously failing) and passing criteria. Re-verify that your changes do not regress passing criteria.
+4. **Re-run ALL tests.** Run the complete test suite — not just tests related to the flagged criteria. Fixes in one area frequently break assumptions in another.
+5. **Update the build manifest and self-assessment** to reflect all changes made in this pass.
+
+**Anti-pattern:** Fixing only the "loudest" failure and hoping the others resolve themselves or will be caught next round. They won't — and you'll burn iteration budget discovering that.
+
 ## Communication
 
 Notify the orchestrator via `SendMessage` at key points:

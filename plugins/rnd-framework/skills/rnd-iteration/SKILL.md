@@ -36,9 +36,11 @@ When receiving verification feedback:
 
 1. **Read the feedback carefully** — Understand WHAT failed, not just that it failed
 2. **Diagnose** — Use `rnd-framework:rnd-debugging` if the failure is unclear
-3. **Fix** — Address the specific issue. Don't "improve" unrelated code
-4. **Update self-assessment** — Note what changed and why
-5. **Resubmit** — Same artifacts, updated code and tests
+3. **Fix ALL failed criteria** — Address every criterion marked FAIL or NEEDS ITERATION, not just the primary failure. Use a checklist: list each failed criterion, diagnose it, fix it, and mark it done. Do not move to step 4 until every failed criterion has been addressed.
+4. **Check shared code paths** — Identify code paths shared between your fixes and currently-passing criteria. Re-run tests covering those paths to confirm your fixes haven't introduced regressions. If a passing criterion shares logic with a fixed one, explicitly re-verify it.
+5. **Re-run ALL tests** — Run the complete test suite, not just tests related to flagged criteria. Fixes often have cross-cutting effects.
+6. **Update self-assessment** — Note what changed and why
+7. **Resubmit** — Same artifacts, updated code and tests
 
 ## Iteration Budget
 
@@ -85,6 +87,7 @@ Track all iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${
 | "The Verifier is wrong" | Maybe. But 3 failures means the task needs re-thinking, not that the Verifier needs convincing. |
 | "Just a minor tweak" | If 3 minor tweaks didn't fix it, it's not minor. |
 | "It works, the test is just wrong" | Then fix the test and prove it. Claims without evidence are not results. |
+| "I'll fix the other failures next round" | No. Address ALL failed criteria in one pass. Narrow fixes burn iteration budget and cause whack-a-mole cycles. Each round must converge, not punt. |
 
 ## Related Skills
 

@@ -35,7 +35,12 @@ Wait for the planner to produce `$RND_DIR/plan.md` with:
 
 **Gate 1:** Review the plan. Every criterion must be empirically verifiable — a skeptical Verifier must be able to produce a true/false result from evidence alone. Criteria like "works correctly", "handles errors", or "is performant" are automatic rejections. Send back to planner until every criterion specifies an observable outcome.
 
-**After Gate 1 passes:** Create a `TaskCreate` entry for each task in the plan. Set `subject` to the task name, `description` to the pre-registration content, and `activeForm` to the present-continuous form (e.g., "Building OAuth handler"). Use `addBlockedBy` on each task to mirror the dependency matrix from the plan — if T3 depends on T1, then T3's `addBlockedBy` should include T1's task ID.
+**After Gate 1 passes:** Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
+- "Approve plan and start building (Recommended)" — proceed to Phase 2
+- "Request plan revisions" — send feedback to the planner for changes
+- "Add more tasks" — extend the plan before building
+
+Once approved, create a `TaskCreate` entry for each task in the plan. Set `subject` to the task name, `description` to the pre-registration content, and `activeForm` to the present-continuous form (e.g., "Building OAuth handler"). Use `addBlockedBy` on each task to mirror the dependency matrix from the plan — if T3 depends on T1, then T3's `addBlockedBy` should include T1's task ID.
 
 ## Phase 2: Build (per wave)
 
@@ -48,6 +53,10 @@ For each wave in the execution schedule:
 3. **Wait for all builders in the wave to complete.** Builders report completion via `SendMessage`.
 
 4. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+
+**After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations. Use `AskUserQuestion` with options:
+- "Proceed to verification (Recommended)" — spawn Verifiers for this wave
+- "Review build artifacts first" — let the user inspect code before verification
 
 ## Phase 3: Verify (per task)
 
@@ -63,13 +72,29 @@ For each completed task in the wave:
    - **NEEDS ITERATION** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
    - **FAIL** → Same as NEEDS ITERATION.
 
+**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed, which need iteration, key findings.
+
+If all tasks PASS, use `AskUserQuestion` with options:
+- "Proceed to integration (Recommended)" — spawn Integrator for this wave
+- "Review verification reports" — let the user inspect reports before integration
+
+If any tasks NEED ITERATION, use `AskUserQuestion` with options:
+- "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
+- "Re-plan failing tasks" — send back to Planner for re-decomposition
+- "Skip failing tasks and continue" — proceed with passing tasks only
+
 ## Phase 4: Iterate (if needed)
 
 1. Extract the Verifier's feedback (not their internal reasoning).
 2. Pass ONLY the feedback to the original Builder agent via `SendMessage`.
 3. Builder revises and resubmits.
 4. Verifier re-checks (same information barrier rules).
-5. Max 3 iterations. If still failing, report to user for re-planning or manual intervention. Use `TaskUpdate` with `metadata: {"iteration": N}` to track each cycle.
+5. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
+   - "Re-plan this task" — send back to Planner for re-decomposition
+   - "Skip and continue (Recommended)" — mark task as skipped, proceed with remaining tasks
+   - "Stop pipeline" — halt the pipeline for manual intervention
+
+   Use `TaskUpdate` with `metadata: {"iteration": N}` to track each cycle.
 
 Track iterations in `$RND_DIR/iteration-log.md`.
 
@@ -80,8 +105,20 @@ Once ALL tasks in a wave pass verification:
 1. Spawn the `rnd-integrator` agent as a **teammate** with `team_name: "rnd-pipeline"`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
-   - **SHIP** → Proceed to next wave or finish.
-   - **NO-SHIP** → Identify failing integration points, route back to relevant builders via `SendMessage`.
+
+**After Gate 4:** Summarize integration results to the user.
+
+If SHIP:
+- If more waves remain, use `AskUserQuestion` with options:
+  - "Proceed to next wave (Recommended)" — start Phase 2 for the next wave
+  - "Review integration report" — let the user inspect the report first
+- If this was the last wave: "Pipeline complete." Use `AskUserQuestion` with options:
+  - "Review all artifacts" — show the user a summary of everything produced
+  - "Proceed to cleanup (Recommended)" — move to Phase 6
+
+If NO-SHIP, use `AskUserQuestion` with options:
+- "Fix failing integration points (Recommended)" — route back to relevant builders
+- "Re-plan affected tasks" — send failing tasks back to the Planner
 
 ## Phase 6: Report & Cleanup
 
@@ -92,6 +129,10 @@ Summarize results for the user:
 - Final integration status
 - Remaining concerns or recommendations
 
-**Present next steps as structured options** using `AskUserQuestion` — never leave the user with an open-ended "What would you like to do?". Include a recommended option.
+Use `AskUserQuestion` to present concrete next steps:
+- "Commit changes (Recommended)" — stage and commit all changes from the pipeline
+- "Create PR" — commit and open a pull request
+- "Review all artifacts" — show the user a summary of everything produced
+- "Clean up" — remove `$RND_DIR` artifacts and team resources only
 
 Use `TeamDelete` to clean up the `rnd-pipeline` team after the pipeline completes or is abandoned.

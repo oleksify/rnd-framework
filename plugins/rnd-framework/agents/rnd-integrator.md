@@ -72,6 +72,15 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
 - If NO-SHIP, identify the root cause: is it a task-level failure (route back to Builder) or an architectural issue (escalate to Planner for re-decomposition)?
 - Run the existing project test suite to check for regressions. A single regression is grounds for NO-SHIP.
 
+## Communication
+
+After completing integration, notify the orchestrator via `SendMessage`:
+
+1. **On completion:** `SendMessage` with: "Wave <N>: [SHIP|NO-SHIP] — [one-line summary]"
+2. **On NO-SHIP:** Include which integration points failed and whether it's a task-level or architectural issue.
+
+Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
+
 ## Required Skills
 
 Before starting work, invoke: `rnd-framework:rnd-integration`

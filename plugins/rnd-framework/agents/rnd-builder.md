@@ -67,6 +67,17 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Run your own tests to make sure they execute, but the Verifier will evaluate their adequacy.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 
+## Communication
+
+Notify the orchestrator via `SendMessage` at key points:
+
+1. **On start:** `SendMessage` with: "Building T<id>: [task name]"
+2. **On completion:** `SendMessage` with: "T<id> build complete — manifest at $RND_DIR/builds/T<id>-manifest.md"
+3. **On approach disagreement:** `SendMessage` with: "STOP: T<id> approach is wrong — [brief reason]. Awaiting guidance."
+4. **On blockers:** `SendMessage` with: "BLOCKED on T<id>: [what's missing or broken]"
+
+Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
+
 ## Required Skills
 
 Before starting work, invoke: `rnd-framework:rnd-building`

@@ -28,6 +28,8 @@ Success criteria:
 
 Save to `$RND_DIR/plan.md`.
 
+Tell the user: "Starting build for: [task name] — [number] success criteria to meet."
+
 Use `TaskCreate` to create a single task with `subject` set to the task name, `description` set to the pre-registration content, and `activeForm` set to the present-continuous form (e.g., "Implementing quick fix").
 
 ## Step 2: Build
@@ -47,7 +49,16 @@ Spawn the `rnd-verifier` agent with:
 
 ## Step 4: Iterate or Ship
 
-- PASS → Use `TaskUpdate` to mark the task `completed`. Report to user.
-- FAIL → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle. Get feedback, fix, re-verify. Max 2 iterations in quick mode.
+- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Use `AskUserQuestion` with options:
+  - "Commit changes (Recommended)" — stage and commit the changes
+  - "Review artifacts" — show the user the verification report and code changes
+  - "Clean up" — remove `$RND_DIR` artifacts only
+
+- **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating [task name] (N/2)"` to track the cycle. Summarize the verification failure to the user. Get feedback, fix, re-verify.
+
+  If iteration budget (2) is exhausted, use `AskUserQuestion` with options:
+  - "Escalate to full pipeline" — switch to `/rnd-framework:start` for deeper decomposition
+  - "Iterate one more time" — extend budget by 1
+  - "Abandon task" — stop work on this task
 
 Quick mode is faster, not less rigorous. The Verifier still applies full skepticism. Do not skip adversarial testing or accept soft evidence to save time.

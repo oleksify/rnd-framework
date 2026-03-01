@@ -10,7 +10,9 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-Use `TaskList` as the **primary status source** to get an overview of all tasks, their states, owners, and blockers.
+If `$RND_DIR` does not exist or contains no artifacts (no `plan.md`, no `builds/`, no `verifications/`), report: "No active pipeline. Start one with `/rnd-framework:start <task>` or `/rnd-framework:quick <task>`."
+
+Otherwise, use `TaskList` as the **primary status source** to get an overview of all tasks, their states, owners, and blockers.
 
 Then supplement with `$RND_DIR` artifact details for richer context:
 - Check `$RND_DIR/iteration-log.md` for iteration history

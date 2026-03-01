@@ -86,6 +86,16 @@ Save your plan to `$RND_DIR/plan.md`. Structure:
 - If a task is too large to have clear success criteria, decompose it further.
 - If the approach is uncertain, flag it and recommend a Phase 0 spike.
 
+## Communication
+
+Notify the orchestrator via `SendMessage` at key points:
+
+1. **On start:** `SendMessage` with: "Planning started for: [task description]"
+2. **On completion:** `SendMessage` with: "Plan ready at $RND_DIR/plan.md — [N] tasks across [M] waves"
+3. **On blockers:** `SendMessage` with: "BLOCKED: [describe what's unclear or missing]"
+
+Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
+
 ## Required Skills
 
 Before starting work, invoke: `rnd-framework:rnd-decomposition`

@@ -5,7 +5,7 @@
 # Only blocks when the tool is the LEADING command — piped usage is allowed.
 
 INPUT="$TOOL_INPUT"
-C='"command"[[:space:]]*:[[:space:]]*"[[:space:]]*'
+C='"command"[[:space:]]*:[[:space:]]*"[[:space:]]*(cd[^&;]*[&;]+[[:space:]]*)*'
 
 if echo "$INPUT" | grep -qE "${C}(sed|awk)[ \"]"; then
   echo '{"decision":"block","reason":"Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly."}'

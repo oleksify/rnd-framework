@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3 — 2026-03-01
+
+### Handle cd-prefixed commands in Bash hook
+
+The `prefer-tools` hook now correctly matches commands prefixed with `cd /path &&` or `cd /path ;`. Previously, `cd /path && sed ...` bypassed the block and `cd /path && ls` bypassed the auto-allow because the regex anchored to the start of the command string.
+
 ## 0.5.2 — 2026-03-01
 
 ### Auto-allow ls in Bash hook

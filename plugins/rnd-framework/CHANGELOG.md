@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-03-01
+
+### Autonomous agents
+
+All pipeline agents (Planner, Builder, Verifier, Integrator) are now spawned with `mode: "bypassPermissions"`. This eliminates permission prompts during pipeline execution — the framework's own quality gates (pre-registration, information barriers, independent verification) provide sufficient control. Applied across all 7 commands (`start`, `plan`, `build`, `verify`, `integrate`, `quick`, `status`) and documented in the orchestration skill.
+
 ## 0.4.0 — 2026-03-01
 
 ### Iteration convergence

@@ -11,7 +11,7 @@ Run ONLY the planning phase for: $ARGUMENTS
    ```bash
    RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
    ```
-2. Spawn the `rnd-planner` agent with the task description. Pass `RND_DIR` to it.
+2. Spawn the `rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description and `RND_DIR`.
 3. Review the output in `$RND_DIR/plan.md`.
 4. Validate that every task has:
    - Testable success criteria (not vague)

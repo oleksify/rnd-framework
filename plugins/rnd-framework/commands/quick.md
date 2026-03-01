@@ -42,7 +42,7 @@ Implement the task yourself. Write code + tests. Save a one-line self-assessment
 
 Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
 
-Spawn the `rnd-verifier` agent with:
+Spawn the `rnd-verifier` agent with `mode: "bypassPermissions"`, passing:
 - The pre-registration from step 1
 - Your code and tests
 - Do NOT pass your self-assessment or any notes about concerns

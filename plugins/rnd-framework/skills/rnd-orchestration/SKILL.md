@@ -64,6 +64,19 @@ Dependencies: [list of task IDs]
 
 ## Subagent Coordination
 
+### Agent Permission Mode
+
+All pipeline agents are spawned with `mode: "bypassPermissions"`:
+
+- **Planner** — decomposes tasks and writes pre-registrations
+- **Builder** — implements tasks and produces self-assessments
+- **Verifier** — independently checks outputs against pre-registered criteria
+- **Integrator** — merges verified outputs and runs integration tests
+
+**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts are redundant and disruptive to autonomous pipeline operation.
+
+### Blocking Behavior
+
 **The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
 
 > **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/project-abc123`. Use `-c` flag to create directory structure.

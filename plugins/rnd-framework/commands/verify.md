@@ -33,6 +33,8 @@ This barrier is the core of the framework. If violated, verification becomes rub
 
 Use `TaskUpdate` to mark target tasks as `in_progress` before spawning verifiers.
 
+Spawn all `rnd-verifier` agents with `mode: "bypassPermissions"`.
+
 If $ARGUMENTS is a task ID: verify that one task.
 If $ARGUMENTS is a wave: verify all tasks in the wave (can be parallel — verifiers are independent).
 If $ARGUMENTS is "all": use `TaskList` to find all built but unverified tasks.

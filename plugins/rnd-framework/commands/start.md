@@ -45,7 +45,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 ## Phase 1: Plan
 
-Spawn the `rnd-planner` agent with the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
+Spawn the `rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
 
 Wait for the planner to produce `$RND_DIR/plan.md` with:
 - Task tree
@@ -73,7 +73,7 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one `rnd-builder` subagent per task as a **teammate** using the `Agent` tool with `team_name: "rnd-pipeline"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Parallel tasks within a wave:** Spawn one `rnd-builder` subagent per task as a **teammate** using the `Agent` tool with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
 
 3. **Wait for all builders in the wave to complete.** Builders report completion via `SendMessage`.
 
@@ -91,7 +91,7 @@ Otherwise, use `AskUserQuestion` with options:
 
 For each completed task in the wave:
 
-1. Spawn an `rnd-verifier` subagent as a **teammate** with `team_name: "rnd-pipeline"`. Pass it ONLY:
+1. Spawn an `rnd-verifier` subagent as a **teammate** with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`. Pass it ONLY:
    - The task's pre-registration document (from `$RND_DIR/plan.md`)
    - The builder's code, tests, and artifacts
    - NEVER pass the builder's self-assessment or reasoning
@@ -135,7 +135,7 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 
 Once ALL tasks in a wave pass verification:
 
-1. Spawn the `rnd-integrator` agent as a **teammate** with `team_name: "rnd-pipeline"`.
+1. Spawn the `rnd-integrator` agent as a **teammate** with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
 

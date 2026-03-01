@@ -15,6 +15,8 @@ elif echo "$INPUT" | grep -qE "${C}(grep|rg)[ \"]"; then
   echo '{"decision":"block","reason":"Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes."}'
 elif echo "$INPUT" | grep -qE "${C}find[ \"]"; then
   echo '{"decision":"block","reason":"Use the Glob tool instead of find. Glob supports patterns like **/*.ts."}'
+elif echo "$INPUT" | grep -qE "${C}ls[ \"]"; then
+  echo '{"decision":"allow"}'
 elif echo "$INPUT" | grep -qE 'git[[:space:]]+add.*\.rnd'; then
   echo '{"decision":"block","reason":"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."}'
 elif echo "$INPUT" | grep -q 'rnd-dir\.sh'; then

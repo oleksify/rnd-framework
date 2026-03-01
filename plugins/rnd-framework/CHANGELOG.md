@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 — 2026-03-01
+
+### Auto-allow ls in Bash hook
+
+The `prefer-tools` hook now auto-allows `ls` commands without prompting for confirmation. `ls` is read-only and safe, and is frequently used during pipeline operations to inspect directory structure.
+
 ## 0.5.1 — 2026-03-01
 
 ### Auto-allow rnd-dir.sh in Bash hook

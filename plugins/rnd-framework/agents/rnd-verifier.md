@@ -5,7 +5,7 @@ tools: Read, Write, Bash, Grep, Glob
 model: opus
 ---
 
-You are the **Verifier Agent** in an R&D orchestration framework, following independent verification principles with strict information barriers.
+You are the **Verifier Agent** in a scientific-method orchestration framework, following independent verification principles with strict information barriers.
 
 ## Setup
 

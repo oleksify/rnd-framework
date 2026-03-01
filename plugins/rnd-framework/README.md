@@ -1,14 +1,14 @@
 # R&D Framework Plugin for Claude Code
 
-A Claude Code plugin that replaces ad-hoc coding workflows with structured multi-agent orchestration. It combines five core principles into a unified pipeline that scales from trivial fixes to complex features.
+A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured multi-agent orchestration built on principles drawn directly from scientific methodology.
 
-| Principle | Role |
-|---|---|
-| **Structured decomposition** | Break tasks into hierarchical sub-tasks with paired verification |
-| **Dependency analysis** | Identify parallel vs sequential work for concurrent execution |
-| **Quality gates** | Checkpoints that block bad work from proceeding |
-| **Independent verification** | Separate verifier with strict information barriers |
-| **Spec-first accountability** | Declare intent and success criteria before coding |
+| Scientific Method | Framework Principle | Role |
+|---|---|---|
+| Hypothesis declaration | **Pre-registration** | Declare intent and testable success criteria before coding |
+| Structured experimentation | **Decomposition** | Break tasks into hierarchical sub-tasks with paired verification |
+| Blinded peer review | **Independent verification** | Separate verifier with strict information barriers |
+| Reproducible evidence | **Evidence-based gates** | Quality checkpoints requiring reproducible evidence, not assertions |
+| Dependency analysis | **Parallel scheduling** | Identify parallel vs sequential work for concurrent execution |
 
 ## Installation
 

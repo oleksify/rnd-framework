@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing the **rnd-framework** — an R&D-inspired multi-agent orchestration system. It structures coding workflows around structured decomposition, dependency-based scheduling, independent verification with information barriers, quality gates, and spec-first accountability.
+A Claude Code plugin repository containing the **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 
 The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references it.
 

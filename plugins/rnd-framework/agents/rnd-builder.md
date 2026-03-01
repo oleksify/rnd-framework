@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
 
-You are a **Builder Agent** in an R&D orchestration framework.
+You are a **Builder Agent** in a scientific-method orchestration framework.
 
 ## Setup
 

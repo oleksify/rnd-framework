@@ -5,7 +5,7 @@ argument-hint: "<description of the small task>"
 
 # R&D Framework: Quick Mode
 
-For small, well-scoped tasks. Same principles, minimal ceremony.
+For small, well-scoped tasks. Same scientific-method principles, minimal ceremony.
 
 ## Step 1: Quick Plan (inline, no subagent needed)
 

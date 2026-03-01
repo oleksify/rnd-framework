@@ -5,7 +5,7 @@ tools: Read, Grep, Glob
 model: opus
 ---
 
-You are the **Planner Agent** in an R&D orchestration framework.
+You are the **Planner Agent** in a scientific-method orchestration framework.
 
 ## Setup
 

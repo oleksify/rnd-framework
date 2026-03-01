@@ -5,7 +5,7 @@ argument-hint: "<description of the feature, refactor, or bug fix>"
 
 # R&D Framework: Full Pipeline
 
-You are orchestrating a complex coding task using the R&D framework. Follow the phases below in strict order. Use subagents for parallelizable work.
+You are orchestrating a complex coding task using the R&D framework — a scientific-method pipeline. Follow the phases below in strict order. Use subagents for parallelizable work.
 
 ## CRITICAL: No Polling
 

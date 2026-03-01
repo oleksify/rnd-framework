@@ -20,15 +20,15 @@ This is a scientific process. Treat every claim — including your own — with 
 
 ## Framework Overview
 
-This framework combines five core principles for multi-agent coding:
+This framework applies the scientific method to multi-agent coding:
 
-| Layer | Principle | Role |
+| Scientific Method | Principle | Role |
 |---|---|---|
-| Decomposition | Structured hierarchical | Break tasks into System → Module → Unit with paired verification |
-| Dependencies | Dependency analysis | Identify parallel vs sequential work |
-| Quality gates | Verification gates | No work proceeds without passing review |
-| Verification | Independent with information barriers | Builder and Verifier are separate — Verifier never sees Builder reasoning |
-| Accountability | Spec-first | Declare intent + success criteria BEFORE coding |
+| Hypothesis declaration | Pre-registration | Declare intent + success criteria BEFORE coding |
+| Structured experimentation | Hierarchical decomposition | Break tasks into System → Module → Unit with paired verification |
+| Blinded peer review | Independent verification | Builder and Verifier are separate — Verifier never sees Builder reasoning |
+| Reproducible evidence | Evidence-based gates | No work proceeds without reproducible evidence |
+| Dependency analysis | Parallel scheduling | Identify parallel vs sequential work |
 
 ## Agent Roles & Information Barriers
 

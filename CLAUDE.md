@@ -16,6 +16,7 @@ plugins/rnd-framework/
 ├── agents/                      # 4 specialized agents (planner, builder, verifier, integrator)
 ├── commands/                    # 7 slash commands (/rnd-framework:start, etc.)
 ├── skills/                      # 15 skills, each in its own dir with SKILL.md
+├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse information barrier
 │   └── session-start            # Bash script injecting using-rnd-framework skill into context

@@ -186,11 +186,35 @@ rnd-framework/
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse (information barrier)
 │   └── session-start            # Bootstrap script
+├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # 13 skills (rnd-* namespace)
 ├── lib/
 │   └── skills-core.js           # Skill discovery & resolution
 └── README.md
 ```
+
+## Output Styles
+
+Three custom output styles optimized for R&D pipeline work. Source files live in `output-styles/` within the plugin.
+
+| Style | Purpose |
+|---|---|
+| **Scientific** | Hypothesis-driven reasoning — every change framed as experiment → evidence → conclusion |
+| **Rigorous** | Maximum precision, zero ambiguity — explicit assumptions, rationale chains, audit-trail quality |
+| **Pipeline** | Minimal narrative — structured status blocks, tables, next actions only |
+
+### Registration
+
+Output styles must be in `~/.claude/output-styles/` (user-level) or `.claude/output-styles/` (project-level) to appear in `/output-style`. Symlink from your project:
+
+```bash
+mkdir -p .claude/output-styles
+ln -sf path/to/rnd-framework/output-styles/scientific.md .claude/output-styles/
+ln -sf path/to/rnd-framework/output-styles/rigorous.md .claude/output-styles/
+ln -sf path/to/rnd-framework/output-styles/pipeline.md .claude/output-styles/
+```
+
+Then switch with `/output-style scientific`, `/output-style rigorous`, or `/output-style pipeline`.
 
 ## Customization
 

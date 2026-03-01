@@ -27,4 +27,9 @@ If $ARGUMENTS is "next":
 
 After build completes, confirm all outputs exist and tests pass locally (Gate 2). Use `TaskUpdate` to mark each successfully built task as `completed`.
 
-Do NOT auto-proceed to verification — let the user trigger `/rnd-framework:verify` when ready.
+Summarize build results to the user: which tasks completed, any deviations from plan, any escalations. Then use `AskUserQuestion` with options:
+- "Proceed to verification (Recommended)" — run `/rnd-framework:verify` for this wave
+- "Review build artifacts first" — inspect code and tests before verification
+- "Build next wave" — skip verification for now and build the next wave
+
+Do NOT auto-proceed to verification without user confirmation.

@@ -21,6 +21,16 @@ Spawn the `rnd-integrator` agent for the wave.
 
 If $ARGUMENTS is "final", also run full system validation against the original task requirements.
 
-Report the SHIP/NO-SHIP verdict to the user:
-- **SHIP:** Use `TaskUpdate` to mark the integration task `completed`.
-- **NO-SHIP:** Keep the integration task `in_progress`. Identify failing integration points and route back to relevant builders.
+Summarize integration results to the user. Then use `AskUserQuestion`:
+
+If **SHIP:**
+- Use `TaskUpdate` to mark the integration task `completed`.
+- "Commit changes (Recommended)" — stage and commit all changes from this wave
+- "Review integration report" — inspect the full report before proceeding
+- "Proceed to next wave" — if more waves remain, start building the next one
+
+If **NO-SHIP:**
+- Keep the integration task `in_progress`.
+- "Fix failing integration points (Recommended)" — identify failures and route back to relevant builders
+- "Re-plan affected tasks" — send failing tasks back to the Planner for re-decomposition
+- "Stop pipeline" — halt for manual intervention

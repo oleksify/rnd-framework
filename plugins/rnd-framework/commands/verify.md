@@ -39,7 +39,24 @@ If $ARGUMENTS is "all": use `TaskList` to find all built but unverified tasks.
 
 ## After Verification
 
-- **PASS:** Use `TaskUpdate` to mark the task `completed`. Report to user.
+Process each task's verdict:
+- **PASS:** Use `TaskUpdate` to mark the task `completed`.
 - **NEEDS ITERATION:** Keep the task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle count. Extract ONLY the feedback section from the verification report. Do NOT extract the Verifier's internal reasoning. Pass feedback to the Builder. Track in `$RND_DIR/iteration-log.md`. Max 3 iterations.
-- **FAIL:** Same as NEEDS ITERATION. If iteration budget (3 cycles) is exhausted, report to user for re-planning.
+- **FAIL:** Same as NEEDS ITERATION.
 - After iteration, re-verify with the same information barrier rules.
+
+Summarize verification results to the user: which tasks passed, which need iteration, key findings. Then use `AskUserQuestion`:
+
+If all tasks PASS:
+- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate` for this wave
+- "Review verification reports" — inspect reports before proceeding
+
+If any tasks NEED ITERATION:
+- "Iterate on failing tasks (Recommended)" — re-build and re-verify failing tasks
+- "Re-plan failing tasks" — send back to Planner for re-decomposition
+- "Skip failing tasks and continue" — proceed with passing tasks only
+
+If iteration budget (3 cycles) is exhausted:
+- "Re-plan this task" — decompose differently
+- "Skip and continue (Recommended)" — proceed without this task
+- "Stop pipeline" — halt for manual intervention

@@ -46,3 +46,9 @@ Also show:
 - Any blocked tasks (from `TaskList` blockedBy data)
 - Iteration log summary (which tasks needed rework and why)
 - Overall progress percentage
+
+After displaying the status, use `AskUserQuestion` to suggest the logical next action based on current state:
+- If tasks are planned but not built: "Build next wave (Recommended)", "Review plan"
+- If tasks are built but not verified: "Verify built tasks (Recommended)", "Review build artifacts"
+- If tasks are verified and ready for integration: "Integrate wave (Recommended)", "Review verification reports"
+- If tasks are stuck in iteration: "Continue iteration (Recommended)", "Re-plan failing tasks", "Skip and proceed"

@@ -22,6 +22,9 @@ Run ONLY the planning phase for: $ARGUMENTS
    - `description`: The full pre-registration content for that task
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
-6. Present the plan to the user for review before proceeding.
+6. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
+   - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:build`
+   - "Request plan revisions" — describe what to change and re-run `/rnd-framework:plan`
+   - "Add more tasks" — extend the plan before building
 
 Do NOT proceed to build/verify/integrate. The user will decide when to continue.

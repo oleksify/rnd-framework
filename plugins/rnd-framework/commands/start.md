@@ -23,9 +23,29 @@ Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agent
 
 Use `TeamCreate` to create a team named `rnd-pipeline` with a description matching the task. This team coordinates all agents for the pipeline run.
 
+## Phase 0: Discovery
+
+Before planning, explore the codebase and gather requirements. This phase prevents the Planner from decomposing a task based on incomplete understanding.
+
+1. **Explore the codebase.** Spawn an `Explore` agent (or use Glob/Grep directly for small codebases) to understand the areas relevant to the task. Identify: existing patterns, relevant files/modules, architectural conventions, and potential constraints.
+
+2. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+
+3. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
+   - **Scope:** What's in and what's out? Any specific files, modules, or areas to focus on or avoid?
+   - **Patterns:** Should this follow an existing pattern in the codebase, or introduce a new approach?
+   - **Constraints:** Performance requirements, compatibility needs, or dependencies to be aware of?
+   - **Preferences:** Any strong opinions on architecture, naming, or approach?
+
+   Keep questions concrete — provide 2-4 options per question based on what you discovered in the codebase, not generic open-ended asks.
+
+4. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) user answers, (c) any constraints discovered. This context is passed to the Planner.
+
+**Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 1. When in doubt, ask — a few questions now prevents re-planning later.
+
 ## Phase 1: Plan
 
-Spawn the `rnd-planner` agent with the task description: $ARGUMENTS
+Spawn the `rnd-planner` agent with the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
 
 Wait for the planner to produce `$RND_DIR/plan.md` with:
 - Task tree

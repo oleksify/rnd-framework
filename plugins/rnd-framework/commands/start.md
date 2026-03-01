@@ -169,5 +169,6 @@ Use `AskUserQuestion` to present concrete next steps:
 - "Create PR" — commit and open a pull request
 - "Review all artifacts" — show the user a summary of everything produced
 - "Clean up" — remove `$RND_DIR` artifacts and team resources only
+- "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
 
 Use `TeamDelete` to clean up the `rnd-pipeline` team after the pipeline completes or is abandoned.

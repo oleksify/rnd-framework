@@ -54,6 +54,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:integrate <target>` | Merge and integration testing |
 | `/rnd-framework:status` | Pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
+| `/rnd-framework:history` | Browse past pipeline sessions for this project |
 
 ## Pipeline Scaling
 

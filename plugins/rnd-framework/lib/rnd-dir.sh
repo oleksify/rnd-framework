@@ -2,10 +2,13 @@
 # rnd-dir.sh — Compute the RND artifacts directory path.
 #
 # Usage:
-#   rnd-dir.sh          Print the RND directory path
-#   rnd-dir.sh -c       Create the directory structure and print the path
+#   rnd-dir.sh          Print session path if .current-session exists, else base dir
+#   rnd-dir.sh -c       Create directory structure; generate session ID if needed; print session path
+#   rnd-dir.sh --finish Delete .current-session (idempotent); exit 0
+#   rnd-dir.sh --base   Print just the project base dir; never creates directories
 #
-# The path is: <claude-config-dir>/.rnd/<project-slug>/
+# Session path: <base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/
+# Base path:    <claude-config-dir>/.rnd/<project-slug>/
 # where project-slug = <basename>-<6char-sha256-of-pwd>
 #
 # Config dir priority:
@@ -44,13 +47,45 @@ else
 fi
 
 SLUG="${BASENAME}-${HASH}"
-RND_DIR="${CONFIG_DIR}/.rnd/${SLUG}"
+BASE_DIR="${CONFIG_DIR}/.rnd/${SLUG}"
+SESSION_FILE="${BASE_DIR}/.current-session"
 
-# --- Optionally create directory structure ---
-if [ "${1:-}" = "-c" ]; then
-  mkdir -p "$RND_DIR/builds" "$RND_DIR/verifications" "$RND_DIR/integration"
-  # Create iteration-log.md if it doesn't exist
-  [ -f "$RND_DIR/iteration-log.md" ] || touch "$RND_DIR/iteration-log.md"
+FLAG="${1:-}"
+
+# --- Handle --base flag ---
+if [ "$FLAG" = "--base" ]; then
+  echo "$BASE_DIR"
+  exit 0
 fi
 
-echo "$RND_DIR"
+# --- Handle --finish flag ---
+if [ "$FLAG" = "--finish" ]; then
+  rm -f "$SESSION_FILE"
+  exit 0
+fi
+
+# --- Handle -c flag: create directory structure ---
+if [ "$FLAG" = "-c" ]; then
+  # Reuse existing session ID or generate a new one
+  if [ -f "$SESSION_FILE" ]; then
+    SESSION_ID="$(cat "$SESSION_FILE")"
+  else
+    TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
+    HEX="$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n' | cut -c1-4)"
+    SESSION_ID="${TIMESTAMP}-${HEX}"
+    mkdir -p "$BASE_DIR"
+    printf '%s' "$SESSION_ID" > "$SESSION_FILE"
+  fi
+  SESSION_DIR="${BASE_DIR}/sessions/${SESSION_ID}"
+  mkdir -p "${SESSION_DIR}/builds" "${SESSION_DIR}/verifications" "${SESSION_DIR}/integration"
+  echo "$SESSION_DIR"
+  exit 0
+fi
+
+# --- No flags: output session path if session active, else base dir ---
+if [ -f "$SESSION_FILE" ]; then
+  SESSION_ID="$(cat "$SESSION_FILE")"
+  echo "${BASE_DIR}/sessions/${SESSION_ID}"
+else
+  echo "$BASE_DIR"
+fi

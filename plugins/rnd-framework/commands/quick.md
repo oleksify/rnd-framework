@@ -53,6 +53,7 @@ Spawn the `rnd-verifier` agent with `mode: "bypassPermissions"`, passing:
   - "Commit changes (Recommended)" — stage and commit the changes
   - "Review artifacts" — show the user the verification report and code changes
   - "Clean up" — remove `$RND_DIR` artifacts only
+  - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
 
 - **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating [task name] (N/2)"` to track the cycle. Summarize the verification failure to the user. Get feedback, fix, re-verify.
 

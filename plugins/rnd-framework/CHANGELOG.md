@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 — 2026-03-01
+
+### Session-based history
+
+Each pipeline run now gets a unique session ID (`YYYYMMDD-HHMMSS-XXXX`) stored in `<base>/.current-session`. Artifacts are written to `<base>/sessions/<session-id>/` instead of the project base directory, preserving history across runs. `rnd-dir.sh` gains `--finish` (clear session ID) and `--base` (output project base dir) flags. New `/rnd-framework:history` command lists past sessions with dates, task names, and SHIP/NO-SHIP verdicts. Completion flow offers "Finish session" alongside existing cleanup options.
+
 ## 0.4.1 — 2026-03-01
 
 ### Autonomous agents

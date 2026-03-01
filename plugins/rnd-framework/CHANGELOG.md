@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 — 2026-03-01
+
+### Auto-allow rnd-dir.sh in Bash hook
+
+The `prefer-tools` PreToolUse hook now auto-allows Bash commands containing `rnd-dir.sh`. Previously, running `rnd-dir.sh -c` to create the artifacts directory prompted for user confirmation because the script's path (`plugins/cache/.../lib/rnd-dir.sh`) doesn't contain `.rnd/` — only its output directory does.
+
 ## 0.5.0 — 2026-03-01
 
 ### Session-based history

@@ -54,12 +54,12 @@ The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/
 
 ### Runtime Artifacts
 
-The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path (e.g., `~/.claude-personal/.rnd/plugins-6f015c`).
+The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path (e.g., `~/.claude/.rnd/plugins-6f015c`).
 
 **Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Use `-c` flag to create directory structure.
 
 ```
-~/.claude-personal/.rnd/project-<hash>/   ($RND_DIR)
+~/.claude/.rnd/project-<hash>/   ($RND_DIR)
 ├── plan.md                    # Task tree, pre-registrations, schedule
 ├── builds/T*-manifest.md      # Builder output records
 ├── builds/T*-self-assessment.md  # Builder uncertainties (blocked from Verifier)

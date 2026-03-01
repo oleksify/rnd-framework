@@ -23,7 +23,7 @@ After the final integration wave receives a SHIP verdict, guide the completion w
 
 Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdict. Do not proceed if NO-SHIP.
 
-> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. Artifacts are stored in a centralized directory outside the project (e.g., `~/.claude-personal/.rnd/project-abc123`), not inside the project tree.
+> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. Artifacts are stored in a centralized directory outside the project (e.g., `~/.claude/.rnd/project-abc123`), not inside the project tree.
 
 ### 2. Clean Up R&D Artifacts
 

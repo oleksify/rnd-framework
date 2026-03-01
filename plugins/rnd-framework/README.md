@@ -155,13 +155,13 @@ The framework stores pipeline artifacts in a centralized directory outside the p
 
 **Helper script:** `lib/rnd-dir.sh`
 - Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
-- Outputs an absolute path like `~/.claude-personal/.rnd/plugins-6f015c`
+- Outputs an absolute path like `~/.claude/.rnd/plugins-6f015c`
 - Use `-c` flag to create the directory structure on first use
 
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude-personal/.rnd/project-6f015c/
+~/.claude/.rnd/project-6f015c/
 ├── plan.md                     # Task tree, pre-registrations, schedule
 ├── builds/
 │   ├── T1-manifest.md          # What the builder produced

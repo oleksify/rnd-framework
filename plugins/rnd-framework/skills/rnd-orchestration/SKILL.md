@@ -66,7 +66,7 @@ Dependencies: [list of task IDs]
 
 **The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
 
-> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude-personal/.rnd/project-abc123`. Use `-c` flag to create directory structure.
+> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/project-abc123`. Use `-c` flag to create directory structure.
 
 - **Never** use `sleep` to wait for subagents
 - **Never** write bash loops to check if build artifacts exist yet

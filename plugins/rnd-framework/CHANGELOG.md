@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-03-01
+
+### Config directory resolution fix
+
+`rnd-dir.sh` now checks `CLAUDE_CONFIG_DIR` before falling back to `~/.claude`. Previously, custom Claude profiles (e.g., `claude-personal` using `~/.claude-personal`) would incorrectly place artifacts under `~/.claude/.rnd/` because `CLAUDE_PLUGIN_ROOT` isn't available in the Bash tool's shell environment.
+
 ## 0.3.0 — 2026-03-01
 
 ### Centralized artifacts

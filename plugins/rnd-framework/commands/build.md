@@ -5,7 +5,13 @@ argument-hint: "<task ID like T3 or wave number like wave-2>"
 
 # R&D Framework: Build
 
-Read the plan from `.rnd/plan.md`. Check `TaskList` to identify current task states.
+Determine the RND artifacts directory:
+
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
+```
+
+Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task states.
 
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
 - Use `TaskUpdate` to mark the task `in_progress`.

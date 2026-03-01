@@ -9,6 +9,12 @@ For small, well-scoped tasks. Same principles, minimal ceremony.
 
 ## Step 1: Quick Plan (inline, no subagent needed)
 
+Determine the RND artifacts directory and create its structure:
+
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
+```
+
 Write a brief pre-registration directly:
 
 ```markdown
@@ -20,7 +26,7 @@ Success criteria:
   - [ ] [criterion 2]
 ```
 
-Save to `.rnd/plan.md`.
+Save to `$RND_DIR/plan.md`.
 
 Use `TaskCreate` to create a single task with `subject` set to the task name, `description` set to the pre-registration content, and `activeForm` set to the present-continuous form (e.g., "Implementing quick fix").
 
@@ -28,7 +34,7 @@ Use `TaskCreate` to create a single task with `subject` set to the task name, `d
 
 Use `TaskUpdate` to mark the task `in_progress` (with `activeForm: "Building [task name]"`).
 
-Implement the task yourself. Write code + tests. Save a one-line self-assessment to `.rnd/builds/` noting any uncertainties.
+Implement the task yourself. Write code + tests. Save a one-line self-assessment to `$RND_DIR/builds/` noting any uncertainties.
 
 ## Step 3: Independent Verify
 

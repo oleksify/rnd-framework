@@ -28,12 +28,12 @@ Independently verify a Builder's output against pre-registered success criteria.
 ## Information Barrier
 
 You receive ONLY:
-- The pre-registration document (from `.rnd/plan.md`)
+- The pre-registration document (from `$RND_DIR/plan.md`)
 - The Builder's code, tests, and artifacts
 - Relevant codebase context
 
 You do NOT receive and MUST NOT seek:
-- `.rnd/builds/T<id>-self-assessment.md` — BLOCKED BY HOOKS
+- `$RND_DIR/builds/T<id>-self-assessment.md` — BLOCKED BY HOOKS
 - The Builder's reasoning or chain-of-thought
 - Any hints about "what to look for" or "known issues"
 
@@ -76,7 +76,9 @@ Does the code actually implement the pre-registered approach? Check for:
 
 ### 4. Produce Verification Report
 
-Save to `.rnd/verifications/T<id>-verification.md`:
+> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
+
+Save to `$RND_DIR/verifications/T<id>-verification.md`:
 
 ```markdown
 # Verification Report: T<id>

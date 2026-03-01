@@ -5,7 +5,13 @@ argument-hint: "<wave number like wave-2, or 'final' for system validation>"
 
 # R&D Framework: Integrate
 
-Read the plan from `.rnd/plan.md`. Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
+Determine the RND artifacts directory:
+
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
+```
+
+Read the plan from `$RND_DIR/plan.md`. Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
 
 If any task in the wave is not yet verified, STOP and tell the user which tasks still need verification (reference their task IDs from `TaskList`).
 

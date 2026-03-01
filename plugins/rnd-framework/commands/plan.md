@@ -7,9 +7,12 @@ argument-hint: "<description of the feature, refactor, or bug fix>"
 
 Run ONLY the planning phase for: $ARGUMENTS
 
-1. Create `.rnd/` directory if needed.
-2. Spawn the `rnd-planner` agent with the task description.
-3. Review the output in `.rnd/plan.md`.
+1. Determine the RND artifacts directory and create its structure:
+   ```bash
+   RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
+   ```
+2. Spawn the `rnd-planner` agent with the task description. Pass `RND_DIR` to it.
+3. Review the output in `$RND_DIR/plan.md`.
 4. Validate that every task has:
    - Testable success criteria (not vague)
    - Clear dependencies

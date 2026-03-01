@@ -9,20 +9,17 @@ You are orchestrating a complex coding task using the R&D framework. Follow the 
 
 ## CRITICAL: No Polling
 
-**Never use `sleep`, polling loops, or manual file checks to wait for subagents.** The Agent tool is blocking — it returns only when the subagent finishes. Trust the tool. Spawn agents and process their results when they return. Do not write bash commands to check `.rnd/` for progress.
+**Never use `sleep`, polling loops, or manual file checks to wait for subagents.** The Agent tool is blocking — it returns only when the subagent finishes. Trust the tool. Spawn agents and process their results when they return. Do not write bash commands to poll `$RND_DIR` for progress.
 
 ## Setup
 
-Create the `.rnd/` directory structure if it doesn't exist:
+Determine the RND artifacts directory and create its structure:
 
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
-.rnd/
-  plan.md
-  builds/
-  verifications/
-  integration/
-  iteration-log.md
-```
+
+Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agents.
 
 Use `TeamCreate` to create a team named `rnd-pipeline` with a description matching the task. This team coordinates all agents for the pipeline run.
 
@@ -30,7 +27,7 @@ Use `TeamCreate` to create a team named `rnd-pipeline` with a description matchi
 
 Spawn the `rnd-planner` agent with the task description: $ARGUMENTS
 
-Wait for the planner to produce `.rnd/plan.md` with:
+Wait for the planner to produce `$RND_DIR/plan.md` with:
 - Task tree
 - Pre-registration documents (with testable success criteria)
 - Dependency matrix
@@ -57,7 +54,7 @@ For each wave in the execution schedule:
 For each completed task in the wave:
 
 1. Spawn an `rnd-verifier` subagent as a **teammate** with `team_name: "rnd-pipeline"`. Pass it ONLY:
-   - The task's pre-registration document (from `.rnd/plan.md`)
+   - The task's pre-registration document (from `$RND_DIR/plan.md`)
    - The builder's code, tests, and artifacts
    - NEVER pass the builder's self-assessment or reasoning
 
@@ -74,7 +71,7 @@ For each completed task in the wave:
 4. Verifier re-checks (same information barrier rules).
 5. Max 3 iterations. If still failing, report to user for re-planning or manual intervention. Use `TaskUpdate` with `metadata: {"iteration": N}` to track each cycle.
 
-Track iterations in `.rnd/iteration-log.md`.
+Track iterations in `$RND_DIR/iteration-log.md`.
 
 ## Phase 5: Integrate
 

@@ -60,7 +60,7 @@ If a task fails verification after max iterations:
    - The approach is fundamentally flawed
 4. **Orchestrator decision:** Re-plan the task, merge it with another task, or escalate to user
 
-Track all iterations in `.rnd/iteration-log.md`:
+Track all iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set):
 
 ```markdown
 ## T<id> Iteration Log

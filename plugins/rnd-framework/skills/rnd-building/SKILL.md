@@ -30,9 +30,16 @@ Implement ONE assigned task against its pre-registered success criteria. Write t
 
 ## Process
 
+### 0. Resolve RND_DIR
+
+If `$RND_DIR` is not already set in session context, compute it:
+```bash
+RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"
+```
+
 ### 1. Read Your Assignment
 
-Find your task in `.rnd/plan.md`. Read its pre-registration document carefully — especially the success criteria and approach.
+Find your task in `$RND_DIR/plan.md`. Read its pre-registration document carefully — especially the success criteria and approach.
 
 ### 2. Read Context
 
@@ -68,7 +75,7 @@ If you need minor adjustments, document them in your self-assessment.
 
 ### 5. Produce Verification Artifacts
 
-Save to `.rnd/builds/T<id>-manifest.md`:
+Save to `$RND_DIR/builds/T<id>-manifest.md`:
 
 ```markdown
 # Build Manifest: T<id>
@@ -85,7 +92,7 @@ Save to `.rnd/builds/T<id>-manifest.md`:
 
 ### 6. Write Honest Self-Assessment
 
-Save to `.rnd/builds/T<id>-self-assessment.md`:
+Save to `$RND_DIR/builds/T<id>-self-assessment.md`:
 
 ```markdown
 # Self-Assessment: T<id>

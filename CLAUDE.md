@@ -38,8 +38,8 @@ plugins/rnd-framework/
 
 The `hooks.json` PreToolUse hooks enforce several policies:
 - **Information barrier:** Blocks any `Read` call where `TOOL_INPUT` contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
-- **Commit protection:** Blocks `git add` of `.rnd/` — pipeline artifacts must never be committed
-- **Auto-allow `.rnd/` operations:** All `Read`, `Write`, `Edit`, and `Bash` operations targeting `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads and git-add
+- **Commit protection:** Blocks `git add` of `.rnd/` as defense-in-depth (artifacts live outside the project in `$RND_DIR`, so this is a safety net)
+- **Auto-allow `$RND_DIR` operations:** All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
 
 ### Skill System
 
@@ -53,17 +53,22 @@ The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/
 
 ### Runtime Artifacts
 
-The framework creates `.rnd/` in the working directory during pipeline execution:
+The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path (e.g., `~/.claude-personal/.rnd/plugins-6f015c`).
+
+**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Use `-c` flag to create directory structure.
 
 ```
-.rnd/
+~/.claude-personal/.rnd/project-<hash>/   ($RND_DIR)
 ├── plan.md                    # Task tree, pre-registrations, schedule
 ├── builds/T*-manifest.md      # Builder output records
 ├── builds/T*-self-assessment.md  # Builder uncertainties (blocked from Verifier)
 ├── verifications/T*-verification.md  # Verifier evidence-based verdicts
 ├── integration/wave-*-report.md      # Integration results, SHIP/NO-SHIP
+├── worktrees/                 # Git worktrees for parallel builder isolation
 └── iteration-log.md           # Build-verify cycle tracking
 ```
+
+Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 

@@ -7,6 +7,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Compute RND_DIR via helper (creates directory structure with -c flag)
+RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" -c 2>/dev/null || echo "")
+
 # Read using-rnd-framework content
 using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&1 || echo "Error reading using-rnd-framework skill")
 
@@ -22,7 +25,11 @@ escape_for_json() {
 }
 
 using_rnd_escaped=$(escape_for_json "$using_rnd_content")
-session_context="<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your 'rnd-framework:using-rnd-framework' skill - your introduction to using the R&D framework. For all other skills, use the 'Skill' tool:**\n\n${using_rnd_escaped}\n\n</EXTREMELY_IMPORTANT>"
+rnd_dir_line=""
+if [ -n "$RND_DIR" ]; then
+    rnd_dir_line="\\n\\n**RND_DIR (pipeline artifact directory for this project):** \`${RND_DIR}\`"
+fi
+session_context="<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your 'rnd-framework:using-rnd-framework' skill - your introduction to using the R&D framework. For all other skills, use the 'Skill' tool:**\n\n${using_rnd_escaped}${rnd_dir_line}\n\n</EXTREMELY_IMPORTANT>"
 
 # Output context injection as JSON
 cat <<EOF

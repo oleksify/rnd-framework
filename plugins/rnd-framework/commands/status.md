@@ -4,22 +4,28 @@ description: "Show the current status of the R&D pipeline: which tasks are plann
 
 # R&D Framework: Status
 
+Determine the RND artifacts directory:
+
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
+```
+
 Use `TaskList` as the **primary status source** to get an overview of all tasks, their states, owners, and blockers.
 
-Then supplement with `.rnd/` artifact details for richer context:
-- Check `.rnd/iteration-log.md` for iteration history
-- Check `.rnd/verifications/` for verdict details
-- Check `.rnd/integration/` for SHIP/NO-SHIP verdicts
+Then supplement with `$RND_DIR` artifact details for richer context:
+- Check `$RND_DIR/iteration-log.md` for iteration history
+- Check `$RND_DIR/verifications/` for verdict details
+- Check `$RND_DIR/integration/` for SHIP/NO-SHIP verdicts
 
 Map task states to pipeline phases:
 
 - **📋 Planned** — Task is `pending` with no build artifacts
-- **🔨 Built** — Task is `completed` and `.rnd/builds/T<id>-manifest.md` exists, but no verification report yet
+- **🔨 Built** — Task is `completed` and `$RND_DIR/builds/T<id>-manifest.md` exists, but no verification report yet
 - **🔍 In Verification** — Task is `in_progress` during verify phase
-- **✅ Verified** — Task is `completed` with PASS verdict in `.rnd/verifications/T<id>-verification.md`
+- **✅ Verified** — Task is `completed` with PASS verdict in `$RND_DIR/verifications/T<id>-verification.md`
 - **🔄 Iterating** — Task is `in_progress` with `iteration` metadata > 0
 - **⚠️ Escalated** — Iteration metadata shows 3+ cycles
-- **🚀 Integrated** — Part of a SHIP verdict in `.rnd/integration/`
+- **🚀 Integrated** — Part of a SHIP verdict in `$RND_DIR/integration/`
 
 Display as a table:
 

@@ -28,10 +28,14 @@ When multiple Builder agents work in parallel (within a wave), they may need iso
 
 ### 1. Create Worktree Per Builder
 
-Before dispatching builders for a wave:
-
+Before dispatching builders for a wave. If `$RND_DIR` is not already set in session context, compute it first:
 ```bash
-git worktree add .rnd/worktrees/T<id> -b rnd/T<id>
+RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)"
+```
+
+Then create the worktree under the centralized artifact directory:
+```bash
+git worktree add "$RND_DIR/worktrees/T<id>" -b rnd/T<id>
 ```
 
 ### 2. Builder Works in Worktree
@@ -48,7 +52,7 @@ After all tasks in the wave pass verification:
 ### 4. Clean Up Worktrees
 
 ```bash
-git worktree remove .rnd/worktrees/T<id>
+git worktree remove "$RND_DIR/worktrees/T<id>"
 git branch -d rnd/T<id>
 ```
 

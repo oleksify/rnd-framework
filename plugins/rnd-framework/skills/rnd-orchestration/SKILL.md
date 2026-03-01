@@ -64,11 +64,13 @@ Dependencies: [list of task IDs]
 
 ## Subagent Coordination
 
-**The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `.rnd/` files for progress. Spawn agents and process their results when the tool returns.
+**The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
+
+> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude-personal/.rnd/project-abc123`. Use `-c` flag to create directory structure.
 
 - **Never** use `sleep` to wait for subagents
 - **Never** write bash loops to check if build artifacts exist yet
-- **Never** scan `.rnd/builds/` to see if a builder is done — the Agent tool tells you
+- **Never** scan `$RND_DIR/builds/` to see if a builder is done — the Agent tool tells you
 - **Do** spawn multiple agents in parallel (multiple Agent tool calls in one message) for independent tasks within a wave
 - **Do** use `run_in_background: true` on Agent calls if you want to continue working while agents run, then process results when notified
 

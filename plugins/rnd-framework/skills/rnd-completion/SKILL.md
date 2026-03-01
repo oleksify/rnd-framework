@@ -21,20 +21,23 @@ After the final integration wave receives a SHIP verdict, guide the completion w
 
 ### 1. Verify SHIP Status
 
-Confirm the final integration report at `.rnd/integration/` shows SHIP verdict. Do not proceed if NO-SHIP.
+Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdict. Do not proceed if NO-SHIP.
+
+> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. Artifacts are stored in a centralized directory outside the project (e.g., `~/.claude-personal/.rnd/project-abc123`), not inside the project tree.
 
 ### 2. Clean Up R&D Artifacts
 
-Decide whether to keep or remove `.rnd/` directory:
-- **Keep** if the project wants audit trails of verification
-- **Remove** if `.rnd/` is gitignored and ephemeral
-- Add `.rnd/` to `.gitignore` if not already present
+Decide whether to keep or remove the `$RND_DIR` directory:
+- **Keep** if the team wants audit trails of verification
+- **Remove** if the artifacts are no longer needed: `rm -rf "$RND_DIR"`
+
+No `.gitignore` changes needed — pipeline artifacts are stored outside the project directory and are never at risk of being committed.
 
 ### 3. Create Final Commit
 
 Stage all verified changes. Write a clear commit message summarizing the feature/fix.
 
-**Never commit `.rnd/` contents.** The `.rnd/` directory is for pipeline artifacts only. Ensure `.rnd/` is in `.gitignore` before staging.
+Pipeline artifacts in `$RND_DIR` are outside the project tree and cannot be accidentally staged.
 
 ### 4. Branch Management
 

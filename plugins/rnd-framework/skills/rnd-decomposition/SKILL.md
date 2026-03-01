@@ -102,7 +102,9 @@ After decomposition, build a dependency matrix:
 
 ## Output
 
-Save the complete plan to `.rnd/plan.md`:
+> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs the absolute path to the centralized artifact directory (e.g., `~/.claude-personal/.rnd/project-abc123`). Use `-c` flag to create the directory structure.
+
+Save the complete plan to `$RND_DIR/plan.md`:
 
 ```markdown
 # RND Plan: [Feature Name]

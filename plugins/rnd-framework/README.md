@@ -151,10 +151,17 @@ Without this barrier:
 
 ## Project Artifacts
 
-The framework creates a `.rnd/` directory during execution:
+The framework stores pipeline artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. The path is based on a hash of the project directory, so each project gets its own isolated artifact space.
+
+**Helper script:** `lib/rnd-dir.sh`
+- Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
+- Outputs an absolute path like `~/.claude-personal/.rnd/plugins-6f015c`
+- Use `-c` flag to create the directory structure on first use
+
+**Artifact layout** (`$RND_DIR`):
 
 ```
-.rnd/
+~/.claude-personal/.rnd/project-6f015c/
 ├── plan.md                     # Task tree, pre-registrations, schedule
 ├── builds/
 │   ├── T1-manifest.md          # What the builder produced
@@ -163,10 +170,11 @@ The framework creates a `.rnd/` directory during execution:
 │   └── T1-verification.md      # Verifier report with evidence
 ├── integration/
 │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
+├── worktrees/                  # Git worktrees for parallel builder isolation
 └── iteration-log.md            # Build-verify cycle tracking
 ```
 
-Add `.rnd/` to `.gitignore` if you don't want to commit pipeline artifacts.
+Since artifacts live outside the project directory, no `.gitignore` changes are needed.
 
 ## Plugin Structure
 

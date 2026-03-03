@@ -23,6 +23,20 @@ Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agent
 
 Use `TeamCreate` to create a team named `rnd-pipeline` with a description matching the task. This team coordinates all agents for the pipeline run.
 
+## Task Input
+
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:start` with no task description):
+
+1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
+
+2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option. Example suggestions might be: recent TODO items, areas with recent churn, or common improvement patterns you spotted. Each option should have a short label and a description explaining what the task would involve.
+
+3. **If the user picks a suggestion**, use it as the task description and continue to Phase 0. **If they type a custom task**, use that instead.
+
+**Never fall back to plain text** to ask what to work on. `AskUserQuestion` is mandatory at every decision point, including this one.
+
+If `$ARGUMENTS` is provided, skip this section and proceed directly.
+
 ## Phase 0: Discovery
 
 Before planning, explore the codebase and gather requirements. This phase prevents the Planner from decomposing a task based on incomplete understanding.

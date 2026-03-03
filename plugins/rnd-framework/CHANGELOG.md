@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 — 2026-03-03
+
+### Structured task input for no-args invocations
+
+`/rnd-framework:start`, `/rnd-framework:quick`, and `/rnd-framework:plan` now handle empty arguments with `AskUserQuestion` instead of falling back to plain text. When invoked without a task description, the orchestrator scans the codebase (recent commits, TODOs, recent changes) and presents 2-4 concrete task suggestions as structured options. This follows the framework's own mandatory rule that every decision point uses `AskUserQuestion`.
+
 ## 0.5.3 — 2026-03-01
 
 ### Handle cd-prefixed commands in Bash hook

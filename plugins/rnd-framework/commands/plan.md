@@ -5,6 +5,18 @@ argument-hint: "<description of the feature, refactor, or bug fix>"
 
 # R&D Framework: Plan Only
 
+## Task Input
+
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:plan` with no task description):
+
+1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
+
+2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option. Each option should have a short label and a description explaining what the task would involve.
+
+3. **If the user picks a suggestion**, use it as the task description and continue below. **If they type a custom task**, use that instead.
+
+**Never fall back to plain text** to ask what to work on. `AskUserQuestion` is mandatory at every decision point, including this one.
+
 Run ONLY the planning phase for: $ARGUMENTS
 
 1. Determine the RND artifacts directory and create its structure:

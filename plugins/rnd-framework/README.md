@@ -95,10 +95,10 @@ The plugin provides 16 skills that embed structured practices into every phase o
 
 | Agent | Model | Tools | Role |
 |---|---|---|---|
-| `rnd-planner` | opus | Read, Grep, Glob | Decomposes tasks, writes pre-registration documents |
-| `rnd-builder` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Implements one task with TDD, produces verification artifacts |
-| `rnd-verifier` | opus | Read, Write, Bash, Grep, Glob | Independent verification against pre-registered criteria |
-| `rnd-integrator` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Merges verified outputs, runs integration tests |
+| `rnd-framework:rnd-planner` | opus | Read, Grep, Glob | Decomposes tasks, writes pre-registration documents |
+| `rnd-framework:rnd-builder` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Implements one task with TDD, produces verification artifacts |
+| `rnd-framework:rnd-verifier` | opus | Read, Write, Bash, Grep, Glob | Independent verification against pre-registered criteria |
+| `rnd-framework:rnd-integrator` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Merges verified outputs, runs integration tests |
 
 ## Pipeline Scaling
 

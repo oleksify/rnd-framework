@@ -30,10 +30,10 @@ Use dependency analysis to schedule tasks into parallel execution waves. Tasks w
 ### Parallel Dispatch Within Waves
 
 Within each wave:
-- Spawn one `rnd-builder` agent per task
+- Spawn one `rnd-framework:rnd-builder` agent per task
 - All builders run concurrently (no cross-dependencies)
 - Wait for ALL builders in the wave to complete
-- Then spawn `rnd-verifier` agents (also parallel within wave)
+- Then spawn `rnd-framework:rnd-verifier` agents (also parallel within wave)
 
 ### Agent Prompt Structure
 

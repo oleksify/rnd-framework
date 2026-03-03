@@ -19,7 +19,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Process:**
 1. Write a one-line pre-registration (inline, no subagent)
 2. Make the change yourself
-3. Spawn one `rnd-verifier` to confirm
+3. Spawn one `rnd-framework:rnd-verifier` to confirm
 4. Done
 
 **Skip:** Planner, dependency scheduling, Integrator
@@ -31,7 +31,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Process:**
 1. Write a brief pre-registration (inline)
 2. Implement with TDD (use `rnd-framework:rnd-building`)
-3. Spawn `rnd-verifier` for independent verification
+3. Spawn `rnd-framework:rnd-verifier` for independent verification
 4. Max 2 iterations
 
 **Skip:** Planner subagent, dependency scheduling, Integrator
@@ -41,7 +41,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 
 **Entry:** `/rnd-framework:start`
 **Process:**
-1. Spawn `rnd-planner` for hierarchical decomposition
+1. Spawn `rnd-framework:rnd-planner` for hierarchical decomposition
 2. Schedule waves with dependency analysis
 3. Spawn Builder(s) per wave
 4. Independent verification per task

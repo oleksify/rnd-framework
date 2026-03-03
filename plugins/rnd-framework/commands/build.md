@@ -15,11 +15,11 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task
 
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
 - Use `TaskUpdate` to mark the task `in_progress`.
-- Spawn one `rnd-builder` agent for that specific task with `mode: "bypassPermissions"`.
+- Spawn one `rnd-framework:rnd-builder` agent for that specific task with `mode: "bypassPermissions"`.
 
 If $ARGUMENTS specifies a wave (e.g., "wave-2"):
 - Use `TaskUpdate` to mark ALL tasks in the wave as `in_progress`.
-- Spawn `rnd-builder` agents in parallel for ALL tasks in that wave, each with `mode: "bypassPermissions"`.
+- Spawn `rnd-framework:rnd-builder` agents in parallel for ALL tasks in that wave, each with `mode: "bypassPermissions"`.
 
 If $ARGUMENTS is "next":
 - Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.

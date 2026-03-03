@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); if echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
+            "command": "INPUT=$(cat); if echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -q '\\.rnd/'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"}}'; fi"
           }
         ]
       },
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); if echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
+            "command": "INPUT=$(cat); if echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null | grep -q '\\.rnd/'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"}}'; fi"
           }
         ]
       },
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); if echo \"$FILE\" | grep -q 'self-assessment'; then echo '{\"decision\": \"block\", \"reason\": \"INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.\"}'; elif echo \"$FILE\" | grep -q '\\.rnd/'; then echo '{\"decision\": \"allow\"}'; fi"
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty' 2>/dev/null); if echo \"$FILE\" | grep -q 'self-assessment'; then echo 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.' >&2; exit 2; elif echo \"$FILE\" | grep -q '\\.rnd/'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"}}'; fi"
           }
         ]
       }

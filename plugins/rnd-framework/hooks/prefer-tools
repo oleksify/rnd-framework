@@ -4,6 +4,11 @@
 #
 # Only blocks when the tool is the LEADING command — piped usage is allowed.
 # Tool input is passed as JSON on stdin (not via environment variables).
+#
+# Output convention (hookSpecificOutput format):
+#   Auto-allow: exit 0 + hookSpecificOutput JSON with permissionDecision=allow
+#   Block:      exit 2 + reason on stderr
+#   No opinion: exit 0 + no output
 
 INPUT="$(cat)"
 COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
@@ -11,20 +16,27 @@ COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 # Strip optional leading cd ... && or cd ... ; prefix
 STRIPPED="$(echo "$COMMAND" | sed -E 's/^cd[[:space:]]+[^&;]+[&;]+[[:space:]]*//')"
 
+ALLOW='{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+
 if echo "$STRIPPED" | grep -qE '^(sed|awk)\b'; then
-  echo '{"decision":"block","reason":"Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly."}'
+  echo "Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly." >&2
+  exit 2
 elif echo "$STRIPPED" | grep -qE '^(cat|head|tail)\b'; then
-  echo '{"decision":"block","reason":"Use the Read tool instead of cat/head/tail. Read supports line offsets and limits natively."}'
+  echo "Use the Read tool instead of cat/head/tail. Read supports line offsets and limits natively." >&2
+  exit 2
 elif echo "$STRIPPED" | grep -qE '^(grep|rg)\b'; then
-  echo '{"decision":"block","reason":"Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes."}'
+  echo "Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes." >&2
+  exit 2
 elif echo "$STRIPPED" | grep -qE '^find\b'; then
-  echo '{"decision":"block","reason":"Use the Glob tool instead of find. Glob supports patterns like **/*.ts."}'
+  echo "Use the Glob tool instead of find. Glob supports patterns like **/*.ts." >&2
+  exit 2
 elif echo "$STRIPPED" | grep -qE '^ls\b'; then
-  echo '{"decision":"allow"}'
+  echo "$ALLOW"
 elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd'; then
-  echo '{"decision":"block","reason":"BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."}'
+  echo "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed." >&2
+  exit 2
 elif echo "$COMMAND" | grep -q 'rnd-dir\.sh'; then
-  echo '{"decision":"allow"}'
+  echo "$ALLOW"
 elif echo "$COMMAND" | grep -q '\.rnd'; then
-  echo '{"decision":"allow"}'
+  echo "$ALLOW"
 fi

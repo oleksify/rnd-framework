@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2 — 2026-03-03
+
+### Update documentation with marketplace install and fix stale content
+
+Root README now covers marketplace-based installation, plugin updates, and auto-update configuration instead of the old `--dir` flag. rnd-framework README and CLAUDE.md synced with current codebase: 8 commands (added `/rnd-framework:history`), 16 skills, `prefer-tools` hook, `rnd-dir.sh` helper, and session-based artifact layout.
+
 ## 0.7.1 — 2026-03-03
 
 ### Use hookSpecificOutput format in PreToolUse hooks

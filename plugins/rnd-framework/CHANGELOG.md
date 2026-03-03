@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.4 — 2026-03-03
+
+### Namespace agent references in commands and skills
+
+All commands and skills referenced agents by short name (e.g., `rnd-planner`), but Claude Code's plugin system requires the full `plugin:agent` namespace (`rnd-framework:rnd-planner`). This caused "Agent type not found" errors whenever the pipeline tried to spawn an agent. Updated all 14 spawn instructions across 6 commands, 2 skills, and the README to use the full namespace. Agent frontmatter `name:` fields remain unchanged.
+
 ## 0.7.3 — 2026-03-03
 
 ### Remove unused skills-core.js

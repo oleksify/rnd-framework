@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — 2026-03-03
+
+### Use hookSpecificOutput format in PreToolUse hooks
+
+All PreToolUse hooks were outputting `{"decision": "allow/block"}` — a format Claude Code doesn't recognize for PreToolUse events. This caused "PreToolUse:Bash hook error" messages and auto-allow rules failing silently, falling through to permission prompts.
+
+Allow decisions now output `hookSpecificOutput` JSON with `permissionDecision: "allow"`. Block decisions now use `exit 2` with the reason on stderr. Unmatched commands exit 0 with no output (no opinion). Applied to all 4 PreToolUse hooks: Write, Edit, Read (inline in `hooks.json`), and Bash (`prefer-tools` script).
+
 ## 0.7.0 — 2026-03-03
 
 ### Fix all PreToolUse hooks to read tool input from stdin

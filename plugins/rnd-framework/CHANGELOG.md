@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.3 — 2026-03-03
+
+### Remove unused skills-core.js
+
+`lib/skills-core.js` was an ESM module implementing skill discovery (frontmatter parsing, recursive directory search, name resolution with shadowing). None of its exports were imported by any hook, command, agent, or script — Claude Code's native plugin system handles skill discovery by directory convention. Deleted the file and removed all references from README.md and CLAUDE.md.
+
 ## 0.7.2 — 2026-03-03
 
 ### Update documentation with marketplace install and fix stale content

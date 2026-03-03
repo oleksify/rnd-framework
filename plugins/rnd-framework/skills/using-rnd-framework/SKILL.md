@@ -106,7 +106,17 @@ These thoughts mean STOP — you're rationalizing:
 - Context goes in the `description` field, not the label
 - The user picks — you don't ask them to explain what to do
 
-This applies at EVERY decision point: post-plan, post-build, post-verify, post-integrate, and any time you need user input on direction.
+This applies at EVERY decision point: post-plan, post-build, post-verify, post-integrate, after completing a user request, and any time you need user input on direction.
+
+### After completing a task
+
+When you finish a user's request — whether it was a pipeline run, an ad-hoc fix, or any other task — **always** use `AskUserQuestion` to present next steps. Typical options include:
+
+- Continuing with related work (e.g., "Fix another issue", "Add tests for the change")
+- Session management (e.g., "Finish session" via `rnd-dir.sh --finish`)
+- Review options (e.g., "Review what changed", "Check git status")
+
+Tailor options to what just happened. Never end with plain text like "Done." or "Let me know if you need anything else."
 
 ## User Instructions
 

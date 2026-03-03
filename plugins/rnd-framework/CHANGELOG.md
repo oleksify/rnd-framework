@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — 2026-03-03
+
+### Structured next-step options after task completion
+
+The `using-rnd-framework` skill now requires `AskUserQuestion` after completing any user request — not just at pipeline decision points. Previously the agent would end with plain text like "Done." after finishing ad-hoc tasks. Now it always presents structured options: continue with related work, review changes, or finish the session.
+
 ## 0.6.0 — 2026-03-03
 
 ### Structured task input for no-args invocations

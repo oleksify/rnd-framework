@@ -14,13 +14,16 @@ The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketpla
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # 4 specialized agents (planner, builder, verifier, integrator)
-├── commands/                    # 7 slash commands (/rnd-framework:start, etc.)
-├── skills/                      # 15 skills, each in its own dir with SKILL.md
+├── commands/                    # 8 slash commands (/rnd-framework:start, etc.)
+├── skills/                      # 16 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # SessionStart bootstrap + PreToolUse information barrier
+│   ├── hooks.json               # SessionStart bootstrap + PreToolUse hooks
+│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find, auto-allows ls/.rnd
 │   └── session-start            # Bash script injecting using-rnd-framework skill into context
-├── lib/skills-core.js           # Skill discovery, resolution, frontmatter parsing (ESM)
+├── lib/
+│   ├── rnd-dir.sh               # Artifact directory path computation + session management
+│   └── skills-core.js           # Skill discovery, resolution, frontmatter parsing (ESM)
 └── README.md
 ```
 
@@ -38,7 +41,7 @@ plugins/rnd-framework/
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` PreToolUse hooks enforce several policies:
-- **Information barrier:** Blocks any `Read` call where `TOOL_INPUT` contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Information barrier:** Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
 - **Commit protection:** Blocks `git add` of `.rnd/` as defense-in-depth (artifacts live outside the project in `$RND_DIR`, so this is a safety net)
 - **Auto-allow `$RND_DIR` operations:** All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
 
@@ -54,26 +57,27 @@ The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/
 
 ### Runtime Artifacts
 
-The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path (e.g., `~/.claude/.rnd/plugins-6f015c`).
+The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path. Each pipeline run gets a unique session ID, preserving history across runs.
 
-**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Use `-c` flag to create directory structure.
+**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create), `--finish` (clear session), `--base` (project base dir).
 
 ```
-~/.claude/.rnd/project-<hash>/   ($RND_DIR)
-├── plan.md                    # Task tree, pre-registrations, schedule
-├── builds/T*-manifest.md      # Builder output records
-├── builds/T*-self-assessment.md  # Builder uncertainties (blocked from Verifier)
-├── verifications/T*-verification.md  # Verifier evidence-based verdicts
-├── integration/wave-*-report.md      # Integration results, SHIP/NO-SHIP
-├── worktrees/                 # Git worktrees for parallel builder isolation
-└── iteration-log.md           # Build-verify cycle tracking
+~/.claude/.rnd/project-<hash>/             # Project base
+├── .current-session                       # Active session ID
+└── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
+    ├── plan.md                            # Task tree, pre-registrations, schedule
+    ├── builds/T*-manifest.md              # Builder output records
+    ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
+    ├── verifications/T*-verification.md   # Verifier evidence-based verdicts
+    ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
+    └── iteration-log.md                   # Build-verify cycle tracking
 ```
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:quick`.
+Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:quick`, `/rnd-framework:history`.
 
 ## Key Conventions
 

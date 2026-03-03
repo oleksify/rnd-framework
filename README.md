@@ -10,29 +10,60 @@ A collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/cla
 
 ## Installation
 
-Install a plugin by pointing Claude Code at its directory:
+### Add the marketplace
 
-```bash
-claude plugin install --dir /path/to/plugins/rnd-framework
+```
+/plugin marketplace add https://tangled.sh/oleksify.me/claude-plugins
 ```
 
-Or install directly from the repository:
+Or with a Git URL:
 
-```bash
-git clone https://tangled.sh/oleksify.me/claude-plugins
-claude plugin install --dir claude-plugins/plugins/rnd-framework
 ```
+/plugin marketplace add git@tangled.org:oleksify.me/claude-plugins.git
+```
+
+### Install a plugin
+
+```
+/plugin install rnd-framework@rnd-framework-plugins
+```
+
+Or use the interactive plugin manager:
+
+```
+/plugin
+```
+
+Navigate to the **Discover** tab, select the plugin, and choose an installation scope:
+
+- **user** — active across all projects (default)
+- **project** — shared via `.claude/settings.json` (committed to git)
+- **local** — per-machine via `.claude/settings.local.json` (not committed)
+
+### Update a plugin
+
+```
+/plugin update rnd-framework@rnd-framework-plugins
+```
+
+To enable auto-updates for this marketplace:
+
+```
+/plugin
+```
+
+Go to the **Marketplaces** tab, select the marketplace, and enable auto-update.
 
 ## Per-Project Configuration
 
-Control which plugins are active per-project via Claude Code's `enabledPlugins` setting.
+Control which plugins are active per-project via the `enabledPlugins` setting.
 
 Add to `.claude/settings.local.json` (per-machine, not committed) or `.claude/settings.json` (shared with team):
 
 ```json
 {
   "enabledPlugins": {
-    "plugin-name@source": false
+    "rnd-framework@rnd-framework-plugins": false
   }
 }
 ```

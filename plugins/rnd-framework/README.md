@@ -12,8 +12,17 @@ A Claude Code plugin that applies the scientific method to software engineering.
 
 ## Installation
 
-```bash
-claude plugin install --dir /path/to/rnd-framework
+Add the marketplace and install:
+
+```
+/plugin marketplace add https://tangled.sh/oleksify.me/claude-plugins
+/plugin install rnd-framework@rnd-framework-plugins
+```
+
+Update to the latest version:
+
+```
+/plugin update rnd-framework@rnd-framework-plugins
 ```
 
 ## Per-Project Plugin Configuration
@@ -57,6 +66,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:integrate <wave-2\|final>` | Merge verified outputs, run integration tests |
 | `/rnd-framework:status` | Show pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
+| `/rnd-framework:history` | Browse past pipeline sessions for this project |
 
 ## Skills
 
@@ -155,23 +165,29 @@ The framework stores pipeline artifacts in a centralized directory outside the p
 
 **Helper script:** `lib/rnd-dir.sh`
 - Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
-- Outputs an absolute path like `~/.claude/.rnd/plugins-6f015c`
+- Outputs an absolute path like `~/.claude/.rnd/plugins-6f015c/sessions/20260303-102051-4b5f`
 - Use `-c` flag to create the directory structure on first use
+- Use `--finish` to clear the session ID after a pipeline run
+- Use `--base` to get the project base dir (without session path)
+
+Each pipeline run gets a unique session ID. Previous sessions remain on disk and can be browsed with `/rnd-framework:history`.
 
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude/.rnd/project-6f015c/
-├── plan.md                     # Task tree, pre-registrations, schedule
-├── builds/
-│   ├── T1-manifest.md          # What the builder produced
-│   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
-├── verifications/
-│   └── T1-verification.md      # Verifier report with evidence
-├── integration/
-│   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
-├── worktrees/                  # Git worktrees for parallel builder isolation
-└── iteration-log.md            # Build-verify cycle tracking
+~/.claude/.rnd/project-6f015c/          # Project base (hash of project path)
+├── .current-session                    # Active session ID
+└── sessions/
+    └── 20260303-102051-4b5f/           # One session per pipeline run
+        ├── plan.md                     # Task tree, pre-registrations, schedule
+        ├── builds/
+        │   ├── T1-manifest.md          # What the builder produced
+        │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
+        ├── verifications/
+        │   └── T1-verification.md      # Verifier report with evidence
+        ├── integration/
+        │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
+        └── iteration-log.md            # Build-verify cycle tracking
 ```
 
 Since artifacts live outside the project directory, no `.gitignore` changes are needed.
@@ -182,13 +198,15 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 4 specialized agents
-├── commands/                    # 7 pipeline commands
+├── commands/                    # 8 pipeline commands
 ├── hooks/
-│   ├── hooks.json               # SessionStart + PreToolUse (information barrier)
+│   ├── hooks.json               # SessionStart + PreToolUse hooks
+│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find, auto-allows ls/.rnd
 │   └── session-start            # Bootstrap script
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # 13 skills (rnd-* namespace)
+├── skills/                      # 16 skills (rnd-* namespace)
 ├── lib/
+│   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   └── skills-core.js           # Skill discovery & resolution
 └── README.md
 ```

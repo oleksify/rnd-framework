@@ -22,8 +22,7 @@ plugins/rnd-framework/
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find, auto-allows ls/.rnd
 │   └── session-start            # Bash script injecting using-rnd-framework skill into context
 ├── lib/
-│   ├── rnd-dir.sh               # Artifact directory path computation + session management
-│   └── skills-core.js           # Skill discovery, resolution, frontmatter parsing (ESM)
+│   └── rnd-dir.sh               # Artifact directory path computation + session management
 └── README.md
 ```
 
@@ -47,7 +46,7 @@ The `hooks.json` PreToolUse hooks enforce several policies:
 
 ### Skill System
 
-Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`). Discovery uses `lib/skills-core.js` which recursively searches up to depth 3.
+Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`). Claude Code's native plugin system discovers skills by directory convention.
 
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
@@ -85,7 +84,6 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
 - **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, tools list
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
-- **ESM modules** — `lib/skills-core.js` uses `import`/`export` syntax
 - **No test suite** — verification happens through the pipeline itself (build manifests + verification reports)
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort
 - **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)

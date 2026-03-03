@@ -206,8 +206,7 @@ rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # 16 skills (rnd-* namespace)
 ├── lib/
-│   ├── rnd-dir.sh               # Artifact directory path computation + session management
-│   └── skills-core.js           # Skill discovery & resolution
+│   └── rnd-dir.sh               # Artifact directory path computation + session management
 └── README.md
 ```
 

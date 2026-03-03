@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 — 2026-03-03
+
+### Fix all PreToolUse hooks to read tool input from stdin
+
+All hooks were reading `$TOOL_INPUT` (an environment variable that Claude Code never populates). Tool input is actually passed as JSON on stdin. This caused every auto-allow rule to silently fail — `rnd-dir.sh`, `.rnd/` paths, `ls`, and the information barrier for self-assessment files all prompted for permission instead of resolving automatically. The `prefer-tools` hook also failed to block `sed`/`cat`/`grep`/`find` since it couldn't see the command.
+
+All hooks now use `jq` to parse stdin JSON. The `prefer-tools` script additionally strips `cd` prefixes with `sed` instead of a complex regex, and matches the actual extracted command string rather than raw JSON.
+
 ## 0.6.1 — 2026-03-03
 
 ### Structured next-step options after task completion

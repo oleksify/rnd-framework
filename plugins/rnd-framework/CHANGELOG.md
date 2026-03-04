@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.19 — 2026-03-04
+
+### Add skill-agent content parity checks to validate.sh
+
+`/rnd-framework:validate` now checks that key content markers in skill files also appear in their corresponding agent mirrors. A data-driven parity table defines 6 marker-pairs across 3 skill-agent pairs (rnd-decomposition↔rnd-planner, rnd-building↔rnd-builder, rnd-verification↔rnd-verifier). Adding a new parity check requires one array entry — no new bash logic. Total checks: 116 → 122.
+
 ## 0.7.18 — 2026-03-04
 
 ### Add external dependency verification to pipeline

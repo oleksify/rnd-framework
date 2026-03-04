@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.9 — 2026-03-04
+
+### Add cross-reference validation to validate.sh
+
+`/rnd-framework:validate` now checks 33 cross-references in addition to the 77 structural checks: skill references in the `using-rnd-framework` table (15), skill references in agent "Required Skills" sections (9), and agent references in command spawn instructions (9). Distinguishes skill refs (backtick-wrapped) from command refs (slash-prefixed) to avoid false positives.
+
 ## 0.7.8 — 2026-03-04
 
 ### Warn on stale plugin cache in session-start

@@ -345,6 +345,41 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
 done
 $QUIET || echo "  (${xref_count} cross-references checked)"
 
+# ── Content Parity ───────────────────────────────────────────────
+
+begin_category "Content Parity"
+
+# Data-driven parity table: "skill_path|agent_path|marker|description"
+parity_table=(
+  "skills/rnd-decomposition/SKILL.md|agents/rnd-planner.md|External dependencies|pre-registration field"
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|erify external dependencies|step 2.5"
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Verified external assumptions|self-assessment sub-section"
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Unverified external assumptions|self-assessment sub-section"
+  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|External contract conformance|adversarial testing"
+  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|assumptions about external systems|code inspection"
+)
+
+for entry in "${parity_table[@]}"; do
+  IFS='|' read -r skill_rel agent_rel marker desc <<< "$entry"
+  skill_file="${PLUGIN_ROOT}/${skill_rel}"
+  agent_file="${PLUGIN_ROOT}/${agent_rel}"
+  skill_name=$(basename "$(dirname "$skill_rel")")
+  agent_name=$(basename "$agent_rel" .md)
+  skill_has=false
+  agent_has=false
+  grep -qi "$marker" "$skill_file" 2>/dev/null && skill_has=true
+  grep -qi "$marker" "$agent_file" 2>/dev/null && agent_has=true
+  if $skill_has && $agent_has; then
+    pass "parity: '${marker}' in ${skill_name} and ${agent_name} (${desc})"
+  elif $skill_has && ! $agent_has; then
+    fail "parity: '${marker}' in ${skill_name} but missing in ${agent_name}"
+  elif ! $skill_has && $agent_has; then
+    fail "parity: '${marker}' in ${agent_name} but missing in ${skill_name}"
+  else
+    fail "parity: '${marker}' missing in both ${skill_name} and ${agent_name}"
+  fi
+done
+
 # ── Summary Table ────────────────────────────────────────────────
 
 echo ""

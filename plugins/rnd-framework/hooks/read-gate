@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Read: enforces the information barrier and auto-allows .rnd/ reads.
+#
+# Two responsibilities:
+#   1. Information barrier — blocks reads of self-assessment files to prevent the
+#      Verifier from anchoring on Builder reasoning. Self-assessment files are
+#      write-only records for the orchestrator.
+#   2. Auto-allow — permits all other reads targeting .rnd/ paths without prompting.
+#
+# Tool input is passed as JSON on stdin.
+#
+# Output convention:
+#   Auto-allow: exit 0 + hookSpecificOutput JSON with permissionDecision=allow
+#   Block:      exit 2 + reason on stderr
+#   No opinion: exit 0 + no output
+
+INPUT="$(cat)"
+FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+
+if echo "$FILE" | grep -q 'self-assessment'; then
+  echo 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.' >&2
+  exit 2
+elif echo "$FILE" | grep -q '\.rnd/'; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+fi

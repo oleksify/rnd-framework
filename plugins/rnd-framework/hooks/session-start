@@ -13,33 +13,20 @@ RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" -c 2>/dev/null || echo "")
 # Read using-rnd-framework content
 using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&1 || echo "Error reading using-rnd-framework skill")
 
-# Escape string for JSON embedding
-escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
-}
-
-using_rnd_escaped=$(escape_for_json "$using_rnd_content")
-rnd_dir_line=""
-if [ -n "$RND_DIR" ]; then
-    rnd_dir_line="\\n\\n**RND_DIR (pipeline artifact directory for this project):** \`${RND_DIR}\`"
-fi
-session_context="<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your 'rnd-framework:using-rnd-framework' skill - your introduction to using the R&D framework. For all other skills, use the 'Skill' tool:**\n\n${using_rnd_escaped}${rnd_dir_line}\n\n</EXTREMELY_IMPORTANT>"
-
-# Output context injection as JSON
-cat <<EOF
-{
-  "additional_context": "${session_context}",
-  "hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": "${session_context}"
+# Build and output JSON using jq (handles all escaping correctly)
+jq -n \
+  --arg skill "$using_rnd_content" \
+  --arg rnd_dir "${RND_DIR:-}" \
+  '
+  (if $rnd_dir != "" then "\n\n**RND_DIR (pipeline artifact directory for this project):** `\($rnd_dir)`" else "" end) as $rnd_line |
+  "<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your '\''rnd-framework:using-rnd-framework'\'' skill - your introduction to using the R&D framework. For all other skills, use the '\''Skill'\'' tool:**\n\n\($skill)\($rnd_line)\n\n</EXTREMELY_IMPORTANT>" as $ctx |
+  {
+    additional_context: $ctx,
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext: $ctx
+    }
   }
-}
-EOF
+  '
 
 exit 0

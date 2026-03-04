@@ -30,6 +30,11 @@ elif echo "$STRIPPED" | grep -qE '^(grep|rg)\b'; then
 elif echo "$STRIPPED" | grep -qE '^find\b'; then
   echo "Use the Glob tool instead of find. Glob supports patterns like **/*.ts." >&2
   exit 2
+elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
+  if echo "$STRIPPED" | grep -qE '>[^&]'; then
+    echo "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs." >&2
+    exit 2
+  fi
 elif echo "$STRIPPED" | grep -qE '^ls\b'; then
   echo "$ALLOW"
 elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd'; then

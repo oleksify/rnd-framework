@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Write and Edit: auto-allows operations targeting .rnd/ paths.
+#
+# The .rnd/ artifact directory lives outside the project tree. Operations targeting
+# it should never require a permission prompt — they are always framework-internal.
+#
+# Tool input is passed as JSON on stdin.
+#
+# Output convention:
+#   Auto-allow: exit 0 + hookSpecificOutput JSON with permissionDecision=allow
+#   No opinion: exit 0 + no output
+
+INPUT="$(cat)"
+FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+
+if echo "$FILE" | grep -q '\.rnd/'; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+fi

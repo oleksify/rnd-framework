@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.15 — 2026-03-04
+
+### Define skip procedure for failing tasks
+
+The "Skip and continue" option in `start.md` and `verify.md` had no defined mechanism: no task status mapping, no dependency handling, no integrator guidance. Added a **Skip Procedure** section to both commands that specifies: (1) mark with `metadata: {"skipped": true, "reason": "..."}` and `completed` status, (2) check downstream dependencies and warn about dependent tasks, (3) inform the integrator which tasks were skipped. Phase 5 now reads "all non-skipped tasks" instead of "ALL tasks."
+
 ## 0.7.14 — 2026-03-04
 
 ### Increase artifact path hash from 6 to 8 characters

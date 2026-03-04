@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.16 — 2026-03-04
+
+### Add summary table and --quiet mode to validate.sh
+
+`/rnd-framework:validate` now outputs a per-category summary table at the end showing pass/fail counts for Manifest, Hooks, Skills, Agents, Commands, Output Styles, and Cross-References. New `--quiet` flag suppresses individual check lines and shows only the summary table — useful for CI. Also fixed a `grep -c || echo "0"` bug where both grep's stdout (`"0"`) and echo's stdout (`"0"`) were captured in command substitution, producing `"0\n0"` and failing integer comparison.
+
 ## 0.7.15 — 2026-03-04
 
 ### Define skip procedure for failing tasks

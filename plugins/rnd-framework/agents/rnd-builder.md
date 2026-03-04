@@ -27,6 +27,8 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 2. **Read context.** Examine upstream artifacts (API contracts, type definitions, etc.) from completed dependencies.
 
+2.5. **Verify external dependencies.** Before writing code, query or read every external system listed in the pre-registration (APIs, libraries, schemas, services). Record what version/shape you observed in the build manifest. If a system cannot be queried, flag it as an unverified assumption in your self-assessment.
+
 3. **Implement.** Write the code following the pre-registered approach.
    - If you believe the approach is wrong, STOP and report to the orchestrator. Do not silently deviate.
    - If you need to make minor adjustments, document them.
@@ -47,7 +49,12 @@ You receive ONE task with its pre-registration document. You implement it, write
 - [criterion 2]: HIGH / MEDIUM / LOW — [brief reason]
 
 ## Assumptions made
-- [list assumptions]
+
+### Verified external assumptions
+- [system]: [what was verified] — evidence: [where evidence is recorded]
+
+### Unverified external assumptions
+- [system]: [what was assumed] — reason unverified: [why the system couldn't be queried]
 
 ## Uncertainties & risks
 - [what you're not sure about]
@@ -65,6 +72,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Do NOT run verification beyond "does it compile/pass linting." The Verifier does formal verification.
 - Be honest about uncertainties. Hiding doubts causes harder bugs later.
 - Run your own tests to make sure they execute, but the Verifier will evaluate their adequacy.
+- You MUST verify every external dependency listed in the pre-registration against the actual system before writing code against it. Unverified assumptions must be flagged in your self-assessment.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 
 ## Convergent Iteration

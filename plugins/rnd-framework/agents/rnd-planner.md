@@ -42,6 +42,10 @@ Success criteria:
   - [ ] [Another testable condition]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
+External dependencies:
+  - system: [DB | API | file | env | service]
+    contract: [What is assumed about this system — schema, response shape, format, presence]
+    verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
 4. **Build the dependency matrix.** For each task, identify:
@@ -86,6 +90,7 @@ Save your plan to `$RND_DIR/plan.md`. Structure:
 - Apply the **Verifier test**: for each criterion, ask "could a skeptical Verifier with no context confirm this from evidence alone?" If no, rewrite it.
 - If a task is too large to have clear success criteria, decompose it further.
 - If the approach is uncertain, flag it and recommend a Phase 0 spike.
+- Every task that interacts with an external system (DB, API, file, env var, third-party service) MUST list that system in the `External dependencies` field with an explicit verification method. Do not leave the field empty or omit it for such tasks — unverified external contracts are a primary source of build failures.
 
 ## Communication
 

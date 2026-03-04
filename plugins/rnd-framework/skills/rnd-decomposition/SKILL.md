@@ -59,6 +59,7 @@ A criterion is testable if a skeptical Verifier can evaluate it from evidence al
 - **Too small:** If a task is a single function with one criterion, merge it up
 - **Too vague:** If criteria require judgment to evaluate ("works correctly", "handles errors", "is performant", "code is clean") — rewrite with observable outcomes or decompose further
 - **Uncertain:** If the approach is unclear, add a Phase 0 spike task
+- **Unverified external contract:** If a task depends on an external system (DB schema, API response shape, file format, env var, third-party service) whose contract has not been independently verified, add a Phase 0 spike or a dedicated verification step before that task to read/query the actual system and confirm assumptions
 
 ## Pre-Registration Document
 
@@ -74,6 +75,10 @@ Success criteria:
   - [ ] [Specific, testable condition 2]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
+External dependencies:
+  - system: [DB | API | file | env | service]
+    contract: [What is assumed about this system — schema, response shape, format, presence]
+    verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
 ### Good vs Bad Success Criteria
@@ -136,6 +141,7 @@ Before declaring planning complete:
 - [ ] Parallel opportunities within waves are identified
 - [ ] Tasks too large (>5 criteria) have been split
 - [ ] Uncertain approaches have Phase 0 spike tasks
+- [ ] Every task that interacts with an external system (DB, API, file format, env var, service) has an "External dependencies" field listing each dependency with: system type, assumed contract, and explicit verification method
 
 ## Related Skills
 

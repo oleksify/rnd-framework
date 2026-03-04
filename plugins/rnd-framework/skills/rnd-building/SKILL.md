@@ -45,6 +45,15 @@ Find your task in `$RND_DIR/plan.md`. Read its pre-registration document careful
 
 Examine upstream artifacts from completed dependencies: API contracts, type definitions, interfaces.
 
+### 2.5. Verify External Dependencies
+
+Before writing any code, verify every external dependency listed in the pre-registration's "External dependencies" field:
+
+- **Read or query the actual external system** — read DB schema, call API endpoint, inspect file, check service response
+- **Record evidence in the build manifest** — include schema dump, response sample, file contents, or other concrete proof
+- **Flag any contract mismatch as a STOP condition** — same protocol as a plan deviation: stop, report to the orchestrator, wait for guidance before continuing
+- **If the system is not accessible**, document this explicitly as an unverified assumption in your self-assessment (see sub-sections below)
+
 ### 3. Red-Green-Refactor (per criterion)
 
 For EACH success criterion in the pre-registration:
@@ -101,7 +110,12 @@ Save to `$RND_DIR/builds/T<id>-self-assessment.md`:
 - [criterion 1]: HIGH / MEDIUM / LOW — [brief reason]
 
 ## Assumptions made
-- [list assumptions]
+
+### Verified external assumptions
+- [system]: [what was verified] — evidence: [where evidence is recorded]
+
+### Unverified external assumptions
+- [system]: [what was assumed] — reason unverified: [why the system couldn't be queried]
 
 ## Uncertainties & risks
 - [what you're not sure about]
@@ -143,6 +157,7 @@ Before submitting your build:
 - [ ] Self-assessment is honest about uncertainties — if you have doubts, say so; the Verifier will find them anyway
 - [ ] No silent deviations from pre-registered approach
 - [ ] Output is clean (no errors, warnings)
+- [ ] Every external dependency in the pre-registration was verified against the actual system, with evidence recorded in the build manifest
 
 ## Related Skills
 

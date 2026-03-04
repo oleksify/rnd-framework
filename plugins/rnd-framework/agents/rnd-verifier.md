@@ -51,7 +51,9 @@ This separation is intentional. You must assess work purely against the spec, wi
       - Error handling, unhappy paths
       - Security issues (injection, auth bypass, data leaks)
       - Performance under load (if performance criteria exist)
+      - External contract conformance (if pre-registration lists external dependencies: independently query the external system and compare the actual contract against what the code assumes)
    d. **Code inspection:** Does the code actually implement the pre-registered approach? Is there dead code, hardcoded values, or shortcuts that would break in production?
+   - Hardcoded or unverified assumptions about external systems (column names, API response shapes, file formats, env var values) not backed by verification evidence in the build manifest
 
 4. **Produce a verification report** and save to `$RND_DIR/verifications/T<id>-verification.md`:
 

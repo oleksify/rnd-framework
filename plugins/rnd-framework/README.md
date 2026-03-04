@@ -166,7 +166,7 @@ The framework stores pipeline artifacts in a centralized directory outside the p
 
 **Helper script:** `lib/rnd-dir.sh`
 - Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
-- Outputs an absolute path like `~/.claude/.rnd/plugins-6f015c/sessions/20260303-102051-4b5f`
+- Outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>`
 - Use `-c` flag to create the directory structure on first use
 - Use `--finish` to clear the session ID after a pipeline run
 - Use `--base` to get the project base dir (without session path)
@@ -176,10 +176,10 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude/.rnd/myproject-6f015c/        # Project base (dirname-hash of project path)
+~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 6-char hash of path)
 ├── .current-session                    # Active session ID
 └── sessions/
-    └── 20260303-102051-4b5f/           # One session per pipeline run
+    └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
         ├── plan.md                     # Task tree, pre-registrations, schedule
         ├── builds/
         │   ├── T1-manifest.md          # What the builder produced

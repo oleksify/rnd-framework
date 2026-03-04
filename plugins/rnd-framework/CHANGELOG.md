@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.11 — 2026-03-04
+
+### Add argument-hint validation to validate.sh
+
+`/rnd-framework:validate` now checks that commands using `$ARGUMENTS` have an `argument-hint` frontmatter field, and that commands with `argument-hint` actually reference `$ARGUMENTS`. Catches missing usage hints on new commands. Adds 6 checks (116 total). Required `|| true` guard on the `frontmatter_val` call since `argument-hint` is optional — without it, `set -euo pipefail` kills the script when `grep` finds no match inside the function's pipeline.
+
 ## 0.7.10 — 2026-03-04
 
 ### Add /validate to command tables and fix artifact path examples

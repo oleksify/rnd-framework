@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.6 — 2026-03-04
+
+### Add plugin validation command
+
+New `/rnd-framework:validate` command runs `lib/validate.sh` to check plugin structure without starting a new session. Validates: plugin manifest (JSON, semver), hooks (JSON, script existence and executability), skills (frontmatter, name/directory consistency), agents (frontmatter, valid tools and models), commands (frontmatter), and output styles (frontmatter). Reports PASS/FAIL per check with a summary count. 77 checks across all 6 artifact types.
+
 ## 0.7.5 — 2026-03-04
 
 ### Harden hook system with external scripts and jq

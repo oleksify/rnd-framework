@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.17 — 2026-03-04
+
+### Distinguish FAIL from NEEDS ITERATION in verify and start commands
+
+Previously both `verify.md` and `start.md` treated FAIL and NEEDS ITERATION identically ("FAIL: Same as NEEDS ITERATION"), routing both to the Builder for iteration. The `rnd-verification` skill defines them differently: NEEDS ITERATION is "all-but-one criteria met with a clear, isolated fix path" while FAIL is "any criterion unmet without a clear fix path." Now FAIL routes to re-planning (not iteration), and in auto-continue mode, FAIL always pauses for user decision — it is an escalation gate.
+
 ## 0.7.16 — 2026-03-04
 
 ### Add summary table and --quiet mode to validate.sh

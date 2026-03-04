@@ -23,18 +23,26 @@ Run ONLY the planning phase for: $ARGUMENTS
    ```bash
    RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
    ```
-2. Spawn the `rnd-framework:rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description and `RND_DIR`.
-3. Review the output in `$RND_DIR/plan.md`.
-4. Validate that every task has:
+2. Create the planning-phase marker to block project file writes:
+   ```bash
+   touch "$RND_DIR/.planning-phase"
+   ```
+3. Spawn the `rnd-framework:rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description and `RND_DIR`.
+4. After the planner finishes, remove the marker:
+   ```bash
+   rm -f "$RND_DIR/.planning-phase"
+   ```
+5. Review the output in `$RND_DIR/plan.md`.
+6. Validate that every task has:
    - Testable success criteria (not vague)
    - Clear dependencies
    - Appropriate verification level
-5. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
+7. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
    - `subject`: Task name (e.g., "T1: Design API contracts")
    - `description`: The full pre-registration content for that task
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
-6. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
+8. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
    - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:build`
    - "Request plan revisions" — describe what to change and re-run `/rnd-framework:plan`
    - "Add more tasks" — extend the plan before building

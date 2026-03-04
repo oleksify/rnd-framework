@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
-# PreToolUse hook for Write and Edit: auto-allows operations targeting .rnd/ paths.
-#
-# The .rnd/ artifact directory lives outside the project tree. Operations targeting
-# it should never require a permission prompt — they are always framework-internal.
+# PreToolUse hook for Write and Edit:
+#   1. Auto-allows operations targeting .rnd/ paths (framework artifacts).
+#   2. Blocks non-.rnd/ writes during planning phase (marker file check).
 #
 # Tool input is passed as JSON on stdin.
 #
 # Output convention:
 #   Auto-allow: exit 0 + hookSpecificOutput JSON with permissionDecision=allow
+#   Block:      exit 2 + reason on stderr
 #   No opinion: exit 0 + no output
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 INPUT="$(cat)"
 FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
 
 if echo "$FILE" | grep -q '\.rnd/'; then
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+else
+  # Check planning-phase marker: block project file writes during planning
+  RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" 2>/dev/null || echo "")
+  if [ -n "$RND_DIR" ] && [ -f "${RND_DIR}/.planning-phase" ]; then
+    echo "BLOCKED: Write/Edit to project files is not allowed during the planning phase. The Planner's only output is \$RND_DIR/plan.md." >&2
+    exit 2
+  fi
 fi

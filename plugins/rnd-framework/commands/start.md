@@ -59,7 +59,17 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 ## Phase 1: Plan
 
+Before spawning the planner, create the planning-phase marker to block project file writes:
+```bash
+touch "$RND_DIR/.planning-phase"
+```
+
 Spawn the `rnd-framework:rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
+
+After the planner finishes, remove the marker:
+```bash
+rm -f "$RND_DIR/.planning-phase"
+```
 
 Wait for the planner to produce `$RND_DIR/plan.md` with:
 - Task tree

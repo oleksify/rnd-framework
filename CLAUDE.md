@@ -18,9 +18,11 @@ plugins/rnd-framework/
 ├── skills/                      # 16 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # SessionStart bootstrap + PreToolUse hooks
-│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find, auto-allows ls/.rnd
-│   └── session-start            # Bash script injecting using-rnd-framework skill into context
+│   ├── hooks.json               # SessionStart bootstrap + PreToolUse hook routing
+│   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
+│   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
+│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
+│   └── session-start            # SessionStart hook: injects skill context via jq
 ├── lib/
 │   └── rnd-dir.sh               # Artifact directory path computation + session management
 └── README.md
@@ -39,10 +41,11 @@ plugins/rnd-framework/
 
 ### Information Barrier and Permission Hooks
 
-The `hooks.json` PreToolUse hooks enforce several policies:
-- **Information barrier:** Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
-- **Commit protection:** Blocks `git add` of `.rnd/` as defense-in-depth (artifacts live outside the project in `$RND_DIR`, so this is a safety net)
-- **Auto-allow `$RND_DIR` operations:** All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
+The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
+- **Information barrier** (`read-gate`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Auto-allow `$RND_DIR` operations** (`auto-allow-rnd`, `read-gate`, `prefer-tools`): All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
+- **Tool discipline** (`prefer-tools`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools
+- **Commit protection** (`prefer-tools`): Blocks `git add` of `.rnd/` as defense-in-depth
 
 ### Skill System
 

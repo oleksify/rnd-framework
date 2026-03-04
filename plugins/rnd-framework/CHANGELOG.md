@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.18 — 2026-03-04
+
+### Add external dependency verification to pipeline
+
+External systems (DB schemas, API contracts, file formats, env vars, third-party services) had no first-class representation in the pipeline. A Builder could write code against a wrongly-assumed schema, and the Verifier had no hook to catch it — tests would pass because both the code and the mocks shared the same wrong assumptions.
+
+Now all three pipeline phases enforce external dependency awareness:
+
+- **Planner** (`rnd-decomposition` skill + `rnd-planner` agent): Pre-registration template gains an `External dependencies` field with sub-structure (`system`, `contract`, `verification`). New decomposition heuristic triggers Phase 0 spikes for unverified external contracts. Checklist item enforces field presence.
+- **Builder** (`rnd-building` skill + `rnd-builder` agent): New step 2.5 "Verify External Dependencies" requires querying/reading actual external systems before writing code. Evidence recorded in build manifest. Self-assessment template restructured to distinguish verified from unverified external assumptions.
+- **Verifier** (`rnd-verification` skill + `rnd-verifier` agent): Adversarial testing gains "External contract conformance" category. Code inspection gains check for hardcoded unverified assumptions. Cross-criterion sweep gains "External assumption probe" — flags all dependent criteria as at-risk when build manifest lacks verification evidence.
+
 ## 0.7.17 — 2026-03-04
 
 ### Distinguish FAIL from NEEDS ITERATION in verify and start commands

@@ -10,6 +10,29 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Compute RND_DIR via helper (creates directory structure with -c flag)
 RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" -c 2>/dev/null || echo "")
 
+# Check for version mismatch between cached plugin and source repo
+VERSION_WARNING=""
+CACHED_VERSION=$(jq -r '.version // empty' "${PLUGIN_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo "")
+if [ -n "$CACHED_VERSION" ]; then
+  # Check if we're in the plugin's source repo
+  GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+  for source_path in \
+    "${GIT_ROOT}/plugins/rnd-framework/.claude-plugin/plugin.json" \
+    "${GIT_ROOT}/rnd-framework/.claude-plugin/plugin.json" \
+    "${GIT_ROOT}/.claude-plugin/plugin.json"; do
+    if [ -n "$GIT_ROOT" ] && [ -f "$source_path" ]; then
+      SOURCE_NAME=$(jq -r '.name // empty' "$source_path" 2>/dev/null || echo "")
+      if [ "$SOURCE_NAME" = "rnd-framework" ]; then
+        SOURCE_VERSION=$(jq -r '.version // empty' "$source_path" 2>/dev/null || echo "")
+        if [ -n "$SOURCE_VERSION" ] && [ "$SOURCE_VERSION" != "$CACHED_VERSION" ]; then
+          VERSION_WARNING="\\n\\n⚠ **Plugin version mismatch:** cached v${CACHED_VERSION}, source v${SOURCE_VERSION}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync."
+        fi
+        break
+      fi
+    fi
+  done
+fi
+
 # Read using-rnd-framework content
 using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&1 || echo "Error reading using-rnd-framework skill")
 
@@ -17,9 +40,10 @@ using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&
 jq -n \
   --arg skill "$using_rnd_content" \
   --arg rnd_dir "${RND_DIR:-}" \
+  --arg version_warning "$VERSION_WARNING" \
   '
   (if $rnd_dir != "" then "\n\n**RND_DIR (pipeline artifact directory for this project):** `\($rnd_dir)`" else "" end) as $rnd_line |
-  "<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your '\''rnd-framework:using-rnd-framework'\'' skill - your introduction to using the R&D framework. For all other skills, use the '\''Skill'\'' tool:**\n\n\($skill)\($rnd_line)\n\n</EXTREMELY_IMPORTANT>" as $ctx |
+  "<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your '\''rnd-framework:using-rnd-framework'\'' skill - your introduction to using the R&D framework. For all other skills, use the '\''Skill'\'' tool:**\n\n\($skill)\($rnd_line)\($version_warning)\n\n</EXTREMELY_IMPORTANT>" as $ctx |
   {
     additional_context: $ctx,
     hookSpecificOutput: {

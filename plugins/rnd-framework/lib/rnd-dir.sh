@@ -9,7 +9,7 @@
 #
 # Session path: <base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/
 # Base path:    <claude-config-dir>/.rnd/<project-slug>/
-# where project-slug = <basename>-<6char-sha256-of-pwd>
+# where project-slug = <basename>-<8char-sha256-of-pwd>
 #
 # Config dir priority:
 #   1. CLAUDE_PLUGIN_ROOT (strip /plugins/cache/... suffix)
@@ -36,14 +36,14 @@ fi
 PROJECT_DIR="$(pwd)"
 BASENAME="$(basename "$PROJECT_DIR")"
 
-# 6-char hex hash of the full path for uniqueness
+# 8-char hex hash of the full path for uniqueness (~4B collision space)
 if command -v shasum >/dev/null 2>&1; then
-  HASH=$(printf '%s' "$PROJECT_DIR" | shasum -a 256 | cut -c1-6)
+  HASH=$(printf '%s' "$PROJECT_DIR" | shasum -a 256 | cut -c1-8)
 elif command -v sha256sum >/dev/null 2>&1; then
-  HASH=$(printf '%s' "$PROJECT_DIR" | sha256sum | cut -c1-6)
+  HASH=$(printf '%s' "$PROJECT_DIR" | sha256sum | cut -c1-8)
 else
   # Fallback: use cksum-based hash (less ideal but always available)
-  HASH=$(printf '%s' "$PROJECT_DIR" | cksum | awk '{printf "%06x", $1}' | cut -c1-6)
+  HASH=$(printf '%s' "$PROJECT_DIR" | cksum | awk '{printf "%08x", $1}' | cut -c1-8)
 fi
 
 SLUG="${BASENAME}-${HASH}"

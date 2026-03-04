@@ -42,6 +42,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `rnd-framework:bun-scripting` | Writing helper scripts — prefer Bun over Python when available |
 | `rnd-framework:committing` | Creating git commits — message style, length limits, user confirmation |
+| `rnd-framework:rnd-data-science` | Performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring Julia computation |
 
 ## Available Commands
 

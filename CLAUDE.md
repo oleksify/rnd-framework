@@ -13,7 +13,7 @@ The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketpla
 ```
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── agents/                      # 4 specialized agents (planner, builder, verifier, integrator)
+├── agents/                      # 5 specialized agents (planner, builder, verifier, integrator, data-scientist)
 ├── commands/                    # 9 slash commands (/rnd-framework:start, etc.)
 ├── skills/                      # 16 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
@@ -38,6 +38,7 @@ plugins/rnd-framework/
 | `rnd-builder` | sonnet | Implements one task using TDD; produces build manifest + self-assessment |
 | `rnd-verifier` | opus | Independent verification — never sees builder reasoning |
 | `rnd-integrator` | sonnet | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
+| `rnd-data-scientist` | opus | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights |
 
 ### Information Barrier and Permission Hooks
 

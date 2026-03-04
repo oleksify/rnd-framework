@@ -71,7 +71,7 @@ After configuring, start a Claude Code session in the project and check:
 
 ## Skills
 
-The plugin provides 16 skills that embed structured practices into every phase of coding:
+The plugin provides 17 skills that embed structured practices into every phase of coding:
 
 | Skill | Purpose |
 |---|---|
@@ -91,6 +91,7 @@ The plugin provides 16 skills that embed structured practices into every phase o
 | `bun-scripting` | Prefer Bun (TypeScript) over Python for helper scripts when available |
 | `committing` | Commit message style, length limits, and user confirmation before committing |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
+| `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
 
 ## Agents
 
@@ -100,6 +101,7 @@ The plugin provides 16 skills that embed structured practices into every phase o
 | `rnd-framework:rnd-builder` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Implements one task with TDD, produces verification artifacts |
 | `rnd-framework:rnd-verifier` | opus | Read, Write, Bash, Grep, Glob | Independent verification against pre-registered criteria |
 | `rnd-framework:rnd-integrator` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Merges verified outputs, runs integration tests |
+| `rnd-framework:rnd-data-scientist` | opus | Read, Write, Edit, Bash, Glob, Grep | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights |
 
 ## Pipeline Scaling
 
@@ -198,7 +200,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 4 specialized agents
+├── agents/                      # 5 specialized agents
 ├── commands/                    # 9 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse hook routing
@@ -207,7 +209,7 @@ rnd-framework/
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   └── session-start            # SessionStart hook: injects skill context via jq
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # 16 skills (rnd-* namespace)
+├── skills/                      # 17 skills (rnd-* namespace)
 ├── lib/
 │   └── rnd-dir.sh               # Artifact directory path computation + session management
 └── README.md

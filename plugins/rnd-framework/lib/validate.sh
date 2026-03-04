@@ -357,6 +357,10 @@ parity_table=(
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Unverified external assumptions|self-assessment sub-section"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|External contract conformance|adversarial testing"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|assumptions about external systems|code inspection"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|mcp__julia__julia_eval|Julia MCP tool reference"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|Validate input data|data validation requirement"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|independent cross-check|numerical verification approach"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|never hardcode|no intermediate value hardcoding rule"
 )
 
 for entry in "${parity_table[@]}"; do

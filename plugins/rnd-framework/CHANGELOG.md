@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.20 — 2026-03-04
+
+### Add rnd-data-scientist agent and rnd-data-science skill
+
+New standalone specialist agent (`rnd-data-scientist`, opus) for numerical and analytical work — finances, calculations, data wiring, analytics, tables, CSV/XLS, charts, and insights. Unlike the 4 pipeline-phase agents, this agent is called on-demand by the orchestrator or other agents when a task involves data work. Uses Julia MCP tools (`mcp__julia__julia_eval`) as primary computation environment, loaded via `ToolSearch` at runtime.
+
+Companion `rnd-data-science` skill provides structured methodology: data validation, numerical verification (cross-checks, tolerance-based comparison), CSV/XLS ingestion, financial calculations, chart generation (Plots.jl), and insight extraction. Four content-parity entries added to `validate.sh` ensuring skill-agent alignment. All reference docs updated (README, `using-rnd-framework`, CLAUDE.md). Total checks: 122 → 135. Agents: 4 → 5. Skills: 16 → 17.
+
 ## 0.7.19 — 2026-03-04
 
 ### Add skill-agent content parity checks to validate.sh

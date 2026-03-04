@@ -43,24 +43,27 @@ If $ARGUMENTS is "all": use `TaskList` to find all built but unverified tasks.
 
 Process each task's verdict:
 - **PASS:** Use `TaskUpdate` to mark the task `completed`.
-- **NEEDS ITERATION:** Keep the task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle count. Extract ONLY the feedback section from the verification report. Do NOT extract the Verifier's internal reasoning. Pass feedback to the Builder. Track in `$RND_DIR/iteration-log.md`. Max 3 iterations.
-- **FAIL:** Same as NEEDS ITERATION.
-- After iteration, re-verify with the same information barrier rules.
+- **NEEDS ITERATION:** A clear, isolated failure the Builder can fix. Keep the task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle count. Extract ONLY the feedback section from the verification report — do NOT include the Verifier's internal reasoning. Pass feedback to the Builder. Track in `$RND_DIR/iteration-log.md`. Max 3 iterations. After iteration, re-verify with the same information barrier rules.
+- **FAIL:** Multiple unmet criteria or no clear fix path — the task needs re-decomposition, not iteration. Do NOT pass to the Builder for iteration. Present this as a re-planning candidate.
 
-Summarize verification results to the user: which tasks passed, which need iteration, key findings. Then use `AskUserQuestion`:
+Summarize verification results to the user: which tasks passed, which need iteration, which failed outright. Then use `AskUserQuestion`:
 
 If all tasks PASS:
 - "Proceed to integration (Recommended)" — run `/rnd-framework:integrate` for this wave
 - "Review verification reports" — inspect reports before proceeding
 
-If any tasks NEED ITERATION:
-- "Iterate on failing tasks (Recommended)" — re-build and re-verify failing tasks
-- "Re-plan failing tasks" — send back to Planner for re-decomposition
+If any tasks got NEEDS ITERATION (but none FAIL):
+- "Iterate on failing tasks (Recommended)" — re-build and re-verify
 - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
 
+If any tasks got FAIL:
+- "Re-plan failing tasks (Recommended)" — send back to Planner for re-decomposition
+- "Iterate anyway" — treat as NEEDS ITERATION (use only if you disagree with the Verifier's severity)
+- "Skip failing tasks and continue" — skip and proceed (see skip procedure below)
+
 If iteration budget (3 cycles) is exhausted:
-- "Re-plan this task" — decompose differently
-- "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
+- "Re-plan this task (Recommended)" — decompose differently
+- "Skip and continue" — skip this task and proceed (see skip procedure below)
 - "Stop pipeline" — halt for manual intervention
 
 ## Skip Procedure

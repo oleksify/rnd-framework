@@ -122,10 +122,10 @@ For each completed task in the wave:
 
 2. **Gate 3:** Check verification report.
    - **PASS** → Task is done. Use `TaskUpdate` to mark `completed`. Move to next.
-   - **NEEDS ITERATION** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
-   - **FAIL** → Same as NEEDS ITERATION.
+   - **NEEDS ITERATION** → A clear, isolated failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
+   - **FAIL** → Multiple unmet criteria or no clear fix path. Do NOT iterate — route to re-planning.
 
-**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed, which need iteration, key findings.
+**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed, which need iteration, which failed outright.
 
 If all tasks PASS:
 - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to integration (Phase 5).
@@ -133,12 +133,17 @@ If all tasks PASS:
   - "Proceed to integration (Recommended)" — spawn Integrator for this wave
   - "Review verification reports" — let the user inspect reports before integration
 
-If any tasks NEED ITERATION:
+If any tasks got NEEDS ITERATION (but none FAIL):
 - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 4 iteration on failing tasks.
 - Otherwise, use `AskUserQuestion` with options:
   - "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
-  - "Re-plan failing tasks" — send back to Planner for re-decomposition
   - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
+
+If any tasks got FAIL:
+- Use `AskUserQuestion` with options (even in auto-continue mode — FAIL always pauses):
+  - "Re-plan failing tasks (Recommended)" — send back to Planner for re-decomposition
+  - "Iterate anyway" — treat as NEEDS ITERATION (override Verifier's severity)
+  - "Skip failing tasks and continue" — skip and proceed (see skip procedure below)
 
 ## Phase 4: Iterate (if needed)
 

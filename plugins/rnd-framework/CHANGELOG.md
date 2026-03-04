@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.8 — 2026-03-04
+
+### Warn on stale plugin cache in session-start
+
+The `session-start` hook now detects version mismatches between the cached plugin and the source repo. When running in the plugin's source repository, it compares the cached `plugin.json` version against the source version. If they differ, a warning appears in the session context suggesting `/plugin update`. Searches multiple common repo layouts (`plugins/rnd-framework/`, `rnd-framework/`, root-level).
+
 ## 0.7.7 — 2026-03-04
 
 ### Block project file writes during planning phase

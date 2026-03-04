@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.5 — 2026-03-04
+
+### Harden hook system with external scripts and jq
+
+Extracted all inline PreToolUse hooks from `hooks.json` into external scripts: `auto-allow-rnd` (shared by Write and Edit matchers) and `read-gate` (Read matcher with information barrier). Added echo/printf file redirect blocking to `prefer-tools` — catches `echo/printf ... > file` patterns while allowing `>&2` stderr output. Replaced the fragile `escape_for_json()` bash function in `session-start` with `jq -n --arg`, eliminating manual string escaping that missed control characters and unicode edge cases.
+
 ## 0.7.4 — 2026-03-03
 
 ### Namespace agent references in commands and skills

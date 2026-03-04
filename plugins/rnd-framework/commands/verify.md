@@ -56,9 +56,17 @@ If all tasks PASS:
 If any tasks NEED ITERATION:
 - "Iterate on failing tasks (Recommended)" — re-build and re-verify failing tasks
 - "Re-plan failing tasks" — send back to Planner for re-decomposition
-- "Skip failing tasks and continue" — proceed with passing tasks only
+- "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
 
 If iteration budget (3 cycles) is exhausted:
 - "Re-plan this task" — decompose differently
-- "Skip and continue (Recommended)" — proceed without this task
+- "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
 - "Stop pipeline" — halt for manual intervention
+
+## Skip Procedure
+
+When the user chooses to skip a failing task:
+
+1. Mark the task: `TaskUpdate` with `status: "completed"` and `metadata: {"skipped": true, "reason": "<why>"}`.
+2. **Check downstream dependencies.** Use `TaskList` to find any tasks that had this task in their `blockedBy`. Warn the user about each dependent task and ask whether to also skip it, proceed anyway, or re-plan.
+3. When integrating, explicitly list skipped tasks so the integrator can exclude them from merge and note them in the report.

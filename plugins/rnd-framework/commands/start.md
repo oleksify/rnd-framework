@@ -138,7 +138,7 @@ If any tasks NEED ITERATION:
 - Otherwise, use `AskUserQuestion` with options:
   - "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
   - "Re-plan failing tasks" — send back to Planner for re-decomposition
-  - "Skip failing tasks and continue" — proceed with passing tasks only
+  - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
 
 ## Phase 4: Iterate (if needed)
 
@@ -148,16 +148,26 @@ If any tasks NEED ITERATION:
 4. Verifier re-checks (same information barrier rules).
 5. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
    - "Re-plan this task" — send back to Planner for re-decomposition
-   - "Skip and continue (Recommended)" — mark task as skipped, proceed with remaining tasks
+   - "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
    - "Stop pipeline" — halt the pipeline for manual intervention
 
    Use `TaskUpdate` with `metadata: {"iteration": N}` to track each cycle.
 
 Track iterations in `$RND_DIR/iteration-log.md`.
 
+### Skip Procedure
+
+When the user chooses to skip a failing task:
+
+1. Mark the task: `TaskUpdate` with `status: "completed"` and `metadata: {"skipped": true, "reason": "<why it was skipped>"}`.
+2. **Check downstream dependencies.** Use `TaskList` to find any tasks that had this task in their `blockedBy`. For each dependent task:
+   - Warn the user: "Task T{X} depends on skipped task T{Y}. It may fail or produce incomplete results."
+   - Use `AskUserQuestion` to ask whether to also skip the dependent task, proceed anyway, or re-plan.
+3. Inform the Integrator: when spawning the integrator for this wave, explicitly list which tasks were skipped so it can exclude them from merge and note them in the integration report.
+
 ## Phase 5: Integrate
 
-Once ALL tasks in a wave pass verification:
+Once all non-skipped tasks in a wave pass verification:
 
 1. Spawn the `rnd-framework:rnd-integrator` agent as a **teammate** with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`.
 2. It merges outputs, runs integration tests, checks for regressions.

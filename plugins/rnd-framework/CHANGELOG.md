@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.12 — 2026-03-04
+
+### Use generic path templates in artifact layout examples
+
+README artifact path examples used concrete values (`myproject-6f015c`, `20260303-102051-4b5f`) that could mislead users about the actual slug format. Replaced with generic templates (`<dirname>-<hash>`, `<YYYYMMDD-HHMMSS-XXXX>`) matching the inline helper description. CLAUDE.md was already fixed in 0.7.10.
+
 ## 0.7.11 — 2026-03-04
 
 ### Add argument-hint validation to validate.sh

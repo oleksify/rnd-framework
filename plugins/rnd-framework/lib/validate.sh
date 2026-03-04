@@ -120,7 +120,7 @@ echo "  (${skill_count} skills found)"
 echo ""
 echo "=== Agents ==="
 
-valid_tools="Read|Write|Edit|Bash|Glob|Grep|NotebookRead|NotebookEdit|WebFetch|WebSearch|Agent|TodoWrite"
+valid_tools="Read|Write|Edit|Bash|Glob|Grep|NotebookRead|NotebookEdit|WebFetch|WebSearch|Agent|TodoWrite|AskUserQuestion|TaskCreate|TaskGet|TaskUpdate|TaskList|Skill|SendMessage|TeamCreate|TeamDelete|EnterPlanMode|ExitPlanMode|EnterWorktree|ToolSearch"
 valid_models="opus|sonnet|haiku"
 agent_count=0
 for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do

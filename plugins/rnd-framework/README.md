@@ -67,6 +67,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:status` | Show pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
 | `/rnd-framework:history` | Browse past pipeline sessions for this project |
+| `/rnd-framework:validate` | Validate plugin structure: frontmatter, hooks, cross-references |
 
 ## Skills
 
@@ -175,7 +176,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude/.rnd/project-6f015c/          # Project base (hash of project path)
+~/.claude/.rnd/myproject-6f015c/        # Project base (dirname-hash of project path)
 ├── .current-session                    # Active session ID
 └── sessions/
     └── 20260303-102051-4b5f/           # One session per pipeline run

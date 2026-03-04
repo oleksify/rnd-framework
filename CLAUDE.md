@@ -64,7 +64,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 **Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create), `--finish` (clear session), `--base` (project base dir).
 
 ```
-~/.claude/.rnd/project-<hash>/             # Project base
+~/.claude/.rnd/<dirname>-<hash>/           # Project base
 ├── .current-session                       # Active session ID
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, pre-registrations, schedule

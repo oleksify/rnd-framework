@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.14 — 2026-03-04
+
+### Increase artifact path hash from 6 to 8 characters
+
+The project slug hash in `rnd-dir.sh` used 6 hex characters (~16M unique values). With many local projects, hash collisions could silently merge artifact directories. Increased to 8 hex characters (~4B unique values). The `cksum` fallback format string was also widened (`%06x` → `%08x`). **Breaking:** existing sessions under 6-char paths are preserved on disk but won't be discovered; run `/rnd-framework:history` to find old artifacts manually.
+
 ## 0.7.13 — 2026-03-04
 
 ### Expand valid agent tool list in validate.sh

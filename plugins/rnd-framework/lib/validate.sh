@@ -1,18 +1,53 @@
 #!/usr/bin/env bash
 # Validates rnd-framework plugin structure: frontmatter, JSON files, hook references.
 # Exits 0 if all checks pass, 1 if any fail.
-# Output: one line per check (PASS/FAIL + description).
+#
+# Flags:
+#   --quiet   Suppress individual checks, show only summary table + exit code
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+QUIET=false
+if [ "${1:-}" = "--quiet" ]; then
+  QUIET=true
+fi
+
 ERRORS=0
 PASSES=0
 
-pass() { echo "  PASS  $1"; PASSES=$((PASSES + 1)); }
-fail() { echo "  FAIL  $1"; ERRORS=$((ERRORS + 1)); }
+# Per-category counters (parallel arrays)
+CAT_NAMES=()
+CAT_PASS=()
+CAT_FAIL=()
+CURRENT_CAT=""
+
+begin_category() {
+  CURRENT_CAT="$1"
+  CAT_NAMES+=("$1")
+  CAT_PASS+=(0)
+  CAT_FAIL+=(0)
+  if ! $QUIET; then
+    [ ${#CAT_NAMES[@]} -gt 1 ] && echo ""
+    echo "=== $1 ==="
+  fi
+}
+
+pass() {
+  $QUIET || echo "  PASS  $1"
+  PASSES=$((PASSES + 1))
+  local i=$(( ${#CAT_PASS[@]} - 1 ))
+  CAT_PASS[$i]=$(( ${CAT_PASS[$i]} + 1 ))
+}
+
+fail() {
+  $QUIET || echo "  FAIL  $1"
+  ERRORS=$((ERRORS + 1))
+  local i=$(( ${#CAT_FAIL[@]} - 1 ))
+  CAT_FAIL[$i]=$(( ${CAT_FAIL[$i]} + 1 ))
+}
 
 # Extract frontmatter value: frontmatter_val <file> <key>
 # Returns the value or empty string
@@ -21,7 +56,9 @@ frontmatter_val() {
   sed -n '2,/^---$/p' "$file" | grep -E "^${key}:" | head -1 | sed "s/^${key}:[[:space:]]*//" | sed 's/^["'"'"']//' | sed 's/["'"'"']$//'
 }
 
-echo "=== Plugin Manifest ==="
+# ── Plugin Manifest ──────────────────────────────────────────────
+
+begin_category "Manifest"
 
 pjson="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
 if [ -f "$pjson" ]; then
@@ -49,8 +86,9 @@ else
   fail "plugin.json not found at ${pjson}"
 fi
 
-echo ""
-echo "=== Hooks ==="
+# ── Hooks ────────────────────────────────────────────────────────
+
+begin_category "Hooks"
 
 hjson="${PLUGIN_ROOT}/hooks/hooks.json"
 if [ -f "$hjson" ]; then
@@ -78,8 +116,9 @@ else
   fail "hooks.json not found at ${hjson}"
 fi
 
-echo ""
-echo "=== Skills ==="
+# ── Skills ───────────────────────────────────────────────────────
+
+begin_category "Skills"
 
 skill_count=0
 for skill_dir in "${PLUGIN_ROOT}"/skills/*/; do
@@ -115,10 +154,11 @@ for skill_dir in "${PLUGIN_ROOT}"/skills/*/; do
     fail "skill '${dir_name}' missing 'description' in frontmatter"
   fi
 done
-echo "  (${skill_count} skills found)"
+$QUIET || echo "  (${skill_count} skills found)"
 
-echo ""
-echo "=== Agents ==="
+# ── Agents ───────────────────────────────────────────────────────
+
+begin_category "Agents"
 
 valid_tools="Read|Write|Edit|Bash|Glob|Grep|NotebookRead|NotebookEdit|WebFetch|WebSearch|Agent|TodoWrite|AskUserQuestion|TaskCreate|TaskGet|TaskUpdate|TaskList|Skill|SendMessage|TeamCreate|TeamDelete|EnterPlanMode|ExitPlanMode|EnterWorktree|ToolSearch"
 valid_models="opus|sonnet|haiku"
@@ -179,10 +219,11 @@ for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
     fail "agent '${file_name}' missing 'model'"
   fi
 done
-echo "  (${agent_count} agents found)"
+$QUIET || echo "  (${agent_count} agents found)"
 
-echo ""
-echo "=== Commands ==="
+# ── Commands ─────────────────────────────────────────────────────
+
+begin_category "Commands"
 
 cmd_count=0
 for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
@@ -202,7 +243,7 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
   fi
   # Check argument-hint consistency: present iff command uses $ARGUMENTS
   hint_val=$(frontmatter_val "$cmd_file" "argument-hint" || true)
-  uses_args=$(grep -c '\$ARGUMENTS' "$cmd_file" 2>/dev/null || echo "0")
+  uses_args=$(grep -c '\$ARGUMENTS' "$cmd_file" 2>/dev/null || true)
   if [ "$uses_args" -gt 0 ] && [ -z "$hint_val" ]; then
     fail "command '${cmd_name}' uses \$ARGUMENTS but missing 'argument-hint'"
   elif [ "$uses_args" -eq 0 ] && [ -n "$hint_val" ]; then
@@ -211,10 +252,11 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
     pass "command '${cmd_name}' has argument-hint"
   fi
 done
-echo "  (${cmd_count} commands found)"
+$QUIET || echo "  (${cmd_count} commands found)"
 
-echo ""
-echo "=== Output Styles ==="
+# ── Output Styles ────────────────────────────────────────────────
+
+begin_category "Output Styles"
 
 style_count=0
 for style_file in "${PLUGIN_ROOT}"/output-styles/*.md; do
@@ -239,10 +281,11 @@ for style_file in "${PLUGIN_ROOT}"/output-styles/*.md; do
     fail "output-style '${style_name}' missing 'description'"
   fi
 done
-echo "  (${style_count} output styles found)"
+$QUIET || echo "  (${style_count} output styles found)"
 
-echo ""
-echo "=== Cross-References ==="
+# ── Cross-References ─────────────────────────────────────────────
+
+begin_category "Cross-References"
 
 # Collect all valid skill names
 valid_skills=""
@@ -300,15 +343,33 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
     fi
   done < <(grep -oE 'rnd-framework:rnd-[a-z]+' "$cmd_file" | sort -u)
 done
-echo "  (${xref_count} cross-references checked)"
+$QUIET || echo "  (${xref_count} cross-references checked)"
+
+# ── Summary Table ────────────────────────────────────────────────
 
 echo ""
 echo "=== Summary ==="
-echo "  ${PASSES} passed, ${ERRORS} failed"
+echo ""
+printf "  %-20s %6s %6s   %s\n" "Category" "Pass" "Fail" "Status"
+printf "  %-20s %6s %6s   %s\n" "────────────────────" "──────" "──────" "──────"
+for i in "${!CAT_NAMES[@]}"; do
+  p=${CAT_PASS[$i]}
+  f=${CAT_FAIL[$i]}
+  if [ "$f" -gt 0 ]; then
+    status="FAIL"
+  else
+    status="ok"
+  fi
+  printf "  %-20s %6d %6d   %s\n" "${CAT_NAMES[$i]}" "$p" "$f" "$status"
+done
+printf "  %-20s %6s %6s\n" "────────────────────" "──────" "──────"
+printf "  %-20s %6d %6d\n" "Total" "$PASSES" "$ERRORS"
+echo ""
 
 if [ "$ERRORS" -gt 0 ]; then
+  echo "  ${ERRORS} check(s) failed."
   exit 1
 else
-  echo "  All checks passed."
+  echo "  All ${PASSES} checks passed."
   exit 0
 fi

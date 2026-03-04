@@ -232,6 +232,67 @@ done
 echo "  (${style_count} output styles found)"
 
 echo ""
+echo "=== Cross-References ==="
+
+# Collect all valid skill names
+valid_skills=""
+for skill_dir in "${PLUGIN_ROOT}"/skills/*/; do
+  [ -d "$skill_dir" ] || continue
+  valid_skills="${valid_skills} $(basename "$skill_dir")"
+done
+
+# Check skill references in using-rnd-framework table
+xref_count=0
+urfm="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
+if [ -f "$urfm" ]; then
+  # Match backtick-wrapped skill refs, exclude /command refs and agent refs
+  while IFS= read -r ref; do
+    ref_name="${ref#rnd-framework:}"  # strip plugin prefix
+    xref_count=$((xref_count + 1))
+    if echo "$valid_skills" | grep -qw "$ref_name"; then
+      pass "using-rnd-framework skill ref '${ref}' resolves"
+    else
+      fail "using-rnd-framework skill ref '${ref}' — skill '${ref_name}' not found"
+    fi
+  done < <(grep -oE '`rnd-framework:[a-z-]+`' "$urfm" | tr -d '`' | sort -u)
+fi
+
+# Check skill references in agent "Required Skills" sections
+for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
+  [ -f "$agent_file" ] || continue
+  agent_name=$(basename "$agent_file" .md)
+  while IFS= read -r ref; do
+    ref_name="${ref#rnd-framework:}"
+    xref_count=$((xref_count + 1))
+    if echo "$valid_skills" | grep -qw "$ref_name"; then
+      pass "agent '${agent_name}' skill ref '${ref}' resolves"
+    else
+      fail "agent '${agent_name}' skill ref '${ref}' — skill '${ref_name}' not found"
+    fi
+  done < <(grep -oE 'rnd-framework:[a-z-]+' "$agent_file" | sort -u)
+done
+
+# Check agent references in commands (spawn instructions)
+valid_agents=""
+for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
+  [ -f "$agent_file" ] || continue
+  valid_agents="${valid_agents} rnd-framework:$(basename "$agent_file" .md)"
+done
+for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
+  [ -f "$cmd_file" ] || continue
+  cmd_name=$(basename "$cmd_file" .md)
+  while IFS= read -r ref; do
+    xref_count=$((xref_count + 1))
+    if echo "$valid_agents" | grep -qw "$ref"; then
+      pass "command '${cmd_name}' agent ref '${ref}' resolves"
+    else
+      fail "command '${cmd_name}' agent ref '${ref}' — agent not found"
+    fi
+  done < <(grep -oE 'rnd-framework:rnd-[a-z]+' "$cmd_file" | sort -u)
+done
+echo "  (${xref_count} cross-references checked)"
+
+echo ""
 echo "=== Summary ==="
 echo "  ${PASSES} passed, ${ERRORS} failed"
 

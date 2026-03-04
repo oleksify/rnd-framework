@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.7 — 2026-03-04
+
+### Block project file writes during planning phase
+
+Three-layer defense preventing the Planner from modifying project files: (1) agent frontmatter restricts tools to Read/Grep/Glob, (2) explicit "NEVER modify project files" instruction as first rule, (3) `auto-allow-rnd` hook blocks non-`.rnd/` Write/Edit calls when a `.planning-phase` marker file exists in `$RND_DIR`. The orchestrator creates the marker before spawning the planner and removes it after. `.rnd/` writes (plan.md) remain allowed.
+
 ## 0.7.6 — 2026-03-04
 
 ### Add plugin validation command

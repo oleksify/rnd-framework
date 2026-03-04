@@ -200,6 +200,16 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
   else
     fail "command '${cmd_name}' missing 'description'"
   fi
+  # Check argument-hint consistency: present iff command uses $ARGUMENTS
+  hint_val=$(frontmatter_val "$cmd_file" "argument-hint" || true)
+  uses_args=$(grep -c '\$ARGUMENTS' "$cmd_file" 2>/dev/null || echo "0")
+  if [ "$uses_args" -gt 0 ] && [ -z "$hint_val" ]; then
+    fail "command '${cmd_name}' uses \$ARGUMENTS but missing 'argument-hint'"
+  elif [ "$uses_args" -eq 0 ] && [ -n "$hint_val" ]; then
+    fail "command '${cmd_name}' has 'argument-hint' but never uses \$ARGUMENTS"
+  elif [ "$uses_args" -gt 0 ] && [ -n "$hint_val" ]; then
+    pass "command '${cmd_name}' has argument-hint"
+  fi
 done
 echo "  (${cmd_count} commands found)"
 

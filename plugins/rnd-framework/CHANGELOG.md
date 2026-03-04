@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.13 — 2026-03-04
+
+### Expand valid agent tool list in validate.sh
+
+The agent tool validation only recognized 12 tools (`Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`, `NotebookRead`, `NotebookEdit`, `WebFetch`, `WebSearch`, `Agent`, `TodoWrite`). Added 12 more: `AskUserQuestion`, `TaskCreate`, `TaskGet`, `TaskUpdate`, `TaskList`, `Skill`, `SendMessage`, `TeamCreate`, `TeamDelete`, `EnterPlanMode`, `ExitPlanMode`, `EnterWorktree`, `ToolSearch`. This prevents false "unknown tool" failures when agents are given orchestration or team-coordination tools.
+
 ## 0.7.12 — 2026-03-04
 
 ### Use generic path templates in artifact layout examples

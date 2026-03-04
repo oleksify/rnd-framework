@@ -1,6 +1,6 @@
 ---
 name: rnd-data-science
-description: "Use when performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring Julia computation — CSV/XLS handling, statistical verification, and insight extraction"
+description: "Use when performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring computation — Julia for statistics/charts/finance, DuckDB for SQL-expressible queries, CSV/Parquet aggregations, joins, and data exploration"
 ---
 
 # R&D Data Science
@@ -24,16 +24,122 @@ Analytical work fails silently. A wrong number in a table looks identical to a c
 ## The Iron Laws
 
 ```
-1. LOAD JULIA TOOLS VIA ToolSearch BEFORE ANY COMPUTATION
+1. LOAD COMPUTATION TOOLS (JULIA OR DUCKDB) BEFORE ANY COMPUTATION
 2. VERIFY EVERY NUMERICAL RESULT WITH AN INDEPENDENT CHECK
 3. VALIDATE INPUT DATA BEFORE PROCESSING — GARBAGE IN, GARBAGE OUT
 4. NEVER HARDCODE INTERMEDIATE VALUES — RECOMPUTE FROM SOURCE
 5. DOCUMENT UNITS, CURRENCY, AND TIME ZONES EXPLICITLY
 ```
 
+## Tool Selection
+
+Choose the right tool before starting. Use the decision table below:
+
+| Task type | Preferred tool | Reason |
+|---|---|---|
+| SQL-expressible queries, aggregations, GROUP BY | DuckDB | Native SQL, fast, zero boilerplate |
+| Joins across multiple CSV/Parquet files | DuckDB | Join syntax is concise; Julia merge is verbose |
+| Data filtering, WHERE clauses, data exploration | DuckDB | Interactive CLI; no session state needed |
+| Parquet file ingestion and transformation | DuckDB | Native Parquet support with no setup |
+| Financial formulas (NPV, CAGR, DCF) | Julia | Mathematical expressiveness, precise control |
+| Chart and visualization generation | Julia | Plots.jl; DuckDB has no chart output |
+| Complex statistics, rolling windows, ML | Julia | StatsBase, RollingFunctions, MLJ |
+| Mixed workload: query then compute/chart | DuckDB → Julia | Export from DuckDB as CSV, load into Julia |
+
+When in doubt: if the task can be expressed in SQL, use DuckDB. If it needs a formula or chart, use Julia.
+
+## Setup: DuckDB CLI
+
+DuckDB is invoked via Bash. No install step needed if `duckdb` is on PATH.
+
+```bash
+# Inline query
+duckdb -c "SELECT 1+1 AS result"
+
+# Query a CSV directly
+duckdb -c "SELECT * FROM read_csv('data.csv') LIMIT 5"
+
+# Query a Parquet file
+duckdb -c "SELECT * FROM 'data.parquet' LIMIT 5"
+
+# Use a persistent database file
+duckdb mydata.duckdb -c "SELECT count(*) FROM sales"
+
+# Multi-line query (use single quotes around the SQL block)
+duckdb -c "
+  SELECT year, SUM(revenue) AS total
+  FROM read_csv('sales.csv')
+  GROUP BY year
+  ORDER BY year
+"
+```
+
+### DuckDB CSV and Parquet Queries
+
+```bash
+# Aggregate with grouping
+duckdb -c "
+  SELECT region, SUM(amount) AS total, AVG(amount) AS avg
+  FROM read_csv('transactions.csv')
+  GROUP BY region
+  ORDER BY total DESC
+"
+
+# Filter and join two CSV files
+duckdb -c "
+  SELECT a.id, a.name, b.revenue
+  FROM read_csv('customers.csv') a
+  JOIN read_csv('revenue.csv') b ON a.id = b.customer_id
+  WHERE b.revenue > 10000
+"
+
+# Export result to CSV
+duckdb -c "
+  COPY (
+    SELECT category, SUM(sales) AS total
+    FROM read_csv('data.csv')
+    GROUP BY category
+  ) TO 'output.csv' (HEADER, DELIMITER ',')
+"
+
+# Export to Parquet
+duckdb -c "
+  COPY (SELECT * FROM read_csv('data.csv'))
+  TO 'output.parquet' (FORMAT PARQUET)
+"
+```
+
+### DuckDB Verification Patterns
+
+Always cross-check aggregations:
+
+```bash
+# Verify row count before and after filter
+duckdb -c "SELECT count(*) AS total FROM read_csv('data.csv')"
+duckdb -c "SELECT count(*) AS filtered FROM read_csv('data.csv') WHERE amount > 0"
+
+# Verify sum reconciles with known total
+duckdb -c "
+  SELECT
+    SUM(amount) AS computed_total,
+    count(*) AS row_count,
+    MIN(amount) AS min_val,
+    MAX(amount) AS max_val
+  FROM read_csv('transactions.csv')
+"
+
+# Cross-check a join: result row count must match left table
+duckdb -c "SELECT count(*) FROM read_csv('customers.csv')"
+duckdb -c "
+  SELECT count(*) FROM read_csv('customers.csv') a
+  JOIN read_csv('orders.csv') b ON a.id = b.customer_id
+"
+# If second count > first count: unexpected duplicates — investigate
+```
+
 ## Setup: Julia MCP Tools
 
-Julia is the primary computation environment. Load the tools at session start:
+Julia is the primary computation environment for statistics, finance, and charts. Load the tools at session start:
 
 ```
 ToolSearch: "select:mcp__julia__julia_eval"
@@ -207,7 +313,7 @@ Distinguish **findings** (what the data says) from **interpretations** (what it 
 
 Before marking the task complete:
 
-- [ ] Julia session used throughout (not ad-hoc shell arithmetic)
+- [ ] Computation tool selected appropriately (DuckDB for SQL queries, Julia for formulas/charts)
 - [ ] Input data validated before processing
 - [ ] Every financial figure has an independent cross-check assertion
 - [ ] CSV/XLS output re-read and spot-checked after writing

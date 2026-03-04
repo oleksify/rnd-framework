@@ -38,7 +38,7 @@ plugins/rnd-framework/
 | `rnd-builder` | sonnet | Implements one task using TDD; produces build manifest + self-assessment |
 | `rnd-verifier` | opus | Independent verification — never sees builder reasoning |
 | `rnd-integrator` | sonnet | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
-| `rnd-data-scientist` | opus | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights |
+| `rnd-data-scientist` | opus | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights; uses Julia or DuckDB CLI as computation backend |
 
 ### Information Barrier and Permission Hooks
 

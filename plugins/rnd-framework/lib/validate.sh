@@ -361,6 +361,9 @@ parity_table=(
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|Validate input data|data validation requirement"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|independent cross-check|numerical verification approach"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|never hardcode|no intermediate value hardcoding rule"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|read_csv|DuckDB CSV function reference"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|duckdb -c|DuckDB CLI invocation pattern"
+  "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|Tool Selection|DuckDB vs Julia decision table"
 )
 
 for entry in "${parity_table[@]}"; do

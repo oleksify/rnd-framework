@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.21 — 2026-03-04
+
+### Add DuckDB CLI as dual-tool option to rnd-data-science skill and rnd-data-scientist agent
+
+The `rnd-data-science` skill and `rnd-data-scientist` agent previously relied solely on Julia (via `mcp__julia__julia_eval`) as the computation backend. DuckDB CLI is now a first-class alternative for tasks that are better suited to SQL: querying CSV/Parquet files, aggregating large datasets, and ad-hoc relational analysis. The skill's tool-selection heuristic guides the agent to choose between Julia (numerical computation, Plots.jl charts, matrix ops) and DuckDB (SQL queries, file ingestion, tabular aggregation) based on task type. Both tools remain available in the same agent session. Reference docs updated in `using-rnd-framework` skill table, README agent table, and CLAUDE.md agent table.
+
 ## 0.7.20 — 2026-03-04
 
 ### Add rnd-data-scientist agent and rnd-data-science skill

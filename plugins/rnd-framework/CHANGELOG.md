@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.10 — 2026-03-04
+
+### Add /validate to command tables and fix artifact path examples
+
+The `/rnd-framework:validate` command was missing from both the README and `using-rnd-framework` skill command tables (only 8 of 9 commands listed). Also fixed the artifact path example in README and CLAUDE.md: slug format was shown as `project-<hash>` but the actual format is `<dirname>-<hash>` (computed from the project directory's basename).
+
 ## 0.7.9 — 2026-03-04
 
 ### Add cross-reference validation to validate.sh

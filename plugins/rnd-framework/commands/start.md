@@ -21,7 +21,6 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 
 Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agents.
 
-Use `TeamCreate` to create a team named `rnd-pipeline` with a description matching the task. This team coordinates all agents for the pipeline run.
 
 ## Task Input
 
@@ -97,9 +96,9 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one agent per task as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
 
-3. **Wait for all builders in the wave to complete.** Builders report completion via `SendMessage`.
+3. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
 
 4. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
 
@@ -115,7 +114,7 @@ Otherwise, use `AskUserQuestion` with options:
 
 For each completed task in the wave:
 
-1. Spawn an agent as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`. Pass it ONLY:
+1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it ONLY:
    - The task's pre-registration document (from `$RND_DIR/plan.md`)
    - The builder's code, tests, and artifacts
    - NEVER pass the builder's self-assessment or reasoning
@@ -148,8 +147,8 @@ If any tasks got FAIL:
 ## Phase 4: Iterate (if needed)
 
 1. Extract the Verifier's feedback (not their internal reasoning).
-2. Pass ONLY the feedback to the original Builder agent via `SendMessage`.
-3. Builder revises and resubmits.
+2. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
+3. The new Builder implements the fix and produces updated code, tests, and artifacts.
 4. Verifier re-checks (same information barrier rules).
 5. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
    - "Re-plan this task" — send back to Planner for re-decomposition
@@ -174,7 +173,7 @@ When the user chooses to skip a failing task:
 
 Once all non-skipped tasks in a wave pass verification:
 
-1. Spawn an agent as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`.
+1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"` and `mode: "bypassPermissions"`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
 
@@ -207,7 +206,5 @@ Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline
 - "Create PR" — commit and open a pull request
 - "Review all artifacts" — show the user a summary of everything produced
-- "Clean up" — remove `$RND_DIR` artifacts and team resources only
+- "Clean up" — remove `$RND_DIR` artifacts only
 - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
-
-Use `TeamDelete` to clean up the `rnd-pipeline` team after the pipeline completes or is abandoned.

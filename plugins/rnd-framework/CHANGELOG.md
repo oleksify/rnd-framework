@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 — 2026-03-05
+
+### Remove team/swarm coordination from pipeline commands
+
+Replaced TeamCreate/SendMessage/team_name team coordination with plain Agent tool calls in start.md. The Agent tool is blocking — agents run to completion and return results directly, making the team messaging layer unnecessary. This eliminates cross-session message leaks caused by Claude Code's experimental team feature. Phase 4 iteration now spawns a new Builder with feedback in the prompt instead of using SendMessage to a finished agent. TeamCreate and TeamDelete removed from validate.sh valid_tools list. All other command files (build, verify, integrate, quick) were already clean. Total checks: 147 (unchanged).
+
 ## 0.7.25 — 2026-03-05
 
 ### Add /rnd-framework:bump command for patch version automation

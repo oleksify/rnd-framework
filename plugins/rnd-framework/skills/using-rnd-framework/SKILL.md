@@ -58,6 +58,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:history` | Browse past pipeline sessions for this project |
 | `/rnd-framework:validate` | Validate plugin structure, frontmatter, and cross-references |
 | `/rnd-framework:doctor` | Runtime environment diagnostics — CLI tools, hooks, RND_DIR, version sync |
+| `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 
 ## Pipeline Scaling
 

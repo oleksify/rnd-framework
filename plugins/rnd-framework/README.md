@@ -69,6 +69,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:history` | Browse past pipeline sessions for this project |
 | `/rnd-framework:validate` | Validate plugin structure: frontmatter, hooks, cross-references |
 | `/rnd-framework:doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
+| `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 
 ## Skills
 
@@ -202,7 +203,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 5 specialized agents
-├── commands/                    # 10 pipeline commands
+├── commands/                    # 11 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
@@ -213,7 +214,8 @@ rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # 17 skills (rnd-* namespace)
 ├── lib/
-│   └── rnd-dir.sh               # Artifact directory path computation + session management
+│   ├── rnd-dir.sh               # Artifact directory path computation + session management
+│   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 └── README.md
 ```
 

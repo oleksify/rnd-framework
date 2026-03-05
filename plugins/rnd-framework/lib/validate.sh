@@ -283,6 +283,24 @@ for style_file in "${PLUGIN_ROOT}"/output-styles/*.md; do
 done
 $QUIET || echo "  (${style_count} output styles found)"
 
+# ── Lib Scripts ──────────────────────────────────────────────────
+
+begin_category "Lib Scripts"
+
+for lib_script in rnd-dir.sh bump.sh; do
+  script_path="${PLUGIN_ROOT}/lib/${lib_script}"
+  if [ -f "$script_path" ]; then
+    pass "lib/${lib_script} exists"
+    if [ -x "$script_path" ]; then
+      pass "lib/${lib_script} is executable"
+    else
+      fail "lib/${lib_script} is not executable"
+    fi
+  else
+    fail "lib/${lib_script} not found"
+  fi
+done
+
 # ── Cross-References ─────────────────────────────────────────────
 
 begin_category "Cross-References"

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.25 — 2026-03-05
+
+### Add /rnd-framework:bump command for patch version automation
+
+New `/rnd-framework:bump` command backed by `lib/bump.sh` automates the release version workflow. The shell script reads the current version from `plugin.json` via `jq`, increments the patch number, writes back atomically, prepends a correctly-formatted CHANGELOG entry, and stages both files. The command file handles argument parsing (headline + optional description via ` --- ` separator), prompts for the headline via `AskUserQuestion` when no arguments are provided, and asks for commit confirmation before creating the commit. New validation checks in `validate.sh` verify `lib/bump.sh` exists and is executable (total checks: 147). Commands: 10 → 11.
+
 ## 0.7.24 — 2026-03-05
 
 ### Fix agent spawn instructions using bare type names

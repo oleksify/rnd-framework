@@ -18,11 +18,12 @@ plugins/rnd-framework/
 ├── skills/                      # 16 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # SessionStart bootstrap + PreToolUse hook routing
+│   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
-│   └── session-start            # SessionStart hook: injects skill context via jq
+│   ├── session-start            # SessionStart hook: injects skill context via jq
+│   └── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 ├── lib/
 │   └── rnd-dir.sh               # Artifact directory path computation + session management
 └── README.md
@@ -47,6 +48,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Auto-allow `$RND_DIR` operations** (`auto-allow-rnd`, `read-gate`, `prefer-tools`): All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
 - **Tool discipline** (`prefer-tools`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools
 - **Commit protection** (`prefer-tools`): Blocks `git add` of `.rnd/` as defense-in-depth
+- **Audit logging** (`audit-log`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
 
 ### Skill System
 

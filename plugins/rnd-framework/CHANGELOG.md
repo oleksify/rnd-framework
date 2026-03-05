@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.23 — 2026-03-05
+
+### Add PostToolUse audit logging for Write and Edit operations
+
+New `hooks/audit-log` PostToolUse hook records every file creation (Write) and modification (Edit) during active pipeline sessions. Each event is appended to `$RND_DIR/audit.jsonl` in JSONL format with timestamp, tool name, and file path. Silent when no pipeline session is active (no `$RND_DIR` set). A new PostToolUse section in `hooks.json` routes Write and Edit tool completions to the `audit-log` script.
+
 ## 0.7.22 — 2026-03-05
 
 ### Add /rnd-framework:doctor command for runtime environment diagnostics

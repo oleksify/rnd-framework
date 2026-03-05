@@ -204,11 +204,12 @@ rnd-framework/
 ├── agents/                      # 5 specialized agents
 ├── commands/                    # 10 pipeline commands
 ├── hooks/
-│   ├── hooks.json               # SessionStart + PreToolUse hook routing
+│   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
-│   └── session-start            # SessionStart hook: injects skill context via jq
+│   ├── session-start            # SessionStart hook: injects skill context via jq
+│   └── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # 17 skills (rnd-* namespace)
 ├── lib/

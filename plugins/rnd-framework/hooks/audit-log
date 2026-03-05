@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# PostToolUse hook for Write and Edit:
+#   Appends a JSONL audit entry to $RND_DIR/audit.jsonl for every file write/edit
+#   during an active pipeline session.
+#
+# Tool input is passed as JSON on stdin.
+#
+# Output convention:
+#   PostToolUse hooks are observational only — always exit 0, no hookSpecificOutput.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+INPUT="$(cat)"
+FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+TOOL="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+
+# Resolve active RND_DIR — empty if no active session
+RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" 2>/dev/null || echo "")
+
+# Exit silently if no active session
+if [ -z "$RND_DIR" ] || [ ! -d "$RND_DIR" ]; then
+  exit 0
+fi
+
+# Append JSONL entry
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "{\"ts\":\"${TS}\",\"tool\":\"${TOOL}\",\"file\":\"${FILE}\"}" >> "${RND_DIR}/audit.jsonl"
+
+exit 0

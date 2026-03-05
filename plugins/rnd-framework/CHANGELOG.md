@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1 — 2026-03-05
+
+### Fix 30 code review findings
+
+Comprehensive code review identified and fixed 30 issues across hooks, shell scripts, commands, agents, and skills. Key fixes: JSONL injection in audit-log (use jq -n), race condition in session creation (noclobber), semver validation in bump.sh, greedy cd-strip in prefer-tools, /dev/ exclusion for redirect detection, missing Write/Bash tools in planner agent, empty-argument handlers for build/integrate commands, prefer-system-tools restructured to lead with rg/fd/sd (blocked tools demoted to POSIX fallback), External dependencies field added to orchestration template, data-scientist role documented in using-rnd-framework, and RND_DIR path examples corrected to show session paths.
+
 ## 0.8.0 — 2026-03-05
 
 ### Remove team/swarm coordination from pipeline commands

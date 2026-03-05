@@ -64,7 +64,7 @@ Before spawning the planner, create the planning-phase marker to block project f
 touch "$RND_DIR/.planning-phase"
 ```
 
-Spawn the `rnd-framework:rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
 
 After the planner finishes, remove the marker:
 ```bash
@@ -97,7 +97,7 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one `rnd-framework:rnd-builder` subagent per task as a **teammate** using the `Agent` tool with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Parallel tasks within a wave:** Spawn one agent per task as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
 
 3. **Wait for all builders in the wave to complete.** Builders report completion via `SendMessage`.
 
@@ -115,7 +115,7 @@ Otherwise, use `AskUserQuestion` with options:
 
 For each completed task in the wave:
 
-1. Spawn an `rnd-framework:rnd-verifier` subagent as a **teammate** with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`. Pass it ONLY:
+1. Spawn an agent as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`. Pass it ONLY:
    - The task's pre-registration document (from `$RND_DIR/plan.md`)
    - The builder's code, tests, and artifacts
    - NEVER pass the builder's self-assessment or reasoning
@@ -174,7 +174,7 @@ When the user chooses to skip a failing task:
 
 Once all non-skipped tasks in a wave pass verification:
 
-1. Spawn the `rnd-framework:rnd-integrator` agent as a **teammate** with `team_name: "rnd-pipeline"` and `mode: "bypassPermissions"`.
+1. Spawn an agent as a **teammate** using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"`, `team_name: "rnd-pipeline"`, and `mode: "bypassPermissions"`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
 

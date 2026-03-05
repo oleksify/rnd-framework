@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.24 — 2026-03-05
+
+### Fix agent spawn instructions using bare type names
+
+All 6 command files (`start`, `plan`, `build`, `verify`, `integrate`, `quick`) used prose like "Spawn the `rnd-framework:rnd-planner` agent" to instruct agent spawning. The LLM sometimes stripped the `rnd-framework:` prefix when constructing the `subagent_type` parameter, causing `Agent type 'rnd-planner' not found` errors. Now all 11 spawn instructions use explicit parameter syntax: `subagent_type: "rnd-framework:rnd-planner"`, making the full qualified name unambiguous.
+
 ## 0.7.23 — 2026-03-05
 
 ### Add PostToolUse audit logging for Write and Edit operations

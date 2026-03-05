@@ -17,7 +17,7 @@ If any task in the wave is not yet verified, STOP and tell the user which tasks 
 
 Create a `TaskCreate` entry for the integration itself (e.g., "Integrate wave-1") with `activeForm: "Integrating wave-1"`. Mark it `in_progress` via `TaskUpdate`.
 
-Spawn the `rnd-framework:rnd-integrator` agent for the wave with `mode: "bypassPermissions"`.
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"` and `mode: "bypassPermissions"` for the wave.
 
 If $ARGUMENTS is "final", also run full system validation against the original task requirements.
 

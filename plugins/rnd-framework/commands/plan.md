@@ -27,7 +27,7 @@ Run ONLY the planning phase for: $ARGUMENTS
    ```bash
    touch "$RND_DIR/.planning-phase"
    ```
-3. Spawn the `rnd-framework:rnd-planner` agent with `mode: "bypassPermissions"`, passing the task description and `RND_DIR`.
+3. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description and `RND_DIR`.
 4. After the planner finishes, remove the marker:
    ```bash
    rm -f "$RND_DIR/.planning-phase"

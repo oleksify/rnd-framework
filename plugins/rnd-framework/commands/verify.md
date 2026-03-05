@@ -15,7 +15,7 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks a
 
 ## CRITICAL: Information Barrier Enforcement
 
-When spawning the `rnd-framework:rnd-verifier` agent, you MUST:
+When spawning the verifier agent (Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`), you MUST:
 
 **INCLUDE:**
 - The task's pre-registration document (copy from `$RND_DIR/plan.md`)
@@ -33,7 +33,7 @@ This barrier is the core of the framework. If violated, verification becomes rub
 
 Use `TaskUpdate` to mark target tasks as `in_progress` before spawning verifiers.
 
-Spawn all `rnd-framework:rnd-verifier` agents with `mode: "bypassPermissions"`.
+Spawn all verifier agents using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`.
 
 If $ARGUMENTS is a task ID: verify that one task.
 If $ARGUMENTS is a wave: verify all tasks in the wave (can be parallel — verifiers are independent).

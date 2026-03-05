@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.22 — 2026-03-05
+
+### Add /rnd-framework:doctor command for runtime environment diagnostics
+
+New `/rnd-framework:doctor` command checks runtime readiness of the framework environment. Unlike `/rnd-framework:validate` (which checks static plugin structure — frontmatter, hooks, cross-references), `doctor` checks the live runtime state: presence and executability of CLI tools (`jq`, `bun`, `duckdb`), hook scripts, RND_DIR accessibility and write permissions, marketplace registration, plugin version sync between source and cache, and Julia MCP availability. Reports PASS/FAIL per check with a summary. Use `validate` to check plugin integrity after edits; use `doctor` when something isn't working at runtime.
+
 ## 0.7.21 — 2026-03-04
 
 ### Add DuckDB CLI as dual-tool option to rnd-data-science skill and rnd-data-scientist agent

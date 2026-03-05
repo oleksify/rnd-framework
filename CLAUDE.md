@@ -14,7 +14,7 @@ The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketpla
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # 5 specialized agents (planner, builder, verifier, integrator, data-scientist)
-├── commands/                    # 9 slash commands (/rnd-framework:start, etc.)
+├── commands/                    # 10 slash commands (/rnd-framework:start, etc.)
 ├── skills/                      # 16 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
@@ -80,7 +80,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`.
+Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`, `/rnd-framework:doctor`.
 
 ## Key Conventions
 

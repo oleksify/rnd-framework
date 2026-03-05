@@ -1,0 +1,103 @@
+---
+description: "Check runtime environment readiness: CLI tools, hook scripts, artifact directory, plugin registration, version sync, and Julia MCP tools."
+---
+
+# R&D Framework: Doctor
+
+Run environment readiness checks and report status for each category.
+
+## 1. CLI Tools
+
+For each of the following tools, run `which <tool>` to check availability, then capture the version:
+
+- `bash` — run `bash --version | head -1`
+- `jq` — run `jq --version`
+- `git` — run `git --version`
+- `duckdb` — run `duckdb --version` (optional — warn but do not fail if missing)
+
+## 2. Hook Scripts
+
+Read the hooks configuration:
+
+```bash
+cat "${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json"
+```
+
+Extract all hook script paths referenced in the JSON (the `command` or `script` fields). For each script path, check that it exists and is executable:
+
+```bash
+ls -la "${CLAUDE_PLUGIN_ROOT}/hooks/"
+```
+
+Report how many hook scripts are present and executable out of the total referenced.
+
+## 3. RND Artifact Directory
+
+Run rnd-dir.sh to determine or create the artifact directory:
+
+```bash
+RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
+```
+
+Check if the command succeeded (exit code 0) and if `$RND_DIR` is a writable directory. Also check for an active session:
+
+```bash
+BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)
+CURRENT_SESSION_FILE="${BASE_DIR}/.current-session"
+```
+
+Report whether `$RND_DIR` is writable and whether an active session exists.
+
+## 4. Plugin Registration
+
+Look for the local marketplace registry file. Check common paths:
+
+- `"${CLAUDE_PLUGIN_ROOT}/../../.claude-plugin/marketplace.json"` (repo root)
+- `~/.claude/marketplace.json`
+
+Read the found marketplace.json and check that the `rnd-framework` plugin entry appears in it.
+
+## 5. Version Sync
+
+Read the plugin version from the installed plugin manifest:
+
+```bash
+cat "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
+```
+
+Extract the `version` field. If running inside the plugin's own source repository, compare with the source version at the same path. Report whether they match.
+
+## 6. Julia MCP Tools
+
+Use `ToolSearch` with query `"julia eval"` to check whether Julia MCP tools are available at runtime. Report if `mcp__julia__julia_eval` or similar tools appear in the results.
+
+## Output Format
+
+Display all results as a table:
+
+```
+Check                    | Status  | Details
+-------------------------|---------|--------
+bash                     | ✅ ok   | /opt/homebrew/bin/bash (5.2.26)
+jq                       | ✅ ok   | /opt/homebrew/bin/jq (1.7)
+git                      | ✅ ok   | /usr/bin/git (2.39.5)
+duckdb                   | ⚠ warn  | not installed (optional)
+Hook scripts             | ✅ ok   | 4/4 executable
+RND artifact directory   | ✅ ok   | writable, active session exists
+Plugin registration      | ✅ ok   | registered in marketplace.json
+Version sync             | ✅ ok   | cached v0.7.21 = source v0.7.21
+Julia MCP tools          | ✅ ok   | mcp__julia__julia_eval available
+```
+
+Use `✅ ok` for passing checks, `⚠ warn` for optional/non-critical issues, and `❌ fail` for critical failures.
+
+After displaying the table, use `AskUserQuestion` to suggest next steps based on results:
+
+- If all checks pass (no `❌ fail`): "Run /rnd-framework:start (Recommended)", "Run /rnd-framework:validate"
+- If any check fails: "Fix reported issues (Recommended)", and for each failure provide a targeted suggestion:
+  - Missing CLI tool: "Install <tool> via homebrew: `brew install <tool>`"
+  - Non-executable hook scripts: "Fix permissions: `chmod +x ${CLAUDE_PLUGIN_ROOT}/hooks/*`"
+  - RND directory not writable: "Check disk space and permissions for `~/.claude/.rnd/`"
+  - Plugin not registered: "Re-register the plugin in marketplace.json"
+  - Version mismatch: "Restart Claude Code to reload the updated plugin"
+  - Julia MCP unavailable: "Enable the Julia MCP server in your Claude Code settings"

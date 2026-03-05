@@ -1,7 +1,7 @@
 ---
 name: rnd-planner
 description: "Decomposes complex tasks into structured sub-tasks with hierarchical decomposition. Creates pre-registration documents with testable success criteria. Builds dependency matrices. Use this agent when starting a new feature, refactor, or complex bug fix."
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Write, Bash
 model: opus
 ---
 

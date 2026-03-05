@@ -11,7 +11,14 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-Read the plan from `$RND_DIR/plan.md`. Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
+Read the plan from `$RND_DIR/plan.md`.
+
+If $ARGUMENTS is empty (user ran `/rnd-framework:integrate` with no arguments):
+- Use `TaskList` to find the most recent wave where all tasks are `completed` (verified) and no integration report yet exists in `$RND_DIR/integration/`.
+- If found, proceed to integrate that wave (treating it as the $ARGUMENTS value).
+- If no such wave exists (either nothing is verified yet, or all verified waves are already integrated), report the current state and use `AskUserQuestion` to ask the user what to do next.
+
+Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
 
 If any task in the wave is not yet verified, STOP and tell the user which tasks still need verification (reference their task IDs from `TaskList`).
 

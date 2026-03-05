@@ -1,6 +1,6 @@
 ---
 name: writing-skills
-description: "Use when creating new skills for the rnd-framework plugin — skill file format, frontmatter conventions, and best practices"
+description: Use when creating new skills for the rnd-framework plugin — skill file format, frontmatter conventions, and best practices
 ---
 
 # Writing Skills
@@ -24,12 +24,12 @@ skills/
 ```yaml
 ---
 name: my-new-skill
-description: "Use when [triggering conditions] — [what it does]"
+description: Use when [triggering conditions] — [what it does]
 ---
 ```
 
 - **name:** Lowercase, hyphenated. Must match the directory name.
-- **description:** Starts with "Use when" — describes WHEN to invoke this skill, not what it contains. This is what the agent sees when deciding whether to invoke.
+- **description:** Starts with "Use when" — describes WHEN to invoke this skill, not what it contains. This is what the agent sees when deciding whether to invoke. Do not quote the value unless it contains YAML-special characters (`:`, `#`, `{`, `}`, etc.).
 
 ### Body Structure
 

@@ -69,12 +69,27 @@ if [ "$FLAG" = "-c" ]; then
   # Reuse existing session ID or generate a new one
   if [ -f "$SESSION_FILE" ]; then
     SESSION_ID="$(cat "$SESSION_FILE")"
+    # Validate format: YYYYMMDD-HHMMSS-XXXX
+    if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+      echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
+      exit 1
+    fi
   else
     TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
     HEX="$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n' | cut -c1-4)"
     SESSION_ID="${TIMESTAMP}-${HEX}"
     mkdir -p "$BASE_DIR"
-    printf '%s' "$SESSION_ID" > "$SESSION_FILE"
+    # Atomic write: use noclobber to prevent race condition
+    if ( set -o noclobber; printf '%s' "$SESSION_ID" > "$SESSION_FILE" ) 2>/dev/null; then
+      : # We created the session file
+    else
+      # Another process created it first; read theirs
+      SESSION_ID="$(cat "$SESSION_FILE")"
+      if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+        echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
+        exit 1
+      fi
+    fi
   fi
   SESSION_DIR="${BASE_DIR}/sessions/${SESSION_ID}"
   mkdir -p "${SESSION_DIR}/builds" "${SESSION_DIR}/verifications" "${SESSION_DIR}/integration"
@@ -85,6 +100,10 @@ fi
 # --- No flags: output session path if session active, else base dir ---
 if [ -f "$SESSION_FILE" ]; then
   SESSION_ID="$(cat "$SESSION_FILE")"
+  if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+    echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
+    exit 1
+  fi
   echo "${BASE_DIR}/sessions/${SESSION_ID}"
 else
   echo "$BASE_DIR"

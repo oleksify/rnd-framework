@@ -60,6 +60,10 @@ Success criteria:
   - [ ] Specific, testable condition 2
 Verification level: unit | integration | system
 Dependencies: [list of task IDs]
+External dependencies:
+  - system: [DB | API | file | env | service]
+    contract: [What is assumed about this system — schema, response shape, format, presence]
+    verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
 ## Subagent Coordination
@@ -79,7 +83,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 **The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
 
-> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/project-abc123`. Use `-c` flag to create directory structure.
+> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 
 - **Never** use `sleep` to wait for subagents
 - **Never** write bash loops to check if build artifacts exist yet

@@ -50,10 +50,10 @@ fail() {
 }
 
 # Extract frontmatter value: frontmatter_val <file> <key>
-# Returns the value or empty string
+# Returns the value or empty string; always exits 0
 frontmatter_val() {
   local file="$1" key="$2"
-  sed -n '2,/^---$/p' "$file" | grep -E "^${key}:" | head -1 | sed "s/^${key}:[[:space:]]*//" | sed 's/^["'"'"']//' | sed 's/["'"'"']$//'
+  sed -n '2,/^---$/p' "$file" | grep -F "${key}:" | head -1 | sed "s/^${key}:[[:space:]]*//" | sed 's/^["'"'"']//' | sed 's/["'"'"']$//' || true
 }
 
 # ── Plugin Manifest ──────────────────────────────────────────────

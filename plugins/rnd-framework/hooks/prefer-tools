@@ -10,11 +10,13 @@
 #   Block:      exit 2 + reason on stderr
 #   No opinion: exit 0 + no output
 
+set -euo pipefail
+
 INPUT="$(cat)"
 COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 
-# Strip optional leading cd ... && or cd ... ; prefix
-STRIPPED="$(echo "$COMMAND" | sed -E 's/^cd[[:space:]]+[^&;]+[&;]+[[:space:]]*//')"
+# Strip ALL leading "cd ... && " or "cd ... ; " prefixes (greedy, handles chained cd)
+STRIPPED="$(echo "$COMMAND" | sed -E 's/^(cd[[:space:]]+[^&;]+([&;]+|&&)[[:space:]]*)+//')"
 
 ALLOW='{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
 
@@ -31,7 +33,8 @@ elif echo "$STRIPPED" | grep -qE '^find\b'; then
   echo "Use the Glob tool instead of find. Glob supports patterns like **/*.ts." >&2
   exit 2
 elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
-  if echo "$STRIPPED" | grep -qE '>[^&]'; then
+  # Block file redirects, but allow /dev/stderr, /dev/null, /dev/stdout (legitimate diagnostic output)
+  if echo "$STRIPPED" | grep -qE '>[^&]' && ! echo "$STRIPPED" | grep -qE '>[[:space:]]*/dev/'; then
     echo "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs." >&2
     exit 2
   fi

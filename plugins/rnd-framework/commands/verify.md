@@ -15,6 +15,8 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks a
 
 ## CRITICAL: Information Barrier Enforcement
 
+> **Note on `bypassPermissions` and read-gate:** When spawning the verifier with `mode: "bypassPermissions"`, the `read-gate` PreToolUse hook that enforces the information barrier may be suppressed — the agent's file reads bypass permission prompts entirely, including the hook logic that blocks self-assessment reads. **Mitigation:** Do not rely solely on the hook to enforce the barrier. The orchestrator MUST actively exclude self-assessment files by never passing their paths or contents in the verifier prompt. Pass file content directly in the prompt rather than relying on the hook to block accidental reads.
+
 When spawning the verifier agent (Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`), you MUST:
 
 **INCLUDE:**

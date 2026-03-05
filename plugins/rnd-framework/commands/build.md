@@ -13,6 +13,12 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task states.
 
+If $ARGUMENTS is empty (user ran `/rnd-framework:build` with no arguments):
+- Read `$RND_DIR/plan.md` and inspect `TaskList` to find the next wave where all tasks are `pending` and unblocked (i.e., all their dependencies are `completed`).
+- If a clear next wave is found, use `AskUserQuestion` to confirm: "Build wave-N next? (N tasks: T1, T2, …)" with options "Yes, build wave-N (Recommended)" and "Choose a different task or wave".
+- If no pending wave is found (all tasks complete, or all remaining are blocked), report the current state and use `AskUserQuestion` to ask the user what to do next.
+- If the plan does not exist, prompt the user to run `/rnd-framework:start` first.
+
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
 - Use `TaskUpdate` to mark the task `in_progress`.
 - Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`.

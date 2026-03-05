@@ -17,10 +17,10 @@ For each of the following tools, run `which <tool>` to check availability, then 
 
 ## 2. Hook Scripts
 
-Read the hooks configuration:
+Read the hooks configuration using the Read tool:
 
-```bash
-cat "${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json"
+```
+Read: "${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json"
 ```
 
 Extract all hook script paths referenced in the JSON (the `command` or `script` fields). For each script path, check that it exists and is executable:
@@ -59,10 +59,10 @@ Read the found marketplace.json and check that the `rnd-framework` plugin entry 
 
 ## 5. Version Sync
 
-Read the plugin version from the installed plugin manifest:
+Read the plugin version from the installed plugin manifest using the Read tool:
 
-```bash
-cat "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
+```
+Read: "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
 ```
 
 Extract the `version` field. If running inside the plugin's own source repository, compare with the source version at the same path. Report whether they match.

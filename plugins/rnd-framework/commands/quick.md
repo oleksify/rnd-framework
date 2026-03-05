@@ -7,6 +7,8 @@ argument-hint: "<description of the small task>"
 
 For small, well-scoped tasks. Same scientific-method principles, minimal ceremony.
 
+> **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:start` for proper decomposition.
+
 ## Task Input
 
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:quick` with no task description):

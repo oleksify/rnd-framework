@@ -82,4 +82,7 @@ Summarize:
 
 - `rnd-framework:rnd-integration` — Integration testing and SHIP verdicts
 - `rnd-framework:rnd-orchestration` — Pipeline overview
+
+## Related Commands
+
 - `/rnd-framework:history` — Browse artifacts from past sessions

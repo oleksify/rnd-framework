@@ -60,6 +60,16 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:doctor` | Runtime environment diagnostics — CLI tools, hooks, RND_DIR, version sync |
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 
+## Data Science Tasks
+
+When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB as a computation backend — use the **`rnd-data-scientist` agent as a standalone specialist**. This agent replaces the standard Build phase for that task:
+
+- The Planner decomposes and pre-registers the task as usual
+- Instead of spawning `rnd-builder`, spawn `rnd-data-scientist` for the analytical task
+- The Verifier then independently checks the output as normal
+
+Do not route analytical tasks through `rnd-builder` — the data-scientist agent has the specialized skills and tooling for numerical correctness.
+
 ## Pipeline Scaling
 
 Every task goes through the R&D pipeline, scaled to complexity:

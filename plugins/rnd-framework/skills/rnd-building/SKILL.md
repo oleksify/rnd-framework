@@ -164,3 +164,4 @@ Before submitting your build:
 - `rnd-framework:rnd-debugging` — When tests reveal unexpected failures
 - `rnd-framework:rnd-iteration` — When Verifier sends back feedback
 - `rnd-framework:rnd-isolation` — For working in isolated worktrees
+- `rnd-framework:rnd-data-science` — When the task involves numerical analysis, financial calculations, data wiring, chart generation, or any analytical work requiring Julia or DuckDB

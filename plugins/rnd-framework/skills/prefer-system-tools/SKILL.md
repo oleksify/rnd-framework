@@ -28,7 +28,7 @@ jq '.users[] | select(.age > 30)' data.json
 jq '{ids: [.items[].id], count: (.items | length)}' data.json
 
 # Process NDJSON / JSON lines
-cat events.jsonl | jq -c 'select(.level == "error")'
+jq -c 'select(.level == "error")' events.jsonl
 
 # Modify in place (via sponge or temp file)
 jq '.version = "2.0"' package.json | sponge package.json
@@ -129,19 +129,31 @@ http POST api.example.com/submit key=value
 
 **Instead of** `os.walk()` / `glob.glob()` / `pathlib.rglob()`:
 
+**Primary approach — `fd` and Claude Code's Glob tool:**
+
 ```bash
-# Find files by pattern
-find . -name "*.py" -type f
-
-# Find and act (delete, move, etc.)
-find . -name "*.pyc" -delete
-find . -name "*.log" -mtime +30 -delete
-
-# Fast alternative: fd (rust-based, respects .gitignore)
+# fd (Rust-based, respects .gitignore, fast)
 fd '\.ts$' src/
 fd -e json -x jq '.version' {}
+fd -t f -e py src/            # files only
+```
 
-# Bulk rename
+Or use the **Glob tool** in Claude Code for file pattern matching — it's reviewable, needs no shell, and works on any codebase size.
+
+**POSIX fallback — `find`:**
+
+> **Note:** `find`, `grep`, and `sed` are blocked by the `prefer-tools` hook in pipeline sessions. Use `fd`/`rg`/`sd` or Claude Code's Glob/Grep/Edit tools instead.
+
+```bash
+# find: use only when fd is unavailable
+find . -name "*.py" -type f
+find . -name "*.pyc" -delete
+find . -name "*.log" -mtime +30 -delete
+```
+
+**Bulk rename:**
+
+```bash
 rename 's/\.jpeg$/.jpg/' *.jpeg        # perl-rename
 for f in *.jpeg; do mv "$f" "${f%.jpeg}.jpg"; done  # bash fallback
 ```
@@ -150,20 +162,32 @@ for f in *.jpeg; do mv "$f" "${f%.jpeg}.jpg"; done  # bash fallback
 
 **Instead of** writing regex scripts with `re.findall()`:
 
-```bash
-# Recursive search (grep)
-grep -rn "TODO" --include="*.py" ./src
+**Primary approach — `rg` and Claude Code's Grep tool:**
 
-# Fast alternative: ripgrep (rg)
+```bash
+# ripgrep (rg) — fast, respects .gitignore
 rg "TODO" --type py
 rg -l "deprecated" --type ts          # list files only
 rg "fn\s+\w+" --type rust -c          # count matches per file
+```
 
-# Search and replace across files
-sed -i 's/old_name/new_name/g' src/*.py
+Or use the **Grep tool** in Claude Code — same power as rg, no shell needed.
 
-# Multi-file search-replace (sd, Rust-based, simpler than sed)
+**Search and replace — `sd` (primary) or Claude Code's Edit tool:**
+
+```bash
+# sd: Rust-based, simpler syntax than sed
 sd 'oldPattern' 'newPattern' src/**/*.ts
+```
+
+**POSIX fallback — `grep` / `sed`:**
+
+> **Note:** `find`, `grep`, and `sed` are blocked by the `prefer-tools` hook in pipeline sessions. Use `fd`/`rg`/`sd` or Claude Code's Glob/Grep/Edit tools instead.
+
+```bash
+# grep/sed: use only when rg/sd are unavailable
+grep -rn "TODO" --include="*.py" ./src
+sed -i 's/old_name/new_name/g' src/*.py
 ```
 
 ## File Diffing and Comparison
@@ -344,7 +368,7 @@ ffmpeg -i video.mp4 -ss 00:01:00 -frames:v 1 thumbnail.jpg
 | Filter + transform + merge JSON | `jq` if expressible | Script if logic is complex |
 | Single HTTP request | `curl` | -- |
 | HTTP with retry logic, auth flows, pagination | -- | Script |
-| Find files by name/pattern | `find` / `fd` | -- |
+| Find files by name/pattern | `fd` / Glob tool | -- |
 | Find files + process each with custom logic | -- | Script |
 | Search text in files | `rg` / `grep` | -- |
 | Search + complex replacement with context | -- | Script |

@@ -23,8 +23,9 @@ if [ -z "$RND_DIR" ] || [ ! -d "$RND_DIR" ]; then
   exit 0
 fi
 
-# Append JSONL entry
+# Append JSONL entry — use jq -n --arg to prevent injection via filenames containing quotes or special chars
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-echo "{\"ts\":\"${TS}\",\"tool\":\"${TOOL}\",\"file\":\"${FILE}\"}" >> "${RND_DIR}/audit.jsonl"
+jq -n --arg ts "$TS" --arg tool "$TOOL" --arg file "$FILE" \
+  '{"ts":$ts,"tool":$tool,"file":$file}' >> "${RND_DIR}/audit.jsonl"
 
 exit 0

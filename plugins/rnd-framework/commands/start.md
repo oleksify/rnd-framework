@@ -65,10 +65,12 @@ touch "$RND_DIR/.planning-phase"
 
 Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
 
-After the planner finishes, remove the marker:
+After the planner finishes — **whether successfully or with an error** — remove the marker:
 ```bash
 rm -f "$RND_DIR/.planning-phase"
 ```
+
+This cleanup is unconditional. If the planner agent errors out or is interrupted, the marker must still be removed so subsequent phases are not blocked from writing project files.
 
 Wait for the planner to produce `$RND_DIR/plan.md` with:
 - Task tree

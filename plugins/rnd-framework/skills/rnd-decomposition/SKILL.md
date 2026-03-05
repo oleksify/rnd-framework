@@ -107,7 +107,7 @@ After decomposition, build a dependency matrix:
 
 ## Output
 
-> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs the absolute path to the centralized artifact directory (e.g., `~/.claude/.rnd/project-abc123`). Use `-c` flag to create the directory structure.
+> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs the absolute path to the current session's artifact directory (e.g., `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`). Use `-c` flag to create the directory structure.
 
 Save the complete plan to `$RND_DIR/plan.md`:
 
@@ -148,3 +148,4 @@ Before declaring planning complete:
 - `rnd-framework:rnd-scheduling` — For detailed wave scheduling
 - `rnd-framework:rnd-scaling` — For choosing pipeline scale
 - `rnd-framework:rnd-orchestration` — For pipeline overview
+- `rnd-framework:rnd-data-science` — When a task involves analytical or numerical work — use as a standalone specialist replacing the standard Build phase

@@ -36,14 +36,25 @@ fi
 HEADLINE="$1"
 DESCRIPTION="${2:-}"
 
+# --- Check CHANGELOG exists before modifying any files ---
+if [ ! -f "$CHANGELOG" ]; then
+  echo "error: CHANGELOG.md not found at ${CHANGELOG}" >&2
+  exit 1
+fi
+
 # --- Read and increment version ---
 CURRENT_VERSION="$(jq -r '.version' "$PLUGIN_JSON")"
+if ! echo "$CURRENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  echo "error: current version '${CURRENT_VERSION}' is not valid semver (expected X.Y.Z)" >&2
+  exit 1
+fi
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 NEW_PATCH=$(( PATCH + 1 ))
 NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
 
 # --- Write new version atomically ---
 TMP_JSON="$(mktemp)"
+trap 'rm -f "$TMP_JSON"' EXIT
 jq --arg v "$NEW_VERSION" '.version = $v' "$PLUGIN_JSON" > "$TMP_JSON"
 mv "$TMP_JSON" "$PLUGIN_JSON"
 

@@ -68,7 +68,7 @@ if [ -f "$pjson" ]; then
     fail "plugin.json is not valid JSON"
   fi
   for field in name description version; do
-    val=$(jq -r ".${field} // empty" "$pjson" 2>/dev/null)
+    val=$(jq -r ".${field} // empty" "$pjson" 2>/dev/null || true)
     if [ -n "$val" ]; then
       pass "plugin.json has '${field}': ${val}"
     else
@@ -76,7 +76,7 @@ if [ -f "$pjson" ]; then
     fi
   done
   # Check semver
-  ver=$(jq -r '.version // empty' "$pjson" 2>/dev/null)
+  ver=$(jq -r '.version // empty' "$pjson" 2>/dev/null || true)
   if echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
     pass "plugin.json version is valid semver"
   else
@@ -98,7 +98,7 @@ if [ -f "$hjson" ]; then
     fail "hooks.json is not valid JSON"
   fi
   # Check referenced scripts exist and are executable
-  for script_ref in $(jq -r '.. | .command? // empty' "$hjson" 2>/dev/null | grep -oE "hooks/[a-z_-]+" | sort -u); do
+  for script_ref in $(jq -r '.. | .command? // empty' "$hjson" 2>/dev/null | grep -oE "hooks/[a-z_-]+" | sort -u || true); do
     script_path="${PLUGIN_ROOT}/${script_ref}"
     script_name=$(basename "$script_ref")
     if [ -f "$script_path" ]; then

@@ -15,17 +15,25 @@ INPUT="$(cat)"
 FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
 TOOL="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
 
-# Resolve active RND_DIR — empty if no active session
+# Resolve active RND_DIR — rnd-dir.sh returns base dir (not session dir) when no
+# .current-session file exists, so we must check for /sessions/ in the path to
+# distinguish "active session" from "just a base dir".
 RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" 2>/dev/null || echo "")
 
-# Exit silently if no active session
-if [ -z "$RND_DIR" ] || [ ! -d "$RND_DIR" ]; then
+# Exit silently if no active session.
+# A session path always contains /sessions/ — a base dir path does not.
+if [ -z "$RND_DIR" ] || [[ "$RND_DIR" != */sessions/* ]]; then
+  exit 0
+fi
+
+# Verify the resolved session directory actually exists.
+if [ ! -d "$RND_DIR" ]; then
   exit 0
 fi
 
 # Append JSONL entry — use jq -n --arg to prevent injection via filenames containing quotes or special chars
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-jq -n --arg ts "$TS" --arg tool "$TOOL" --arg file "$FILE" \
+jq -cn --arg ts "$TS" --arg tool "$TOOL" --arg file "$FILE" \
   '{"ts":$ts,"tool":$tool,"file":$file}' >> "${RND_DIR}/audit.jsonl"
 
 exit 0

@@ -1,0 +1,10 @@
+{
+  "name": "rnd-framework-tests",
+  "private": true,
+  "devDependencies": {
+    "bun-types": "^1.3.10"
+  },
+  "scripts": {
+    "test": "bun test"
+  }
+}

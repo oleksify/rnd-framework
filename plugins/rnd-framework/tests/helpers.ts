@@ -2,8 +2,9 @@
  * Test helpers for rnd-framework hook/library script testing.
  *
  * Exports:
- *   runHook(scriptPath, stdinJson?, env?) — run a hook script as a subprocess
- *   createTempRndDir()                   — create an isolated .rnd/-like temp tree
+ *   runHook(scriptPath, stdinJson?, env?)    — run a hook script as a subprocess
+ *   runHookRaw(scriptPath, rawStdin?, env?)  — run a hook script with raw string stdin
+ *   createTempRndDir()                       — create an isolated .rnd/-like temp tree
  */
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -75,6 +76,64 @@ export async function runHook(
   // Write JSON to stdin then close the write end so the script gets EOF
   if (stdinJson !== undefined && proc.stdin) {
     const encoded = new TextEncoder().encode(JSON.stringify(stdinJson));
+    await proc.stdin.write(encoded);
+    proc.stdin.end();
+  }
+
+  // Collect stdout and stderr concurrently while waiting for exit
+  const [stdoutBytes, stderrBytes] = await Promise.all([
+    Bun.readableStreamToArrayBuffer(proc.stdout),
+    Bun.readableStreamToArrayBuffer(proc.stderr),
+    proc.exited,
+  ]);
+
+  const decoder = new TextDecoder();
+
+  return {
+    stdout: decoder.decode(stdoutBytes),
+    stderr: decoder.decode(stderrBytes),
+    exitCode: proc.exitCode ?? 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// runHookRaw
+// ---------------------------------------------------------------------------
+
+/**
+ * Runs a hook/library script as a subprocess, passing a raw string directly
+ * on stdin without any JSON serialization. Use this when you need to send
+ * malformed JSON or other non-JSON payloads (e.g. empty string, plain text).
+ *
+ * The subprocess inherits the current process environment. Extra env vars
+ * provided via the `env` parameter are merged on top (they can override
+ * inherited values if keys collide).
+ *
+ * @param scriptPath  Absolute path to the executable script.
+ * @param rawStdin    Optional raw string to write directly to stdin.
+ * @param env         Optional extra environment variables for the subprocess.
+ * @returns           { stdout, stderr, exitCode }
+ */
+export async function runHookRaw(
+  scriptPath: string,
+  rawStdin?: string,
+  env?: Record<string, string>,
+): Promise<HookResult> {
+  const mergedEnv: Record<string, string> = {
+    ...process.env as Record<string, string>,
+    ...(env ?? {}),
+  };
+
+  const proc = Bun.spawn([scriptPath], {
+    stdin: rawStdin !== undefined ? "pipe" : "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: mergedEnv,
+  });
+
+  // Write raw bytes to stdin then close the write end so the script gets EOF
+  if (rawStdin !== undefined && proc.stdin) {
+    const encoded = new TextEncoder().encode(rawStdin);
     await proc.stdin.write(encoded);
     proc.stdin.end();
   }

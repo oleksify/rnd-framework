@@ -6,7 +6,7 @@
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { runHook, createTempRndDir } from "./helpers";
+import { runHook, runHookRaw, createTempRndDir } from "./helpers";
 
 // A tiny inline bash script that acts as a fake hook for testing
 const ECHO_HOOK = `#!/usr/bin/env bash
@@ -117,6 +117,66 @@ describe("runHook() env parameter", () => {
     // PATH must still be inherited so bash can run
     const result = await runHook(echoHookPath, { ok: true }, { EXTRA: "yes" });
     expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runHookRaw() — return shape
+// ---------------------------------------------------------------------------
+
+describe("runHookRaw() return shape", () => {
+  it("returns an object with stdout, stderr, and exitCode fields", async () => {
+    const result = await runHookRaw(echoHookPath, "hello");
+    expect(result).toHaveProperty("stdout");
+    expect(result).toHaveProperty("stderr");
+    expect(result).toHaveProperty("exitCode");
+    expect(typeof result.stdout).toBe("string");
+    expect(typeof result.stderr).toBe("string");
+    expect(typeof result.exitCode).toBe("number");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runHookRaw() — raw stdin passing
+// ---------------------------------------------------------------------------
+
+describe("runHookRaw() raw stdin passing", () => {
+  it("sends an empty string on stdin (not the JSON string \"\")", async () => {
+    const result = await runHookRaw(echoHookPath, "");
+    expect(result.exitCode).toBe(0);
+    // An empty string written to stdin → cat echoes nothing
+    expect(result.stdout).toBe("");
+  });
+
+  it("sends literal bytes 'not json' on stdin", async () => {
+    const result = await runHookRaw(echoHookPath, "not json");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("not json");
+  });
+
+  it("sends a valid JSON string exactly as-is on stdin", async () => {
+    const raw = '{"tool_input":{}}';
+    const result = await runHookRaw(echoHookPath, raw);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe(raw);
+  });
+
+  it("passes no stdin when rawStdin is omitted", async () => {
+    const result = await runHookRaw(echoHookPath);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  it("captures stderr and non-zero exit code", async () => {
+    const result = await runHookRaw(stderrHookPath, "anything");
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr.trim()).toBe("hook error message");
+  });
+
+  it("supports env parameter like runHook", async () => {
+    const result = await runHookRaw(envHookPath, "", { TEST_VAR: "raw-env-test" });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("raw-env-test");
   });
 });
 

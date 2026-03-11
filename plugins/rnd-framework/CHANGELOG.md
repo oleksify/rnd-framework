@@ -4,13 +4,19 @@
 
 ### Fix stale references and terminology
 
+Updated doctor.md example version from v0.7.21 to v0.8.3, corrected skill count from 16 to 17 in CLAUDE.md, and standardized "info-barrier" to "information-barrier" across verify.md, rnd-verifier.md, and CHANGELOG.md to match established codebase terminology.
+
 ## 0.8.3 — 2026-03-11
 
 ### Add information-barrier pre-flight checks
 
+Added defense-in-depth for the information barrier between Builder and Verifier agents. The verify command now runs a pre-flight sanity check that lists self-assessment files before prompt assembly and scans the assembled prompt for the substring `self-assessment`. The verifier agent now performs a startup self-check to detect leaked Builder reasoning in its prompt context. Updated the `bypassPermissions` documentation to describe all three defense layers (hook, pre-flight, self-check) instead of just documenting the weakness.
+
 ## 0.8.2 — 2026-03-11
 
 ### Harden hooks against edge cases
+
+Improved resilience of three hook scripts: `audit-log` now guards against missing jq/date dependencies, uses `printf` instead of `echo` for POSIX correctness, silently exits on empty fields or malformed JSON, and handles write failures gracefully. `prefer-tools` fixes jq parse failure handling, improves echo/printf redirect detection by stripping `/dev/` paths before checking for redirects, and tightens the `.rnd` git-add pattern to avoid false positives. `read-gate` fixes jq parse failure handling and uses case-insensitive matching for self-assessment filenames. All changes paired with expanded test coverage.
 
 ## 0.8.1 — 2026-03-05
 

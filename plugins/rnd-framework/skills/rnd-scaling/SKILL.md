@@ -55,7 +55,6 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Process:**
 1. Full pipeline + design review gate between Plan and Schedule
 2. Sub-waves within large waves
-3. Consider worktree isolation for builders (`rnd-framework:rnd-isolation`)
 
 ### High-Stakes (security, financial, data integrity)
 

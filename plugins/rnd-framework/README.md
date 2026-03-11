@@ -88,7 +88,6 @@ The plugin provides 17 skills that embed structured practices into every phase o
 | `rnd-iteration` | Build-verify feedback loops, iteration budgets, escalation |
 | `rnd-integration` | Merge verified outputs, integration/system validation |
 | `rnd-completion` | Post-SHIP workflow: branch management, PR creation, cleanup |
-| `rnd-isolation` | Git worktree isolation for parallel builders |
 | `prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `bun-scripting` | Prefer Bun (TypeScript) over Python for helper scripts when available |
 | `committing` | Commit message style, length limits, and user confirmation before committing |

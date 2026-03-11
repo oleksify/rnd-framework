@@ -62,4 +62,3 @@ Wave 3: [T6]          -> Build -> Verify -> Final integration
 
 - `rnd-framework:rnd-decomposition` — Produces the dependency matrix
 - `rnd-framework:rnd-orchestration` — Pipeline overview
-- `rnd-framework:rnd-isolation` — Worktree isolation for parallel builders

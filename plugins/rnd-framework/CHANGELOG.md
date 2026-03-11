@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3 — 2026-03-11
+
+### Add info-barrier pre-flight checks
+
 ## 0.8.2 — 2026-03-11
 
 ### Harden hooks against edge cases

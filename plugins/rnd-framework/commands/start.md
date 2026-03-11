@@ -42,9 +42,29 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 1. **Explore the codebase.** Spawn an `Explore` agent (or use Glob/Grep directly for small codebases) to understand the areas relevant to the task. Identify: existing patterns, relevant files/modules, architectural conventions, and potential constraints.
 
-2. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+2. **Discover local experts.** Check whether the target project ships its own agents or skills in `.claude/`. Use Glob to scan:
+   - `.claude/agents/*.md` — project-local agents
+   - `.claude/skills/*/SKILL.md` — project-local skills
 
-3. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
+   For each discovered file, read the YAML frontmatter and extract the `name` and `description` fields. Assemble a structured summary:
+
+   ```
+   Local Experts Discovered:
+
+   Agents (.claude/agents/):
+     - name: security-reviewer
+       description: "Reviews auth and input validation changes for vulnerabilities"
+
+   Skills (.claude/skills/):
+     - name: project-testing
+       description: "Use when writing tests — covers project-specific test helpers and CI patterns"
+   ```
+
+   If neither `.claude/agents/` nor `.claude/skills/` exists, or both are empty, record `Local Experts Discovered: none` and continue silently. Missing directories are not an error.
+
+3. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+
+4. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
    - **Scope:** What's in and what's out? Any specific files, modules, or areas to focus on or avoid?
    - **Patterns:** Should this follow an existing pattern in the codebase, or introduce a new approach?
    - **Constraints:** Performance requirements, compatibility needs, or dependencies to be aware of?
@@ -52,7 +72,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
    Keep questions concrete — provide 2-4 options per question based on what you discovered in the codebase, not generic open-ended asks.
 
-4. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) user answers, (c) any constraints discovered. This context is passed to the Planner.
+5. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) user answers, (d) any constraints discovered. This context is passed to the Planner.
 
 **Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 1. When in doubt, ask — a few questions now prevents re-planning later.
 
@@ -63,7 +83,7 @@ Before spawning the planner, create the planning-phase marker to block project f
 touch "$RND_DIR/.planning-phase"
 ```
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition.
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition — including any project-local agents or skills it may reference in pre-registration documents.
 
 After the planner finishes — **whether successfully or with an error** — remove the marker:
 ```bash
@@ -114,14 +134,25 @@ Otherwise, use `AskUserQuestion` with options:
 
 ## Phase 3: Verify (per task)
 
+This phase uses multi-judge consensus verification. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary below.
+
 For each completed task in the wave:
 
-1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it ONLY:
-   - The task's pre-registration document (from `$RND_DIR/plan.md`)
-   - The builder's code, tests, and artifacts
-   - NEVER pass the builder's self-assessment or reasoning
+1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt.
 
-2. **Gate 3:** Check verification report.
+2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook).
+   - Judge A saves its report to `$RND_DIR/verifications/T<id>-judge-a.md`
+   - Judge B saves its report to `$RND_DIR/verifications/T<id>-judge-b.md`
+
+3. **Consensus logic:** Read both reports and compare their `Overall Verdict` lines.
+   - **Both judges agree** → their shared verdict is the final verdict. Proceed to step 5.
+   - **Judges disagree** → proceed to step 4 (tiebreaker).
+
+4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. The tiebreaker saves its report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
+
+5. **Save aggregated report** to `$RND_DIR/verifications/T<id>-verification.md` containing: Judge A report, Judge B report, tiebreaker report (if used), and the final consensus verdict with consensus method noted.
+
+6. **Gate 3:** Check the consensus verdict (not individual judge verdicts).
    - **PASS** → Task is done. Use `TaskUpdate` to mark `completed`. Move to next.
    - **NEEDS ITERATION** → A clear, isolated failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
    - **FAIL** → Multiple unmet criteria or no clear fix path. Do NOT iterate — route to re-planning.

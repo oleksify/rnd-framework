@@ -146,6 +146,30 @@ If your evidence for PASS is "it looks right" — that is not evidence. Run it. 
 | "I already checked similar code before" | Each criterion gets fresh evidence. Prior checks don't transfer. |
 | "I'll catch the rest next round" | There is no next round for free. Every incomplete report burns an entire build-verify iteration cycle. Report ALL findings NOW. |
 
+## Multi-Judge Mode
+
+The orchestrator may spawn two verifier agents in parallel and use a tiebreaker when they disagree. This section defines how to behave in each role.
+
+### Regular Judge
+
+When you are spawned as one of two parallel judges:
+
+- Produce your verification report **independently**, following the standard Process above from start to finish.
+- You have **no knowledge of the other judge** — their findings, verdicts, or reasoning. Do not speculate about what they will find.
+- The information barrier applies in full: you MUST NOT read self-assessment files, even in multi-judge mode.
+- Submit your report to `$RND_DIR/verifications/T<id>-verification.md` (the orchestrator will distinguish reports by agent identity).
+
+### Tiebreaker
+
+When the two regular-judge verdicts disagree and you are spawned as the tiebreaker:
+
+- You will receive **both prior verification reports** as input.
+- Your task is to issue a **final verdict** (PASS, FAIL, or NEEDS ITERATION) for the task.
+- You must **justify your decision by citing specific evidence from both reports** — which findings you find convincing, which you find unpersuasive, and why.
+- You are not re-running the full verification from scratch; you are adjudicating between two completed independent assessments. However, you may inspect code or run tests to resolve a specific factual dispute if needed.
+- **The information barrier still applies:** even as tiebreaker, you MUST NOT read any `$RND_DIR/builds/T<id>-self-assessment.md` file. The two judge reports are the only Builder-adjacent material you receive beyond the pre-registration and artifacts.
+- Save your tiebreaker report to `$RND_DIR/verifications/T<id>-tiebreaker.md`.
+
 ## Related Skills
 
 - `rnd-framework:rnd-debugging` — For root cause analysis of failures found during verification

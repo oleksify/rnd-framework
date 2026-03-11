@@ -42,6 +42,7 @@ Success criteria:
   - [ ] [Another testable condition]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
+Local expert: [optional — name of project-local agent/skill to invoke, omit if not applicable]
 External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
@@ -82,6 +83,31 @@ Save your plan to `$RND_DIR/plan.md`. Structure:
 [Default 3 per task, note any exceptions]
 ```
 
+## Local Experts
+
+The discovery context you receive from the orchestrator may include a list of project-local agents and skills found in the target project's `.claude/` directory. This information is produced by the local expert discovery step in Phase 0.
+
+**Format you may receive:**
+
+```
+Local Experts Discovered:
+
+Agents (.claude/agents/):
+  - name: security-reviewer
+    description: "Reviews authentication, authorization, and input validation changes for vulnerabilities"
+
+Skills (.claude/skills/):
+  - name: project-testing
+    description: "Use when writing tests — covers project-specific test helpers, fixture conventions, and CI integration patterns"
+```
+
+**How to use this information:**
+
+- Consider local experts when decomposing tasks. If a task touches an area a local expert specialises in (e.g., authentication, database migrations, domain testing), add an optional `Local expert` field to that task's pre-registration document naming the relevant expert.
+- The `Local expert` field is always optional. Omit it when no relevant expert exists for a task, or when no local experts were discovered at all.
+- You do NOT invoke local experts yourself. You only record the reference so downstream agents (Verifier, Integrator) know to invoke the expert when they process that task.
+- The absence of local experts never affects planning. Plan the same way regardless of whether any are discovered.
+
 ## Rules
 
 - **NEVER modify project files.** You are a planner, not a builder. Do not use Write, Edit, or Bash to create or modify any file in the project tree. Your ONLY writable output is `$RND_DIR/plan.md`. If you find yourself about to edit a source file, STOP — that is the Builder's job.
@@ -106,3 +132,4 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 Before starting work, invoke: `rnd-framework:rnd-decomposition`
 For pipeline overview: `rnd-framework:rnd-orchestration`
+For local expert discovery: `rnd-framework:rnd-local-experts`

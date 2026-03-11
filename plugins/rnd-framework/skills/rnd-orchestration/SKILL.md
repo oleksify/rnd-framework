@@ -35,7 +35,7 @@ This framework applies the scientific method to multi-agent coding:
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets.
 **Builder** — Writes code + tests + honest self-assessment. Does NOT verify own work.
-**Verifier** — Checks output against pre-registered criteria. Does NOT see Builder's reasoning.
+**Verifier** — Checks output against pre-registered criteria. Does NOT see Builder's reasoning. In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
 **Integrator** — Merges verified outputs, runs integration/system tests.
 
 ### Critical Information Flow Rules
@@ -126,8 +126,8 @@ Common decision points:
 
 ## Scaling Rules
 
-- **Small tasks (<1hr):** Collapse — one Builder + one Verifier. Lightweight pre-registration.
-- **Medium tasks:** Full framework with parallel waves.
-- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves.
+- **Small tasks (<1hr) / quick mode:** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration.
+- **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task.
+- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
-- **High-stakes:** Dual independent verification. Add formal invariants.
+- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants.

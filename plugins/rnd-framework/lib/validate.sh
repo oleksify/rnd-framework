@@ -349,6 +349,12 @@ for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
   [ -f "$agent_file" ] || continue
   valid_agents="${valid_agents} rnd-framework:$(basename "$agent_file" .md)"
 done
+# Build valid_skill_refs for cross-reference lookups (plugin-prefixed)
+valid_skill_refs=""
+for skill_dir in "${PLUGIN_ROOT}"/skills/*/; do
+  [ -d "$skill_dir" ] || continue
+  valid_skill_refs="${valid_skill_refs} rnd-framework:$(basename "$skill_dir")"
+done
 for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
   [ -f "$cmd_file" ] || continue
   cmd_name=$(basename "$cmd_file" .md)
@@ -356,10 +362,12 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
     xref_count=$((xref_count + 1))
     if echo "$valid_agents" | grep -qw "$ref"; then
       pass "command '${cmd_name}' agent ref '${ref}' resolves"
+    elif echo "$valid_skill_refs" | grep -qw "$ref"; then
+      pass "command '${cmd_name}' skill ref '${ref}' resolves"
     else
       fail "command '${cmd_name}' agent ref '${ref}' — agent not found"
     fi
-  done < <(grep -oE 'rnd-framework:rnd-[a-z]+' "$cmd_file" | sort -u)
+  done < <(grep -oE 'rnd-framework:rnd-[a-z-]+' "$cmd_file" | sort -u)
 done
 $QUIET || echo "  (${xref_count} cross-references checked)"
 
@@ -375,6 +383,8 @@ parity_table=(
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Unverified external assumptions|self-assessment sub-section"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|External contract conformance|adversarial testing"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|assumptions about external systems|code inspection"
+  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|ulti-Judge|multi-judge consensus protocol"
+  "skills/rnd-decomposition/SKILL.md|agents/rnd-planner.md|ocal expert|local expert field parity"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|mcp__julia__julia_eval|Julia MCP tool reference"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|Validate input data|data validation requirement"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|independent cross-check|numerical verification approach"

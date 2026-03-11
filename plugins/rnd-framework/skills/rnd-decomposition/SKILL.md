@@ -60,6 +60,7 @@ A criterion is testable if a skeptical Verifier can evaluate it from evidence al
 - **Too vague:** If criteria require judgment to evaluate ("works correctly", "handles errors", "is performant", "code is clean") — rewrite with observable outcomes or decompose further
 - **Uncertain:** If the approach is unclear, add a Phase 0 spike task
 - **Unverified external contract:** If a task depends on an external system (DB schema, API response shape, file format, env var, third-party service) whose contract has not been independently verified, add a Phase 0 spike or a dedicated verification step before that task to read/query the actual system and confirm assumptions
+- **Local expert available:** If the project has a domain-specific agent or skill (e.g., a `security-reviewer` agent for auth changes, or a `db-migration-expert` skill for schema changes), set the `Local expert` field in the pre-registration so the Builder knows to invoke it during implementation
 
 ## Pre-Registration Document
 
@@ -75,6 +76,7 @@ Success criteria:
   - [ ] [Specific, testable condition 2]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
+Local expert: [optional — name of project-local agent/skill to invoke, e.g., security-reviewer]
 External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]

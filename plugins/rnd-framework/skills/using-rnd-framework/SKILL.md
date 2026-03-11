@@ -42,6 +42,8 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:bun-scripting` | Writing helper scripts — prefer Bun over Python when available |
 | `rnd-framework:committing` | Creating git commits — message style, length limits, user confirmation |
 | `rnd-framework:rnd-data-science` | Performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring Julia or DuckDB computation |
+| `rnd-framework:rnd-multi-judge` | Running multi-judge consensus verification — spawning 2 independent verifiers, aggregating verdicts, and triggering a tiebreaker on disagreement |
+| `rnd-framework:rnd-local-experts` | Discovering project-local agents and skills in `.claude/agents/` and `.claude/skills/` and surfacing them for the Planner to reference in pre-registrations |
 
 ## Available Commands
 
@@ -75,10 +77,10 @@ Every task goes through the R&D pipeline, scaled to complexity:
 
 | Task Size | Entry Point | What Happens |
 |-----------|-------------|--------------|
-| Trivial | `/rnd-framework:quick` | Inline plan → build → verify |
+| Trivial | `/rnd-framework:quick` | Inline plan → build → verify (single verifier) |
 | Small (<1hr) | `/rnd-framework:quick` | 1 Builder + 1 Verifier |
-| Medium | `/rnd-framework:start` | Planner + Builders + Verifiers + Integrator |
-| Large | `/rnd-framework:start` | Full pipeline + design review gate |
+| Medium | `/rnd-framework:start` | Planner + Builders + 2-judge verification + Integrator |
+| Large | `/rnd-framework:start` | Full pipeline + design review gate + multi-judge verification |
 | High-stakes | `/rnd-framework:start` | Full pipeline + dual verification |
 
 ## Skill Priority

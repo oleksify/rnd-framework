@@ -15,7 +15,23 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks a
 
 ## CRITICAL: Information Barrier Enforcement
 
-> **Note on `bypassPermissions` and read-gate:** When spawning the verifier with `mode: "bypassPermissions"`, the `read-gate` PreToolUse hook that enforces the information barrier may be suppressed — the agent's file reads bypass permission prompts entirely, including the hook logic that blocks self-assessment reads. **Mitigation:** Do not rely solely on the hook to enforce the barrier. The orchestrator MUST actively exclude self-assessment files by never passing their paths or contents in the verifier prompt. Pass file content directly in the prompt rather than relying on the hook to block accidental reads.
+> **Note on `bypassPermissions` and read-gate:** When spawning the verifier with `mode: "bypassPermissions"`, the `read-gate` hook may be suppressed. The info-barrier is enforced through three layers: (1) the `read-gate` hook blocks self-assessment reads at the tool level, (2) the pre-flight check below catches files before prompt assembly, (3) the verifier agent runs a startup self-check to detect leaked content. Do not rely on any single layer — all three must hold.
+
+### Pre-Flight Check
+
+Before assembling the verifier prompt, run this sanity check to list self-assessment files that must be excluded:
+
+```bash
+SA_FILES=$(ls "$RND_DIR/builds/"*self-assessment* 2>/dev/null || true)
+if [ -n "$SA_FILES" ]; then
+  echo "INFO-BARRIER: The following files must NOT appear in verifier prompts:"
+  echo "$SA_FILES"
+fi
+```
+
+Review the list. Then, when assembling the verifier prompt, cross-check: none of these paths or their contents may be included.
+
+### Prompt Assembly
 
 When spawning the verifier agent (Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`), you MUST:
 
@@ -28,6 +44,8 @@ When spawning the verifier agent (Agent tool with `subagent_type: "rnd-framework
 - Any `$RND_DIR/builds/T*-self-assessment.md` files
 - The Builder's reasoning or chain-of-thought
 - Any notes about "what to look for" or "known issues"
+
+After assembling the prompt, scan it for the substring `self-assessment`. If found, do NOT spawn the verifier — strip the offending content and re-assemble.
 
 This barrier is the core of the framework. If violated, verification becomes rubber-stamping.
 

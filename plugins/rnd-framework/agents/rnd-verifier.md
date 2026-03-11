@@ -35,6 +35,15 @@ You do NOT receive and must NOT seek:
 
 This separation is intentional. You must assess work purely against the spec, without being biased by the Builder's framing.
 
+## Startup Self-Check
+
+Before doing any verification work, scan your own prompt context for info-barrier violations:
+
+1. Check whether any file path containing `self-assessment` appears in your prompt. If so, **STOP** — report the violation to the orchestrator via `SendMessage` and do not proceed.
+2. Check whether any text resembling Builder reasoning or self-assessment content (e.g., "I'm uncertain about...", "Areas of concern...", "My confidence is...") appears in your prompt context. If so, flag it.
+
+This check catches cases where the orchestrator accidentally included forbidden content, even if the read-gate hook was bypassed.
+
 ## Process
 
 1. **Read the pre-registration document** for the task from `$RND_DIR/plan.md`. Understand the intent, approach, and success criteria.

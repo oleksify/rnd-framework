@@ -7,11 +7,19 @@
  *   3. Path containing both ".rnd/" and "self-assessment" → exit 2 (block takes priority)
  *   4. Path not containing ".rnd/" → exit 0 + empty stdout (no opinion)
  *   5. Filename "self-assessment.md" in a non-.rnd/ path → still blocked (substring match)
+ *
+ * Also covers T3 hardening criteria:
+ *   6. Case-insensitive self-assessment matching (capital variants blocked)
+ *   7. Malformed stdin (empty, non-JSON, missing keys) → exits 0, no opinion
+ *   8. Empty file_path → exits 0, no opinion
+ *   9. ".rnd" without trailing slash → no opinion
+ *  10. "self-assessment" as substring in unrelated path → blocked
+ *  11. Symlink paths: hook checks path string, not resolved target (documented behavior)
  */
 
 import { describe, test, expect } from "bun:test";
 import { join } from "node:path";
-import { runHook } from "./helpers";
+import { runHook, runHookRaw } from "./helpers";
 
 const HOOK = join(import.meta.dir, "..", "hooks", "read-gate");
 
@@ -175,5 +183,109 @@ describe("read-gate: self-assessment substring match applies to full path", () =
     const result = await runHook(HOOK, input("self-assessment.md"));
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: case-insensitive self-assessment matching
+// ---------------------------------------------------------------------------
+describe("read-gate: case-insensitive self-assessment blocking", () => {
+  test("Self-Assessment.md (capital S and A) is blocked with exit 2", async () => {
+    const result = await runHook(HOOK, input("/rnd/builds/T1-Self-Assessment.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+
+  test("SELF-ASSESSMENT.md (all caps) is blocked with exit 2", async () => {
+    const result = await runHook(HOOK, input("/rnd/builds/T1-SELF-ASSESSMENT.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+
+  test("self-ASSESSMENT.md (mixed case) is blocked with exit 2", async () => {
+    const result = await runHook(HOOK, input("/rnd/builds/T1-self-ASSESSMENT.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: malformed or missing stdin input → no opinion
+// ---------------------------------------------------------------------------
+describe("read-gate: malformed stdin produces no opinion", () => {
+  test("empty string stdin exits 0 with empty stdout", async () => {
+    const result = await runHookRaw(HOOK, "");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  test("non-JSON text stdin exits 0 with empty stdout", async () => {
+    const result = await runHookRaw(HOOK, "this is not json at all");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  test("JSON with no tool_input key exits 0 with empty stdout", async () => {
+    const result = await runHookRaw(HOOK, '{"other_key": "value"}');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: empty file_path extracted from JSON → no opinion
+// ---------------------------------------------------------------------------
+describe("read-gate: empty file_path produces no opinion", () => {
+  test("file_path set to empty string exits 0 with empty stdout", async () => {
+    const result = await runHook(HOOK, { tool_input: { file_path: "" } });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: ".rnd" without trailing slash → no opinion
+// ---------------------------------------------------------------------------
+describe('read-gate: ".rnd" without trailing slash produces no opinion', () => {
+  test('path exactly ".rnd" exits 0 with empty stdout', async () => {
+    const result = await runHook(HOOK, input(".rnd"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  test('path "/some/dir/.rnd" (no trailing slash) exits 0 with empty stdout', async () => {
+    const result = await runHook(HOOK, input("/some/dir/.rnd"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: "self-assessment" as substring in documentation path → blocked
+// ---------------------------------------------------------------------------
+describe("read-gate: self-assessment substring in documentation path is blocked", () => {
+  test("/docs/my-self-assessment-guide/chapter1.txt is blocked", async () => {
+    const result = await runHook(
+      HOOK,
+      input("/docs/my-self-assessment-guide/chapter1.txt"),
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T3 Criterion: symlink behavior documented — hook checks path string only
+// ---------------------------------------------------------------------------
+describe("read-gate: symlink paths are checked as path strings, not resolved targets", () => {
+  test("path 'link-to-sa' that does not contain 'self-assessment' produces no opinion", async () => {
+    // The hook checks the path string, not the resolved symlink target.
+    // A symlink named "link-to-sa" pointing to a self-assessment file would
+    // NOT be blocked because the path string "link-to-sa" does not contain
+    // "self-assessment". This is documented behavior — the hook cannot resolve
+    // symlinks without filesystem access.
+    const result = await runHook(HOOK, input("/project/builds/link-to-sa"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
   });
 });

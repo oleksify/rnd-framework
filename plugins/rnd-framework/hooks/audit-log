@@ -8,12 +8,22 @@
 # Output convention:
 #   PostToolUse hooks are observational only — always exit 0, no hookSpecificOutput.
 
+# FIX 1: Guard missing dependencies — PostToolUse hooks must never fail.
+command -v jq  >/dev/null 2>&1 || exit 0
+command -v date >/dev/null 2>&1 || exit 0
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 INPUT="$(cat)"
-FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
-TOOL="$(echo "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+FILE="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+TOOL="$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+
+# FIX 3: When jq fails to parse (malformed JSON), FILE and TOOL will be empty.
+# Do NOT write a corrupt/meaningless entry — exit 0 silently.
+if [ -z "$FILE" ] || [ -z "$TOOL" ]; then
+  exit 0
+fi
 
 # Resolve active RND_DIR — rnd-dir.sh returns base dir (not session dir) when no
 # .current-session file exists, so we must check for /sessions/ in the path to
@@ -31,9 +41,13 @@ if [ ! -d "$RND_DIR" ]; then
   exit 0
 fi
 
-# Append JSONL entry — use jq -n --arg to prevent injection via filenames containing quotes or special chars
-TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# Capture timestamp — exit 0 silently if date fails or produces empty output.
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" || true
+[ -z "$TS" ] && exit 0
+
+# Append JSONL entry — use jq -n --arg to prevent injection via filenames containing quotes or special chars.
+# FIX 2: Redirect stderr to /dev/null and exit 0 on write failure (e.g. read-only audit.jsonl).
 jq -cn --arg ts "$TS" --arg tool "$TOOL" --arg file "$FILE" \
-  '{"ts":$ts,"tool":$tool,"file":$file}' >> "${RND_DIR}/audit.jsonl"
+  '{"ts":$ts,"tool":$tool,"file":$file}' >> "${RND_DIR}/audit.jsonl" 2>/dev/null || true
 
 exit 0

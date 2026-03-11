@@ -13,7 +13,8 @@
 set -euo pipefail
 
 INPUT="$(cat)"
-COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+# Use || true so a jq parse failure (non-JSON stdin) exits 0 gracefully
+COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
 
 # Strip ALL leading "cd ... && " or "cd ... ; " prefixes (greedy, handles chained cd)
 STRIPPED="$(echo "$COMMAND" | sed -E 's/^(cd[[:space:]]+[^&;]+([&;]+|&&)[[:space:]]*)+//')"
@@ -33,18 +34,19 @@ elif echo "$STRIPPED" | grep -qE '^find\b'; then
   echo "Use the Glob tool instead of find. Glob supports patterns like **/*.ts." >&2
   exit 2
 elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
-  # Block file redirects, but allow /dev/stderr, /dev/null, /dev/stdout (legitimate diagnostic output)
-  if echo "$STRIPPED" | grep -qE '>[^&]' && ! echo "$STRIPPED" | grep -qE '>[[:space:]]*/dev/'; then
+  # Block file redirects. Strip all > /dev/... occurrences, then block if any > remains.
+  WITHOUT_DEV="$(echo "$STRIPPED" | sed -E 's/> *\/dev\/[^[:space:]]* ?//g')"
+  if echo "$WITHOUT_DEV" | grep -qE '>'; then
     echo "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs." >&2
     exit 2
   fi
 elif echo "$STRIPPED" | grep -qE '^ls\b'; then
   echo "$ALLOW"
-elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd'; then
+elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd(/|[[:space:]]|$)'; then
   echo "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed." >&2
   exit 2
 elif echo "$COMMAND" | grep -q 'rnd-dir\.sh'; then
   echo "$ALLOW"
-elif echo "$COMMAND" | grep -q '\.rnd'; then
+elif echo "$COMMAND" | grep -qE '\.rnd/'; then
   echo "$ALLOW"
 fi

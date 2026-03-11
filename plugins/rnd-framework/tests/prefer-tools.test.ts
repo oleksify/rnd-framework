@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from "bun:test";
 import { join } from "node:path";
-import { runHook } from "./helpers";
+import { runHook, runHookRaw } from "./helpers";
 
 const HOOK = join(import.meta.dir, "../hooks/prefer-tools");
 
@@ -224,5 +224,110 @@ describe("unmatched commands — no opinion", () => {
     const result = await runHook(HOOK, payload("npm install"));
     expect(result.exitCode).toBe(0);
     expect(result.stdout.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// cd semicolon stripping (FIX 1)
+// ---------------------------------------------------------------------------
+
+describe("cd semicolon stripping", () => {
+  it("'cd /path ; sed s/a/b/ f' returns exit 2 with Edit tool mention", async () => {
+    const result = await runHook(HOOK, payload("cd /path ; sed s/a/b/ f"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
+
+  it("'cd /path; sed s/a/b/ f' (no space before ;) returns exit 2 with Edit tool mention", async () => {
+    const result = await runHook(HOOK, payload("cd /path; sed s/a/b/ f"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
+
+  it("'cd /a ; cd /b ; cat file' returns exit 2 with Read tool mention", async () => {
+    const result = await runHook(HOOK, payload("cd /a ; cd /b ; cat file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+
+  it("'cd /path ;; cat file' (double semicolon) returns exit 2 with Read tool mention", async () => {
+    const result = await runHook(HOOK, payload("cd /path ;; cat file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// git add edge cases (FIX 2)
+// ---------------------------------------------------------------------------
+
+describe("git add .rnd edge cases", () => {
+  it("'git add .rnd.backup' returns exit 0 with empty stdout (not blocked)", async () => {
+    const result = await runHook(HOOK, payload("git add .rnd.backup"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  it("'git add .rnd/' returns exit 2 with BLOCKED in stderr", async () => {
+    const result = await runHook(HOOK, payload("git add .rnd/"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  it("'git add some/path/.rnd/file' returns exit 2 with BLOCKED in stderr", async () => {
+    const result = await runHook(HOOK, payload("git add some/path/.rnd/file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// echo/printf with multiple redirects (FIX 3)
+// ---------------------------------------------------------------------------
+
+describe("echo/printf multiple redirect blocking", () => {
+  it("'echo foo > /dev/stderr > /tmp/out' returns exit 2 with Write tool mention", async () => {
+    const result = await runHook(HOOK, payload("echo foo > /dev/stderr > /tmp/out"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Write tool");
+  });
+
+  it("'printf data > /dev/null > file.txt' returns exit 2 with Write tool mention", async () => {
+    const result = await runHook(HOOK, payload("printf data > /dev/null > file.txt"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Write tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Malformed stdin — graceful exit 0
+// ---------------------------------------------------------------------------
+
+describe("malformed stdin — graceful handling", () => {
+  it("empty stdin returns exit 0 without crashing", async () => {
+    const result = await runHookRaw(HOOK, "");
+    expect(result.exitCode).toBe(0);
+  });
+
+  it("non-JSON text on stdin returns exit 0 without crashing", async () => {
+    const result = await runHookRaw(HOOK, "not valid json at all");
+    expect(result.exitCode).toBe(0);
+  });
+
+  it("JSON missing tool_input key returns exit 0 without crashing", async () => {
+    const result = await runHookRaw(HOOK, '{"no_tool_input":"here"}');
+    expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Large command — no crash
+// ---------------------------------------------------------------------------
+
+describe("large command — no crash", () => {
+  it("10000-character command string does not crash the hook (exits 0)", async () => {
+    const bigCommand = "x".repeat(10000);
+    const result = await runHook(HOOK, payload(bigCommand));
+    expect(result.exitCode).toBe(0);
   });
 });

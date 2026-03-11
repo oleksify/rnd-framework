@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4 — 2026-03-11
+
+### Fix stale references and terminology
+
 ## 0.8.3 — 2026-03-11
 
 ### Add information-barrier pre-flight checks

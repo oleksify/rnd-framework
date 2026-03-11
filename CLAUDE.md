@@ -15,7 +15,7 @@ plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # 5 specialized agents (planner, builder, verifier, integrator, data-scientist)
 ├── commands/                    # 11 slash commands (/rnd-framework:start, etc.)
-├── skills/                      # 16 skills, each in its own dir with SKILL.md
+├── skills/                      # 17 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing

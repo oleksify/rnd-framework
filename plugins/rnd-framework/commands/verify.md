@@ -15,7 +15,7 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks a
 
 ## CRITICAL: Information Barrier Enforcement
 
-> **Note on `bypassPermissions` and read-gate:** When spawning the verifier with `mode: "bypassPermissions"`, the `read-gate` hook may be suppressed. The info-barrier is enforced through three layers: (1) the `read-gate` hook blocks self-assessment reads at the tool level, (2) the pre-flight check below catches files before prompt assembly, (3) the verifier agent runs a startup self-check to detect leaked content. Do not rely on any single layer — all three must hold.
+> **Note on `bypassPermissions` and read-gate:** When spawning the verifier with `mode: "bypassPermissions"`, the `read-gate` hook may be suppressed. The information-barrier is enforced through three layers: (1) the `read-gate` hook blocks self-assessment reads at the tool level, (2) the pre-flight check below catches files before prompt assembly, (3) the verifier agent runs a startup self-check to detect leaked content. Do not rely on any single layer — all three must hold.
 
 ### Pre-Flight Check
 

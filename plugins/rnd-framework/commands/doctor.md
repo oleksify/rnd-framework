@@ -85,7 +85,7 @@ duckdb                   | ⚠ warn  | not installed (optional)
 Hook scripts             | ✅ ok   | 4/4 executable
 RND artifact directory   | ✅ ok   | writable, active session exists
 Plugin registration      | ✅ ok   | registered in marketplace.json
-Version sync             | ✅ ok   | cached v0.7.21 = source v0.7.21
+Version sync             | ✅ ok   | cached v0.8.3 = source v0.8.3
 Julia MCP tools          | ✅ ok   | mcp__julia__julia_eval available
 ```
 

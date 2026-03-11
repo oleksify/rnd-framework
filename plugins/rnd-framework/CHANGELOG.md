@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2 — 2026-03-11
+
+### Harden hooks against edge cases
+
 ## 0.8.1 — 2026-03-05
 
 ### Fix 30 code review findings

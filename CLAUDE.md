@@ -91,7 +91,7 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
 - **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, tools list
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
-- **No test suite** — verification happens through the pipeline itself (build manifests + verification reports)
+- **Test suite** — `tests/` contains Bun tests for hooks and lib scripts; run with `bun test` from `plugins/rnd-framework/`
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort
 - **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)
 

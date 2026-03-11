@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 — 2026-03-11
+
+### Add multi-judge verification and local expert discovery
+
+Two new features for the pipeline. **Multi-judge verification** replaces the single-verifier model: two independent verifier agents check each task's output against pre-registered criteria, and a tiebreaker resolves split verdicts. The information barrier applies to all judges. New `rnd-multi-judge` skill defines the consensus protocol; `verify.md`, `start.md` Phase 3, `rnd-verification` skill, and `rnd-verifier` agent all updated. Quick mode retains single-verifier for lightweight tasks. **Local expert discovery** auto-scans the target project's `.claude/agents/` and `.claude/skills/` directories during Phase 0 (Discovery), reads frontmatter from each, and includes a structured summary in the Planner's context. The Planner can then reference project-local agents/skills in pre-registrations via an optional `Local expert` field. New `rnd-local-experts` skill defines the discovery protocol; `start.md` Phase 0, `rnd-planner` agent, and `rnd-decomposition` skill all updated. Plugin now has 18 skills and 155 validation checks.
+
 ## 0.8.5 — 2026-03-11
 
 ### Remove worktree isolation skill

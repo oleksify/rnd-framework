@@ -427,3 +427,404 @@ describe("--quiet flag with failing plugin", () => {
     expect(result.stdout).toContain("Summary");
   });
 });
+
+// ===========================================================================
+// C) Synthetic tests — Content Parity
+//
+// Each test:
+//   1. Creates both files in the parity pair with the marker present in the skill
+//   2. Creates the agent file WITHOUT the marker (the defect)
+//   3. Asserts exit 1, stdout contains "FAIL", stdout contains "parity"
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Helpers for parity tests
+// ---------------------------------------------------------------------------
+
+/** Creates a valid skill SKILL.md with the given marker in the body. */
+async function createSkillWithMarker(
+  dir: string,
+  skillDirName: string,
+  marker: string,
+): Promise<void> {
+  await mkdir(join(dir, "skills", skillDirName), { recursive: true });
+  await writeFile(
+    join(dir, "skills", skillDirName, "SKILL.md"),
+    `---\nname: ${skillDirName}\ndescription: A parity test skill\n---\n\n# Skill\n\n${marker}\n`,
+  );
+}
+
+/** Creates a valid agent .md WITHOUT the marker (the defect). */
+async function createAgentWithoutMarker(
+  dir: string,
+  agentFileName: string,
+): Promise<void> {
+  await mkdir(join(dir, "agents"), { recursive: true });
+  await writeFile(
+    join(dir, "agents", `${agentFileName}.md`),
+    `---\nname: ${agentFileName}\ndescription: A parity test agent\ntools: Read, Write\nmodel: sonnet\n---\n\n# Agent\n\nNo marker here.\n`,
+  );
+}
+
+/** Creates a valid command .md WITHOUT the marker (the defect). */
+async function createCommandWithoutMarker(
+  dir: string,
+  commandFileName: string,
+): Promise<void> {
+  await mkdir(join(dir, "commands"), { recursive: true });
+  await writeFile(
+    join(dir, "commands", `${commandFileName}.md`),
+    `---\ndescription: A parity test command\n---\n\n# Command\n\nNo marker here.\n`,
+  );
+}
+
+/** Creates a valid skill SKILL.md WITHOUT the marker (the defect). */
+async function createSkillWithoutMarker(
+  dir: string,
+  skillDirName: string,
+): Promise<void> {
+  await mkdir(join(dir, "skills", skillDirName), { recursive: true });
+  await writeFile(
+    join(dir, "skills", skillDirName, "SKILL.md"),
+    `---\nname: ${skillDirName}\ndescription: A parity test skill\n---\n\n# Skill\n\nNo marker here.\n`,
+  );
+}
+
+describe("Synthetic: Content Parity", () => {
+  // ── 1. decomposition↔planner: "External dependencies" ───────────────────
+
+  test("parity: 'External dependencies' missing in rnd-planner exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-decomposition", "External dependencies");
+    await createAgentWithoutMarker(tmpDir, "rnd-planner");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 2. building↔builder: "erify external dependencies" ──────────────────
+
+  test("parity: 'erify external dependencies' missing in rnd-builder exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-building", "erify external dependencies");
+    await createAgentWithoutMarker(tmpDir, "rnd-builder");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 3. building↔builder: "Verified external assumptions" ────────────────
+
+  test("parity: 'Verified external assumptions' missing in rnd-builder exits 1 with FAIL+parity", async () => {
+    // Agent file must contain "erify external dependencies" to pass parity check #2,
+    // but must NOT contain "Verified external assumptions" (marker for this check).
+    // Create agent with first marker but missing this one.
+    await createSkillWithMarker(tmpDir, "rnd-building", "Verified external assumptions");
+    await mkdir(join(tmpDir, "agents"), { recursive: true });
+    await writeFile(
+      join(tmpDir, "agents", "rnd-builder.md"),
+      `---\nname: rnd-builder\ndescription: A parity test agent\ntools: Read, Write\nmodel: sonnet\n---\n\n# Agent\n\nerify external dependencies\n`,
+    );
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 4. building↔builder: "Unverified external assumptions" ──────────────
+
+  test("parity: 'Unverified external assumptions' missing in rnd-builder exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-building", "Unverified external assumptions");
+    await createAgentWithoutMarker(tmpDir, "rnd-builder");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 5. verification↔verifier: "External contract conformance" ───────────
+
+  test("parity: 'External contract conformance' missing in rnd-verifier exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-verification", "External contract conformance");
+    await createAgentWithoutMarker(tmpDir, "rnd-verifier");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 6. verification↔verifier: "assumptions about external systems" ───────
+
+  test("parity: 'assumptions about external systems' missing in rnd-verifier exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-verification", "assumptions about external systems");
+    await createAgentWithoutMarker(tmpDir, "rnd-verifier");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 7. verification↔verifier: "ulti-Judge" ──────────────────────────────
+
+  test("parity: 'ulti-Judge' missing in rnd-verifier exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-verification", "ulti-Judge");
+    await createAgentWithoutMarker(tmpDir, "rnd-verifier");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 8. decomposition↔planner: "ocal expert" ─────────────────────────────
+
+  test("parity: 'ocal expert' missing in rnd-planner exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-decomposition", "ocal expert");
+    await createAgentWithoutMarker(tmpDir, "rnd-planner");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 9. data-science↔data-scientist: "mcp__julia__julia_eval" ────────────
+
+  test("parity: 'mcp__julia__julia_eval' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "mcp__julia__julia_eval");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 10. data-science↔data-scientist: "Validate input data" ──────────────
+
+  test("parity: 'Validate input data' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "Validate input data");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 11. data-science↔data-scientist: "independent cross-check" ───────────
+
+  test("parity: 'independent cross-check' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "independent cross-check");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 12. data-science↔data-scientist: "never hardcode" ───────────────────
+
+  test("parity: 'never hardcode' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "never hardcode");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 13. data-science↔data-scientist: "read_csv" ─────────────────────────
+
+  test("parity: 'read_csv' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "read_csv");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 14. data-science↔data-scientist: "duckdb -c" ────────────────────────
+
+  test("parity: 'duckdb -c' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "duckdb -c");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 15. data-science↔data-scientist: "Tool Selection" ───────────────────
+
+  test("parity: 'Tool Selection' missing in rnd-data-scientist exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-data-science", "Tool Selection");
+    await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── T1: multi-judge parity (skill ↔ command) ─────────────────────────────
+
+  // ── 16. multi-judge↔verify: "judge-a.md" ────────────────────────────────
+
+  test("parity: 'judge-a.md' missing in commands/verify.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-a.md");
+    await createCommandWithoutMarker(tmpDir, "verify");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 17. multi-judge↔verify: "judge-b.md" ────────────────────────────────
+
+  test("parity: 'judge-b.md' missing in commands/verify.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-b.md");
+    await createCommandWithoutMarker(tmpDir, "verify");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 18. multi-judge↔verify: "tiebreaker.md" ─────────────────────────────
+
+  test("parity: 'tiebreaker.md' missing in commands/verify.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "tiebreaker.md");
+    await createCommandWithoutMarker(tmpDir, "verify");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 19. multi-judge↔start: "judge-a.md" ─────────────────────────────────
+
+  test("parity: 'judge-a.md' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-a.md");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 20. multi-judge↔start: "judge-b.md" ─────────────────────────────────
+
+  test("parity: 'judge-b.md' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-b.md");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 21. multi-judge↔start: "tiebreaker.md" ──────────────────────────────
+
+  test("parity: 'tiebreaker.md' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "tiebreaker.md");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 22. multi-judge↔verify: "Consensus method" ──────────────────────────
+
+  test("parity: 'Consensus method' missing in commands/verify.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-multi-judge", "Consensus method");
+    await createCommandWithoutMarker(tmpDir, "verify");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── T2: local expert discovery parity (skill ↔ command) ──────────────────
+
+  // ── 23. local-experts↔start: ".claude/agents/" ──────────────────────────
+
+  test("parity: '.claude/agents/' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-local-experts", ".claude/agents/");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 24. local-experts↔start: ".claude/skills/" ──────────────────────────
+
+  test("parity: '.claude/skills/' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-local-experts", ".claude/skills/");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 25. local-experts↔start: "Local Experts Discovered" ─────────────────
+
+  test("parity: 'Local Experts Discovered' missing in commands/start.md exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-local-experts", "Local Experts Discovered");
+    await createCommandWithoutMarker(tmpDir, "start");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── T3: local expert invocation parity ───────────────────────────────────
+
+  // ── 26. local-experts↔planner: "Local Experts Discovered" ───────────────
+
+  test("parity: 'Local Experts Discovered' missing in rnd-planner exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-local-experts", "Local Experts Discovered");
+    await createAgentWithoutMarker(tmpDir, "rnd-planner");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 27. local-experts↔rnd-decomposition: "ocal expert" (skill↔skill) ────
+
+  test("parity: 'ocal expert' missing in skills/rnd-decomposition exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-local-experts", "ocal expert");
+    await createSkillWithoutMarker(tmpDir, "rnd-decomposition");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+});

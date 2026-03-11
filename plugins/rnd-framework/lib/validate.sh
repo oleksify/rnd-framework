@@ -392,6 +392,21 @@ parity_table=(
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|read_csv|DuckDB CSV function reference"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|duckdb -c|DuckDB CLI invocation pattern"
   "skills/rnd-data-science/SKILL.md|agents/rnd-data-scientist.md|Tool Selection|DuckDB vs Julia decision table"
+  # T1: multi-judge file path parity
+  "skills/rnd-multi-judge/SKILL.md|commands/verify.md|judge-a.md|multi-judge judge-a file naming"
+  "skills/rnd-multi-judge/SKILL.md|commands/verify.md|judge-b.md|multi-judge judge-b file naming"
+  "skills/rnd-multi-judge/SKILL.md|commands/verify.md|tiebreaker.md|multi-judge tiebreaker file naming"
+  "skills/rnd-multi-judge/SKILL.md|commands/start.md|judge-a.md|multi-judge judge-a file naming in start"
+  "skills/rnd-multi-judge/SKILL.md|commands/start.md|judge-b.md|multi-judge judge-b file naming in start"
+  "skills/rnd-multi-judge/SKILL.md|commands/start.md|tiebreaker.md|multi-judge tiebreaker file naming in start"
+  "skills/rnd-multi-judge/SKILL.md|commands/verify.md|Consensus method|multi-judge consensus method field"
+  # T2: local expert discovery parity
+  "skills/rnd-local-experts/SKILL.md|commands/start.md|.claude/agents/|local expert agents discovery path"
+  "skills/rnd-local-experts/SKILL.md|commands/start.md|.claude/skills/|local expert skills discovery path"
+  "skills/rnd-local-experts/SKILL.md|commands/start.md|Local Experts Discovered|local expert discovery summary field"
+  # T3: local expert invocation parity
+  "skills/rnd-local-experts/SKILL.md|agents/rnd-planner.md|Local Experts Discovered|local expert discovery field in planner"
+  "skills/rnd-local-experts/SKILL.md|skills/rnd-decomposition/SKILL.md|ocal expert|local expert field in decomposition skill"
 )
 
 for entry in "${parity_table[@]}"; do

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 — 2026-03-12
+
+### Make verifier agent read-only
+
+Remove Write tool from verifier agent, making it fully read-only. Adversarial test writing replaced with failure mode analysis (code inspection). Verifiers now return reports as text output; the orchestrator saves all verification report files. Updated across agent, skills (rnd-verification, rnd-multi-judge, rnd-debugging), commands (start, verify, quick), validate.sh parity descriptions, and README.
+
 ## 0.9.0 — 2026-03-11
 
 ### Add multi-judge verification and local expert discovery

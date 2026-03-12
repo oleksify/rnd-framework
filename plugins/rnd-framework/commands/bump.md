@@ -1,5 +1,5 @@
 ---
-description: "Bump the plugin patch version and add a CHANGELOG entry. Stages plugin.json and CHANGELOG.md, then offers to commit."
+description: "Bump the plugin patch version and add a CHANGELOG entry. Stages plugin.json and CHANGELOG.md, then offers to commit and optionally tag."
 argument-hint: "<changelog headline> [--- <optional description>]"
 ---
 
@@ -65,6 +65,27 @@ where `X.Y.Z` is the new version read from `plugin.json`.
 **If "Review changes first"** is chosen, run `git diff --staged` (scoped to the plugin directory) and display the output, then use `AskUserQuestion` again with the same options.
 
 **If "Skip commit"** is chosen, confirm to the user that files are staged and ready for manual commit.
+
+## Step 5: Tag Offer
+
+After a successful commit, use `AskUserQuestion` to ask:
+
+> "Create an annotated git tag `vX.Y.Z`?"
+
+Options:
+- "Tag and push" — create the tag and push it to the remote
+- "Tag only" — create the tag locally, don't push
+- "Skip tagging (Recommended)" — no tag, done
+
+**If "Tag and push"** or **"Tag only"** is chosen, run:
+
+```bash
+git tag -a vX.Y.Z -m "<headline>"
+```
+
+where `<headline>` is the CHANGELOG headline from Step 1. If "Tag and push", also run `git push origin vX.Y.Z`.
+
+**If "Skip tagging"** is chosen, done — no further action.
 
 ## Commit Message Convention
 

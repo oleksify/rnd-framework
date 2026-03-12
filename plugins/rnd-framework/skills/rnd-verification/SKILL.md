@@ -1,6 +1,6 @@
 ---
 name: rnd-verification
-description: "Use when independently verifying built work against pre-registered criteria — information-barrier verification with evidence-based verdicts and adversarial testing"
+description: "Use when independently verifying built work against pre-registered criteria — information-barrier verification with evidence-based verdicts and failure mode analysis"
 ---
 
 # R&D Verification
@@ -59,8 +59,8 @@ Do the provided tests actually test this criterion, or just something vaguely re
 **b. Run Tests**
 Execute the test suite. Record results verbatim.
 
-**c. Adversarial Testing**
-Write additional tests targeting likely failure modes:
+**c. Failure Mode Analysis**
+Identify likely failure modes through code inspection:
 - Boundary/edge cases, off-by-one errors
 - Error handling, unhappy paths
 - Race conditions, concurrency issues
@@ -92,7 +92,7 @@ Does the code actually implement the pre-registered approach? Check for:
 
 > **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
-Save to `$RND_DIR/verifications/T<id>-verification.md`:
+Return the following report as your text output to the orchestrator:
 
 ```markdown
 # Verification Report: T<id>
@@ -102,7 +102,7 @@ Save to `$RND_DIR/verifications/T<id>-verification.md`:
 ### Criterion: [exact text from pre-registration]
 **Result:** PASS | FAIL
 **Evidence:** [Specific — test output, code line references, benchmark results]
-**Additional tests run:** [Any adversarial tests and their results]
+**Failure modes inspected:** [Failure modes identified through code inspection and results of running existing tests]
 
 [Repeat for each criterion]
 
@@ -117,9 +117,9 @@ Do NOT suggest a fix. The Builder must reason about solutions independently.]
 
 A criterion is binary: met or not met. There is no "partially met" or "met in spirit".
 
-- **PASS:** ALL criteria met with reproducible evidence. Adversarial tests pass. Code follows declared approach. No deviations, no caveats, no "should be fine".
+- **PASS:** ALL criteria met with reproducible evidence. Failure mode analysis reveals no issues. Code follows declared approach. No deviations, no caveats, no "should be fine".
 - **NEEDS ITERATION:** All-but-one criteria met with evidence, AND the unmet criterion has a clear, isolated failure that the Builder can address with specific feedback. This is NOT a soft pass — it is a scoped FAIL with a clear fix path.
-- **FAIL:** Any criterion unmet without a clear fix path. Any deviation from declared approach. Any case where adversarial tests reveal unhandled failure modes. One unmet criterion with unclear cause is FAIL, not NEEDS ITERATION.
+- **FAIL:** Any criterion unmet without a clear fix path. Any deviation from declared approach. Any case where failure mode analysis reveals unhandled failure modes. One unmet criterion with unclear cause is FAIL, not NEEDS ITERATION.
 
 **When in doubt between NEEDS ITERATION and FAIL, choose FAIL.** False negatives (rejecting good work) are recoverable. False positives (passing broken work) compound downstream.
 
@@ -128,7 +128,7 @@ A criterion is binary: met or not met. There is no "partially met" or "met in sp
 What counts as evidence for a criterion:
 
 - **Necessary:** Test output you ran yourself (not claimed by Builder). Code inspection with specific line references.
-- **Strong:** Adversarial tests that actively tried to break the criterion and failed to.
+- **Strong:** Failure mode analysis that actively probed the criterion and revealed no issues.
 - **Insufficient:** "Tests pass" without inspecting what the tests actually assert. "Code looks correct" without tracing execution paths. "Should work" based on pattern recognition.
 
 If your evidence for PASS is "it looks right" — that is not evidence. Run it. Break it. Trace it.
@@ -142,7 +142,7 @@ If your evidence for PASS is "it looks right" — that is not evidence. Run it. 
 | "The Builder probably knows best" | You're independent. Assess against spec, not Builder authority. |
 | "I'll just glance at the self-assessment" | VIOLATION. This breaks the entire framework. |
 | "I'll suggest a fix to save time" | Your job is WHAT is wrong. Builder reasons about HOW to fix. |
-| "This clearly works, no need for adversarial tests" | If it clearly works, adversarial tests will confirm that quickly. Run them. |
+| "This clearly works, no need for failure mode analysis" | If it clearly works, failure mode analysis will confirm that quickly. Inspect it. |
 | "I already checked similar code before" | Each criterion gets fresh evidence. Prior checks don't transfer. |
 | "I'll catch the rest next round" | There is no next round for free. Every incomplete report burns an entire build-verify iteration cycle. Report ALL findings NOW. |
 
@@ -157,7 +157,7 @@ When you are spawned as one of two parallel judges:
 - Produce your verification report **independently**, following the standard Process above from start to finish.
 - You have **no knowledge of the other judge** — their findings, verdicts, or reasoning. Do not speculate about what they will find.
 - The information barrier applies in full: you MUST NOT read self-assessment files, even in multi-judge mode.
-- Submit your report to `$RND_DIR/verifications/T<id>-verification.md` (the orchestrator will distinguish reports by agent identity).
+- Return your report as text output (the orchestrator will distinguish reports by agent identity and save them).
 
 ### Tiebreaker
 
@@ -168,7 +168,7 @@ When the two regular-judge verdicts disagree and you are spawned as the tiebreak
 - You must **justify your decision by citing specific evidence from both reports** — which findings you find convincing, which you find unpersuasive, and why.
 - You are not re-running the full verification from scratch; you are adjudicating between two completed independent assessments. However, you may inspect code or run tests to resolve a specific factual dispute if needed.
 - **The information barrier still applies:** even as tiebreaker, you MUST NOT read any `$RND_DIR/builds/T<id>-self-assessment.md` file. The two judge reports are the only Builder-adjacent material you receive beyond the pre-registration and artifacts.
-- Save your tiebreaker report to `$RND_DIR/verifications/T<id>-tiebreaker.md`.
+- Return your tiebreaker report as text output (the orchestrator saves it to `$RND_DIR/verifications/T<id>-tiebreaker.md`).
 
 ## Related Skills
 

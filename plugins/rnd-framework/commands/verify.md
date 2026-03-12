@@ -72,7 +72,7 @@ Each judge receives:
 
 Neither judge's prompt includes the other judge's report. The two judges run with no knowledge of each other.
 
-Direct each judge to save its report to:
+After each judge completes, the orchestrator saves the returned report to:
 - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
 - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 
@@ -104,7 +104,7 @@ The tiebreaker receives:
 
 The tiebreaker does NOT receive self-assessment files. The same EXCLUDE rules apply.
 
-Direct the tiebreaker to save its report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
+After the tiebreaker completes, the orchestrator saves the returned report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
 
 The tiebreaker's verdict is the final verdict.
 

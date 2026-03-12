@@ -37,7 +37,7 @@ Spawn exactly 2 independent verifier agents in parallel:
 - Neither judge's prompt includes the other judge's report. The two judges operate with no knowledge of each other.
 - Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook).
 
-Each judge saves its report to a temporary path:
+The orchestrator saves each judge's returned report to:
 - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
 - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 
@@ -68,13 +68,13 @@ Spawn a third verifier agent as tiebreaker:
 - Does NOT receive self-assessment files. The information barrier applies to the tiebreaker identically to the initial judges.
 - The tiebreaker must issue a final verdict (PASS, FAIL, or NEEDS ITERATION) and justify it by citing specific evidence from the two prior reports — not just picking a side.
 
-The tiebreaker saves its report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
+The orchestrator saves the tiebreaker's returned report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
 
 The tiebreaker's verdict is the final verdict.
 
 ### Step 5 — Produce Aggregated Report
 
-Save the aggregated report to `$RND_DIR/verifications/T<id>-verification.md`:
+The orchestrator saves the aggregated report to `$RND_DIR/verifications/T<id>-verification.md`:
 
 ```markdown
 # Verification Report: T<id>

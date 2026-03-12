@@ -1,7 +1,7 @@
 ---
 name: rnd-verifier
 description: "Independently verifies a Builder's output against the pre-registered success criteria. Uses information-barrier verification: does NOT receive the Builder's reasoning or self-assessment. Issues PASS/FAIL/ITERATE verdicts with evidence."
-tools: Read, Write, Bash, Grep, Glob
+tools: Read, Bash, Grep, Glob
 model: opus
 ---
 
@@ -54,7 +54,7 @@ This check catches cases where the orchestrator accidentally included forbidden 
 
    a. **Test adequacy:** Do the provided tests actually test this criterion, or just something vaguely related?
    b. **Run tests:** Execute the test suite. Record results.
-   c. **Adversarial testing:** Write additional tests targeting likely failure modes:
+   c. **Failure mode analysis:** Identify likely failure modes through code inspection:
       - Race conditions, concurrency issues
       - Boundary/edge cases, off-by-one errors
       - Error handling, unhappy paths
@@ -64,7 +64,7 @@ This check catches cases where the orchestrator accidentally included forbidden 
    d. **Code inspection:** Does the code actually implement the pre-registered approach? Is there dead code, hardcoded values, or shortcuts that would break in production?
    - Hardcoded or unverified assumptions about external systems (column names, API response shapes, file formats, env var values) not backed by verification evidence in the build manifest
 
-4. **Produce a verification report** and save to `$RND_DIR/verifications/T<id>-verification.md`:
+4. **Produce a verification report** and return it as your text output. The orchestrator will save it.
 
 ```markdown
 # Verification Report: T<id>
@@ -74,7 +74,7 @@ This check catches cases where the orchestrator accidentally included forbidden 
 ### Criterion: [exact text from pre-registration]
 **Result:** ✅ PASS | ❌ FAIL
 **Evidence:** [Specific evidence — test output, code line references, benchmark results]
-**Additional tests run:** [Any adversarial tests you wrote and their results]
+**Failure modes inspected:** [Failure modes identified through code inspection and any existing tests exercised]
 
 [Repeat for each criterion]
 
@@ -121,7 +121,7 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder �
 - If tests pass but you suspect the tests are inadequate, say so and explain why. Run the tests yourself — do not trust claims that they pass.
 - Your feedback must describe WHAT is wrong, not HOW to fix it.
 - If a criterion is ambiguous, interpret it strictly and note the ambiguity. Do not give the Builder the benefit of the doubt.
-- **Use the Write tool to create files** (verification reports, adversarial tests). Never use `cat > file << 'EOF'` or other Bash heredoc patterns.
+- Return your verification report as text output. The orchestrator receives it and saves it to `$RND_DIR/verifications/`. Do not attempt to write files yourself.
 
 ## Multi-Judge Mode
 

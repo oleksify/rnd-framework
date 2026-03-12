@@ -381,7 +381,7 @@ parity_table=(
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|erify external dependencies|step 2.5"
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Verified external assumptions|self-assessment sub-section"
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Unverified external assumptions|self-assessment sub-section"
-  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|External contract conformance|adversarial testing"
+  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|External contract conformance|failure mode analysis"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|assumptions about external systems|code inspection"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|ulti-Judge|multi-judge consensus protocol"
   "skills/rnd-decomposition/SKILL.md|agents/rnd-planner.md|ocal expert|local expert field parity"

@@ -140,15 +140,15 @@ For each completed task in the wave:
 
 1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt.
 
-2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook).
-   - Judge A saves its report to `$RND_DIR/verifications/T<id>-judge-a.md`
-   - Judge B saves its report to `$RND_DIR/verifications/T<id>-judge-b.md`
+2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
+   - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
+   - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 
 3. **Consensus logic:** Read both reports and compare their `Overall Verdict` lines.
    - **Both judges agree** → their shared verdict is the final verdict. Proceed to step 5.
    - **Judges disagree** → proceed to step 4 (tiebreaker).
 
-4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. The tiebreaker saves its report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
+4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. After the tiebreaker returns its report as text output, the orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
 
 5. **Save aggregated report** to `$RND_DIR/verifications/T<id>-verification.md` containing: Judge A report, Judge B report, tiebreaker report (if used), and the final consensus verdict with consensus method noted.
 

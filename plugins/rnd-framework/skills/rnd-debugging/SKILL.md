@@ -15,7 +15,7 @@ Random fixes waste time and create new bugs. Quick patches mask underlying issue
 
 - Any test failure during build or verification phases
 - Unexpected behavior during integration
-- Bugs found by the Verifier's adversarial tests
+- Bugs found by the Verifier's failure mode analysis
 - Performance issues discovered during system validation
 
 ## The Iron Law

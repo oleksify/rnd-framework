@@ -63,6 +63,8 @@ Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-veri
 - Your code and tests
 - Do NOT pass your self-assessment or any notes about concerns
 
+The verifier returns its report as text output. The orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-verification.md`.
+
 ## Step 4: Iterate or Ship
 
 - **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Use `AskUserQuestion` with options:
@@ -78,4 +80,4 @@ Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-veri
   - "Iterate one more time" — extend budget by 1
   - "Abandon task" — stop work on this task
 
-Quick mode is faster, not less rigorous. The Verifier still applies full skepticism. Do not skip adversarial testing or accept soft evidence to save time.
+Quick mode is faster, not less rigorous. The Verifier still applies full skepticism. Do not skip failure mode analysis or accept soft evidence to save time.

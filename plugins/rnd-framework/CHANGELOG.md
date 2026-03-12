@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2 — 2026-03-12
+
+### Add optional tagging to bump command
+
 ## 0.9.1 — 2026-03-12
 
 ### Make verifier agent read-only

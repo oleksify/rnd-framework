@@ -73,7 +73,7 @@ After configuring, start a Claude Code session in the project and check:
 
 ## Skills
 
-The plugin provides 17 skills that embed structured practices into every phase of coding:
+The plugin provides 20 skills that embed structured practices into every phase of coding:
 
 | Skill | Purpose |
 |---|---|
@@ -93,6 +93,8 @@ The plugin provides 17 skills that embed structured practices into every phase o
 | `committing` | Commit message style, length limits, and user confirmation before committing |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
 | `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
+| `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
+| `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
 
 ## Agents
 
@@ -121,8 +123,10 @@ Every task goes through the pipeline, scaled to complexity:
 ### Big feature
 
 ```
-> /rnd-framework:plan Add OAuth2 login with Google provider
-  [Planner produces task tree, pre-registrations, dependency matrix]
+> /rnd-framework:start Add OAuth2 login with Google provider
+  [Phase 0: Discovery — requirements gathering]
+  [Phase 0.5: Design Exploration — 2-3 architectural alternatives with trade-offs, user approves design spec]
+  [Planner produces task tree, pre-registrations, dependency matrix from approved design]
   [Review the plan, adjust if needed]
 
 > /rnd-framework:build wave-1
@@ -184,6 +188,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 └── sessions/
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
         ├── plan.md                     # Task tree, pre-registrations, schedule
+        ├── design-spec.md              # Approved architectural design spec (Design phase output)
         ├── builds/
         │   ├── T1-manifest.md          # What the builder produced
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
@@ -211,7 +216,7 @@ rnd-framework/
 │   ├── session-start            # SessionStart hook: injects skill context via jq
 │   └── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # 17 skills (rnd-* namespace)
+├── skills/                      # 20 skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage

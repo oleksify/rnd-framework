@@ -827,4 +827,70 @@ describe("Synthetic: Content Parity", () => {
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
   });
+
+  // ── Feature 2: failure modes parity ──────────────────────────────────────
+
+  // ── 28. rnd-failure-modes↔rnd-verifier: "failure modes" ─────────────────
+
+  test("parity: 'failure modes' missing in rnd-verifier exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-failure-modes", "failure modes");
+    await createAgentWithoutMarker(tmpDir, "rnd-verifier");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 29. rnd-failure-modes↔rnd-verification: "failure modes" (skill↔skill)
+
+  test("parity: 'failure modes' missing in skills/rnd-verification exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-failure-modes", "failure modes");
+    await createSkillWithoutMarker(tmpDir, "rnd-verification");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── Feature 3: builder status codes parity ───────────────────────────────
+
+  // ── 30. rnd-building↔rnd-builder: "DONE_WITH_CONCERNS" ──────────────────
+
+  test("parity: 'DONE_WITH_CONCERNS' missing in rnd-builder exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-building", "DONE_WITH_CONCERNS");
+    await createAgentWithoutMarker(tmpDir, "rnd-builder");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── 31. rnd-building↔rnd-builder: "NEEDS_CONTEXT" ───────────────────────
+
+  test("parity: 'NEEDS_CONTEXT' missing in rnd-builder exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-building", "NEEDS_CONTEXT");
+    await createAgentWithoutMarker(tmpDir, "rnd-builder");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
+
+  // ── Feature 4: tiered criteria parity ────────────────────────────────────
+
+  // ── 32. rnd-decomposition↔rnd-planner: "Correctness:" ───────────────────
+
+  test("parity: 'Correctness:' missing in rnd-planner exits 1 with FAIL+parity", async () => {
+    await createSkillWithMarker(tmpDir, "rnd-decomposition", "Correctness:");
+    await createAgentWithoutMarker(tmpDir, "rnd-planner");
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("FAIL");
+    expect(result.stdout).toContain("parity");
+  });
 });

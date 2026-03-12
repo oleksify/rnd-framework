@@ -87,10 +87,11 @@ After both judges complete, read their reports and extract the `Overall Verdict`
 | Judge A | Judge B | Final Verdict |
 |---------|---------|---------------|
 | PASS    | PASS    | PASS          |
+| PASS (quality: NEEDS ITERATION) | PASS (quality: NEEDS ITERATION) | PASS (quality: NEEDS ITERATION) |
 | FAIL    | FAIL    | FAIL          |
 | NEEDS ITERATION | NEEDS ITERATION | NEEDS ITERATION |
 
-**When judges disagree** (any split — PASS/FAIL, PASS/NEEDS ITERATION, FAIL/NEEDS ITERATION), proceed to Step 3.
+**When judges disagree** (any split — PASS/FAIL, PASS/NEEDS ITERATION, FAIL/NEEDS ITERATION, or any split involving `PASS (quality: NEEDS ITERATION)`), proceed to Step 3.
 
 ### Step 3 — Tiebreaker Judge (on disagreement only)
 
@@ -133,7 +134,7 @@ Save the aggregated result to `$RND_DIR/verifications/T<id>-verification.md` fol
 
 ---
 
-## Final Consensus Verdict: PASS | FAIL | NEEDS ITERATION
+## Final Consensus Verdict: PASS | PASS (quality: NEEDS ITERATION) | NEEDS ITERATION | FAIL
 
 **Consensus method:** Both judges agreed | Tiebreaker required — [Judge A verdict] vs [Judge B verdict]
 
@@ -146,16 +147,18 @@ Save the aggregated result to `$RND_DIR/verifications/T<id>-verification.md` fol
 
 Process each task's consensus verdict:
 - **PASS:** Use `TaskUpdate` to mark the task `completed`.
-- **NEEDS ITERATION:** A clear, isolated failure the Builder can fix. Keep the task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle count. Extract ONLY the feedback section from the aggregated verification report — do NOT include any judge's internal reasoning. Pass feedback to the Builder. Track in `$RND_DIR/iteration-log.md`. Max 3 iterations. After iteration, re-verify with the same information barrier rules and multi-judge protocol.
-- **FAIL:** Multiple unmet criteria or no clear fix path — the task needs re-decomposition, not iteration. Do NOT pass to the Builder for iteration. Present this as a re-planning candidate.
+- **PASS (quality: NEEDS ITERATION):** Correctness is fully met; quality tier has feedback. Use `TaskUpdate` to mark the task `completed`. Save the quality feedback section from the aggregated verification report to `$RND_DIR/verifications/T<id>-quality-feedback.md`. Quality-tier failures do NOT block integration — they are deferred for a non-blocking iteration round after integration succeeds.
+- **NEEDS ITERATION:** A clear, isolated Correctness failure the Builder can fix. Keep the task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` to track the cycle count. Extract ONLY the feedback section from the aggregated verification report — do NOT include any judge's internal reasoning. Pass feedback to the Builder. Track in `$RND_DIR/iteration-log.md`. Max 3 iterations. After iteration, re-verify with the same information barrier rules and multi-judge protocol.
+- **FAIL:** Multiple unmet Correctness criteria or no clear fix path — the task needs re-decomposition, not iteration. Do NOT pass to the Builder for iteration. Present this as a re-planning candidate.
 
-Summarize verification results to the user: which tasks passed, which need iteration, which failed outright. Then use `AskUserQuestion`:
+Summarize verification results to the user: which tasks passed fully, which passed with quality feedback (quality: NEEDS ITERATION), which need Correctness iteration, which failed outright. Then use `AskUserQuestion`:
 
-If all tasks PASS:
-- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate` for this wave
+If all tasks PASS or PASS (quality: NEEDS ITERATION) (no Correctness failures):
+- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate` for this wave; quality-tier feedback deferred to post-integration
+- "Iterate on quality first" — address quality-tier feedback before integration (only if any task has `quality: NEEDS ITERATION`)
 - "Review verification reports" — inspect reports before proceeding
 
-If any tasks got NEEDS ITERATION (but none FAIL):
+If any tasks got NEEDS ITERATION (Correctness failure, but none FAIL):
 - "Iterate on failing tasks (Recommended)" — re-build and re-verify
 - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
 
@@ -168,6 +171,10 @@ If iteration budget (3 cycles) is exhausted:
 - "Re-plan this task (Recommended)" — decompose differently
 - "Skip and continue" — skip this task and proceed (see skip procedure below)
 - "Stop pipeline" — halt for manual intervention
+
+**Quality iteration round (after integration SHIP):** After integration succeeds, if any task has `quality: NEEDS ITERATION` feedback recorded in `$RND_DIR/verifications/T<id>-quality-feedback.md`, use `AskUserQuestion`:
+- "Iterate on quality now" — spawn Builder(s) with quality feedback from the recorded feedback files; re-verify after
+- "Defer quality iteration (Recommended)" — note the feedback in the report and skip; address in a future pipeline run
 
 ## Skip Procedure
 

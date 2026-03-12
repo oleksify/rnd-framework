@@ -407,6 +407,14 @@ parity_table=(
   # T3: local expert invocation parity
   "skills/rnd-local-experts/SKILL.md|agents/rnd-planner.md|Local Experts Discovered|local expert discovery field in planner"
   "skills/rnd-local-experts/SKILL.md|skills/rnd-decomposition/SKILL.md|ocal expert|local expert field in decomposition skill"
+  # Feature 2: failure modes parity
+  "skills/rnd-failure-modes/SKILL.md|agents/rnd-verifier.md|failure modes|failure modes catalog reference in verifier"
+  "skills/rnd-failure-modes/SKILL.md|skills/rnd-verification/SKILL.md|failure modes|failure modes catalog reference in verification skill"
+  # Feature 3: builder status codes parity
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|DONE_WITH_CONCERNS|builder status code DONE_WITH_CONCERNS parity"
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|NEEDS_CONTEXT|builder status code NEEDS_CONTEXT parity"
+  # Feature 4: tiered criteria parity
+  "skills/rnd-decomposition/SKILL.md|agents/rnd-planner.md|Correctness:|tiered criteria Correctness marker in planner"
 )
 
 for entry in "${parity_table[@]}"; do

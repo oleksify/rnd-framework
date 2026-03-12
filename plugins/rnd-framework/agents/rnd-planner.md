@@ -38,8 +38,11 @@ Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts]
 Success criteria:
-  - [ ] [Specific, testable condition — something a Verifier can check]
-  - [ ] [Another testable condition]
+  Correctness:
+  - [ ] [Functional requirement, test passing, or contract conformance condition]
+  - [ ] [Another must-pass condition]
+  Quality:
+  - [ ] [Code quality, naming, patterns, or documentation condition]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
 Local expert: [optional — name of project-local agent/skill to invoke, omit if not applicable]
@@ -48,6 +51,25 @@ External dependencies:
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
+
+### Tiered Criteria: Correctness vs Quality
+
+Every success criterion belongs to exactly one tier:
+
+**Correctness** — functional requirements, test passing, contract conformance, API behavior. These are must-pass. Any unmet Correctness criterion causes a FAIL verdict that blocks progress.
+
+**Quality** — code quality, naming conventions, patterns, documentation, style. These are should-pass. Unmet Quality criteria trigger NEEDS ITERATION on the quality tier, but do NOT cause a FAIL on Correctness. Integration can proceed; quality iteration is non-blocking.
+
+**Classification guide:**
+
+| Correctness (must-pass) | Quality (should-pass) |
+|---|---|
+| "Returns 401 for expired tokens" | "Function names follow project naming convention" |
+| "Throws ValidationError when input is null" | "Inline comments explain the retry logic" |
+| "File exists at the declared output path" | "No magic numbers — constants are named" |
+| "All unit tests pass" | "Error messages are user-facing and descriptive" |
+
+**Decision rule:** Ask "does a user or downstream system observe this outcome?" If yes → Correctness. If it only affects maintainability or developer experience → Quality.
 
 4. **Build the dependency matrix.** For each task, identify:
    - What it depends on (must complete first)
@@ -114,6 +136,7 @@ Skills (.claude/skills/):
 - Success criteria MUST be empirically verifiable — a Verifier must be able to check them by running code, inspecting output, or measuring a value. If a criterion cannot produce a true/false result from evidence, it is not a criterion.
 - Do not write vague criteria like "code is clean", "works correctly", "handles errors gracefully", or "is performant." Each criterion must specify an observable outcome: "returns 401 for expired tokens", "p99 latency under 50ms", "throws ValidationError when input is null".
 - Apply the **Verifier test**: for each criterion, ask "could a skeptical Verifier with no context confirm this from evidence alone?" If no, rewrite it.
+- Every criterion MUST be tagged as Correctness or Quality. Correctness criteria are must-pass — any unmet Correctness criterion is a FAIL that blocks progress. Quality criteria are should-pass — unmet Quality criteria produce NEEDS ITERATION on the quality tier but do not block a PASS on Correctness.
 - If a task is too large to have clear success criteria, decompose it further.
 - If the approach is uncertain, flag it and recommend a Phase 0 spike.
 - Every task that interacts with an external system (DB, API, file, env var, third-party service) MUST list that system in the `External dependencies` field with an explicit verification method. Do not leave the field empty or omit it for such tasks — unverified external contracts are a primary source of build failures.

@@ -159,6 +159,31 @@ Before submitting your build:
 - [ ] Output is clean (no errors, warnings)
 - [ ] Every external dependency in the pre-registration was verified against the actual system, with evidence recorded in the build manifest
 
+## Status Codes
+
+After completing the Verification Checklist, choose one status code and include it in your completion `SendMessage`:
+
+| Code | When to Use |
+|------|-------------|
+| `DONE` | All criteria met, all tests pass, no significant concerns. Proceed to verification. |
+| `DONE_WITH_CONCERNS` | Criteria met and tests pass, but you have uncertainty about specific areas (e.g., an unverified external dependency, a tricky edge case you couldn't fully exercise). Verifier should pay extra attention to the flagged areas. |
+| `NEEDS_CONTEXT` | You cannot proceed without additional information — ambiguous requirement, missing dependency, conflicting specs. State exactly what you need. |
+| `BLOCKED` | Cannot proceed at all. A hard blocker prevents implementation (e.g., missing file that must exist, broken toolchain, contradictory success criteria). Requires orchestrator intervention. |
+
+**Completion message format:**
+
+```
+T<id> build complete — status: DONE — manifest at $RND_DIR/builds/T<id>-manifest.md
+T<id> build complete — status: DONE_WITH_CONCERNS: [brief summary of concerns] — manifest at $RND_DIR/builds/T<id>-manifest.md
+```
+
+**Examples:**
+
+- `DONE` — "T7 build complete — status: DONE — manifest at ..."
+- `DONE_WITH_CONCERNS` — "T12 build complete — status: DONE_WITH_CONCERNS: external API shape unverified (sandbox only) — manifest at ..."
+- `NEEDS_CONTEXT` — "NEEDS_CONTEXT on T5: the pre-registration references schema v2 but the DB is on v1. Which should I target?"
+- `BLOCKED` — "BLOCKED on T3: commands/start.md does not exist at the expected path. Cannot proceed."
+
 ## Related Skills
 
 - `rnd-framework:rnd-debugging` — When tests reveal unexpected failures

@@ -72,8 +72,11 @@ Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
 Success criteria:
-  - [ ] [Specific, testable condition 1]
-  - [ ] [Specific, testable condition 2]
+  Correctness:
+  - [ ] [Functional requirement, test passing, or contract conformance condition]
+  - [ ] [Another must-pass condition]
+  Quality:
+  - [ ] [Code quality, naming, patterns, or documentation condition]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
 Local expert: [optional — name of project-local agent/skill to invoke, e.g., security-reviewer]
@@ -83,19 +86,43 @@ External dependencies:
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
+### Tiered Criteria: Correctness vs Quality
+
+Every success criterion belongs to exactly one tier:
+
+**Correctness** — functional requirements, test passing, contract conformance, API behavior. These are must-pass. Any unmet Correctness criterion causes a FAIL verdict that blocks progress.
+
+**Quality** — code quality, naming conventions, patterns, documentation, style. These are should-pass. Unmet Quality criteria trigger NEEDS ITERATION on the quality tier, but do NOT cause a FAIL on Correctness. Integration can proceed; quality iteration is non-blocking.
+
+**Classification guide:**
+
+| Correctness (must-pass) | Quality (should-pass) |
+|---|---|
+| "Returns 401 for expired tokens" | "Function names follow project naming convention" |
+| "Throws ValidationError when input is null" | "Inline comments explain the retry logic" |
+| "File exists at the declared output path" | "No magic numbers — constants are named" |
+| "All unit tests pass" | "Error messages are user-facing and descriptive" |
+
+**Decision rule:** Ask "does a user or downstream system observe this outcome?" If yes → Correctness. If it only affects maintainability or developer experience → Quality.
+
 ### Good vs Bad Success Criteria
 
-**Good (testable):**
+**Good (testable Correctness):**
 - "Returns 401 for expired tokens"
 - "Processes 1000 records in under 2 seconds"
 - "Creates a file at `~/.config/app/settings.json` on first run"
 - "Calling `validate(null)` throws `ValidationError`"
 
-**Bad (vague):**
-- "Works correctly"
-- "Handles errors gracefully"
-- "Is performant"
-- "Code is clean and well-structured"
+**Good (testable Quality):**
+- "Function names follow the project naming convention (camelCase for JS files)"
+- "All public functions have JSDoc comments with `@param` and `@returns`"
+- "No inline magic numbers — all thresholds use named constants"
+
+**Bad (vague — rewrite before using):**
+- "Works correctly" → rewrite as Correctness
+- "Handles errors gracefully" → rewrite as Correctness (specify the observable outcome)
+- "Is performant" → rewrite as Correctness (specify threshold)
+- "Code is clean and well-structured" → rewrite as Quality (specify the convention)
 
 ## Dependency Analysis
 
@@ -138,6 +165,7 @@ Before declaring planning complete:
 
 - [ ] Every task has a complete pre-registration document
 - [ ] Every success criterion is testable (a Verifier can check it)
+- [ ] Every success criterion is tagged as Correctness or Quality
 - [ ] No circular dependencies in the dependency matrix
 - [ ] Waves are correctly ordered
 - [ ] Parallel opportunities within waves are identified

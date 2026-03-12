@@ -89,12 +89,28 @@ When receiving a verification report with NEEDS ITERATION, address **every** fai
 
 **Anti-pattern:** Fixing only the "loudest" failure and hoping the others resolve themselves or will be caught next round. They won't — and you'll burn iteration budget discovering that.
 
+## Status Codes
+
+Every build completion must include one of four machine-readable status codes. Choose the code that best describes the build outcome:
+
+| Code | When it applies | Example scenario |
+|------|----------------|-----------------|
+| `DONE` | All criteria met, no significant uncertainties. Proceed directly to verification. | All tests pass, implementation matches the plan exactly, edge cases covered. |
+| `DONE_WITH_CONCERNS` | Criteria are met but the builder has uncertainty about specific areas that the Verifier should scrutinize. | Tests pass but the builder is unsure whether an edge case (e.g., concurrent writes) is fully handled; or a third-party API could not be queried so a behavior was assumed. |
+| `NEEDS_CONTEXT` | Builder cannot complete the task without additional information. Work is paused. | The pre-registration references an API schema that does not exist yet; or a requirement is ambiguous between two incompatible interpretations. |
+| `BLOCKED` | Builder cannot proceed at all and requires orchestrator intervention. | A required dependency is missing from the environment; a critical upstream artifact was not produced by its task. |
+
+When the status is `DONE_WITH_CONCERNS`, include a brief `concerns:` line in the completion message summarizing what the Verifier should scrutinize. The Verifier will receive this summary (but not your full self-assessment).
+
 ## Communication
 
 Notify the orchestrator via `SendMessage` at key points:
 
 1. **On start:** `SendMessage` with: "Building T<id>: [task name]"
-2. **On completion:** `SendMessage` with: "T<id> build complete — manifest at $RND_DIR/builds/T<id>-manifest.md"
+2. **On completion:** `SendMessage` with: "T<id> build complete — manifest at $RND_DIR/builds/T<id>-manifest.md — status: DONE"
+   - Replace `DONE` with the appropriate status code from the table above.
+   - For `DONE_WITH_CONCERNS`, append: `— concerns: [brief summary of what to scrutinize]`
+   - Example: "T7 build complete — manifest at $RND_DIR/builds/T7-manifest.md — status: DONE_WITH_CONCERNS — concerns: assumed POST /submit returns 201; could not verify against live API"
 3. **On approach disagreement:** `SendMessage` with: "STOP: T<id> approach is wrong — [brief reason]. Awaiting guidance."
 4. **On blockers:** `SendMessage` with: "BLOCKED on T<id>: [what's missing or broken]"
 

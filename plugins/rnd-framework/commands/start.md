@@ -74,7 +74,39 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 5. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) user answers, (d) any constraints discovered. This context is passed to the Planner.
 
-**Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 1. When in doubt, ask — a few questions now prevents re-planning later.
+**Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 0.5. When in doubt, ask — a few questions now prevents re-planning later.
+
+## Phase 0.5: Design Exploration
+
+Before committing to a plan, explore architectural alternatives so the user can make an informed decision. Invoke `rnd-framework:rnd-design` for the full protocol. Summary below.
+
+**Skip condition:** If the task description is already highly specific (includes file paths, a concrete implementation approach, and clear scope), skip this phase and proceed directly to Phase 1. Also skip if the task is a small refactor with no meaningful architectural ambiguity.
+
+If **auto-continue mode is ON**, skip the approval gate — automatically select the recommended approach from the design spec and proceed to Phase 1 without pausing for user input.
+
+Otherwise:
+
+1. **Generate 2-3 architectural alternatives.** Using the discovery context from Phase 0 (codebase findings, user answers, constraints), identify meaningfully different approaches. For each alternative cover: how it works, strengths, weaknesses, effort estimate, and risk level.
+
+2. **Recommend one approach.** State the recommended alternative with specific reasons tied to the constraints you found in Phase 0, the key assumptions that must hold, and what conditions would change the recommendation.
+
+3. **Save design spec.** Write the spec to `$RND_DIR/design-spec.md` using the format defined in `rnd-framework:rnd-design`. Initial status is `STATUS: DRAFT`.
+
+4. **Present for approval.** Use `AskUserQuestion` with these options:
+   - "Approve design (Recommended)" — accept the recommended approach and proceed to Phase 1
+   - "Approve with modifications" — apply requested changes, re-save, re-present (counts as one iteration)
+   - "Choose a different alternative" — switch to a different listed approach, re-save, re-present
+   - "Request another alternative" — generate a new option, re-save, re-present
+   - "Skip design phase" — proceed to Phase 1 without a design spec (orchestrator decides approach)
+
+5. **Iterate on feedback** (maximum 3 rounds). If the user requests changes, update `$RND_DIR/design-spec.md`, increment the iteration counter, and re-present via `AskUserQuestion`. After 3 rounds without approval, stop and report:
+
+   ```
+   BLOCKED on design approval after 3 iterations. User feedback: [summary].
+   Awaiting guidance on how to proceed.
+   ```
+
+6. **Finalize.** Once approved (or auto-approved in auto-continue mode), update `$RND_DIR/design-spec.md` with `STATUS: APPROVED` and the approved approach name. This spec is passed to the Planner in Phase 1 alongside the discovery context.
 
 ## Phase 1: Plan
 
@@ -83,7 +115,7 @@ Before spawning the planner, create the planning-phase marker to block project f
 touch "$RND_DIR/.planning-phase"
 ```
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints). This gives the Planner pre-gathered context to inform decomposition — including any project-local agents or skills it may reference in pre-registration documents.
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints) **and the approved design spec from Phase 0.5** (`$RND_DIR/design-spec.md` content, if it exists and has `STATUS: APPROVED`). This gives the Planner pre-gathered context to inform decomposition — including architectural decisions already made, rejected alternatives, and any project-local agents or skills it may reference in pre-registration documents.
 
 After the planner finishes — **whether successfully or with an error** — remove the marker:
 ```bash
@@ -122,7 +154,16 @@ For each wave in the execution schedule:
 
 3. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
 
-4. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+4. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
+
+   | Status code | Action |
+   |-------------|--------|
+   | `DONE` | Proceed to Gate 2 normally. |
+   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Extract the concerns summary from the builder's status message (NOT from the self-assessment). Pass the concerns summary to the Verifier prompt for that task so the Verifier scrutinizes the flagged areas. |
+   | `NEEDS_CONTEXT` | Pause this task. Use `AskUserQuestion` to present the builder's stated context gap and ask the user to provide the missing information, restate the requirement, or skip the task. Re-dispatch the builder with the user's answer appended to the original prompt. Do not advance to Gate 2 until the builder returns `DONE` or `DONE_WITH_CONCERNS`. |
+   | `BLOCKED` | Pause this task. Use `AskUserQuestion` to present the blocker description and offer escalation options: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". Apply the chosen action before advancing to Gate 2. |
+
+5. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
 
 **After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
 
@@ -153,19 +194,21 @@ For each completed task in the wave:
 5. **Save aggregated report** to `$RND_DIR/verifications/T<id>-verification.md` containing: Judge A report, Judge B report, tiebreaker report (if used), and the final consensus verdict with consensus method noted.
 
 6. **Gate 3:** Check the consensus verdict (not individual judge verdicts).
-   - **PASS** → Task is done. Use `TaskUpdate` to mark `completed`. Move to next.
-   - **NEEDS ITERATION** → A clear, isolated failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
-   - **FAIL** → Multiple unmet criteria or no clear fix path. Do NOT iterate — route to re-planning.
+   - **PASS** → All criteria (both tiers) passed. Use `TaskUpdate` to mark `completed`. Move to next.
+   - **PASS (quality: NEEDS ITERATION)** → Correctness is fully met; quality tier has feedback. Use `TaskUpdate` to mark `completed`. Record the quality feedback in `$RND_DIR/verifications/T<id>-quality-feedback.md` for a non-blocking iteration round after integration. Quality-tier failures do NOT block integration — proceed with the task marked completed.
+   - **NEEDS ITERATION** → A clear, isolated Correctness failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
+   - **FAIL** → Multiple unmet Correctness criteria or no clear fix path. Do NOT iterate — route to re-planning.
 
-**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed, which need iteration, which failed outright.
+**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed fully, which passed with quality feedback (quality: NEEDS ITERATION), which need Correctness iteration, which failed outright.
 
-If all tasks PASS:
-- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to integration (Phase 5).
+If all tasks PASS or PASS (quality: NEEDS ITERATION) (no Correctness failures):
+- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to integration (Phase 5). Any quality feedback is deferred to the post-integration quality round.
 - Otherwise, use `AskUserQuestion` with options:
-  - "Proceed to integration (Recommended)" — spawn Integrator for this wave
+  - "Proceed to integration (Recommended)" — spawn Integrator; quality-tier feedback deferred to post-integration
+  - "Iterate on quality first" — address quality-tier feedback before integration (only if any task has `quality: NEEDS ITERATION`)
   - "Review verification reports" — let the user inspect reports before integration
 
-If any tasks got NEEDS ITERATION (but none FAIL):
+If any tasks got NEEDS ITERATION (Correctness failure, but none FAIL):
 - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 4 iteration on failing tasks.
 - Otherwise, use `AskUserQuestion` with options:
   - "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
@@ -176,6 +219,12 @@ If any tasks got FAIL:
   - "Re-plan failing tasks (Recommended)" — send back to Planner for re-decomposition
   - "Iterate anyway" — treat as NEEDS ITERATION (override Verifier's severity)
   - "Skip failing tasks and continue" — skip and proceed (see skip procedure below)
+
+**Quality iteration round (after integration SHIP):** After integration succeeds, if any task recorded `quality: NEEDS ITERATION` feedback in `$RND_DIR/verifications/T<id>-quality-feedback.md`:
+- If **auto-continue mode is ON**, defer quality iteration automatically — note the deferred quality feedback in the phase summary and skip the round.
+- Otherwise, use `AskUserQuestion` with options:
+  - "Iterate on quality now" — spawn Builder(s) with quality feedback from the recorded feedback files; re-verify and re-integrate if needed
+  - "Defer quality iteration (Recommended)" — note the feedback in the report and skip; address separately in a future pipeline run
 
 ## Phase 4: Iterate (if needed)
 

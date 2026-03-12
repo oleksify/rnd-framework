@@ -31,7 +31,16 @@ If $ARGUMENTS is "next":
 - Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.
 - Mark those tasks `in_progress` and build them in parallel, each with `mode: "bypassPermissions"`.
 
-After build completes, confirm all outputs exist and tests pass locally (Gate 2). Use `TaskUpdate` to mark each successfully built task as `completed`.
+After each builder agent returns, check its status code from the completion message before proceeding:
+
+| Status | Action |
+|--------|--------|
+| `DONE` | Proceed to Gate 2 normally. |
+| `DONE_WITH_CONCERNS` | Proceed to Gate 2, but record the concerns summary. Pass it to the Verifier prompt when spawning verification — this tells the Verifier which areas need extra scrutiny. Do NOT read the self-assessment. |
+| `NEEDS_CONTEXT` | Pause immediately. Use `AskUserQuestion` to present the builder's question to the user and collect the missing context. Resume the builder (spawn a new agent) with the original task plus the clarifying context. |
+| `BLOCKED` | Pause immediately. Use `AskUserQuestion` with options: "Provide missing dependency manually", "Re-plan this task", "Skip this task". |
+
+Gate 2: Confirm all `DONE` and `DONE_WITH_CONCERNS` tasks have code, tests, artifacts, and self-assessment. Use `TaskUpdate` to mark each successfully built task as `completed`.
 
 Summarize build results to the user: which tasks completed, any deviations from plan, any escalations. Then use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — run `/rnd-framework:verify` for this wave

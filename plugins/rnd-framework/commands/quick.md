@@ -5,7 +5,7 @@ argument-hint: "<description of the small task>"
 
 # R&D Framework: Quick Mode
 
-For small, well-scoped tasks. Same scientific-method principles, minimal ceremony.
+For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. Design exploration is skipped in quick mode — use `/rnd-framework:start` if the task requires architectural trade-off analysis.
 
 > **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:start` for proper decomposition.
 
@@ -54,6 +54,13 @@ Use `TaskUpdate` to mark the task `in_progress` (with `activeForm: "Building [ta
 
 Implement the task yourself. Write code + tests. Save a one-line self-assessment to `$RND_DIR/builds/` noting any uncertainties.
 
+After building, assess your own work and set a status code based on your confidence:
+
+- `DONE` — all criteria met, tests pass, no significant concerns. Proceed to Step 3.
+- `DONE_WITH_CONCERNS` — criteria met but you have uncertainty (e.g., an unverified external dependency, a tricky edge case). Record the concerns in your self-assessment and pass a brief concerns summary to the Verifier in Step 3.
+
+Quick mode does not use `NEEDS_CONTEXT` or `BLOCKED` — as the orchestrator, you can resolve context gaps and dependency issues directly without pausing.
+
 ## Step 3: Independent Verify
 
 Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
@@ -61,7 +68,8 @@ Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [
 Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`, passing:
 - The pre-registration from step 1
 - Your code and tests
-- Do NOT pass your self-assessment or any notes about concerns
+- If your status was `DONE_WITH_CONCERNS`, include the brief concerns summary so the Verifier knows which areas need extra scrutiny
+- Do NOT pass your full self-assessment
 
 The verifier returns its report as text output. The orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-verification.md`.
 
@@ -72,6 +80,8 @@ The verifier returns its report as text output. The orchestrator saves the retur
   - "Review artifacts" — show the user the verification report and code changes
   - "Clean up" — remove `$RND_DIR` artifacts only
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
+
+- **PASS (quality: NEEDS ITERATION)** → Treat as PASS for pipeline purposes. Use `TaskUpdate` to mark the task `completed`. Show the quality feedback from the verification report to the user. Do NOT trigger an iteration cycle. Note: "Quality feedback noted. For small tasks, quality iteration is optional — review and address manually if needed." Then present the same `AskUserQuestion` options as a full PASS.
 
 - **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating [task name] (N/2)"` to track the cycle. Summarize the verification failure to the user. Get feedback, fix, re-verify.
 

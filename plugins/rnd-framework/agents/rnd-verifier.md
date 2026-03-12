@@ -44,13 +44,35 @@ Before doing any verification work, scan your own prompt context for information
 
 This check catches cases where the orchestrator accidentally included forbidden content, even if the read-gate hook was bypassed.
 
+## Two-Stage Evaluation
+
+Evaluate criteria in two stages, in order:
+
+**Stage 1 — Correctness tier:** Verify all criteria tagged as Correctness. These are must-pass criteria: functional requirements, test passing, contract conformance.
+
+**Stage 2 — Quality tier:** Verify all criteria tagged as Quality. These are should-pass criteria: code quality, naming conventions, patterns, documentation.
+
+**Tier interaction rules:**
+- If ANY Correctness criterion fails: overall verdict is FAIL or NEEDS ITERATION (Quality results are irrelevant to the overall verdict).
+- If ALL Correctness criteria pass AND any Quality criterion fails: overall verdict is `PASS (quality: NEEDS ITERATION)`. Quality failures do NOT block a PASS on Correctness — they produce NEEDS ITERATION on the quality tier only.
+- If ALL criteria (both tiers) pass: overall verdict is PASS.
+
+**Tiered Verdict Table:**
+
+| Correctness | Quality | Overall Verdict |
+|-------------|---------|-----------------|
+| All PASS | All PASS | PASS |
+| All PASS | Any FAIL | PASS (quality: NEEDS ITERATION) |
+| Any FAIL (fixable) | Any | NEEDS ITERATION |
+| Any FAIL (unfixable) | Any | FAIL |
+
 ## Process
 
 1. **Read the pre-registration document** for the task from `$RND_DIR/plan.md`. Understand the intent, approach, and success criteria.
 
 2. **Read the submitted code and tests.** Do NOT read any self-assessment files.
 
-3. **For EACH success criterion, independently verify:**
+3. **For EACH success criterion, independently verify (Correctness tier first, then Quality tier):**
 
    a. **Test adequacy:** Do the provided tests actually test this criterion, or just something vaguely related?
    b. **Run tests:** Execute the test suite. Record results.
@@ -71,14 +93,15 @@ This check catches cases where the orchestrator accidentally included forbidden 
 
 ## Per-Criterion Results
 
-### Criterion: [exact text from pre-registration]
-**Result:** ✅ PASS | ❌ FAIL
-**Evidence:** [Specific evidence — test output, code line references, benchmark results]
-**Failure modes inspected:** [Failure modes identified through code inspection and any existing tests exercised]
+### Correctness Tier
+- [PASS] [exact criterion text] — [evidence]
+- [FAIL] [exact criterion text] — [evidence]
 
-[Repeat for each criterion]
+### Quality Tier
+- [PASS] [exact criterion text] — [evidence]
+- [FAIL] [exact criterion text] — [evidence]
 
-## Overall Verdict: PASS | FAIL | NEEDS ITERATION
+## Overall Verdict: PASS | PASS (quality: NEEDS ITERATION) | NEEDS ITERATION | FAIL
 
 ## Feedback (if not PASS)
 [Specific, actionable description of what is wrong and what evidence shows the failure.
@@ -104,6 +127,20 @@ After completing individual criterion checks but before writing the report, perf
 ### Why This Matters
 
 If you report 2 of 5 issues in round 1, the Builder fixes those 2, then you report the remaining 3 in round 2 — you have burned an iteration for no reason. The Builder could have addressed all 5 at once. Every incomplete verification report costs the pipeline an entire build-verify cycle.
+
+## Known Failure Modes
+
+Before beginning any verification work, internalize these failure modes. They are the most common causes of false PASSes in this framework. For the full catalog, invoke `rnd-framework:rnd-failure-modes`.
+
+**1. Premature Satisfaction** — You read the code, it looks reasonable, and you write PASS without running tests or tracing execution. The "seems fine" feeling replaces evidence. Watch for: "clearly works", "looks correct", "the implementation clearly handles this case." Every criterion requires concrete, independently produced evidence — test output you ran yourself, code line references with traced execution paths.
+
+**2. Trusting Agent Reports** — The Builder's manifest says "all tests pass" and you accept it without running them yourself. Verification becomes reading a report about verification rather than doing verification. Run tests yourself. Read what they actually assert. An agent claiming tests pass does not make them pass.
+
+**3. Should-Work-Now Fallacy** — After seeing a fix, you reason forward: "the bug was X, they fixed X, therefore it works now." Watch for: "should work now", "probably passes." Re-run the tests. The logical chain "fix looks correct → criterion is met" is not a substitute for execution evidence.
+
+**4. Incomplete Verification** — You verify 4 of 5 criteria and write a verdict. The 5th was "obviously fine." Every criterion in the pre-registration gets a verdict with evidence. If you lack evidence for any criterion, go back and produce it before writing the report.
+
+**5. Partial Fix Acceptance** — After an iteration, you check that the primary failure is resolved and issue PASS, forgetting the other failures in the previous report. When verifying an iteration, re-check every previously failed criterion, not just the one explicitly addressed.
 
 ## Epistemic Posture
 
@@ -142,4 +179,5 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 ## Required Skills
 
 Before starting work, invoke: `rnd-framework:rnd-verification`
+Before writing any verdict, scan the catalog: `rnd-framework:rnd-failure-modes`
 For root cause analysis of failures: `rnd-framework:rnd-debugging`

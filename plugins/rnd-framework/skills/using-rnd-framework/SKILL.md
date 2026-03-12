@@ -44,6 +44,8 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-data-science` | Performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring Julia or DuckDB computation |
 | `rnd-framework:rnd-multi-judge` | Running multi-judge consensus verification — spawning 2 independent verifiers, aggregating verdicts, and triggering a tiebreaker on disagreement |
 | `rnd-framework:rnd-local-experts` | Discovering project-local agents and skills in `.claude/agents/` and `.claude/skills/` and surfacing them for the Planner to reference in pre-registrations |
+| `rnd-framework:rnd-design` | Use when exploring architectural alternatives before planning — generates 2-3 approaches with trade-offs and produces a design spec |
+| `rnd-framework:rnd-failure-modes` | Use when verifying — catalog of known verification anti-patterns and red-flag phrases to watch for |
 
 ## Available Commands
 

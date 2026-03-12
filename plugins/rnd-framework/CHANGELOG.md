@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3 — 2026-03-12
+
+### Add design exploration, failure modes, status codes, and tiered verification
+
+Four superpowers-inspired features: Design Exploration phase (Phase 0.5) between Discovery and Planning, verification anti-pattern catalog (rnd-failure-modes skill), structured builder status codes (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED), and two-stage verification with Correctness/Quality tiers. Updated agents, commands, skills, validate.sh parity checks, and tests.
+
 ## 0.9.2 — 2026-03-12
 
 ### Add optional tagging to bump command

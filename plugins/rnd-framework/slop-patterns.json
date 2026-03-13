@@ -1,0 +1,139 @@
+{
+  "patterns": [
+    {
+      "id": "over-commenting",
+      "name": "Over-commenting: comment restates code",
+      "regex": "//\\s+(?:increment|decrement|initialize|declare|define|set|get|return|check|create|update|delete|add|remove|call|invoke|assign|calculate|compute|iterate|loop|handle|process|log|print|import|export|require)\\b",
+      "severity": 2,
+      "category": "over-commenting",
+      "description": "Comment restates what the next line of code already expresses clearly.",
+      "remediation": "Remove comments that merely describe the mechanics; only keep comments explaining why."
+    },
+    {
+      "id": "empty-catch-block",
+      "name": "Empty catch block",
+      "regex": "catch\\s*\\([^)]*\\)\\s*\\{\\s*(?:\\/\\/[^\\n]*|/\\*[^*]*\\*/)?\\s*\\}",
+      "severity": 4,
+      "category": "error-handling",
+      "description": "Catch block with no body silently swallows exceptions, hiding errors.",
+      "remediation": "At minimum, log or rethrow the error, or add a comment explaining why silent handling is intentional."
+    },
+    {
+      "id": "placeholder-todo",
+      "name": "Placeholder TODO/FIXME left in code",
+      "regex": "//\\s*(?:TODO|FIXME|HACK|XXX)\\b",
+      "severity": 3,
+      "category": "hygiene",
+      "description": "TODO/FIXME/HACK/XXX marker was left in the code without being resolved.",
+      "remediation": "Resolve the underlying issue or track it in an issue tracker and remove the inline marker."
+    },
+    {
+      "id": "commented-out-code",
+      "name": "Commented-out code block",
+      "regex": "^\\s*//\\s*(?:const|let|var|function|class|import|export|return|if|for|while|switch|async|await|throw|try|catch)\\b",
+      "severity": 3,
+      "category": "hygiene",
+      "description": "Commented-out code left in the file instead of being deleted.",
+      "remediation": "Delete unused code; version control preserves history if the code is ever needed again."
+    },
+    {
+      "id": "console-log-leftover",
+      "name": "Debug console.log left behind",
+      "regex": "console\\.(?:log|debug|warn|error|info|dir|trace)\\s*\\(",
+      "severity": 3,
+      "category": "hygiene",
+      "description": "Debug console statement was left in production code after development.",
+      "remediation": "Remove debug logging statements or replace with a structured logger that can be toggled by environment."
+    },
+    {
+      "id": "unnecessary-else-after-return",
+      "name": "Unnecessary else after return",
+      "regex": "\\breturn\\b[^;{]*;\\s*\\}\\s*else\\s*\\{",
+      "severity": 2,
+      "category": "control-flow",
+      "description": "An else branch follows a return statement, making the else redundant and adding nesting.",
+      "remediation": "Remove the else keyword; code after the if block is only reached when the condition is false."
+    },
+    {
+      "id": "unnecessary-wrapper-function",
+      "name": "Unnecessary single-expression wrapper function",
+      "regex": "(?:function\\s+\\w+\\s*\\([^)]*\\)|(?:const|let|var)\\s+\\w+\\s*=\\s*(?:async\\s+)?(?:\\([^)]*\\)|\\w+)\\s*=>)\\s*\\{\\s*return\\s+\\w+\\s*\\([^)]*\\)\\s*;\\s*\\}",
+      "severity": 2,
+      "category": "abstraction",
+      "description": "Function body does nothing but delegate to another function with the same arguments.",
+      "remediation": "Replace the wrapper with a direct reference or alias to the wrapped function."
+    },
+    {
+      "id": "cargo-cult-try-catch",
+      "name": "Try-catch around obviously infallible code",
+      "regex": "try\\s*\\{\\s*(?:const|let|var)\\s+\\w+\\s*=\\s*(?:\\d+|true|false|null|undefined|\\[\\]|\\{\\}|'[^']*'|\"[^\"]*\")\\s*;\\s*\\}\\s*catch",
+      "severity": 3,
+      "category": "error-handling",
+      "description": "Try-catch wraps code that cannot throw, adding defensive ceremony without benefit.",
+      "remediation": "Remove the try-catch wrapper from synchronous operations that provably cannot throw."
+    },
+    {
+      "id": "excessive-type-annotation",
+      "name": "Obvious type annotation on literal",
+      "regex": "(?:const|let|var)\\s+\\w+\\s*:\\s*(?:number|string|boolean|null|undefined|any)\\s*=\\s*(?:\\d+|true|false|null|undefined|'[^']*'|\"[^\"]*\")",
+      "severity": 1,
+      "category": "typing",
+      "description": "Type annotation on a variable whose type is obvious from the literal value assigned.",
+      "remediation": "Omit the type annotation and rely on TypeScript's inference for obvious literal assignments."
+    },
+    {
+      "id": "unnecessary-async",
+      "name": "Async function with no await",
+      "regex": "async\\s+(?:function\\s+\\w+|(?:const|let|var)\\s+\\w+\\s*=\\s*(?:async\\s+)?(?:\\([^)]*\\)|\\w+)\\s*=>)",
+      "severity": 2,
+      "category": "typing",
+      "description": "Function is declared async but contains no await expression, wrapping the return value unnecessarily.",
+      "remediation": "Remove the async keyword if the function does not need to await any asynchronous operation."
+    },
+    {
+      "id": "re-export-barrel",
+      "name": "Barrel file that only re-exports",
+      "regex": "^export\\s+\\{[^}]+\\}\\s+from\\s+['\"]",
+      "severity": 1,
+      "category": "abstraction",
+      "description": "Index or barrel file that solely re-exports from other modules without adding any logic.",
+      "remediation": "Consider whether the barrel indirection is needed; deep imports are often clearer and faster to compile."
+    },
+    {
+      "id": "over-defensive-null-check",
+      "name": "Null check on provably non-null value",
+      "regex": "if\\s*\\(\\s*(?:typeof\\s+)?\\w+(?:\\.\\w+)*\\s*(?:===?\\s*(?:null|undefined)|!==?\\s*(?:null|undefined)|==\\s*null|!=\\s*null)\\s*\\)\\s*\\{\\s*(?:return|throw)\\s*;?\\s*\\}",
+      "severity": 1,
+      "category": "error-handling",
+      "description": "Null guard on a value that the type system or prior logic guarantees is non-null.",
+      "remediation": "Remove the guard or add a TypeScript non-null assertion if you are certain the value cannot be null."
+    },
+    {
+      "id": "empty-function-body",
+      "name": "Function with empty or comment-only body",
+      "regex": "(?:function\\s+\\w+\\s*\\([^)]*\\)|(?:const|let|var)\\s+\\w+\\s*=\\s*(?:async\\s+)?(?:\\([^)]*\\)|\\w+)\\s*=>)\\s*\\{\\s*(?:\\/\\/[^\\n]*)?\\s*\\}",
+      "severity": 3,
+      "category": "abstraction",
+      "description": "Function body is empty or contains only a comment, providing no implementation.",
+      "remediation": "Implement the function body or remove the function if it is no longer needed."
+    },
+    {
+      "id": "redundant-return-type",
+      "name": "Redundant explicit return type annotation",
+      "regex": "(?:function\\s+\\w+\\s*\\([^)]*\\)|\\([^)]*\\)\\s*=>)\\s*:\\s*(?:void|undefined|boolean|number|string)\\s*(?:=>|\\{)",
+      "severity": 1,
+      "category": "typing",
+      "description": "Return type annotation duplicates what TypeScript would infer automatically.",
+      "remediation": "Remove the explicit return type annotation when TypeScript can infer it from the function body."
+    },
+    {
+      "id": "verbose-object-spread-copy",
+      "name": "Verbose manual property copy instead of spread",
+      "regex": "(?:const|let|var)\\s+\\w+\\s*=\\s*\\{(?:\\s*\\w+\\s*:\\s*\\w+\\.\\w+\\s*,\\s*){3,}\\}",
+      "severity": 2,
+      "category": "abstraction",
+      "description": "Object is constructed by manually copying multiple properties from another object.",
+      "remediation": "Use object spread (`{ ...source }`) or `Object.assign` to copy object properties concisely."
+    }
+  ]
+}

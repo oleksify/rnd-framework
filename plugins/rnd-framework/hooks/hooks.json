@@ -57,6 +57,10 @@
           {
             "type": "command",
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log'"
+          },
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate'"
           }
         ]
       },
@@ -66,6 +70,10 @@
           {
             "type": "command",
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log'"
+          },
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate'"
           }
         ]
       }

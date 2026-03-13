@@ -112,6 +112,17 @@ if [ -f "$hjson" ]; then
       fail "hook script '${script_name}' not found at ${script_path}"
     fi
   done
+  # Check slop-patterns.json exists and is valid JSON
+  slop_catalog="${PLUGIN_ROOT}/slop-patterns.json"
+  if [ -f "$slop_catalog" ]; then
+    if jq empty "$slop_catalog" 2>/dev/null; then
+      pass "slop-patterns.json exists and is valid JSON"
+    else
+      fail "slop-patterns.json is not valid JSON"
+    fi
+  else
+    fail "slop-patterns.json not found at ${slop_catalog}"
+  fi
 else
   fail "hooks.json not found at ${hjson}"
 fi
@@ -415,6 +426,14 @@ parity_table=(
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|NEEDS_CONTEXT|builder status code NEEDS_CONTEXT parity"
   # Feature 4: tiered criteria parity
   "skills/rnd-decomposition/SKILL.md|agents/rnd-planner.md|Correctness:|tiered criteria Correctness marker in planner"
+  # T7: slop-gate parity checks
+  "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|over-commenting|slop skill and catalog share over-commenting category"
+  "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|error-handling|slop skill and catalog share error-handling category"
+  "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|hygiene|slop skill and catalog share hygiene category"
+  "hooks/slop-gate|slop-patterns.json|severity|slop-gate hook and catalog share severity field schema"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|PASS|slop skill and hook share PASS verdict"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|WARN|slop skill and hook share WARN verdict"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|FAIL|slop skill and hook share FAIL verdict"
 )
 
 for entry in "${parity_table[@]}"; do

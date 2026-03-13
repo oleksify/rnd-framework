@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.4 — 2026-03-13
+
+### Add /rnd-framework:resume command
+
+New command that scans $RND_DIR artifacts to reconstruct pipeline state and continues a partially-completed pipeline from where it left off. Parses plan.md for task tree and waves, scans builds/, verifications/, and integration/ directories to determine per-task status, recreates TaskList entries, and presents next-action options via AskUserQuestion. Cross-session capable — works in a new Claude Code conversation. Commands: 11 → 12.
+
 ## 0.9.3 — 2026-03-12
 
 ### Add design exploration, failure modes, status codes, and tiered verification

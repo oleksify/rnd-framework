@@ -74,7 +74,7 @@ After configuring, start a Claude Code session in the project and check:
 
 ## Skills
 
-The plugin provides 20 skills that embed structured practices into every phase of coding:
+The plugin provides 21 skills that embed structured practices into every phase of coding:
 
 | Skill | Purpose |
 |---|---|
@@ -98,6 +98,7 @@ The plugin provides 20 skills that embed structured practices into every phase o
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
+| `rnd-slop-detection` | PostToolUse slop gate — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) and reports to pipeline artifacts |
 
 ## Agents
 
@@ -217,9 +218,10 @@ rnd-framework/
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start            # SessionStart hook: injects skill context via jq
-│   └── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # 20 skills (rnd-* namespace)
+├── skills/                      # 21 skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage

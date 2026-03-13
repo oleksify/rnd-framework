@@ -46,6 +46,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-local-experts` | Discovering project-local agents and skills in `.claude/agents/` and `.claude/skills/` and surfacing them for the Planner to reference in pre-registrations |
 | `rnd-framework:rnd-design` | Use when exploring architectural alternatives before planning — generates 2-3 approaches with trade-offs and produces a design spec |
 | `rnd-framework:rnd-failure-modes` | Use when verifying — catalog of known verification anti-patterns and red-flag phrases to watch for |
+| `rnd-framework:rnd-slop-detection` | Use when reviewing code quality — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) with evidence-based verdicts |
 
 ## Available Commands
 

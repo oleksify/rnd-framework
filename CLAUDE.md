@@ -15,7 +15,7 @@ plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # 5 specialized agents (planner, builder, verifier, integrator, data-scientist)
 ├── commands/                    # 12 slash commands (/rnd-framework:start, etc.)
-├── skills/                      # 20 skills, each in its own dir with SKILL.md
+├── skills/                      # 21 skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing
@@ -23,7 +23,8 @@ plugins/rnd-framework/
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start            # SessionStart hook: injects skill context via jq
-│   └── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage

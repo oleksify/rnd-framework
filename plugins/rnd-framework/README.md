@@ -67,6 +67,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:status` | Show pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
 | `/rnd-framework:history` | Browse past pipeline sessions for this project |
+| `/rnd-framework:resume` | Resume a partially-completed pipeline from where it left off |
 | `/rnd-framework:validate` | Validate plugin structure: frontmatter, hooks, cross-references |
 | `/rnd-framework:doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
@@ -209,7 +210,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 5 specialized agents
-├── commands/                    # 11 pipeline commands
+├── commands/                    # 12 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths

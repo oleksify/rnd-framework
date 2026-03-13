@@ -59,6 +59,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:status` | Pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
 | `/rnd-framework:history` | Browse past pipeline sessions for this project |
+| `/rnd-framework:resume` | Resume a partially-completed pipeline from where it left off |
 | `/rnd-framework:validate` | Validate plugin structure, frontmatter, and cross-references |
 | `/rnd-framework:doctor` | Runtime environment diagnostics — CLI tools, hooks, RND_DIR, version sync |
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |

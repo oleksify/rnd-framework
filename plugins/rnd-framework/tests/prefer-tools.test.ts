@@ -126,14 +126,15 @@ describe("echo to /dev/ paths — exempted", () => {
 });
 
 // ---------------------------------------------------------------------------
-// echo without redirect → no opinion
+// echo without redirect → auto-allow
 // ---------------------------------------------------------------------------
 
-describe("echo without redirect — no opinion", () => {
-  it("'echo hello' returns exit 0 and empty stdout", async () => {
+describe("echo without redirect — auto-allow", () => {
+  it("'echo hello' returns exit 0 with permissionDecision allow", async () => {
     const result = await runHook(HOOK, payload("echo hello"));
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("");
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 });
 
@@ -216,14 +217,15 @@ describe("cd prefix stripping", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Unmatched commands → no opinion
+// Unmatched commands → auto-allow
 // ---------------------------------------------------------------------------
 
-describe("unmatched commands — no opinion", () => {
-  it("'npm install' returns exit 0 and empty stdout", async () => {
+describe("unmatched commands — auto-allow", () => {
+  it("'npm install' returns exit 0 with permissionDecision allow", async () => {
     const result = await runHook(HOOK, payload("npm install"));
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("");
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 });
 
@@ -262,10 +264,11 @@ describe("cd semicolon stripping", () => {
 // ---------------------------------------------------------------------------
 
 describe("git add .rnd edge cases", () => {
-  it("'git add .rnd.backup' returns exit 0 with empty stdout (not blocked)", async () => {
+  it("'git add .rnd.backup' returns exit 0 with permissionDecision allow (not blocked)", async () => {
     const result = await runHook(HOOK, payload("git add .rnd.backup"));
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("");
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 
   it("'git add .rnd/' returns exit 2 with BLOCKED in stderr", async () => {

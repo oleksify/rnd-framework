@@ -40,13 +40,10 @@ elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
     echo "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs." >&2
     exit 2
   fi
-elif echo "$STRIPPED" | grep -qE '^ls\b'; then
   echo "$ALLOW"
 elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd(/|[[:space:]]|$)'; then
   echo "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed." >&2
   exit 2
-elif echo "$COMMAND" | grep -q 'rnd-dir\.sh'; then
-  echo "$ALLOW"
-elif echo "$COMMAND" | grep -qE '\.rnd/'; then
+else
   echo "$ALLOW"
 fi

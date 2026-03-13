@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.5 — 2026-03-13
+
+### Add slop gate and fix confirmation prompts
+
+New evidence-based PostToolUse hook (hooks/slop-gate) detects structural LLM anti-patterns in code written by Write/Edit tools. Includes: declarative pattern catalog (slop-patterns.json) with 15 anti-patterns, diff-aware analysis (Write analyzes full content, Edit analyzes only new_string), evidence-based scoring with PASS/WARN/FAIL verdicts, pipeline artifact integration (per-file reports and cumulative session scoring), companion skill (rnd-slop-detection) with 15 before/after remediation examples, hooks.json registration, validate.sh parity checks (193 total), and 70 new tests. Also fixes excessive confirmation prompts during pipeline runs by making the prefer-tools hook auto-allow all non-blocked bash commands instead of returning no-opinion. Skills: 20 to 21. Tests: 240 to 310.
+
 ## 0.9.4 — 2026-03-13
 
 ### Add /rnd-framework:resume command

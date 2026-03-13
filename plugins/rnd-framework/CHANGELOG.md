@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.6 — 2026-03-13
+
+### Fix stale skill counts in CLAUDE.md and README
+
 ## 0.9.5 — 2026-03-13
 
 ### Add slop gate and fix confirmation prompts

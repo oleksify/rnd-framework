@@ -19,6 +19,7 @@ plugins/rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing
+│   ├── lib.sh                   # Shared utilities for all bash hooks (path parsing, JSON responses, .rnd/ detection)
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
@@ -35,13 +36,15 @@ plugins/rnd-framework/
 
 ### Agent Roles and Models
 
-| Agent | Model | Purpose |
-|---|---|---|
-| `rnd-planner` | opus | Decomposes tasks into pre-registered sub-tasks with testable criteria |
-| `rnd-builder` | sonnet | Implements one task using TDD; produces build manifest + self-assessment |
-| `rnd-verifier` | opus | Independent verification — never sees builder reasoning |
-| `rnd-integrator` | sonnet | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
-| `rnd-data-scientist` | opus | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights; uses Julia or DuckDB CLI as computation backend |
+| Agent | Model | Color | Purpose |
+|---|---|---|---|
+| `rnd-planner` | opus | blue | Decomposes tasks into pre-registered sub-tasks with testable criteria |
+| `rnd-builder` | sonnet | green | Implements one task using TDD; produces build manifest + self-assessment |
+| `rnd-verifier` | opus | amber | Independent verification — never sees builder reasoning |
+| `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
+| `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Write, Edit` as defense-in-depth.
 
 ### Information Barrier and Permission Hooks
 
@@ -90,7 +93,7 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 
 - **Skills use YAML frontmatter** — `name` and `description` fields between `---` delimiters
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
-- **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, tools list
+- **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, `tools`, `memory`, `color`, `skills`, and optionally `disallowedTools`
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
 - **Test suite** — `tests/` contains Bun tests for hooks and lib scripts; run with `bun test` from `plugins/rnd-framework/`
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort

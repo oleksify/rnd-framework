@@ -99,16 +99,19 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
 | `rnd-slop-detection` | PostToolUse slop gate — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) and reports to pipeline artifacts |
+| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB |
 
 ## Agents
 
-| Agent | Model | Tools | Role |
+All agents have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Write, Edit` as defense-in-depth.
+
+| Agent | Model | Color | Role |
 |---|---|---|---|
-| `rnd-framework:rnd-planner` | opus | Read, Grep, Glob | Decomposes tasks, writes pre-registration documents |
-| `rnd-framework:rnd-builder` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Implements one task with TDD, produces verification artifacts |
-| `rnd-framework:rnd-verifier` | opus | Read, Bash, Grep, Glob | Independent verification against pre-registered criteria |
-| `rnd-framework:rnd-integrator` | sonnet | Read, Write, Edit, Bash, Glob, Grep | Merges verified outputs, runs integration tests |
-| `rnd-framework:rnd-data-scientist` | opus | Read, Write, Edit, Bash, Glob, Grep | Standalone specialist for numerical/analytical work — finances, calculations, data, analytics, charts, insights; uses Julia or DuckDB CLI as computation backend |
+| `rnd-framework:rnd-planner` | opus | blue | Decomposes tasks, writes pre-registration documents |
+| `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces verification artifacts |
+| `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria |
+| `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
+| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
 
 ## Pipeline Scaling
 
@@ -214,12 +217,13 @@ rnd-framework/
 ├── commands/                    # 12 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
+│   ├── lib.sh                   # Shared utilities (path parsing, JSON responses, .rnd/ detection)
 │   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
 │   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
 │   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start            # SessionStart hook: injects skill context via jq
 │   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
+│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/

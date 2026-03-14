@@ -20,6 +20,15 @@
 - Don't add a CSS-in-JS library when a stylesheet works
 - Flexbox and Grid solve most layouts — don't reach for layout libraries
 
+## Tailwind CSS
+
+- Use utility classes directly in markup — don't extract to `@apply` unless a pattern repeats 3+ times
+- Don't create custom Tailwind plugins for one-off design tokens — use arbitrary values (`bg-[#1a1a2e]`) instead
+- Don't add `@layer components` abstractions for single-use component styles
+- Use Tailwind's built-in responsive prefixes (`md:`, `lg:`) — don't create custom breakpoint utilities
+- Don't override Tailwind's spacing/color scales unless the project has a design system that conflicts
+- Use `class:` conditional syntax (Svelte) or template literals over `clsx`/`classnames` for simple conditionals — reach for utility libraries only when conditional logic is genuinely complex
+
 ## HTML
 
 - Use semantic HTML elements (`nav`, `main`, `article`, `section`) over `div` soup

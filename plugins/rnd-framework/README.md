@@ -107,6 +107,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-standards` | Extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB |
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
+| `rnd-wellbeing` | Developer wellbeing — break suggestions based on session duration, explained incremental coding |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 
 ## Agents

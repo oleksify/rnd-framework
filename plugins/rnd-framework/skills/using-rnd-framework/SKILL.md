@@ -52,6 +52,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:code-review` | Use when reviewing code changes — defines the six review categories, four severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-framework:kiss-practices` | Language-specific KISS rules to prevent over-engineering — load during Phase 0 discovery, read only the relevant language files |
 | `rnd-framework:fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
+| `rnd-framework:rnd-wellbeing` | Use at pipeline pause points to suggest breaks and encourage explained, incremental coding |
 
 ## Available Commands
 

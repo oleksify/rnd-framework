@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.20 — 2026-03-14
+
+### Fix design recommendation truncation in terminal
+
+Design exploration step now explicitly outputs the full recommendation as regular text before presenting the AskUserQuestion choice. Previously the recommendation could get stuffed into option descriptions which truncate in the terminal.
+
 ## 0.9.19 — 2026-03-14
 
 ### Add post-SHIP documentation polish step

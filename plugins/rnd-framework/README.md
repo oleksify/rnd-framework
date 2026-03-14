@@ -73,6 +73,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 | `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor |
 | `/rnd-framework:audit` | Full codebase audit against project standards |
+| `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
 
 ## Skills
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.28 — 2026-03-14
+
+### Add developer wellbeing and explained coding
+
+New rnd-wellbeing skill with break suggestions at 90min/2hr/3hr thresholds using cognitive science reasoning, and explained incremental coding principles. Iron Law 7 requires builders to explain before writing and work in logical increments. Break checkpoints wired into start.md between waves and Phase 6. Builder agent preloads the wellbeing skill.
+
 ## 0.9.27 — 2026-03-14
 
 ### Add standalone narrative command for past sessions

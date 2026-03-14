@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.19 — 2026-03-14
+
+### Add post-SHIP documentation polish step
+
+New rnd-doc-polish skill checks and updates CLAUDE.md, README.md, project-specific docs, and stale inline comments after SHIP but before committing. Wired into start.md Phase 6 and quick.md Step 4.
+
 ## 0.9.18 — 2026-03-14
 
 ### Add project-specific code standards enforcement

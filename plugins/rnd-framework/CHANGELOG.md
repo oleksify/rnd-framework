@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.22 — 2026-03-14
+
+### Fix README kiss-practices language list
+
+README skill table description for kiss-practices now includes Bash and Markdown alongside the existing six languages.
+
 ## 0.9.21 — 2026-03-14
 
 ### Add Markdown and Bash KISS practice rules

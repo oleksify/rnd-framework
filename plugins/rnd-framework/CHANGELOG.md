@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.13 — 2026-03-14
+
+### Add Tailwind KISS rules and update docs
+
 ## 0.9.12 — 2026-03-14
 
 ### Add Svelte and DuckDB KISS rules

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.14 — 2026-03-14
+
+### Add evidence-based code review pipeline
+
+New `/rnd-framework:review` command for reviewing code changes with the same multi-judge, evidence-based rigor as the verification pipeline. Supports three scope modes: uncommitted changes (default), commit ranges (`HEAD~3..HEAD`), and directory paths. Reuses the `rnd-verifier` agent — no new agents. Includes a `code-review` skill defining 6 review categories (architecture, security, correctness, testing, KISS compliance, style), 4 severity levels (critical, major, minor, info), and 3 verdicts (CLEAN, ISSUES_FOUND, CRITICAL_ISSUES). After review, suggests `/rnd-framework:start` or `:quick` to fix issues found. Checks: 212 → 218.
+
 ## 0.9.13 — 2026-03-14
 
 ### Add Tailwind KISS rules and update docs

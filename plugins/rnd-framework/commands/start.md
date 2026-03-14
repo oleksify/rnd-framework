@@ -96,7 +96,7 @@ Otherwise:
 
 3. **Save design spec.** Write the spec to `$RND_DIR/design-spec.md` using the format defined in `rnd-framework:rnd-design`. Initial status is `STATUS: DRAFT`.
 
-4. **Present for approval.** Use `AskUserQuestion` with these options:
+4. **Present for approval.** Output the full design summary as regular text first — include the alternatives comparison table, the full recommendation with all reasoning, key assumptions, and trade-offs. Do NOT abbreviate. Then use `AskUserQuestion` with short option labels (keep descriptions to one sentence — do NOT put the recommendation text in option descriptions):
    - "Approve design (Recommended)" — accept the recommended approach and proceed to Phase 1
    - "Approve with modifications" — apply requested changes, re-save, re-present (counts as one iteration)
    - "Choose a different alternative" — switch to a different listed approach, re-save, re-present

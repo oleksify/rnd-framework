@@ -80,7 +80,9 @@ Format the spec as shown in the "Design-Spec.md Artifact Format" section below. 
 
 ### 5. Present for Approval
 
-Use `AskUserQuestion` (not plain text) to present the design spec for review. Offer structured options:
+**Output the full design summary as regular text first** — include the alternatives comparison table, the recommendation with all reasoning, key assumptions, and conditions that would change it. Do NOT abbreviate or truncate the recommendation. The user needs to read the full rationale before choosing.
+
+**Then** use `AskUserQuestion` with short option labels for the decision. Do NOT put the recommendation text inside option descriptions — keep descriptions to one short sentence each.
 
 ```
 Options:

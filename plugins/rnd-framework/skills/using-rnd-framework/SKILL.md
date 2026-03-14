@@ -48,6 +48,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-failure-modes` | Use when verifying — catalog of known verification anti-patterns and red-flag phrases to watch for |
 | `rnd-framework:rnd-slop-detection` | Use when reviewing code quality — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) with evidence-based verdicts |
 | `rnd-framework:code-review` | Use when reviewing code changes — defines the six review categories, four severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
+| `rnd-framework:kiss-practices` | Language-specific KISS rules to prevent over-engineering — load during Phase 0 discovery, read only the relevant language files |
 
 ## Available Commands
 

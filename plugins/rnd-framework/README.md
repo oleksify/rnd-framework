@@ -71,6 +71,8 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:validate` | Validate plugin structure: frontmatter, hooks, cross-references |
 | `/rnd-framework:doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
+| `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor |
+| `/rnd-framework:audit` | Full codebase audit against project standards |
 
 ## Skills
 
@@ -100,6 +102,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
 | `rnd-slop-detection` | PostToolUse slop gate — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) and reports to pipeline artifacts |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB |
+| `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 
 ## Agents
 
@@ -190,7 +193,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 6-char hash of path)
+~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 8-char hash of path)
 ├── .current-session                    # Active session ID
 └── sessions/
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
@@ -214,7 +217,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 5 specialized agents
-├── commands/                    # 12 pipeline commands
+├── commands/                    # 14 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── lib.sh                   # Shared utilities (path parsing, JSON responses, .rnd/ detection)
@@ -228,7 +231,8 @@ rnd-framework/
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
-│   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
+│   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
+│   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 └── README.md
 ```
 

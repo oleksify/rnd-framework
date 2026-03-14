@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.21 — 2026-03-14
+
+### Add Markdown and Bash KISS practice rules
+
+New KISS practice files for Markdown (headings, formatting, tables, links, content organization) and Bash (script structure, quoting, variables, conditionals, pipelines, error handling). Detection heuristics table updated for *.md and *.sh file patterns.
+
 ## 0.9.20 — 2026-03-14
 
 ### Fix design recommendation truncation in terminal

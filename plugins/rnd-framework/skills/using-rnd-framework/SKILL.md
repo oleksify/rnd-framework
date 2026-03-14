@@ -58,6 +58,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:build <target>` | Build a task or wave |
 | `/rnd-framework:verify <target>` | Independent verification |
 | `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor — detects architecture, security, correctness, testing, KISS, and style issues |
+| `/rnd-framework:audit` | Full codebase audit against project standards |
 | `/rnd-framework:integrate <target>` | Merge and integration testing |
 | `/rnd-framework:status` | Pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |

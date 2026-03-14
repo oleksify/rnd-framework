@@ -294,5 +294,20 @@ Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline
 - "Run code review first" — run `/rnd-framework:review` on the changes before committing, to catch issues the pipeline may have missed
 - "Create PR" — commit and open a pull request
+- "Show development narrative" — generate a narrative explanation of the pipeline run (see below)
 - "Review all artifacts" — show the user a summary of everything produced
 - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
+
+### Development Narrative
+
+When the user selects "Show development narrative," produce a human-readable story of the pipeline run. Do NOT spawn agents — generate this yourself from your pipeline context. If your conversation context has been compressed (long runs), re-read `$RND_DIR/plan.md`, `$RND_DIR/builds/T*-manifest.md`, `$RND_DIR/verifications/T*-verification.md`, and `$RND_DIR/iteration-log.md` to refresh your memory before writing. Cover:
+
+1. **What was built and why** — the original request, how it evolved through discovery/design, what the final deliverables are
+2. **Key decisions** — architectural choices made during design exploration, scope decisions during planning, trade-offs chosen and their rationale
+3. **Obstacles and iterations** — any verification failures, iteration cycles, re-plans, blocked tasks, or unexpected issues encountered during the run
+4. **Insights gained** — non-obvious things learned about the codebase, surprising edge cases discovered, patterns that emerged during implementation
+5. **What's left** — open questions, deferred quality feedback, known limitations, or follow-up work suggested by the pipeline
+
+Write it as a narrative (prose paragraphs), not a bullet list. Use the first person plural ("we"). Keep it concise — 3-5 paragraphs, not a report. The goal is to give the developer a sense of connection to the process, not to rehash every detail.
+
+After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option (since it's already been shown).

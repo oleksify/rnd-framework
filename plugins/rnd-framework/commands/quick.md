@@ -83,8 +83,8 @@ The verifier returns its report as text output. The orchestrator saves the retur
 
 - **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Before presenting commit options, invoke `rnd-framework:rnd-doc-polish` to check and update any documentation that went stale from the changes. Use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
+  - "Show development narrative" — generate a narrative explanation of the session: what was built and why, key decisions and trade-offs, obstacles encountered, insights gained, and what's left. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes
-  - "Clean up" — remove `$RND_DIR` artifacts only
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
 
 - **PASS (quality: NEEDS ITERATION)** → Treat as PASS for pipeline purposes. Use `TaskUpdate` to mark the task `completed`. Show the quality feedback from the verification report to the user. Do NOT trigger an iteration cycle. Note: "Quality feedback noted. For small tasks, quality iteration is optional — review and address manually if needed." Then present the same `AskUserQuestion` options as a full PASS.

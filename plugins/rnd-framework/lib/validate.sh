@@ -229,6 +229,16 @@ for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
   else
     fail "agent '${file_name}' missing 'model'"
   fi
+
+  valid_memory_scopes="user|project|local"
+  memory_val=$(frontmatter_val "$agent_file" "memory")
+  if [ -n "$memory_val" ]; then
+    if echo "$memory_val" | grep -qE "^(${valid_memory_scopes})$"; then
+      pass "agent '${file_name}' memory scope is valid: ${memory_val}"
+    else
+      fail "agent '${file_name}' has invalid memory scope '${memory_val}'"
+    fi
+  fi
 done
 $QUIET || echo "  (${agent_count} agents found)"
 

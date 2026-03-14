@@ -347,6 +347,81 @@ describe("Synthetic: Agents — agent with unknown model", () => {
   });
 });
 
+describe("Synthetic: Agents — memory: user is valid", () => {
+  test("output contains a PASS line with 'memory' and 'user'", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: user\n---\n\n# My Agent\n",
+    );
+
+    const result = await runScript(validateSh);
+    // There must be a PASS line mentioning both 'memory' and 'user'
+    const passLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("user"),
+    );
+    expect(passLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Synthetic: Agents — memory: project is valid", () => {
+  test("output contains a PASS line with 'memory' and 'project'", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: project\n---\n\n# My Agent\n",
+    );
+
+    const result = await runScript(validateSh);
+    const passLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("project"),
+    );
+    expect(passLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Synthetic: Agents — memory: local is valid", () => {
+  test("output contains a PASS line with 'memory' and 'local'", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: local\n---\n\n# My Agent\n",
+    );
+
+    const result = await runScript(validateSh);
+    const passLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("local"),
+    );
+    expect(passLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Synthetic: Agents — memory: banana is invalid", () => {
+  test("exits 1 and output contains a FAIL line with 'memory' and 'banana'", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: banana\n---\n\n# My Agent\n",
+    );
+
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    const failLines = result.stdout.split("\n").filter(
+      (l) => /^\s+FAIL\s/.test(l) && l.includes("memory") && l.includes("banana"),
+    );
+    expect(failLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Synthetic: Agents — no memory field emits no memory pass or fail", () => {
+  test("output does NOT contain any 'memory' PASS or FAIL line", async () => {
+    // The baseline minimal plugin agent has no memory field — reuse it as-is
+    // (no file rewrite needed; createMinimalPlugin writes an agent without memory)
+    const result = await runScript(validateSh);
+    // No PASS or FAIL line should mention "memory"
+    const memoryLines = result.stdout.split("\n").filter(
+      (l) => /^\s+(PASS|FAIL)\s/.test(l) && l.includes("memory"),
+    );
+    expect(memoryLines).toHaveLength(0);
+  });
+});
+
 // ── Commands category ────────────────────────────────────────────────────────
 
 describe("Synthetic: Commands — command .md missing description in frontmatter", () => {

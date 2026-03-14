@@ -288,7 +288,7 @@ Summarize results for the user:
 
 Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline
+- "Run code review first" — run `/rnd-framework:review` on the changes before committing, to catch issues the pipeline may have missed
 - "Create PR" — commit and open a pull request
 - "Review all artifacts" — show the user a summary of everything produced
-- "Clean up" — remove `$RND_DIR` artifacts only
 - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session

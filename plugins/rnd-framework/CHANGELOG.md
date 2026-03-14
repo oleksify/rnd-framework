@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.12 — 2026-03-14
+
+### Add Svelte and DuckDB KISS rules
+
 ## 0.9.11 — 2026-03-14
 
 ### Add KISS practices skill with language-specific rules

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.18 — 2026-03-14
+
+### Add project-specific code standards enforcement
+
+New rnd-standards skill auto-extracts coding rules from CLAUDE.md files into regex-based slop patterns at pipeline start. The slop-gate hook now merges project-specific patterns from project-patterns.json alongside built-in patterns. Iron Law 5 in the builder skill mandates immediate self-correction on severity 3+ matches. Both /start and /quick commands now invoke rnd-standards during discovery. Five new tests cover all merging paths.
+
 ## 0.9.17 — 2026-03-14
 
 ### Fix stale docs in README and skill tables

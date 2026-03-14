@@ -103,7 +103,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
 | `rnd-slop-detection` | PostToolUse slop gate — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) and reports to pipeline artifacts |
 | `rnd-standards` | Extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
-| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB |
+| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 
 ## Agents

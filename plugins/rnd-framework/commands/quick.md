@@ -27,6 +27,8 @@ If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
 Before planning, detect the project's tech stack and load relevant KISS practices. Invoke `rnd-framework:kiss-practices` and read the language files matching the project (e.g., `elixir.md` for Elixir projects). Include the KISS rules in your build context.
 
+Then invoke `rnd-framework:rnd-standards` to scan the project's CLAUDE.md files and generate `$RND_DIR/project-patterns.json` with project-specific coding rules. These patterns extend the slop gate's built-in catalog for this pipeline run.
+
 ## Step 1: Quick Plan (inline, no subagent needed)
 
 Determine the RND artifacts directory and create its structure:

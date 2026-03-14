@@ -1059,3 +1059,150 @@ describe("slop-gate: filename sanitization", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// slop-gate: project pattern loading
+// ---------------------------------------------------------------------------
+
+/**
+ * A minimal valid project pattern that matches the string "CUSTOM_PROJECT_FORBIDDEN".
+ * Chosen to be distinct from all built-in patterns so test assertions are unambiguous.
+ */
+const PROJECT_PATTERN_CUSTOM = {
+  id: "custom-project-rule",
+  name: "Custom project rule",
+  regex: "CUSTOM_PROJECT_FORBIDDEN",
+  severity: 3,
+  category: "project-standard",
+  description: "This identifier is forbidden by project standards.",
+  remediation: "Remove or rename the forbidden identifier.",
+};
+
+describe("slop-gate: project pattern loading", () => {
+  it("matches from a valid project pattern appear in stdout JSON output", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      // Write project-patterns.json into the session dir
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [PROJECT_PATTERN_CUSTOM] }),
+        "utf-8",
+      );
+
+      // Code that triggers the custom pattern (and no built-in patterns)
+      const content = "const x = CUSTOM_PROJECT_FORBIDDEN;\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+
+      expect(result.exitCode).toBe(0);
+      const output = parseOutput(result.stdout);
+      const customMatches = output.matches.filter(
+        (m) => m.pattern_id === "custom-project-rule",
+      );
+      expect(customMatches.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  it("both built-in and project patterns produce matches when project-patterns.json exists", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [PROJECT_PATTERN_CUSTOM] }),
+        "utf-8",
+      );
+
+      // Code that triggers both the custom pattern and the built-in empty-catch-block pattern
+      const content = "catch (e) {}\nconst x = CUSTOM_PROJECT_FORBIDDEN;\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+
+      expect(result.exitCode).toBe(0);
+      const output = parseOutput(result.stdout);
+      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
+      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(true);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  it("hook produces output using built-in patterns only when project-patterns.json does not exist", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      // project-patterns.json is intentionally NOT written
+
+      // Code that triggers a built-in pattern but not the custom pattern
+      const content = "catch (e) {}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+
+      expect(result.exitCode).toBe(0);
+      const output = parseOutput(result.stdout);
+      // Built-in patterns still work
+      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
+      // No custom pattern matches (file doesn't exist)
+      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(false);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  it("hook exits 0 and uses built-in patterns only when project-patterns.json contains invalid JSON", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      // Write malformed JSON
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        "{ this is not valid JSON !!!",
+        "utf-8",
+      );
+
+      const content = "catch (e) {}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+
+      expect(result.exitCode).toBe(0);
+      const output = parseOutput(result.stdout);
+      // Built-in patterns still work despite malformed project file
+      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  it("hook produces output using built-in patterns only when no active session exists", async () => {
+    // withSession=false means no .current-session file, so resolveActiveSessionDir returns null
+    const env = await createSlopTestEnv(false);
+    try {
+      const content = "catch (e) {}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+
+      expect(result.exitCode).toBe(0);
+      const output = parseOutput(result.stdout);
+      // Built-in patterns still produce matches
+      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
+      // No custom matches (no session dir to load from)
+      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(false);
+    } finally {
+      await env.cleanup();
+    }
+  });
+});

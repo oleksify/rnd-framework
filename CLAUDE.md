@@ -77,6 +77,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 ├── .current-session                       # Active session ID
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, pre-registrations, schedule
+    ├── project-patterns.json              # Project-specific slop patterns extracted from CLAUDE.md
     ├── builds/T*-manifest.md              # Builder output records
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts

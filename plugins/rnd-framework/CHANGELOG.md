@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.26 — 2026-03-14
+
+### Add anti-deflection rule for error handling
+
+Iron Law 6 in builder skill: agents must investigate and fix errors/warnings instead of deflecting with 'pre-existing' as a reason to skip. Context about whether an issue is new or old is allowed, but the response must always be solution-oriented.
+
 ## 0.9.25 — 2026-03-14
 
 ### Add development narrative option to pipeline completion

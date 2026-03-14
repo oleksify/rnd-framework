@@ -81,7 +81,7 @@ The verifier returns its report as text output. The orchestrator saves the retur
 
 ## Step 4: Iterate or Ship
 
-- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Use `AskUserQuestion` with options:
+- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Before presenting commit options, invoke `rnd-framework:rnd-doc-polish` to check and update any documentation that went stale from the changes. Use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
   - "Review artifacts" — show the user the verification report and code changes
   - "Clean up" — remove `$RND_DIR` artifacts only

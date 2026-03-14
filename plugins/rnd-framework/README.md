@@ -91,6 +91,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-iteration` | Build-verify feedback loops, iteration budgets, escalation |
 | `rnd-integration` | Merge verified outputs, integration/system validation |
 | `rnd-completion` | Post-SHIP workflow: branch management, PR creation, cleanup |
+| `rnd-doc-polish` | Post-SHIP documentation check — updates CLAUDE.md, README.md, project docs, and stale inline comments |
 | `prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `bun-scripting` | Prefer Bun (TypeScript) over Python for helper scripts when available |
 | `committing` | Commit message style, length limits, and user confirmation before committing |

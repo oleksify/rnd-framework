@@ -288,6 +288,8 @@ Summarize results for the user:
 - Final integration status
 - Remaining concerns or recommendations
 
+**Documentation polish:** Before presenting commit options, invoke `rnd-framework:rnd-doc-polish` to check and update any documentation that may have gone stale from the pipeline's changes. This covers CLAUDE.md, README.md, project-specific docs, and stale inline comments in changed files. Report what was updated (or that everything is current).
+
 Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline
 - "Run code review first" — run `/rnd-framework:review` on the changes before committing, to catch issues the pipeline may have missed

@@ -37,6 +37,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-scaling` | Choosing pipeline scale for task complexity |
 | `rnd-framework:rnd-integration` | Merging verified outputs, system validation |
 | `rnd-framework:rnd-completion` | Post-SHIP branch management and PR creation |
+| `rnd-framework:rnd-doc-polish` | Use after SHIP before committing — checks and updates CLAUDE.md, README.md, project docs, and stale inline comments |
 | `rnd-framework:writing-skills` | Creating new skills for the framework |
 | `rnd-framework:prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `rnd-framework:bun-scripting` | Writing helper scripts — prefer Bun over Python when available |

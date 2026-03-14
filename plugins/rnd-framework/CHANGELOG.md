@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.16 — 2026-03-14
+
+### Add full codebase audit command
+
+New /rnd-framework:audit command performs full codebase audits using multi-judge consensus. Unlike /review (diff-based), audit explores every tracked file against project standards auto-detected from CLAUDE.md files, KISS rules, and codebase conventions.
+
 ## 0.9.15 — 2026-03-14
 
 ### Suggest code review before committing in pipeline completion

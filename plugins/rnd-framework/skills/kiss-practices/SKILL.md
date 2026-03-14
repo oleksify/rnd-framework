@@ -30,6 +30,8 @@ description: Language-specific KISS (Keep It Simple) rules to prevent over-engin
 | `*.ex`, `*.exs`, `mix.exs` | `elixir.md` |
 | `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.css`, `*.html` | `javascript.md` |
 | `*.svelte`, `svelte.config.*` | `svelte.md` |
+| `*.sh`, `*.bash`, `Makefile` | `bash.md` |
+| `*.md`, `CLAUDE.md`, `README.md` | `markdown.md` |
 | `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `postgresql.md` |
 | DuckDB usage, `*.duckdb` files, or analytical/data tasks | `duckdb.md` |
 

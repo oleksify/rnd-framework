@@ -74,6 +74,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor |
 | `/rnd-framework:audit` | Full codebase audit against project standards |
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
+| `/rnd-framework:narrative` | Generate a development narrative for a pipeline session |
 
 ## Skills
 

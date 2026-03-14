@@ -72,6 +72,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:doctor` | Runtime environment diagnostics — CLI tools, hooks, RND_DIR, version sync |
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused, implementable plans |
+| `/rnd-framework:narrative` | Generate a development narrative for a pipeline session from its artifacts |
 
 ## Data Science Tasks
 

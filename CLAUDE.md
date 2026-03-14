@@ -89,7 +89,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:resume`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`, `/rnd-framework:doctor`, `/rnd-framework:bump`, `/rnd-framework:review`, `/rnd-framework:audit`, `/rnd-framework:brainstorm`.
+Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:resume`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`, `/rnd-framework:doctor`, `/rnd-framework:bump`, `/rnd-framework:review`, `/rnd-framework:audit`, `/rnd-framework:brainstorm`, `/rnd-framework:narrative`.
 
 ## Key Conventions
 

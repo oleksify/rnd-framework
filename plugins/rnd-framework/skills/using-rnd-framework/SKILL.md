@@ -47,6 +47,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-design` | Use when exploring architectural alternatives before planning — generates 2-3 approaches with trade-offs and produces a design spec |
 | `rnd-framework:rnd-failure-modes` | Use when verifying — catalog of known verification anti-patterns and red-flag phrases to watch for |
 | `rnd-framework:rnd-slop-detection` | Use when reviewing code quality — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) with evidence-based verdicts |
+| `rnd-framework:code-review` | Use when reviewing code changes — defines the six review categories, four severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 
 ## Available Commands
 
@@ -56,6 +57,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:plan <task>` | Planning only — decompose and pre-register |
 | `/rnd-framework:build <target>` | Build a task or wave |
 | `/rnd-framework:verify <target>` | Independent verification |
+| `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor — detects architecture, security, correctness, testing, KISS, and style issues |
 | `/rnd-framework:integrate <target>` | Merge and integration testing |
 | `/rnd-framework:status` | Pipeline status dashboard |
 | `/rnd-framework:quick <task>` | Lightweight mode for small tasks |

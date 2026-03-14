@@ -74,6 +74,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Your self-assessment is for the Orchestrator's records. The Verifier will NOT see it.
 - Do NOT run verification beyond "does it compile/pass linting." The Verifier does formal verification.
 - Be honest about uncertainties. Hiding doubts causes harder bugs later.
+- When you encounter errors or warnings, investigate and suggest a fix. You may note whether an issue is new or pre-existing for context, but never use "pre-existing" as a reason to skip fixing it. Always be solution-oriented.
 - Run your own tests to make sure they execute, but the Verifier will evaluate their adequacy.
 - You MUST verify every external dependency listed in the pre-registration against the actual system before writing code against it. Unverified assumptions must be flagged in your self-assessment.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.

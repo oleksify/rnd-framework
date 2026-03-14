@@ -23,6 +23,10 @@ If `$ARGUMENTS` is empty (user ran `/rnd-framework:quick` with no task descripti
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
+## Step 0: KISS Detection
+
+Before planning, detect the project's tech stack and load relevant KISS practices. Invoke `rnd-framework:kiss-practices` and read the language files matching the project (e.g., `elixir.md` for Elixir projects). Include the KISS rules in your build context.
+
 ## Step 1: Quick Plan (inline, no subagent needed)
 
 Determine the RND artifacts directory and create its structure:

@@ -142,6 +142,7 @@ Skills (.claude/skills/):
 - Every criterion MUST be tagged as Correctness or Quality. Correctness criteria are must-pass — any unmet Correctness criterion is a FAIL that blocks progress. Quality criteria are should-pass — unmet Quality criteria produce NEEDS ITERATION on the quality tier but do not block a PASS on Correctness.
 - If a task is too large to have clear success criteria, decompose it further.
 - If the approach is uncertain, flag it and recommend a Phase 0 spike.
+- **KISS:** Do not over-decompose. Do not create tasks for defensive programming, speculative error handling, or abstractions that serve a single use case. If the discovery context includes KISS rules for the project's tech stack, follow them when deciding task granularity and approach.
 - Every task that interacts with an external system (DB, API, file, env var, third-party service) MUST list that system in the `External dependencies` field with an explicit verification method. Do not leave the field empty or omit it for such tasks — unverified external contracts are a primary source of build failures.
 
 ## Memory

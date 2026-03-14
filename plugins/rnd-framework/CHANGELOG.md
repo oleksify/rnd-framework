@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.15 — 2026-03-14
+
+### Suggest code review before committing in pipeline completion
+
 ## 0.9.14 — 2026-03-14
 
 ### Add evidence-based code review pipeline

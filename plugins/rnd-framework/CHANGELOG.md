@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.24 — 2026-03-14
+
+### Add brainstorming pipeline for idea exploration
+
+New /rnd-framework:brainstorm command — a conversational pipeline that funnels vague ideas into focused, implementable plans through 6 phases: Seed, Expand, Explore, Narrow, Focus, Output. No agents spawned — purely AskUserQuestion driven. Output can be saved or handed to /rnd-framework:start for implementation.
+
 ## 0.9.23 — 2026-03-14
 
 ### Add functional programming practices skill

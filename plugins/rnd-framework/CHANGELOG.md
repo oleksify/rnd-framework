@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.8 — 2026-03-14
+
+### Add colors, skill preloading, and disallowedTools to agents
+
+All 5 agents now have distinct UI colors (planner: blue, builder: green, verifier: amber, integrator: purple, data-scientist: cyan), skill preloading via frontmatter (eliminating startup tool calls for skill loading), and the verifier has `disallowedTools: Write, Edit` as defense-in-depth alongside its tools allowlist. The `## Required Skills` sections in all agents updated to note skills are preloaded at startup. validate.sh extended with color, skills, and disallowedTools field validation. Checks: 199 → 210.
+
 ## 0.9.7 — 2026-03-14
 
 ### Add persistent memory to all agents

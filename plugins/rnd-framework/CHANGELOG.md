@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.7 — 2026-03-14
+
+### Add persistent memory to all agents
+
+All 5 agents (planner, builder, verifier, integrator, data-scientist) now have `memory: user` frontmatter enabling persistent cross-project learning. Each agent includes a domain-specific `## Memory` section guiding what knowledge to accumulate: decomposition patterns (planner), debugging insights (builder), failure patterns (verifier), integration patterns (integrator), and data processing gotchas (data-scientist). The verifier's memory section explicitly preserves the information barrier by prohibiting storage of task-specific builder information. validate.sh extended with memory scope validation (user|project|local); 5 new tests. Checks: 194 → 199. Tests: 310 → 315.
+
 ## 0.9.6 — 2026-03-13
 
 ### Fix stale skill counts in CLAUDE.md and README

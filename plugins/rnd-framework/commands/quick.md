@@ -25,7 +25,7 @@ If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
 ## Step 0: KISS Detection
 
-Before planning, detect the project's tech stack and load relevant KISS practices. Invoke `rnd-framework:kiss-practices` and read the language files matching the project (e.g., `elixir.md` for Elixir projects). Include the KISS rules in your build context.
+Before planning, detect the project's tech stack and load relevant coding practices. Invoke `rnd-framework:kiss-practices` and read the language files matching the project (e.g., `elixir.md` for Elixir projects). Also invoke `rnd-framework:fp-practices` to load functional programming principles. Include both KISS and FP rules in your build context.
 
 Then invoke `rnd-framework:rnd-standards` to scan the project's CLAUDE.md files and generate `$RND_DIR/project-patterns.json` with project-specific coding rules. These patterns extend the slop gate's built-in catalog for this pipeline run.
 

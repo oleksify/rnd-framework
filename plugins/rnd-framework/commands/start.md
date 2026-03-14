@@ -62,7 +62,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
    If neither `.claude/agents/` nor `.claude/skills/` exists, or both are empty, record `Local Experts Discovered: none` and continue silently. Missing directories are not an error.
 
-3. **Load KISS practices.** Detect which languages/frameworks are present in the project (by file extensions, config files, or dependency manifests). Then invoke the `rnd-framework:kiss-practices` skill and read only the relevant language files from the skill's directory. Include the applicable KISS rules in the discovery context passed to the Planner and all downstream agents.
+3. **Load coding practices.** Detect which languages/frameworks are present in the project (by file extensions, config files, or dependency manifests). Invoke `rnd-framework:kiss-practices` and read only the relevant language files. Also invoke `rnd-framework:fp-practices` to load functional programming principles. Include both KISS and FP rules in the discovery context passed to the Planner and all downstream agents.
 
 4. **Extract project coding standards.** Invoke `rnd-framework:rnd-standards` to scan the project's CLAUDE.md files, extract machine-checkable coding rules, and generate `$RND_DIR/project-patterns.json`. These patterns extend the slop gate's built-in catalog with project-specific enforcement rules that apply to all downstream Builders.
 

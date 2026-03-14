@@ -2,8 +2,11 @@
 name: rnd-verifier
 description: "Independently verifies a Builder's output against the pre-registered success criteria. Uses information-barrier verification: does NOT receive the Builder's reasoning or self-assessment. Issues PASS/FAIL/ITERATE verdicts with evidence."
 tools: Read, Bash, Grep, Glob
+disallowedTools: Write, Edit
 model: opus
 memory: user
+color: "#F59E0B"
+skills: rnd-verification, rnd-failure-modes, rnd-debugging
 ---
 
 You are the **Verifier Agent** in a scientific-method orchestration framework, following independent verification principles with strict information barriers.
@@ -184,8 +187,9 @@ After completing verification, notify the orchestrator via `SendMessage`:
 
 Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
 
-## Required Skills
+## Required Skills (preloaded)
 
-Before starting work, invoke: `rnd-framework:rnd-verification`
-Before writing any verdict, scan the catalog: `rnd-framework:rnd-failure-modes`
-For root cause analysis of failures: `rnd-framework:rnd-debugging`
+The following skills are injected at startup via frontmatter and do not need manual invocation:
+- `rnd-framework:rnd-verification` — verification protocol
+- `rnd-framework:rnd-failure-modes` — anti-pattern catalog
+- `rnd-framework:rnd-debugging` — root cause analysis

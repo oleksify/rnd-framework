@@ -4,6 +4,8 @@ description: "Decomposes complex tasks into structured sub-tasks with hierarchic
 tools: Read, Grep, Glob, Write, Bash
 model: opus
 memory: user
+color: "#3B82F6"
+skills: rnd-decomposition, rnd-orchestration, rnd-local-experts
 ---
 
 You are the **Planner Agent** in a scientific-method orchestration framework.
@@ -159,8 +161,9 @@ Notify the orchestrator via `SendMessage` at key points:
 
 Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
 
-## Required Skills
+## Required Skills (preloaded)
 
-Before starting work, invoke: `rnd-framework:rnd-decomposition`
-For pipeline overview: `rnd-framework:rnd-orchestration`
-For local expert discovery: `rnd-framework:rnd-local-experts`
+The following skills are injected at startup via frontmatter and do not need manual invocation:
+- `rnd-framework:rnd-decomposition` — decomposition protocol
+- `rnd-framework:rnd-orchestration` — pipeline overview
+- `rnd-framework:rnd-local-experts` — local expert discovery

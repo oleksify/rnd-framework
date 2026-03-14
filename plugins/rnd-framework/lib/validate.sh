@@ -239,6 +239,35 @@ for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
       fail "agent '${file_name}' has invalid memory scope '${memory_val}'"
     fi
   fi
+
+  # color is optional, any non-empty string is valid (hex, CSS name, etc.)
+  color_val=$(frontmatter_val "$agent_file" "color")
+  if [ -n "$color_val" ]; then
+    pass "agent '${file_name}' has color: ${color_val}"
+  fi
+
+  # skills is optional, comma-separated list of skill names
+  skills_val=$(frontmatter_val "$agent_file" "skills")
+  if [ -n "$skills_val" ]; then
+    pass "agent '${file_name}' has skills: ${skills_val}"
+  fi
+
+  # disallowedTools is optional, must be valid tool names
+  disallowed_val=$(frontmatter_val "$agent_file" "disallowedTools")
+  if [ -n "$disallowed_val" ]; then
+    all_valid=true
+    IFS=', ' read -ra disallowed_list <<< "$disallowed_val"
+    for tool in "${disallowed_list[@]}"; do
+      tool=$(echo "$tool" | xargs)
+      if ! echo "$tool" | grep -qE "^(${valid_tools})$"; then
+        fail "agent '${file_name}' has unknown disallowed tool '${tool}'"
+        all_valid=false
+      fi
+    done
+    if $all_valid; then
+      pass "agent '${file_name}' disallowedTools are valid: ${disallowed_val}"
+    fi
+  fi
 done
 $QUIET || echo "  (${agent_count} agents found)"
 

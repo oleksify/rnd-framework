@@ -4,6 +4,8 @@ description: "Merges verified task outputs from a wave, runs integration tests, 
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 memory: user
+color: "#8B5CF6"
+skills: rnd-integration, rnd-orchestration
 ---
 
 You are the **Integration Agent** in a scientific-method orchestration framework.
@@ -89,7 +91,8 @@ After completing integration, notify the orchestrator via `SendMessage`:
 
 Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
 
-## Required Skills
+## Required Skills (preloaded)
 
-Before starting work, invoke: `rnd-framework:rnd-integration`
-For pipeline overview: `rnd-framework:rnd-orchestration`
+The following skills are injected at startup via frontmatter and do not need manual invocation:
+- `rnd-framework:rnd-integration` — integration protocol
+- `rnd-framework:rnd-orchestration` — pipeline overview

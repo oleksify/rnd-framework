@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.9 — 2026-03-14
+
+### Remove hardcoded component counts from docs
+
 ## 0.9.8 — 2026-03-14
 
 ### Add colors, skill preloading, and disallowedTools to agents

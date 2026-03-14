@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.11 — 2026-03-14
+
+### Add KISS practices skill with language-specific rules
+
+New `kiss-practices` skill with language-specific KISS (Keep It Simple) rules to prevent over-engineering. Includes general rules plus three language files: `elixir.md` (Elixir/Phoenix/Ecto), `javascript.md` (JS/TS/CSS/HTML), and `postgresql.md`. Phase 0 Discovery detects the project's tech stack and loads only the relevant language rules. Rules are overridable by project-local `kiss-practices` skills. All three agents (planner, builder, verifier) have KISS notes in their rules sections. Checks: 210 → 212.
+
 ## 0.9.10 — 2026-03-14
 
 ### Extract shared hook utilities into hooks/lib.sh

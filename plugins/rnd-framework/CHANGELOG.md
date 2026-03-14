@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.27 — 2026-03-14
+
+### Add standalone narrative command for past sessions
+
+New /rnd-framework:narrative command generates a prose development narrative from any pipeline session's artifacts. Reads plan, build manifests, verification reports, iteration logs, and integration reports. Works with active sessions, most recent session, or specific session IDs. Complements the 'Show development narrative' option in the Phase 6 menu.
+
 ## 0.9.26 — 2026-03-14
 
 ### Add anti-deflection rule for error handling

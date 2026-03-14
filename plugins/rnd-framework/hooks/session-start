@@ -2,19 +2,15 @@
 # SessionStart hook for rnd-framework plugin
 
 set -euo pipefail
-
-# Determine plugin root directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "$(dirname "$0")/lib.sh"
 
 # Compute RND_DIR via helper (creates directory structure with -c flag)
-RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" -c 2>/dev/null || echo "")
+RND_DIR=$(resolve_rnd_dir -c)
 
 # Check for version mismatch between cached plugin and source repo
 VERSION_WARNING=""
 CACHED_VERSION=$(jq -r '.version // empty' "${PLUGIN_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo "")
 if [ -n "$CACHED_VERSION" ]; then
-  # Check if we're in the plugin's source repo
   GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
   for source_path in \
     "${GIT_ROOT}/plugins/rnd-framework/.claude-plugin/plugin.json" \

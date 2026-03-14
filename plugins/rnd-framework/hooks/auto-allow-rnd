@@ -11,25 +11,16 @@
 #   No opinion: exit 0 + no output
 
 set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "$(dirname "$0")/lib.sh"
 
 INPUT="$(cat)"
-FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+FILE="$(hook_file_path "$INPUT")"
 
-# .rnd/ path detection uses substring matching — any path containing the string ".rnd/"
-# is treated as a framework artifact and auto-allowed. This is an accepted trade-off:
-# a project file with ".rnd/" in its path would be incorrectly auto-allowed, but such
-# paths are extremely unlikely in practice and the false-negative risk (blocking legitimate
-# artifact writes) is more harmful than the false-positive risk.
-if echo "$FILE" | grep -q '\.rnd/'; then
-  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+if is_rnd_path "$FILE"; then
+  hook_allow
 else
-  # Check planning-phase marker: block all writes outside .rnd/ during planning
-  RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" 2>/dev/null || echo "")
+  RND_DIR=$(resolve_rnd_dir)
   if [ -n "$RND_DIR" ] && [ -f "${RND_DIR}/.planning-phase" ]; then
-    echo "BLOCKED: Write/Edit to paths outside .rnd/ is not allowed during the planning phase. The Planner writes only to \$RND_DIR/plan.md." >&2
-    exit 2
+    hook_block "BLOCKED: Write/Edit to paths outside .rnd/ is not allowed during the planning phase. The Planner writes only to \$RND_DIR/plan.md."
   fi
 fi

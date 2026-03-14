@@ -11,39 +11,31 @@
 #   No opinion: exit 0 + no output
 
 set -euo pipefail
+source "$(dirname "$0")/lib.sh"
 
 INPUT="$(cat)"
-# Use || true so a jq parse failure (non-JSON stdin) exits 0 gracefully
-COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+COMMAND="$(hook_command "$INPUT")"
 
 # Strip ALL leading "cd ... && " or "cd ... ; " prefixes (greedy, handles chained cd)
 STRIPPED="$(echo "$COMMAND" | sed -E 's/^(cd[[:space:]]+[^&;]+([&;]+|&&)[[:space:]]*)+//')"
 
-ALLOW='{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
-
 if echo "$STRIPPED" | grep -qE '^(sed|awk)\b'; then
-  echo "Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly." >&2
-  exit 2
+  hook_block "Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly."
 elif echo "$STRIPPED" | grep -qE '^(cat|head|tail)\b'; then
-  echo "Use the Read tool instead of cat/head/tail. Read supports line offsets and limits natively." >&2
-  exit 2
+  hook_block "Use the Read tool instead of cat/head/tail. Read supports line offsets and limits natively."
 elif echo "$STRIPPED" | grep -qE '^(grep|rg)\b'; then
-  echo "Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes." >&2
-  exit 2
+  hook_block "Use the Grep tool instead of grep/rg. Grep supports regex, file globs, and output modes."
 elif echo "$STRIPPED" | grep -qE '^find\b'; then
-  echo "Use the Glob tool instead of find. Glob supports patterns like **/*.ts." >&2
-  exit 2
+  hook_block "Use the Glob tool instead of find. Glob supports patterns like **/*.ts."
 elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
   # Block file redirects. Strip all > /dev/... occurrences, then block if any > remains.
   WITHOUT_DEV="$(echo "$STRIPPED" | sed -E 's/> *\/dev\/[^[:space:]]* ?//g')"
   if echo "$WITHOUT_DEV" | grep -qE '>'; then
-    echo "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs." >&2
-    exit 2
+    hook_block "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs."
   fi
-  echo "$ALLOW"
+  hook_allow
 elif echo "$COMMAND" | grep -qE 'git[[:space:]]+add.*\.rnd(/|[[:space:]]|$)'; then
-  echo "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed." >&2
-  exit 2
+  hook_block "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."
 else
-  echo "$ALLOW"
+  hook_allow
 fi

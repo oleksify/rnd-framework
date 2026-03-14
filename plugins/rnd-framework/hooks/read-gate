@@ -15,14 +15,13 @@
 #   No opinion: exit 0 + no output
 
 set -euo pipefail
+source "$(dirname "$0")/lib.sh"
 
 INPUT="$(cat)"
-FILE="$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)"
+FILE="$(hook_file_path "$INPUT")"
 
 if echo "$FILE" | grep -iq 'self-assessment'; then
-  echo 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.' >&2
-  exit 2
-# .rnd/ path detection uses substring matching — accepted trade-off documented in auto-allow-rnd
-elif echo "$FILE" | grep -q '\.rnd/'; then
-  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+  hook_block 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.'
+elif is_rnd_path "$FILE"; then
+  hook_allow
 fi

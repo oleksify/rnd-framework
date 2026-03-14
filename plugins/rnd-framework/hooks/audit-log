@@ -8,45 +8,34 @@
 # Output convention:
 #   PostToolUse hooks are observational only — always exit 0, no hookSpecificOutput.
 
-# FIX 1: Guard missing dependencies — PostToolUse hooks must never fail.
+# Guard missing dependencies — PostToolUse hooks must never fail.
 command -v jq  >/dev/null 2>&1 || exit 0
 command -v date >/dev/null 2>&1 || exit 0
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "$(dirname "$0")/lib.sh"
 
 INPUT="$(cat)"
-FILE="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
-TOOL="$(printf '%s' "$INPUT" | jq -r '.tool_name // empty' 2>/dev/null)"
+FILE="$(hook_file_path "$INPUT")"
+TOOL="$(hook_tool_name "$INPUT")"
 
-# FIX 3: When jq fails to parse (malformed JSON), FILE and TOOL will be empty.
-# Do NOT write a corrupt/meaningless entry — exit 0 silently.
+# When jq fails to parse (malformed JSON), FILE and TOOL will be empty.
 if [ -z "$FILE" ] || [ -z "$TOOL" ]; then
   exit 0
 fi
 
-# Resolve active RND_DIR — rnd-dir.sh returns base dir (not session dir) when no
-# .current-session file exists, so we must check for /sessions/ in the path to
-# distinguish "active session" from "just a base dir".
-RND_DIR=$("${PLUGIN_ROOT}/lib/rnd-dir.sh" 2>/dev/null || echo "")
-
-# Exit silently if no active session.
-# A session path always contains /sessions/ — a base dir path does not.
+# Resolve active RND_DIR — must contain /sessions/ to be an active session.
+RND_DIR=$(resolve_rnd_dir)
 if [ -z "$RND_DIR" ] || [[ "$RND_DIR" != */sessions/* ]]; then
   exit 0
 fi
 
-# Verify the resolved session directory actually exists.
-if [ ! -d "$RND_DIR" ]; then
-  exit 0
-fi
+[ ! -d "$RND_DIR" ] && exit 0
 
-# Capture timestamp — exit 0 silently if date fails or produces empty output.
+# Capture timestamp — exit 0 silently if date fails.
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" || true
 [ -z "$TS" ] && exit 0
 
-# Append JSONL entry — use jq -n --arg to prevent injection via filenames containing quotes or special chars.
-# FIX 2: Redirect stderr to /dev/null and exit 0 on write failure (e.g. read-only audit.jsonl).
+# Append JSONL entry — use jq -n --arg to prevent injection.
 jq -cn --arg ts "$TS" --arg tool "$TOOL" --arg file "$FILE" \
   '{"ts":$ts,"tool":$tool,"file":$file}' >> "${RND_DIR}/audit.jsonl" 2>/dev/null || true
 

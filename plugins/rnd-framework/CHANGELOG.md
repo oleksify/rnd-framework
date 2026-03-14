@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.17 — 2026-03-14
+
+### Fix stale docs in README and skill tables
+
+Update README command table (12→14 commands, added review and audit), skill table (22→23 skills, added code-review), hash comment (6-char→8-char), command count comment (12→14), and structure trees (added validate.sh). Update using-rnd-framework skill table (added kiss-practices).
+
 ## 0.9.16 — 2026-03-14
 
 ### Add full codebase audit command

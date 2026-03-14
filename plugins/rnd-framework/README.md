@@ -74,7 +74,7 @@ After configuring, start a Claude Code session in the project and check:
 
 ## Skills
 
-The plugin provides 21 skills that embed structured practices into every phase of coding:
+The plugin provides skills that embed structured practices into every phase of coding:
 
 | Skill | Purpose |
 |---|---|
@@ -221,7 +221,7 @@ rnd-framework/
 │   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # 21 skills (rnd-* namespace)
+├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   └── bump.sh                  # Patch version increment + CHANGELOG entry + git stage

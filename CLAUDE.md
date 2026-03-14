@@ -13,9 +13,9 @@ The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketpla
 ```
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── agents/                      # 5 specialized agents (planner, builder, verifier, integrator, data-scientist)
-├── commands/                    # 12 slash commands (/rnd-framework:start, etc.)
-├── skills/                      # 21 skills, each in its own dir with SKILL.md
+├── agents/                      # Specialized agents (planner, builder, verifier, integrator, data-scientist)
+├── commands/                    # Slash commands (/rnd-framework:start, etc.)
+├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing

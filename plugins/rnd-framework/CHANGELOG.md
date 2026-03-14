@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.10 — 2026-03-14
+
+### Extract shared hook utilities into hooks/lib.sh
+
+Consolidated duplicated patterns across 5 bash hook scripts (auto-allow-rnd, read-gate, prefer-tools, audit-log, session-start) into a shared `hooks/lib.sh` library. Provides: `hook_file_path()`, `hook_command()`, `hook_tool_name()` for JSON input parsing, `is_rnd_path()` for artifact path detection, `resolve_rnd_dir()` for session resolution, `hook_allow()` and `hook_block()` for PreToolUse decisions, and `PLUGIN_ROOT` path setup. Each hook now sources lib.sh instead of duplicating these patterns.
+
 ## 0.9.9 — 2026-03-14
 
 ### Remove hardcoded component counts from docs

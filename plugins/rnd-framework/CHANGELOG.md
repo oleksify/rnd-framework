@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.23 — 2026-03-14
+
+### Add functional programming practices skill
+
+New fp-practices skill with five concrete FP principles: pure functions, data transformations over mutation, composition over inheritance, command-query separation, and immutability by default. Each principle includes do/don't rules with code-level examples and a 'when to break' section. Preloaded in the builder agent and loaded during Phase 0 alongside KISS practices.
+
 ## 0.9.22 — 2026-03-14
 
 ### Fix README kiss-practices language list

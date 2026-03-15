@@ -169,7 +169,7 @@ function generateSessionId(): string {
     `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   const time =
     `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const rand = Math.random().toString(16).slice(2, 6).padEnd(4, "0");
   return `${date}-${time}-${rand}`;
 }
 

@@ -53,7 +53,7 @@ fail() {
 # Returns the value or empty string; always exits 0
 frontmatter_val() {
   local file="$1" key="$2"
-  sed -n '2,/^---$/p' "$file" | grep -F "${key}:" | head -1 | sed "s/^${key}:[[:space:]]*//" | sed 's/^["'"'"']//' | sed 's/["'"'"']$//' || true
+  sed -n '2,/^---$/p' "$file" | grep -F "${key}:" | head -1 | sed -e "s/^${key}:[[:space:]]*//" -e 's/^["'"'"']//' -e 's/["'"'"']$//' || true
 }
 
 # ── Plugin Manifest ──────────────────────────────────────────────

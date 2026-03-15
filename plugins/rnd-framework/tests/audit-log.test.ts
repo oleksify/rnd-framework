@@ -24,8 +24,7 @@ import { runHook, runHookRaw } from "./helpers";
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH =
-  "/Users/oleksify/Developer/oleksify/claude/plugins/rnd-framework/hooks/audit-log";
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "audit-log");
 
 // The hook is invoked in the test process's CWD, so slug = <basename(CWD)>-<hash(CWD)>
 // We replicate that computation here to know where rnd-dir.sh will look.

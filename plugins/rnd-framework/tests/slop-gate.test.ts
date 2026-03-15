@@ -25,8 +25,7 @@ import { runHook, runHookRaw } from "./helpers";
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH =
-  "/Users/oleksify/Developer/oleksify/claude/plugins/rnd-framework/hooks/slop-gate";
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "slop-gate");
 
 // ---------------------------------------------------------------------------
 // Pipeline artifact test helpers (T4)

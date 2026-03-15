@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.5 — 2026-03-15
+
+### Add evidence-based decision grounding
+
+Require Builders to cite file:line evidence for external contracts before coding (Step 2.75). Verifiers now check manifest Evidence Gathered section against code. New evidence-warn PostToolUse hook detects SQL/API patterns and reminds Builders to read schemas.
+
 ## 0.10.4 — 2026-03-15
 
 ### Fix minor audit cosmetic findings

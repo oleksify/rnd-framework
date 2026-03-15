@@ -6,7 +6,8 @@
 # Tool input is passed as JSON on stdin.
 #
 # Output convention:
-#   No opinion: exit 0 + no output  (path is .rnd/ or line count <= 30)
+#   Auto-allow: exit 0 + hookSpecificOutput JSON  (path is .rnd/)
+#   No opinion: exit 0 + no output  (line count <= 30)
 #   Block:      exit 2 + reason on stderr  (line count > 30 on non-.rnd/ path)
 
 set -euo pipefail
@@ -17,6 +18,7 @@ FILE="$(hook_file_path "$INPUT")"
 
 # Auto-allow .rnd/ paths — framework artifacts are never size-limited
 if is_rnd_path "$FILE"; then
+  hook_allow
   exit 0
 fi
 

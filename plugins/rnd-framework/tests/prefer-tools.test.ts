@@ -110,6 +110,32 @@ describe("echo/printf file redirect blocking", () => {
 });
 
 // ---------------------------------------------------------------------------
+// echo/printf redirects to .rnd/ paths → exempt (auto-allow)
+// ---------------------------------------------------------------------------
+
+describe("echo/printf redirects to .rnd/ paths — auto-allow", () => {
+  it("'echo content > /path/.rnd/builds/file.md' returns exit 0 with allow", async () => {
+    const result = await runHook(HOOK, payload('echo "DONE" > /home/user/.rnd/sessions/20260314/builds/T1-self-assessment.md'));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+
+  it("'printf content > /path/.rnd/builds/file.md' returns exit 0 with allow", async () => {
+    const result = await runHook(HOOK, payload("printf 'DONE' > /home/user/.rnd/sessions/20260314/builds/T1-self-assessment.md"));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+
+  it("'echo content > /tmp/regular.txt' is still blocked", async () => {
+    const result = await runHook(HOOK, payload("echo content > /tmp/regular.txt"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Write tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // echo to /dev/ paths → exempt (exit 0)
 // ---------------------------------------------------------------------------
 

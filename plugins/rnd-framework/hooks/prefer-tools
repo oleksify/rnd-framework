@@ -28,9 +28,10 @@ elif echo "$STRIPPED" | grep -qE '^(grep|rg)\b'; then
 elif echo "$STRIPPED" | grep -qE '^find\b'; then
   hook_block "Use the Glob tool instead of find. Glob supports patterns like **/*.ts."
 elif echo "$STRIPPED" | grep -qE '^(echo|printf)\b'; then
-  # Block file redirects. Strip all > /dev/... occurrences, then block if any > remains.
-  WITHOUT_DEV="$(echo "$STRIPPED" | sed -E 's/> *\/dev\/[^[:space:]]* ?//g')"
-  if echo "$WITHOUT_DEV" | grep -qE '>'; then
+  # Block file redirects. Strip all > /dev/... and > .../.rnd/... occurrences,
+  # then block if any unsafe redirect remains.
+  WITHOUT_SAFE="$(echo "$STRIPPED" | sed -E 's/> *\/dev\/[^[:space:]]* ?//g; s/> *[^[:space:]]*\.rnd\/[^[:space:]]* ?//g')"
+  if echo "$WITHOUT_SAFE" | grep -qE '>'; then
     hook_block "Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs."
   fi
   hook_allow

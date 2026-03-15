@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2 — 2026-03-15
+
+### Fix minor audit findings
+
+Compute HOOK_PATH from import.meta.dir in audit-log and slop-gate tests, align generateSessionId() to lowercase hex, consolidate validate.sh frontmatter_val sed pipes
+
 ## 0.10.1 — 2026-03-15
 
 ### Fix hooks blocking Builder self-assessment writes to .rnd/ paths

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.3 — 2026-03-15
+
+### Adopt Claude Code latest features
+
+Add PreCompact, PostCompact, InstructionsLoaded, and Setup hooks. Enhance read-gate with agent_type awareness. Add wellbeing cron via SessionStart. Add permissionMode to all agents. Add user-invocable, context:fork, allowed-tools, CLAUDE_SKILL_DIR, and CLAUDE_SESSION_ID to skills. Ship settings.json with spinnerVerbs. Add model to quick and verify commands.
+
 ## 0.10.2 — 2026-03-15
 
 ### Fix minor audit findings

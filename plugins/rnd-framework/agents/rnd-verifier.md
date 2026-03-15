@@ -7,6 +7,7 @@ model: opus
 memory: user
 color: "#F59E0B"
 skills: rnd-verification, rnd-failure-modes, rnd-debugging
+permissionMode: bypassPermissions
 ---
 
 You are the **Verifier Agent** in a scientific-method orchestration framework, following independent verification principles with strict information barriers.

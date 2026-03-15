@@ -22,6 +22,11 @@ hook_tool_name() {
   printf '%s' "$1" | jq -r '.tool_name // empty' 2>/dev/null || true
 }
 
+# Extract agent_type from hook JSON input (empty string if absent)
+hook_agent_type() {
+  printf '%s' "$1" | jq -r '.agent_type // empty' 2>/dev/null || true
+}
+
 # Check if path is an .rnd/ artifact
 is_rnd_path() {
   printf '%s' "$1" | grep -q '\.rnd/'

@@ -1,6 +1,6 @@
 ---
 name: kiss-practices
-description: Language-specific KISS (Keep It Simple) rules to prevent over-engineering. Load during Phase 0 discovery — detect project languages and read only the relevant .md files from this skill's directory.
+description: Language-specific KISS (Keep It Simple) rules to prevent over-engineering. Load during Phase 0 discovery — detect project languages and read only the relevant files via `${CLAUDE_SKILL_DIR}/<lang>.md`.
 ---
 
 # KISS Practices
@@ -20,19 +20,19 @@ description: Language-specific KISS (Keep It Simple) rules to prevent over-engin
 
 **During Phase 0 (Discovery):**
 1. Detect which languages/frameworks are present in the project (by file extensions, config files, or dependencies)
-2. Read only the relevant language files from this skill's directory (e.g., `elixir.md`, `javascript.md`)
+2. Read only the relevant language files (e.g., `${CLAUDE_SKILL_DIR}/elixir.md`, `${CLAUDE_SKILL_DIR}/javascript.md`)
 3. Include the language-specific KISS rules in the discovery context passed to the Planner
 
 **Language detection heuristics:**
 
 | Files present | Load |
 |---|---|
-| `*.ex`, `*.exs`, `mix.exs` | `elixir.md` |
-| `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.css`, `*.html` | `javascript.md` |
-| `*.svelte`, `svelte.config.*` | `svelte.md` |
-| `*.sh`, `*.bash`, `Makefile` | `bash.md` |
-| `*.md`, `CLAUDE.md`, `README.md` | `markdown.md` |
-| `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `postgresql.md` |
-| DuckDB usage, `*.duckdb` files, or analytical/data tasks | `duckdb.md` |
+| `*.ex`, `*.exs`, `mix.exs` | `${CLAUDE_SKILL_DIR}/elixir.md` |
+| `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.css`, `*.html` | `${CLAUDE_SKILL_DIR}/javascript.md` |
+| `*.svelte`, `svelte.config.*` | `${CLAUDE_SKILL_DIR}/svelte.md` |
+| `*.sh`, `*.bash`, `Makefile` | `${CLAUDE_SKILL_DIR}/bash.md` |
+| `*.md`, `CLAUDE.md`, `README.md` | `${CLAUDE_SKILL_DIR}/markdown.md` |
+| `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `${CLAUDE_SKILL_DIR}/postgresql.md` |
+| DuckDB usage, `*.duckdb` files, or analytical/data tasks | `${CLAUDE_SKILL_DIR}/duckdb.md` |
 
 **Overriding:** Projects can ship their own `kiss-practices` skill in `.claude/skills/kiss-practices/SKILL.md` to override these defaults with project-specific rules.

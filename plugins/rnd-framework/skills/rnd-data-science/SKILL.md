@@ -1,6 +1,7 @@
 ---
 name: rnd-data-science
 description: "Use when performing numerical analysis, financial calculations, data wiring, chart generation, or any analytical task requiring computation — Julia for statistics/charts/finance, DuckDB for SQL-expressible queries, CSV/Parquet aggregations, joins, and data exploration"
+user-invocable: false
 ---
 
 # R&D Data Science

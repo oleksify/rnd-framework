@@ -119,7 +119,7 @@ Before spawning the planner, create the planning-phase marker to block project f
 touch "$RND_DIR/.planning-phase"
 ```
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"` and `mode: "bypassPermissions"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints) **and the approved design spec from Phase 0.5** (`$RND_DIR/design-spec.md` content, if it exists and has `STATUS: APPROVED`). This gives the Planner pre-gathered context to inform decomposition — including architectural decisions already made, rejected alternatives, and any project-local agents or skills it may reference in pre-registration documents.
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints) **and the approved design spec from Phase 0.5** (`$RND_DIR/design-spec.md` content, if it exists and has `STATUS: APPROVED`). This gives the Planner pre-gathered context to inform decomposition — including architectural decisions already made, rejected alternatives, and any project-local agents or skills it may reference in pre-registration documents.
 
 After the planner finishes — **whether successfully or with an error** — remove the marker:
 ```bash
@@ -154,7 +154,7 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. Do NOT use `mode: "bypassPermissions"` for Builders — they need `AskUserQuestion` pass-through for chunk-by-chunk approval. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. They can run in parallel since tasks within a wave have no cross-dependencies.
 
 3. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
 
@@ -185,7 +185,7 @@ For each completed task in the wave:
 
 1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt.
 
-2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
+2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
    - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
    - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 
@@ -193,7 +193,7 @@ For each completed task in the wave:
    - **Both judges agree** → their shared verdict is the final verdict. Proceed to step 5.
    - **Judges disagree** → proceed to step 4 (tiebreaker).
 
-4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. After the tiebreaker returns its report as text output, the orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
+4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. After the tiebreaker returns its report as text output, the orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
 
 5. **Save aggregated report** to `$RND_DIR/verifications/T<id>-verification.md` containing: Judge A report, Judge B report, tiebreaker report (if used), and the final consensus verdict with consensus method noted.
 
@@ -259,7 +259,7 @@ When the user chooses to skip a failing task:
 
 Once all non-skipped tasks in a wave pass verification:
 
-1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"` and `mode: "bypassPermissions"`.
+1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
 

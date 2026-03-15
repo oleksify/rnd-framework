@@ -1,6 +1,7 @@
 ---
 name: rnd-standards
 description: "Use when extracting project-specific coding rules from CLAUDE.md files and converting them into regex-based slop patterns saved to $RND_DIR/project-patterns.json"
+user-invocable: false
 ---
 
 # R&D Standards Extraction

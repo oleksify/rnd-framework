@@ -28,6 +28,11 @@ function input(filePath: string): unknown {
   return { tool_input: { file_path: filePath } };
 }
 
+/** Build stdin JSON including agent_type (Claude Code 2.1.69+) */
+function inputWithAgent(filePath: string, agentType: string): unknown {
+  return { tool_input: { file_path: filePath }, agent_type: agentType };
+}
+
 // ---------------------------------------------------------------------------
 // Criterion 1: self-assessment path → INFORMATION BARRIER block
 // ---------------------------------------------------------------------------
@@ -287,5 +292,85 @@ describe("read-gate: symlink paths are checked as path strings, not resolved tar
     const result = await runHook(HOOK, input("/project/builds/link-to-sa"));
     expect(result.exitCode).toBe(0);
     expect(result.stdout.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T5 Criterion 1: verifier + self-assessment → blocked
+// ---------------------------------------------------------------------------
+describe("read-gate: verifier agent cannot read self-assessment files", () => {
+  test("rnd-framework:rnd-verifier is blocked from self-assessment", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent("/builds/T1-self-assessment.md", "rnd-framework:rnd-verifier"),
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+
+  test("agent_type containing 'verifier' substring is blocked", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent("/builds/T1-self-assessment.md", "custom-verifier"),
+    );
+    expect(result.exitCode).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T5 Criterion 2: non-verifier + self-assessment → allowed
+// ---------------------------------------------------------------------------
+describe("read-gate: non-verifier agents can read self-assessment files", () => {
+  test("builder agent is allowed to read self-assessment", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent("/builds/T1-self-assessment.md", "rnd-framework:rnd-builder"),
+    );
+    expect(result.exitCode).toBe(0);
+  });
+
+  test("planner agent is allowed to read self-assessment", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent("/builds/T1-self-assessment.md", "rnd-framework:rnd-planner"),
+    );
+    expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T5 Criterion 3: absent/empty agent_type → block (backward compat)
+// ---------------------------------------------------------------------------
+describe("read-gate: absent agent_type defaults to blocking self-assessment", () => {
+  test("no agent_type field → self-assessment blocked", async () => {
+    const result = await runHook(HOOK, input("/builds/T1-self-assessment.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+
+  test("empty string agent_type → self-assessment blocked", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent("/builds/T1-self-assessment.md", ""),
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T5 Criterion 4: .rnd/ auto-allow unaffected by agent_type
+// ---------------------------------------------------------------------------
+describe("read-gate: .rnd/ auto-allow works for all agent types", () => {
+  const rndPath = "/home/user/.rnd/project/sessions/20260305-120000-1a2b/plan.md";
+
+  test("verifier gets .rnd/ auto-allow for non-self-assessment path", async () => {
+    const result = await runHook(
+      HOOK,
+      inputWithAgent(rndPath, "rnd-framework:rnd-verifier"),
+    );
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 });

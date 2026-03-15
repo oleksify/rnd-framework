@@ -29,7 +29,7 @@ If $ARGUMENTS specifies a wave (e.g., "wave-2"):
 
 If $ARGUMENTS is "next":
 - Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.
-- Mark those tasks `in_progress` and build them in parallel, each with `mode: "bypassPermissions"`.
+- Mark those tasks `in_progress` and build them in parallel.
 
 After each builder agent returns, check its status code from the completion message before proceeding:
 

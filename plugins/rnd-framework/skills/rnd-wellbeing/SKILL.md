@@ -1,6 +1,7 @@
 ---
 name: rnd-wellbeing
 description: "Use at pipeline pause points to suggest breaks and encourage explained, incremental coding — keeps developers healthy and connected to their codebase"
+user-invocable: false
 ---
 
 # Developer Wellbeing

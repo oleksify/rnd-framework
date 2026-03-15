@@ -1,6 +1,7 @@
 ---
 name: rnd-iteration
 description: "Use when handling build-verify feedback loops — receiving verification feedback, iteration budgets, escalation to re-planning"
+user-invocable: false
 ---
 
 # R&D Iteration
@@ -64,7 +65,7 @@ If a task fails verification after max iterations:
 
 **Progress visibility:** When entering an iteration cycle, update the task's `activeForm` via `TaskUpdate` to include the iteration count — e.g., `"Iterating T3 (2/3)"`. This shows progress in the user's task list spinner and prevents the "silent pipeline" problem.
 
-Track all iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set):
+Track all iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set; session is `${CLAUDE_SESSION_ID}`):
 
 ```markdown
 ## T<id> Iteration Log

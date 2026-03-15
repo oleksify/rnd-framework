@@ -307,3 +307,37 @@ describe("session-start: no version mismatch warning when versions match", () =>
     expect(ctx.toLowerCase()).not.toContain("version mismatch");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Criteria 10-14: Wellbeing cron instruction
+// ---------------------------------------------------------------------------
+
+describe("session-start: cron instruction — CronCreate mention", () => {
+  test("additionalContext contains 'CronCreate'", () => {
+    expect(parsed["additional_context"] as string).toContain("CronCreate");
+  });
+});
+
+describe("session-start: cron instruction — 30-minute interval", () => {
+  test("additionalContext mentions 30-minute interval", () => {
+    expect((parsed["additional_context"] as string).toLowerCase()).toMatch(/30.?minute/);
+  });
+});
+
+describe("session-start: cron instruction — session timestamp", () => {
+  test("additionalContext contains YYYYMMDD-HHMMSS session timestamp", () => {
+    expect(parsed["additional_context"] as string).toMatch(/\d{8}-\d{6}/);
+  });
+});
+
+describe("session-start: cron instruction — 90-minute break threshold", () => {
+  test("additionalContext mentions 90 minutes as the break threshold", () => {
+    expect(parsed["additional_context"] as string).toMatch(/90.{0,10}minute/i);
+  });
+});
+
+describe("session-start: cron instruction — rnd-wellbeing skill reference", () => {
+  test("additionalContext references the rnd-wellbeing skill", () => {
+    expect(parsed["additional_context"] as string).toContain("rnd-wellbeing");
+  });
+});

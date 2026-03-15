@@ -48,7 +48,7 @@ Compose the audit prompt for verifier agents. Include:
 - Instruction: produce a structured report using the review report template, one section per category, with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line
 - Instruction: set the **Scope** field in the report to "Full codebase audit"
 
-**Spawn 2 verifier agents in parallel** using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`. Each receives the same audit prompt independently.
+**Spawn 2 verifier agents in parallel** using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each receives the same audit prompt independently.
 
 After both return:
 - Save Judge A's report to `$RND_DIR/audit/judge-a.md`
@@ -57,7 +57,7 @@ After both return:
 **Consensus logic:** Compare the `## Overall Verdict` lines from both reports.
 
 - **Both agree** — their shared verdict is the final verdict. Proceed to Phase 3.
-- **Disagree** — spawn a tiebreaker: a third agent with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`, passing the same audit prompt plus both prior reports (Judge A and Judge B). Save the tiebreaker report to `$RND_DIR/audit/tiebreaker.md`. The tiebreaker's verdict is the final verdict.
+- **Disagree** — spawn a tiebreaker: a third agent with `subagent_type: "rnd-framework:rnd-verifier"`, passing the same audit prompt plus both prior reports (Judge A and Judge B). Save the tiebreaker report to `$RND_DIR/audit/tiebreaker.md`. The tiebreaker's verdict is the final verdict.
 
 ## Phase 3: Report
 

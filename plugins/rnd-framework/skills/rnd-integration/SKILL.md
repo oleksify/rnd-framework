@@ -1,6 +1,7 @@
 ---
 name: rnd-integration
 description: "Use when merging verified task outputs and running integration/system validation — ensures component-level PASS translates to system-level correctness"
+user-invocable: false
 ---
 
 # R&D Integration

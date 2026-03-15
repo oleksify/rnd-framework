@@ -1,6 +1,7 @@
 ---
 description: "Lightweight R&D mode for small tasks (<1hr). Same principles, collapsed workflow: quick plan → build → independent verify. One Builder, one Verifier."
 argument-hint: "<description of the small task>"
+model: sonnet
 ---
 
 # R&D Framework: Quick Mode
@@ -71,7 +72,7 @@ Quick mode does not use `NEEDS_CONTEXT` or `BLOCKED` — as the orchestrator, yo
 
 Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`, passing:
+Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`, passing:
 - The pre-registration from step 1
 - Your code and tests
 - If your status was `DONE_WITH_CONCERNS`, include the brief concerns summary so the Verifier knows which areas need extra scrutiny

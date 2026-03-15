@@ -268,6 +268,16 @@ for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do
       pass "agent '${file_name}' disallowedTools are valid: ${disallowed_val}"
     fi
   fi
+
+  # permissionMode is optional; if present must be bypassPermissions
+  perm_val=$(frontmatter_val "$agent_file" "permissionMode")
+  if [ -n "$perm_val" ]; then
+    if [ "$perm_val" = "bypassPermissions" ]; then
+      pass "agent '${file_name}' permissionMode is valid: ${perm_val}"
+    else
+      fail "agent '${file_name}' has invalid permissionMode '${perm_val}'"
+    fi
+  fi
 done
 $QUIET || echo "  (${agent_count} agents found)"
 
@@ -300,6 +310,16 @@ for cmd_file in "${PLUGIN_ROOT}"/commands/*.md; do
     fail "command '${cmd_name}' has 'argument-hint' but never uses \$ARGUMENTS"
   elif [ "$uses_args" -gt 0 ] && [ -n "$hint_val" ]; then
     pass "command '${cmd_name}' has argument-hint"
+  fi
+
+  # model is optional; if present must be a valid model name
+  cmd_model_val=$(frontmatter_val "$cmd_file" "model")
+  if [ -n "$cmd_model_val" ]; then
+    if echo "$cmd_model_val" | grep -qE "^(${valid_models})$"; then
+      pass "command '${cmd_name}' model is valid: ${cmd_model_val}"
+    else
+      fail "command '${cmd_name}' has invalid model '${cmd_model_val}'"
+    fi
   fi
 done
 $QUIET || echo "  (${cmd_count} commands found)"

@@ -1,6 +1,7 @@
 ---
 name: rnd-doc-polish
 description: "Use after SHIP verdict before committing — checks and updates CLAUDE.md, README.md, project docs, and stale inline comments to reflect what the pipeline just built"
+user-invocable: false
 ---
 
 # Documentation Polish

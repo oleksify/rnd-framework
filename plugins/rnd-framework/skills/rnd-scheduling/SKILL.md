@@ -1,6 +1,7 @@
 ---
 name: rnd-scheduling
 description: "Use when planning parallel execution waves from a dependency matrix — dependency-based scheduling, parallel agent dispatch, and wave coordination"
+user-invocable: false
 ---
 
 # R&D Scheduling

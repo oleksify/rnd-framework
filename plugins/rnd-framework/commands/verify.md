@@ -1,6 +1,7 @@
 ---
 description: "Run independent multi-judge verification on a built task. Two verifier agents check output against pre-registered criteria independently; a tiebreaker resolves disagreement."
 argument-hint: "<task ID like T3, or 'wave-2' to verify all tasks in a wave>"
+model: opus
 ---
 
 # R&D Framework: Verify
@@ -17,7 +18,7 @@ Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks a
 
 ## CRITICAL: Information Barrier Enforcement
 
-> **Note on `bypassPermissions` and read-gate:** When spawning verifiers with `mode: "bypassPermissions"`, the `read-gate` hook may be suppressed. The information barrier is enforced through three layers: (1) the `read-gate` hook blocks self-assessment reads at the tool level, (2) the pre-flight check below catches files before prompt assembly, (3) each verifier agent runs a startup self-check to detect leaked content. Do not rely on any single layer — all three must hold.
+> **Note on `bypassPermissions` and read-gate:** Verifier agents run with `permissionMode: bypassPermissions` declared in their frontmatter, which may suppress the `read-gate` hook. The information barrier is enforced through three layers: (1) the `read-gate` hook blocks self-assessment reads at the tool level, (2) the pre-flight check below catches files before prompt assembly, (3) each verifier agent runs a startup self-check to detect leaked content. Do not rely on any single layer — all three must hold.
 
 ### Pre-Flight Check
 
@@ -35,7 +36,7 @@ Review the list. Cross-check every prompt you assemble — none of these paths o
 
 ### Prompt Assembly
 
-When spawning any verifier agent (Agent tool with `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`), you MUST:
+When spawning any verifier agent (Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`), you MUST:
 
 **INCLUDE:**
 - The task's pre-registration document (copy from `$RND_DIR/plan.md`)
@@ -64,7 +65,7 @@ For each task, follow the multi-judge protocol:
 
 ### Step 1 — Spawn 2 Independent Judges (parallel)
 
-Spawn Judge A and Judge B simultaneously using the Agent tool. Both use `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`.
+Spawn Judge A and Judge B simultaneously using the Agent tool. Both use `subagent_type: "rnd-framework:rnd-verifier"`.
 
 Each judge receives:
 - The pre-registration document
@@ -95,7 +96,7 @@ After both judges complete, read their reports and extract the `Overall Verdict`
 
 ### Step 3 — Tiebreaker Judge (on disagreement only)
 
-Spawn a third verifier as tiebreaker using `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`.
+Spawn a third verifier as tiebreaker using `subagent_type: "rnd-framework:rnd-verifier"`.
 
 The tiebreaker receives:
 - The pre-registration document

@@ -969,3 +969,65 @@ describe("Synthetic: Content Parity", () => {
     expect(result.stdout).toContain("parity");
   });
 });
+
+// ===========================================================================
+// T7: Agent permissionMode and Command model validation
+// ===========================================================================
+
+describe("T7: Agent permissionMode: bypassPermissions is valid", () => {
+  test("output contains PASS line with permissionMode and bypassPermissions", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\npermissionMode: bypassPermissions\n---\n\n# My Agent\n",
+    );
+    const result = await runScript(validateSh);
+    const passLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("permissionMode") && l.includes("bypassPermissions"),
+    );
+    expect(passLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("T7: Agent permissionMode: invalid value is rejected", () => {
+  test("exits 1 and stdout contains FAIL line with permissionMode", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\npermissionMode: invalid\n---\n\n# My Agent\n",
+    );
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    const failLines = result.stdout.split("\n").filter(
+      (l) => /^\s+FAIL\s/.test(l) && l.includes("permissionMode"),
+    );
+    expect(failLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("T7: Command model: opus is valid", () => {
+  test("output contains PASS line with command model and opus", async () => {
+    await writeFile(
+      join(tmpDir, "commands", "my-command.md"),
+      "---\ndescription: A test command\nmodel: opus\n---\n\n# My Command\n",
+    );
+    const result = await runScript(validateSh);
+    const passLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("my-command") && l.includes("model"),
+    );
+    expect(passLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("T7: Command model: invalid value is rejected", () => {
+  test("exits 1 and stdout contains FAIL line with command model", async () => {
+    await writeFile(
+      join(tmpDir, "commands", "my-command.md"),
+      "---\ndescription: A test command\nmodel: gpt-4o\n---\n\n# My Command\n",
+    );
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    const failLines = result.stdout.split("\n").filter(
+      (l) => /^\s+FAIL\s/.test(l) && l.includes("my-command") && l.includes("model"),
+    );
+    expect(failLines.length).toBeGreaterThan(0);
+  });
+});

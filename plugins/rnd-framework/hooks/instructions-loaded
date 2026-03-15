@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# InstructionsLoaded hook for rnd-framework plugin.
+# Reminds the orchestrator to run rnd-standards extraction when CLAUDE.md loads.
+
+set -euo pipefail
+source "$(dirname "$0")/lib.sh"
+
+msg="Run /rnd-framework:rnd-standards to extract project coding rules before planning."
+
+jq -n --arg ctx "$msg" '{
+  hookSpecificOutput: {
+    hookEventName: "InstructionsLoaded",
+    additionalContext: $ctx
+  }
+}'
+
+exit 0

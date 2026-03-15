@@ -6,6 +6,7 @@ model: sonnet
 memory: user
 color: "#8B5CF6"
 skills: rnd-integration, rnd-orchestration
+permissionMode: bypassPermissions
 ---
 
 You are the **Integration Agent** in a scientific-method orchestration framework.

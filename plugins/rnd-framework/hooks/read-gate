@@ -19,9 +19,18 @@ source "$(dirname "$0")/lib.sh"
 
 INPUT="$(cat)"
 FILE="$(hook_file_path "$INPUT")"
+AGENT="$(hook_agent_type "$INPUT")"
 
+# Block self-assessment reads unless the requester is a known non-verifier agent.
+# Absent/empty agent_type defaults to blocking for backward compat.
 if echo "$FILE" | grep -iq 'self-assessment'; then
-  hook_block 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.'
-elif is_rnd_path "$FILE"; then
+  if [ -n "$AGENT" ] && ! echo "$AGENT" | grep -iq 'verifier'; then
+    : # known non-verifier — fall through to auto-allow check below
+  else
+    hook_block 'INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier.'
+  fi
+fi
+
+if is_rnd_path "$FILE"; then
   hook_allow
 fi

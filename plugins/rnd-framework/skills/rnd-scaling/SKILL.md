@@ -1,6 +1,7 @@
 ---
 name: rnd-scaling
 description: "Use when deciding how much R&D pipeline ceremony a task needs — scales from trivial (quick mode) to high-stakes (dual verification)"
+user-invocable: false
 ---
 
 # R&D Scaling

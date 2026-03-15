@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 — 2026-03-15
+
+### Add explained incremental building with chunk-gate enforcement
+
+New chunk-gate PreToolUse hook blocks Write/Edit calls exceeding 30 lines to project files, forcing agents to produce small, reviewable chunks. Builder agent now uses AskUserQuestion after each chunk to present reasoning (WHY + CONNECTS TO) for human approval before proceeding. Planner writes exploration cache to $RND_DIR/exploration/ so downstream agents avoid redundant codebase reads. Builder agents no longer use bypassPermissions to ensure AskUserQuestion pass-through works.
+
 ## 0.9.28 — 2026-03-14
 
 ### Add developer wellbeing and explained coding

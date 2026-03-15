@@ -27,6 +27,7 @@ Implement ONE assigned task against its pre-registered success criteria. Write t
 5. IF SLOP-GATE RETURNS WARN OR FAIL WITH ANY SEVERITY 3+ MATCH, RE-EDIT IMMEDIATELY — DO NOT DEFER
 6. WHEN YOU HIT AN ERROR OR WARNING, INVESTIGATE AND FIX IT — NEVER DEFLECT WITH "PRE-EXISTING" AS A REASON TO SKIP
 7. EXPLAIN BEFORE YOU WRITE — ONE LOGICAL CHANGE PER WRITE/EDIT, NOT WALLS OF CODE
+8. KEEP EACH WRITE/EDIT TO 30 LINES OR FEWER — THE CHUNK-GATE HOOK WILL BLOCK LARGER CHANGES
 ```
 
 **On file creation:** Always use the `Write` tool to create files and `Edit` to modify them. Never use `cat > file << 'EOF'`, `echo >`, or other Bash heredoc/redirect patterns to write file content. The dedicated tools are reviewable, diffable, and won't silently mangle content (quoting, escaping, whitespace).
@@ -48,7 +49,17 @@ Find your task in `$RND_DIR/plan.md`. Read its pre-registration document careful
 
 Examine upstream artifacts from completed dependencies: API contracts, type definitions, interfaces.
 
-### 2.5. Verify External Dependencies
+### 2.5. Read Exploration Cache
+
+If `$RND_DIR/exploration/` exists, read the files inside before writing any code. The Planner writes structured findings about the codebase there — file summaries, key patterns, relevant dependencies — so you don't need to re-explore what was already mapped.
+
+```bash
+ls "$RND_DIR/exploration/" 2>/dev/null && echo "exploration cache found"
+```
+
+Read whichever files are relevant to your task. This is faster than re-reading source files the Planner already summarized.
+
+### 2.75. Verify External Dependencies
 
 Before writing any code, verify every external dependency listed in the pre-registration's "External dependencies" field:
 
@@ -67,14 +78,46 @@ For EACH success criterion in the pre-registration:
 - Real code, no mocks unless unavoidable
 - Run it. Watch it fail. Confirm it fails for the right reason.
 
-**GREEN — Write minimal code**
-- Simplest code to pass the test
-- Don't add features, refactor, or "improve" beyond the test
-- Run tests. All green.
+**GREEN — Write minimal code in chunks**
+
+Each Write or Edit to a project file must be 30 lines or fewer. The chunk-gate hook enforces this — larger writes are blocked. Plan your implementation as a sequence of small, coherent chunks before writing the first one.
+
+For each chunk:
+1. Write the chunk (≤30 lines) using the `Write` or `Edit` tool
+2. Present it to the user via `AskUserQuestion` using the Chunk Presentation Format (see section below)
+3. Wait for approval before writing the next chunk
+4. Run tests after each green chunk to catch regressions early
 
 **REFACTOR — Clean up**
 - After green only: remove duplication, improve names, extract helpers
 - Keep tests green. Don't add behavior.
+- Refactoring edits are also subject to the 30-line limit per Edit call.
+
+### 3.5. Chunk Presentation Format
+
+Use `AskUserQuestion` after each chunk with this format:
+
+```
+[Chunk N/M] — [brief title]
+
+[Show what was just written/edited — paste the key lines]
+
+WHY: [1-2 sentences explaining the reasoning behind this chunk]
+
+CONNECTS TO: [How this chunk relates to the broader task or prior chunks]
+```
+
+Example:
+
+```
+[Chunk 2/4] — Parse line count from stdin JSON
+
+  count=$(echo "$input" | jq -r '.tool_input.content // ""' | wc -l)
+
+WHY: Extracts the Write tool's content field and counts newlines so we can enforce the 30-line limit.
+
+CONNECTS TO: This feeds into the gate condition in Chunk 3 — if count > 30 and the path is not .rnd/, we block.
+```
 
 ### 4. Handle Plan Deviations
 

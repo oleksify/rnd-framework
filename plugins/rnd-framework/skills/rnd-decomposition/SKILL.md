@@ -62,6 +62,45 @@ A criterion is testable if a skeptical Verifier can evaluate it from evidence al
 - **Unverified external contract:** If a task depends on an external system (DB schema, API response shape, file format, env var, third-party service) whose contract has not been independently verified, add a Phase 0 spike or a dedicated verification step before that task to read/query the actual system and confirm assumptions
 - **Local expert available:** If the project has a domain-specific agent or skill (e.g., a `security-reviewer` agent for auth changes, or a `db-migration-expert` skill for schema changes), set the `Local expert` field in the pre-registration so the Builder knows to invoke it during implementation
 
+## Exploration Cache
+
+Before decomposition, the Planner writes structured exploration findings to `$RND_DIR/exploration/` so downstream agents (Builder, Verifier) can reference them instead of re-exploring the same files.
+
+### Output Directory
+
+`$RND_DIR/exploration/`
+
+Create with: `mkdir -p "$RND_DIR/exploration"`
+
+### File Naming
+
+One file per explored area, using descriptive kebab-case names:
+- `hooks-architecture.md` — hook system structure and patterns
+- `test-patterns.md` — testing conventions and helpers
+- `existing-agents.md` — current agent configurations
+
+### File Structure
+
+Each exploration file follows this format:
+
+```markdown
+# [Area Name]
+
+## Files Examined
+- [file path] — [one-line description of what it contains]
+
+## Key Patterns
+- [pattern or convention observed]
+
+## Relevant Dependencies
+- [dependency or coupling that builders should know about]
+
+## Notes for Builders
+- [anything that would be non-obvious from reading the file alone]
+```
+
+Each file contains structured findings about one area of the codebase relevant to the planned tasks.
+
 ## Pre-Registration Document
 
 Every task MUST have this before coding:

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Write and Edit:
+#   Blocks writes/edits exceeding 30 lines on project files, forcing
+#   the Builder to produce small, reviewable chunks.
+#
+# Tool input is passed as JSON on stdin.
+#
+# Output convention:
+#   No opinion: exit 0 + no output  (path is .rnd/ or line count <= 30)
+#   Block:      exit 2 + reason on stderr  (line count > 30 on non-.rnd/ path)
+
+set -euo pipefail
+source "$(dirname "$0")/lib.sh"
+
+INPUT="$(cat)"
+FILE="$(hook_file_path "$INPUT")"
+
+# Auto-allow .rnd/ paths — framework artifacts are never size-limited
+if is_rnd_path "$FILE"; then
+  exit 0
+fi
+
+TOOL="$(hook_tool_name "$INPUT")"
+
+# Extract content based on tool type
+if [ "$TOOL" = "Write" ]; then
+  CONTENT="$(printf '%s' "$INPUT" | jq -r '.tool_input.content // empty' 2>/dev/null || true)"
+elif [ "$TOOL" = "Edit" ]; then
+  CONTENT="$(printf '%s' "$INPUT" | jq -r '.tool_input.new_string // empty' 2>/dev/null || true)"
+else
+  exit 0
+fi
+
+LINE_COUNT="$(printf '%s' "$CONTENT" | awk 'END{print NR}')"
+
+if [ "$LINE_COUNT" -gt 30 ]; then
+  hook_block "BLOCKED: ${TOOL} to '${FILE}' has ${LINE_COUNT} lines (limit: 30). Split into smaller chunks of 30 lines or fewer."
+fi

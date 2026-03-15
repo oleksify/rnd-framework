@@ -154,7 +154,7 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. Do NOT use `mode: "bypassPermissions"` for Builders — they need `AskUserQuestion` pass-through for chunk-by-chunk approval. They can run in parallel since tasks within a wave have no cross-dependencies.
 
 3. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
 
@@ -233,7 +233,7 @@ If any tasks got FAIL:
 ## Phase 4: Iterate (if needed)
 
 1. Extract the Verifier's feedback (not their internal reasoning).
-2. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
+2. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
 3. The new Builder implements the fix and produces updated code, tests, and artifacts.
 4. Verifier re-checks (same information barrier rules).
 5. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:

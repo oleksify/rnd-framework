@@ -70,14 +70,15 @@ External dependencies:
 
 ### Agent Permission Mode
 
-All pipeline agents are spawned with `mode: "bypassPermissions"`:
+Most pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 - **Planner** — decomposes tasks and writes pre-registrations
-- **Builder** — implements tasks and produces self-assessments
 - **Verifier** — independently checks outputs against pre-registered criteria
 - **Integrator** — merges verified outputs and runs integration tests
 
-**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts are redundant and disruptive to autonomous pipeline operation.
+**Builder agents must NOT use `bypassPermissions`.** Builders use `AskUserQuestion` to present each code chunk to the user for approval before writing. `bypassPermissions` mode routes tool calls internally and can prevent `AskUserQuestion` prompts from reaching the user's terminal. Spawn Builder subagents in normal (foreground) mode so the chunk-approval flow works correctly.
+
+**Rationale for other agents:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts for Planner/Verifier/Integrator are redundant and disruptive to autonomous pipeline operation.
 
 ### Blocking Behavior
 
@@ -93,9 +94,9 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 ## Execution Phases
 
-1. **Plan** — Planner decomposes, writes pre-registrations, builds dependency matrix.
+1. **Plan** — Planner decomposes, writes pre-registrations, builds dependency matrix. Planner also writes structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream agents can read cached context instead of re-exploring the codebase.
 2. **Schedule** — Orchestrator creates execution waves from dependency matrix.
-3. **Build** — Builder agents work tasks (parallel within waves). Produce code + tests + self-assessment.
+3. **Build** — Builder agents work tasks (parallel within waves). Produce code + tests + self-assessment. Each Write/Edit to project files is limited to 30 lines by the chunk-gate PreToolUse hook. Builders present each chunk to the user via `AskUserQuestion` showing the chunk number, WHY it is written this way, and how it CONNECTS TO the broader task — the human reviews and approves before the next chunk proceeds.
 4. **Verify** — Independent Verifier checks each task against pre-registered criteria. PASS/FAIL/ITERATE.
 5. **Iterate** — On FAIL, Builder gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation.

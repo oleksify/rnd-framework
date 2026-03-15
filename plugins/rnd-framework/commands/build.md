@@ -21,11 +21,11 @@ If $ARGUMENTS is empty (user ran `/rnd-framework:build` with no arguments):
 
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
 - Use `TaskUpdate` to mark the task `in_progress`.
-- Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`.
+- Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`.
 
 If $ARGUMENTS specifies a wave (e.g., "wave-2"):
 - Use `TaskUpdate` to mark ALL tasks in the wave as `in_progress`.
-- Spawn agents in parallel for ALL tasks in that wave, each using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"` and `mode: "bypassPermissions"`.
+- Spawn agents in parallel for ALL tasks in that wave, each using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`.
 
 If $ARGUMENTS is "next":
 - Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.

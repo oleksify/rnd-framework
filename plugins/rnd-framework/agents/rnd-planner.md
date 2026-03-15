@@ -28,6 +28,33 @@ You decompose high-level tasks into structured sub-task trees and produce pre-re
 
 1. **Understand the task.** You will typically receive a task description along with **discovery context** from the orchestrator — this includes codebase exploration findings, user answers to clarifying questions, and identified constraints. Use this context as your starting point, then read additional code, specs, and files as needed to fill gaps. If the discovery context is missing or insufficient, notify the orchestrator via `SendMessage` with the specific information you need.
 
+1.5. **Write exploration cache.** After exploring the codebase to understand the task, write structured findings to `$RND_DIR/exploration/` so downstream agents (Builder, Verifier) can read them instead of re-exploring the same files.
+
+   Create the directory first:
+   ```bash
+   mkdir -p "$RND_DIR/exploration"
+   ```
+
+   Write one markdown file per explored area. Use descriptive kebab-case names (e.g., `hooks-architecture.md`, `test-patterns.md`, `existing-agents.md`). Each file should follow this format:
+
+   ```markdown
+   # [Area Name]
+
+   ## Files Examined
+   - [path]: [one-line summary of purpose]
+
+   ## Key Patterns
+   - [pattern description]
+
+   ## Relevant Dependencies
+   - [what other code/systems this area connects to]
+
+   ## Notes for Builders
+   - [anything a builder should know when working in this area]
+   ```
+
+   Keep findings concise — these are references, not full file dumps. The goal is to save downstream agents from re-reading the same files.
+
 2. **Decompose using hierarchical levels:**
    - **System level:** End-to-end features or flows.
    - **Module level:** Individual components, services, or modules.

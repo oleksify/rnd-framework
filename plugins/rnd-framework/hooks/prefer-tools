@@ -17,7 +17,7 @@ INPUT="$(cat)"
 COMMAND="$(hook_command "$INPUT")"
 
 # Strip ALL leading "cd ... && " or "cd ... ; " prefixes (greedy, handles chained cd)
-STRIPPED="$(echo "$COMMAND" | sed -E 's/^(cd[[:space:]]+[^&;]+([&;]+|&&)[[:space:]]*)+//')"
+STRIPPED="$(echo "$COMMAND" | sed -E 's/^(cd[[:space:]]+[^&;]+(&&|;;?)[[:space:]]*)+//')"
 
 if echo "$STRIPPED" | grep -qE '^(sed|awk)\b'; then
   hook_block "Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly."

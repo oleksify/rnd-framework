@@ -153,6 +153,7 @@ interface CumulativeScore {
   average_score: number;
   worst_file: string;
   worst_score: number;
+  per_file: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -240,12 +241,16 @@ function writePipelineArtifacts(output: HookOutput): void {
         average_score: 0,
         worst_file: "",
         worst_score: 0,
+        per_file: {},
       };
     }
+    if (!cumulative.per_file) cumulative.per_file = {};
 
-    cumulative.total_score += output.score;
-    cumulative.file_count += 1;
-    cumulative.average_score = cumulative.total_score / cumulative.file_count;
+    const prevScore = cumulative.per_file[output.file_path] ?? 0;
+    cumulative.total_score += output.score - prevScore;
+    if (!(output.file_path in cumulative.per_file)) cumulative.file_count += 1;
+    cumulative.per_file[output.file_path] = output.score;
+    cumulative.average_score = cumulative.file_count > 0 ? cumulative.total_score / cumulative.file_count : 0;
 
     if (output.score > cumulative.worst_score) {
       cumulative.worst_score = output.score;

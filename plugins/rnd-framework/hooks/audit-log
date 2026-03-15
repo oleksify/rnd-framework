@@ -6,9 +6,9 @@
 # Tool input is passed as JSON on stdin.
 #
 # Output convention:
-#   PostToolUse hooks are observational only — always exit 0, no hookSpecificOutput.
+#   Resilient: always exit 0, never fail.
 
-# Guard missing dependencies — PostToolUse hooks must never fail.
+# Guard missing dependencies — resilient hook, must never fail.
 command -v jq  >/dev/null 2>&1 || exit 0
 command -v date >/dev/null 2>&1 || exit 0
 

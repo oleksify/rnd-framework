@@ -3,9 +3,9 @@
 # Re-injects pipeline state after context compaction by reading compact-state.json
 # and outputting it as hookSpecificOutput.additionalContext.
 #
-# Resilient pattern: guard all deps, always exit 0, never fail.
+# Resilient: always exit 0, never fail.
 
-# Guard missing dependencies — PostCompact hooks must never fail.
+# Guard missing dependencies — resilient hook, must never fail.
 command -v jq >/dev/null 2>&1 || exit 0
 
 source "$(dirname "$0")/lib.sh"

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1 — 2026-03-15
+
+### Fix hooks blocking Builder self-assessment writes to .rnd/ paths
+
 ## 0.10.0 — 2026-03-15
 
 ### Add explained incremental building with chunk-gate enforcement

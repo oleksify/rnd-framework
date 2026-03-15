@@ -1,0 +1,157 @@
+#!/usr/bin/env bun
+// PostToolUse hook: evidence-warn
+//
+// Detects SQL table references and API endpoint patterns in written code
+// and emits an advisory warning via hookSpecificOutput.additionalContext.
+// Always exits 0 — purely advisory, never blocks.
+
+const CODE_EXTENSIONS = new Set([
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".py",
+  ".rb",
+  ".go",
+  ".rs",
+  ".java",
+  ".c",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".cs",
+  ".swift",
+  ".kt",
+  ".scala",
+  ".sh",
+  ".bash",
+  ".zsh",
+  ".fish",
+  ".lua",
+  ".php",
+  ".vue",
+  ".svelte",
+  ".ex",
+  ".exs",
+]);
+
+function isCodeFile(filePath: string): boolean {
+  const lastDot = filePath.lastIndexOf(".");
+  if (lastDot === -1) return false;
+  const ext = filePath.slice(lastDot).toLowerCase();
+  return CODE_EXTENSIONS.has(ext);
+}
+
+const SQL_PATTERNS: Array<RegExp> = [
+  /SELECT\s+.*\s+FROM\s+(\w+)/gi,
+  /INSERT\s+INTO\s+(\w+)/gi,
+  /CREATE\s+TABLE\s+(\w+)/gi,
+  /UPDATE\s+(\w+)\s+SET/gi,
+  /DELETE\s+FROM\s+(\w+)/gi,
+  /ALTER\s+TABLE\s+(\w+)/gi,
+  /DROP\s+TABLE\s+(\w+)/gi,
+];
+
+const API_PATTERNS: Array<RegExp> = [
+  /fetch\s*\(\s*["'](\/?[^"']+)/gi,
+  /axios\.\w+\s*\(\s*["'](\/?[^"']+)/gi,
+];
+
+function scanSQL(content: string): string[] {
+  const tables = new Set<string>();
+  for (const pattern of SQL_PATTERNS) {
+    pattern.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(content)) !== null) {
+      if (match[1]) tables.add(match[1]);
+    }
+  }
+  return Array.from(tables);
+}
+
+function scanAPI(content: string): string[] {
+  const endpoints = new Set<string>();
+  for (const pattern of API_PATTERNS) {
+    pattern.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(content)) !== null) {
+      if (match[1]) endpoints.add(match[1].split("?")[0]);
+    }
+  }
+  return Array.from(endpoints);
+}
+
+async function main(): Promise<void> {
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of Bun.stdin.stream()) chunks.push(chunk);
+  const raw = chunks.reduce((acc, c) => {
+    const m = new Uint8Array(acc.length + c.length);
+    m.set(acc, 0);
+    m.set(c, acc.length);
+    return m;
+  }, new Uint8Array(0));
+  const stdinText = new TextDecoder().decode(raw);
+
+  let input: Record<string, unknown>;
+  try {
+    const p = JSON.parse(stdinText);
+    if (typeof p !== "object" || p === null || Array.isArray(p))
+      process.exit(0);
+    input = p as Record<string, unknown>;
+  } catch {
+    process.exit(0);
+  }
+
+  const toolName = input["tool_name"];
+  const toolInput = input["tool_input"];
+  if (
+    typeof toolName !== "string" ||
+    typeof toolInput !== "object" ||
+    toolInput === null ||
+    Array.isArray(toolInput)
+  )
+    process.exit(0);
+  const ti = toolInput as Record<string, unknown>;
+
+  const filePath = ti["file_path"];
+  if (typeof filePath !== "string" || filePath.length === 0) process.exit(0);
+  if (filePath.includes(".rnd/") || !isCodeFile(filePath)) process.exit(0);
+
+  let content: string;
+  if (toolName === "Write") {
+    const c = ti["content"];
+    if (typeof c !== "string") process.exit(0);
+    content = c;
+  } else if (toolName === "Edit") {
+    const ns = ti["new_string"];
+    if (typeof ns !== "string") process.exit(0);
+    content = ns;
+  } else {
+    process.exit(0);
+  }
+
+  const tables = scanSQL(content);
+  const endpoints = scanAPI(content);
+
+  if (tables.length === 0 && endpoints.length === 0) process.exit(0);
+
+  const parts: string[] = [];
+  if (tables.length > 0) parts.push(`tables [${tables.join(", ")}]`);
+  if (endpoints.length > 0) parts.push(`endpoints [${endpoints.join(", ")}]`);
+
+  const msg =
+    `Evidence check: This code references ${parts.join(" and ")}. ` +
+    `Verify you have read the relevant schema/migration files and API specifications before proceeding.`;
+
+  console.log(
+    JSON.stringify({ hookSpecificOutput: { additionalContext: msg } }),
+  );
+}
+
+try {
+  await main();
+} catch {
+  process.exit(0);
+}

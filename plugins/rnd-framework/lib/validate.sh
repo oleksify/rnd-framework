@@ -493,6 +493,9 @@ parity_table=(
   "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|PASS|slop skill and hook share PASS verdict"
   "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|WARN|slop skill and hook share WARN verdict"
   "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|FAIL|slop skill and hook share FAIL verdict"
+  # T7: evidence-grounding parity checks
+  "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Evidence Gathered|evidence gathering manifest section parity"
+  "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|Evidence Gathered|evidence grounding verification parity"
 )
 
 for entry in "${parity_table[@]}"; do

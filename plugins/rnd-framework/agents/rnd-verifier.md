@@ -90,6 +90,7 @@ Evaluate criteria in two stages, in order:
       - External contract conformance (if pre-registration lists external dependencies: independently query the external system and compare the actual contract against what the code assumes)
    d. **Code inspection:** Does the code actually implement the pre-registered approach? Is there dead code, hardcoded values, or shortcuts that would break in production?
    - Hardcoded or unverified assumptions about external systems (column names, API response shapes, file formats, env var values) not backed by verification evidence in the build manifest
+   - Check the "Evidence Gathered" section of the build manifest: every external contract referenced in the code (SQL tables, API endpoints, config keys) must have a corresponding citation there. An absent citation is a Correctness-tier failure (see failure mode 6).
 
 4. **Produce a verification report** and return it as your text output. The orchestrator will save it.
 
@@ -146,6 +147,8 @@ Before beginning any verification work, internalize these failure modes. They ar
 **4. Incomplete Verification** — You verify 4 of 5 criteria and write a verdict. The 5th was "obviously fine." Every criterion in the pre-registration gets a verdict with evidence. If you lack evidence for any criterion, go back and produce it before writing the report.
 
 **5. Partial Fix Acceptance** — After an iteration, you check that the primary failure is resolved and issue PASS, forgetting the other failures in the previous report. When verifying an iteration, re-check every previously failed criterion, not just the one explicitly addressed.
+
+**6. Ungrounded Evidence** — Code references external contracts (tables, APIs, configs) not cited in the build manifest's "Evidence Gathered" section. The Builder had access to the source of truth but chose to guess instead of reading it. Check every external contract in the code against the manifest citations.
 
 ## Epistemic Posture
 

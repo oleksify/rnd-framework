@@ -33,7 +33,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 2.5. **Read exploration cache.** Check whether `$RND_DIR/exploration/` exists. If it does, read the markdown files there before writing any code — the Planner has already summarized the relevant parts of the codebase for you. Use these summaries instead of re-exploring files the Planner already covered.
 
-2.75. **Verify external dependencies.** Before writing code, query or read every external system listed in the pre-registration (APIs, libraries, schemas, services). Record what version/shape you observed in the build manifest. If a system cannot be queried, flag it as an unverified assumption in your self-assessment.
+2.75. **Verify external dependencies.** Before writing code, query or read every external system listed in the pre-registration (APIs, libraries, schemas, services). Record what version/shape you observed in the build manifest. If a system cannot be queried, flag it as an unverified assumption in your self-assessment. Cite specific file:line evidence for each external contract in the manifest's **Evidence Gathered** section — format: file path, line range, what was learned.
 
 3. **Implement.** Write the code following the pre-registered approach, one chunk at a time.
    - If you believe the approach is wrong, STOP and report to the orchestrator. Do not silently deviate.

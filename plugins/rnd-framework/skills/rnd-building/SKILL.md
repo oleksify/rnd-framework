@@ -65,7 +65,12 @@ Read whichever files are relevant to your task. This is faster than re-reading s
 Before writing any code, verify every external dependency listed in the pre-registration's "External dependencies" field:
 
 - **Read or query the actual external system** — read DB schema, call API endpoint, inspect file, check service response
-- **Record evidence in the build manifest** — include schema dump, response sample, file contents, or other concrete proof
+- **Record evidence in the build manifest** under an `### Evidence Gathered` section — cite each finding with file path, line range, and what was learned. Example format:
+  ```
+  ### Evidence Gathered
+  - `path/to/schema.sql:15-20` — users table has string `id` column (not UUID)
+  - `lib/api-client.ts:42` — API returns `{ data: User[] }` shape
+  ```
 - **Flag any contract mismatch as a STOP condition** — same protocol as a plan deviation: stop, report to the orchestrator, wait for guidance before continuing
 - **If the system is not accessible**, document this explicitly as an unverified assumption in your self-assessment (see sub-sections below)
 
@@ -139,6 +144,10 @@ Save to `$RND_DIR/builds/T<id>-manifest.md`:
 ## Files Created/Modified
 - [list with paths]
 
+## Evidence Gathered
+- `path/to/file.ext:NN-MM` — [what was learned about the external contract]
+- `path/to/other.ts:NN` — [what was observed]
+
 ## Tests Written
 - [test name]: Tests [criterion text]
 
@@ -205,6 +214,7 @@ Before submitting your build:
 - [ ] No silent deviations from pre-registered approach
 - [ ] Output is clean (no errors, warnings)
 - [ ] Every external dependency in the pre-registration was verified against the actual system, with evidence recorded in the build manifest
+- [ ] Build manifest `### Evidence Gathered` section contains file:line citations for each external contract used
 
 ## Status Codes
 

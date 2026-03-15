@@ -101,6 +101,7 @@ Does the code actually implement the pre-registered approach? Check for:
 - Missing error handling at system boundaries
 - Deviation from the declared approach
 - Hardcoded assumptions about external systems (column names, API response shapes, file formats, env var values) that are not backed by verification evidence in the build manifest
+- Evidence Gathered: cross-reference the build manifest's "Evidence Gathered" section against every external contract used in code — if a contract is referenced in the code but has no citation in the manifest, treat it as an ungrounded decision, which is a Correctness-tier failure
 
 ### 3.5. Cross-Criterion Sweep
 
@@ -109,7 +110,7 @@ Does the code actually implement the pre-registered approach? Check for:
 1. **Systemic patterns:** Does the same defect type (e.g., missing validation, incorrect error handling) appear across multiple criteria? If so, report it as a systemic issue — not N independent failures.
 2. **Shared root causes:** Do multiple criterion failures trace back to the same underlying defect? Identify the root cause explicitly.
 3. **Fragile passes:** Does any passing criterion depend on an assumption invalidated by a failing criterion? Flag it as at-risk even if its tests currently pass.
-4. **External assumption probe:** For every external dependency in the pre-registration, confirm the build manifest contains verification evidence (schema dump, API response sample, file inspection). If evidence is missing, flag all criteria that depend on that external system as at-risk — regardless of whether their tests currently pass. Tests that mock an external system encode the Builder's assumptions; without independent verification, passing tests prove nothing about production behavior.
+4. **External assumption probe:** For every external dependency in the pre-registration, confirm the build manifest contains verification evidence (schema dump, API response sample, file inspection) in its "Evidence Gathered" section. If evidence is missing, flag all criteria that depend on that external system as at-risk — regardless of whether their tests currently pass. Tests that mock an external system encode the Builder's assumptions; without independent verification, passing tests prove nothing about production behavior.
 5. **Completeness check:** Confirm you have a verdict and evidence for EVERY criterion listed in the pre-registration. If any criterion lacks evidence, go back to step 3 for that criterion.
 
 **Do not proceed to step 4 until this sweep is complete.** Writing verdicts incrementally — some now, more in a later round — wastes the Builder's iteration budget and is a verification failure in itself.

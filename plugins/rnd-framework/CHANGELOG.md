@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.4 — 2026-03-15
+
+### Fix minor audit cosmetic findings
+
+Fix slop-gate cumulative score double-counting on same-file rewrites, prefer-tools cd-stripping regex precision, standardize resilient hook comments, and replace grep -iq with bash nocasematch in read-gate
+
 ## 0.10.3 — 2026-03-15
 
 ### Adopt Claude Code latest features

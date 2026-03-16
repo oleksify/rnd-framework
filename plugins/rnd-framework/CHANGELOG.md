@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.7 — 2026-03-16
+
+### Port all hooks to TypeScript
+
+Replaced all 11 bash hooks and 2 JS hooks with TypeScript equivalents sharing a typed lib.ts utility library. Merged auto-allow-rnd logic into chunk-gate.ts (Write/Edit) and read-gate.ts (Read), eliminating the standalone hook. Deleted lib.sh. Renamed 7 t-prefixed test files to descriptive names, centralized duplicated helpers (computeSlug, createTestEnv, input builders) into helpers.ts, standardized all tests on test() instead of it(). Updated CLAUDE.md and README.md hooks directory trees. 505 tests pass, net -262 lines.
+
 ## 0.10.6 — 2026-03-16
 
 ### Fix 4 non-functional features

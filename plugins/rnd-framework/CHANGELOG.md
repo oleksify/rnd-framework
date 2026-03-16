@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.9 — 2026-03-16
+
+### Add experiment-based verification and calibration
+
 ## 0.10.8 — 2026-03-16
 
 ### Fix bump.sh failing when invoked from plugin cache path

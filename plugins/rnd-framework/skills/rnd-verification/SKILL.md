@@ -174,6 +174,7 @@ If your evidence for PASS is "it looks right" — that is not evidence. Run it. 
 | "This clearly works, no need for failure mode analysis" | If it clearly works, failure mode analysis will confirm that quickly. Inspect it. |
 | "I already checked similar code before" | Each criterion gets fresh evidence. Prior checks don't transfer. |
 | "I'll catch the rest next round" | There is no next round for free. Every incomplete report burns an entire build-verify iteration cycle. Report ALL findings NOW. |
+| "This is pre-existing" / "by design" / "not in scope" | Every finding must include a proposed fix. Never dismiss a finding without citing specific documentation that justifies the exception. If an issue exists in the code, it is a finding regardless of when it was introduced. |
 
 ## Multi-Judge Mode
 

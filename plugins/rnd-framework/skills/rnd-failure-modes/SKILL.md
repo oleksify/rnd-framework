@@ -108,6 +108,14 @@ These are the known failure modes this framework has encountered. Each entry inc
 
 ---
 
+### 11. Deflection
+
+**How it manifests:** You identify a problem but dismiss it as "pre-existing", "by design", or "not in scope" rather than reporting it. You rationalize that because the issue predates this change, or was intended, it is exempt from your verdict. The issue goes unreported and unfixed.
+
+**Correct behavior:** Every finding must include a proposed fix. Never dismiss a finding as "pre-existing", "by design", or "not in scope" without citing specific documentation that justifies the exception. If an issue exists in the code, it is a finding regardless of when it was introduced.
+
+---
+
 ## Red Flag Phrases
 
 When you find yourself writing or thinking any of the following, stop and check your reasoning:

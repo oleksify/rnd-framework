@@ -291,7 +291,7 @@ Summarize results for the user:
 
 **Break checkpoint:** Invoke `rnd-framework:rnd-wellbeing` to check elapsed session time. If >90 minutes, suggest a break before the final commit/cleanup steps.
 
-**Documentation polish:** Before presenting commit options, invoke `rnd-framework:rnd-doc-polish` to check and update any documentation that may have gone stale from the pipeline's changes. This covers CLAUDE.md, README.md, project-specific docs, and stale inline comments in changed files. Report what was updated (or that everything is current).
+**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete.
 
 Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline

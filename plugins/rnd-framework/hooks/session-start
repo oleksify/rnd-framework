@@ -29,10 +29,6 @@ if [ -n "$CACHED_VERSION" ]; then
   done
 fi
 
-# Extract session start timestamp from the RND_DIR path (YYYYMMDD-HHMMSS-XXXX)
-SESSION_ID=$(basename "${RND_DIR:-}")
-SESSION_TIMESTAMP=$(echo "$SESSION_ID" | grep -oE '^[0-9]{8}-[0-9]{6}' || echo "")
-
 # Read using-rnd-framework content
 using_rnd_content=$(cat "${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md" 2>&1 || echo "Error reading using-rnd-framework skill")
 
@@ -41,11 +37,9 @@ jq -n \
   --arg skill "$using_rnd_content" \
   --arg rnd_dir "${RND_DIR:-}" \
   --arg version_warning "$VERSION_WARNING" \
-  --arg session_ts "${SESSION_TIMESTAMP:-}" \
   '
   (if $rnd_dir != "" then "\n\n**RND_DIR (pipeline artifact directory for this project):** `\($rnd_dir)`" else "" end) as $rnd_line |
-  (if $session_ts != "" then "\n\n**Wellbeing cron:** Register a 30-minute recurring cron job using CronCreate. The cron prompt should check elapsed time since session start (\($session_ts)) and invoke the rnd-wellbeing skill to suggest a break if >90 minutes have passed." else "" end) as $cron_line |
-  "<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your '\''rnd-framework:using-rnd-framework'\'' skill - your introduction to using the R&D framework. For all other skills, use the '\''Skill'\'' tool:**\n\n\($skill)\($rnd_line)\($cron_line)\($version_warning)\n\n</EXTREMELY_IMPORTANT>" as $ctx |
+  "<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n**Below is the full content of your '\''rnd-framework:using-rnd-framework'\'' skill - your introduction to using the R&D framework. For all other skills, use the '\''Skill'\'' tool:**\n\n\($skill)\($rnd_line)\($version_warning)\n\n</EXTREMELY_IMPORTANT>" as $ctx |
   {
     additional_context: $ctx,
     hookSpecificOutput: {

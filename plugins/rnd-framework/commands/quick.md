@@ -82,7 +82,7 @@ The verifier returns its report as text output. The orchestrator saves the retur
 
 ## Step 4: Iterate or Ship
 
-- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. Before presenting commit options, invoke `rnd-framework:rnd-doc-polish` to check and update any documentation that went stale from the changes. Use `AskUserQuestion` with options:
+- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. **MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete. Use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
   - "Show development narrative" — generate a narrative explanation of the session: what was built and why, key decisions and trade-offs, obstacles encountered, insights gained, and what's left. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes

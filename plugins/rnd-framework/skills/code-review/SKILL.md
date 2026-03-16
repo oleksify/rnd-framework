@@ -90,6 +90,10 @@ Verdict is determined by the highest severity finding: critical beats major, maj
 [One sentence justifying the verdict, referencing the highest-severity finding.]
 ```
 
+## Review Rules
+
+- Every finding must include a proposed fix. Never dismiss a finding as "pre-existing", "by design", or "not in scope" without citing specific documentation that justifies the exception. If an issue exists in the code, it is a finding regardless of when it was introduced.
+
 ## Related Skills
 
 - `rnd-framework:rnd-verification` — Evidence-based verification process; code review applies the same evidence standards

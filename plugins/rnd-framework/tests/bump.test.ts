@@ -42,7 +42,7 @@ async function runScript(
   } = {},
 ): Promise<RunResult> {
   const proc = Bun.spawn([scriptPath, ...args], {
-    cwd: opts.cwd,
+    cwd: opts.cwd ?? join(scriptPath, "..", ".."),
     stdin: "ignore",
     stdout: "pipe",
     stderr: "pipe",

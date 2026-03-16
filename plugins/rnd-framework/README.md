@@ -75,6 +75,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:audit` | Full codebase audit against project standards |
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
 | `/rnd-framework:narrative` | Generate a development narrative for a pipeline session |
+| `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
 
 ## Skills
 
@@ -109,10 +110,12 @@ The plugin provides skills that embed structured practices into every phase of c
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
 | `rnd-wellbeing` | Developer wellbeing — break suggestions based on session duration, explained incremental coding |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
+| `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
+| `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
 
 ## Agents
 
-All agents have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Write, Edit` as defense-in-depth.
+All agents have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 | Agent | Model | Color | Role |
 |---|---|---|---|
@@ -201,6 +204,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 ```
 ~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 8-char hash of path)
 ├── .current-session                    # Active session ID
+├── calibration.jsonl                   # Verdict accuracy tracking (cross-session)
 └── sessions/
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
         ├── plan.md                     # Task tree, pre-registrations, schedule
@@ -209,7 +213,8 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   ├── T1-manifest.md          # What the builder produced
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
         ├── verifications/
-        │   └── T1-verification.md      # Verifier report with evidence
+        │   ├── T1-verification.md      # Verifier report with evidence
+        │   └── T1-experiments/         # Verifier-written independent experiment tests
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
         └── iteration-log.md            # Build-verify cycle tracking
@@ -223,7 +228,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 5 specialized agents
-├── commands/                    # 14 pipeline commands
+├── commands/                    # 15 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)

@@ -51,7 +51,7 @@ plugins/rnd-framework/
 | `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Write, Edit` as defense-in-depth.
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 ### Information Barrier and Permission Hooks
 
@@ -81,12 +81,14 @@ The framework stores artifacts in a centralized directory outside the project tr
 ```
 ~/.claude/.rnd/<dirname>-<hash>/           # Project base
 ├── .current-session                       # Active session ID
+├── calibration.jsonl                      # Verdict accuracy tracking (cross-session)
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, pre-registrations, schedule
     ├── project-patterns.json              # Project-specific slop patterns extracted from CLAUDE.md
     ├── builds/T*-manifest.md              # Builder output records
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts
+    ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
     └── iteration-log.md                   # Build-verify cycle tracking
 ```
@@ -95,7 +97,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:resume`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`, `/rnd-framework:doctor`, `/rnd-framework:bump`, `/rnd-framework:review`, `/rnd-framework:audit`, `/rnd-framework:brainstorm`, `/rnd-framework:narrative`.
+Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-framework:plan`, `/rnd-framework:build`, `/rnd-framework:verify`, `/rnd-framework:integrate`, `/rnd-framework:status`, `/rnd-framework:resume`, `/rnd-framework:quick`, `/rnd-framework:history`, `/rnd-framework:validate`, `/rnd-framework:doctor`, `/rnd-framework:bump`, `/rnd-framework:review`, `/rnd-framework:audit`, `/rnd-framework:brainstorm`, `/rnd-framework:narrative`, `/rnd-framework:calibrate`.
 
 ## Key Conventions
 

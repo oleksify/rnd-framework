@@ -2,7 +2,7 @@
 name: rnd-verification
 description: "Use when independently verifying built work against pre-registered criteria — information-barrier verification with evidence-based verdicts and failure mode analysis"
 user-invocable: false
-allowed-tools: [Read, Bash, Grep, Glob]
+allowed-tools: [Read, Write, Bash, Grep, Glob]
 ---
 
 # R&D Verification
@@ -69,53 +69,76 @@ Evaluate criteria in two stages, in order:
 
 Understand the intent, approach, and success criteria. These are your ONLY reference for what "correct" means.
 
-### 2. Read the Code and Tests
+**Output:** A clear mental model of what the task requires, with each criterion noted separately before proceeding.
 
-Read the Builder's code and tests. Do NOT read any self-assessment files.
+### 2. Write Independent Experiment Tests
 
-### 3. Verify Each Criterion (Correctness tier first, then Quality tier)
+Before reading the Builder's code or tests, write one experiment test per success criterion using the `rnd-framework:rnd-experiments` skill. Derive tests from the pre-registration spec text alone.
 
-For EACH success criterion:
+**CRITICAL:** You MUST NOT read Builder test files at this stage. Write experiments first, then proceed to Step 3.
 
-**a. Test Adequacy**
-Do the provided tests actually test this criterion, or just something vaguely related?
+For each criterion:
+1. Identify the observable outcome stated in the criterion
+2. Write an experiment test file to `$RND_DIR/verifications/T<id>-experiments/`
+3. Name each file `exp-<criterion-slug>.test.<ext>`
 
-**b. Run Tests**
-Execute the test suite. Record results verbatim.
+**Output:** Experiment test files in `$RND_DIR/verifications/T<id>-experiments/`, one per criterion.
 
-**c. Failure Mode Analysis**
+### 3. Run Experiments Against Builder's Code
+
+Run the experiment files written in Step 2 against the Builder's implementation using the project's test runner. Do NOT read the Builder's test files yet.
+
+Record the raw output verbatim. Do not paraphrase results. Each failing experiment is a Correctness-tier finding. If an experiment itself was wrong (e.g., misread the criterion), fix it, note the correction, but do not delete the original — corrections are part of the evidence trail.
+
+**Output:** Verbatim experiment run output recorded, with each criterion's result (PASS/FAIL) noted.
+
+### 4. Run Builder's Tests and Compare
+
+Now read the Builder's code and tests. Run the Builder's full test suite using the project's test runner. Record results verbatim.
+
+**Test Adequacy:** For each criterion, does the Builder's test actually test the criterion, or just something vaguely related?
+
+Compare outcomes: if a Builder test passes but your experiment fails for the same criterion, this is a significant finding — the Builder's test may be encoding assumptions that differ from the spec.
+
+**Output:** Builder test results recorded verbatim; divergences with experiment results identified and noted per criterion.
+
+### 5. Code Inspection, Failure Mode Analysis, and Cross-Criterion Sweep
+
+Before writing any verdicts, scan your own reasoning for known verification anti-patterns. The `rnd-framework:rnd-failure-modes` skill catalogs these (premature satisfaction, trusting agent reports, incomplete verification) along with red-flag phrases to watch for.
+
+**a. Failure Mode Analysis**
 Identify likely failure modes through code inspection:
 - Boundary/edge cases, off-by-one errors
 - Error handling, unhappy paths
 - Race conditions, concurrency issues
 - Security issues (injection, auth bypass, data leaks)
 - Performance under load (if performance criteria exist)
-- External contract conformance (if the pre-registration lists external dependencies: independently query the external system — DB schema, API endpoint, file, env var — and compare the actual contract against what the code assumes; tests that mock external systems may pass with wrong assumptions)
+- External contract conformance — independently query the external system (DB schema, API endpoint, file, env var) and compare the actual contract against what the code assumes; tests that mock external systems may pass with wrong assumptions
 
-Before writing any verdict, also scan your own reasoning for known verification anti-patterns. The `rnd-framework:rnd-failure-modes` skill catalogs these failure modes (premature satisfaction, trusting agent reports, incomplete verification, and others) along with red-flag phrases to watch for.
-
-**d. Code Inspection**
+**b. Code Inspection**
 Does the code actually implement the pre-registered approach? Check for:
 - Dead code or hardcoded values
 - Shortcuts that would break in production
 - Missing error handling at system boundaries
 - Deviation from the declared approach
-- Hardcoded assumptions about external systems (column names, API response shapes, file formats, env var values) that are not backed by verification evidence in the build manifest
+- Hardcoded assumptions about external systems (column names, API response shapes, file formats, env var values) not backed by verification evidence in the build manifest
 - Evidence Gathered: cross-reference the build manifest's "Evidence Gathered" section against every external contract used in code — if a contract is referenced in the code but has no citation in the manifest, treat it as an ungrounded decision, which is a Correctness-tier failure
 
-### 3.5. Cross-Criterion Sweep
+**c. Cross-Criterion Sweep**
 
-**Before writing any verdicts**, review all findings from step 3 together:
+**Before writing any verdicts**, review all findings from steps 3-5b together:
 
-1. **Systemic patterns:** Does the same defect type (e.g., missing validation, incorrect error handling) appear across multiple criteria? If so, report it as a systemic issue — not N independent failures.
+1. **Systemic patterns:** Does the same defect type (e.g., missing validation, incorrect error handling) appear across multiple criteria? Report it as a systemic issue — not N independent failures.
 2. **Shared root causes:** Do multiple criterion failures trace back to the same underlying defect? Identify the root cause explicitly.
 3. **Fragile passes:** Does any passing criterion depend on an assumption invalidated by a failing criterion? Flag it as at-risk even if its tests currently pass.
 4. **External assumption probe:** For every external dependency in the pre-registration, confirm the build manifest contains verification evidence (schema dump, API response sample, file inspection) in its "Evidence Gathered" section. If evidence is missing, flag all criteria that depend on that external system as at-risk — regardless of whether their tests currently pass. Tests that mock an external system encode the Builder's assumptions; without independent verification, passing tests prove nothing about production behavior.
-5. **Completeness check:** Confirm you have a verdict and evidence for EVERY criterion listed in the pre-registration. If any criterion lacks evidence, go back to step 3 for that criterion.
+5. **Completeness check:** Confirm you have a verdict and evidence for EVERY criterion listed in the pre-registration. If any criterion lacks evidence, return to steps 3-4 for that criterion.
 
-**Do not proceed to step 4 until this sweep is complete.** Writing verdicts incrementally — some now, more in a later round — wastes the Builder's iteration budget and is a verification failure in itself.
+**Do not proceed to Step 6 until this sweep is complete.** Writing verdicts incrementally wastes the Builder's iteration budget and is a verification failure in itself.
 
-### 4. Produce Verification Report
+**Output:** All findings consolidated, systemic issues identified, every criterion has a verdict backed by evidence.
+
+### 6. Produce Verification Report
 
 > **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
@@ -202,6 +225,7 @@ When the two regular-judge verdicts disagree and you are spawned as the tiebreak
 
 ## Related Skills
 
+- `rnd-framework:rnd-experiments` — How to write independent experiment tests from spec in Step 2
 - `rnd-framework:rnd-failure-modes` — Catalog of verification anti-patterns and red-flag phrases; scan before writing any verdict
 - `rnd-framework:rnd-debugging` — For root cause analysis of failures found during verification
 - `rnd-framework:rnd-iteration` — For how feedback flows back to Builder

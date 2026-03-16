@@ -81,11 +81,15 @@ describe("T13: rnd-verification has allowed-tools with Read, Bash, Grep, Glob", 
   });
 });
 
-describe("T13: rnd-verification allowed-tools does NOT include Write or Edit", () => {
-  test("frontmatter allowed-tools line does not contain Write or Edit", async () => {
+describe("rnd-verification allowed-tools includes Write but not Edit", () => {
+  test("frontmatter allowed-tools line contains Write", async () => {
     const fm = frontmatter(await readSkill("rnd-verification"));
     const toolsLine = fm.split("\n").find((l) => l.includes("allowed-tools")) ?? "";
-    expect(toolsLine).not.toContain("Write");
+    expect(toolsLine).toContain("Write");
+  });
+  test("frontmatter allowed-tools line does not contain Edit", async () => {
+    const fm = frontmatter(await readSkill("rnd-verification"));
+    const toolsLine = fm.split("\n").find((l) => l.includes("allowed-tools")) ?? "";
     expect(toolsLine).not.toContain("Edit");
   });
 });

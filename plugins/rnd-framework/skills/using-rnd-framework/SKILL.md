@@ -53,6 +53,8 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:kiss-practices` | Language-specific KISS rules to prevent over-engineering — load during Phase 0 discovery, read only the relevant language files |
 | `rnd-framework:fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
 | `rnd-framework:rnd-wellbeing` | Use at pipeline pause points to suggest breaks and encourage explained, incremental coding |
+| `rnd-framework:rnd-experiments` | Use when verifying — defines how verifiers write independent experiment tests from the spec alone |
+| `rnd-framework:rnd-calibration` | Use when recording verdict data — JSONL-based calibration stats with automatic false-verdict detection |
 
 ## Available Commands
 
@@ -74,6 +76,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused, implementable plans |
 | `/rnd-framework:narrative` | Generate a development narrative for a pipeline session from its artifacts |
+| `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
 
 ## Data Science Tasks
 

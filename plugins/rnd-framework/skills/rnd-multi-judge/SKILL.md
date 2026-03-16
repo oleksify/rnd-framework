@@ -27,7 +27,8 @@ Single-verifier mode (as used in `/rnd-framework:quick`) is acceptable only for 
 Before spawning any judges:
 
 1. Run the self-assessment scan: confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. The information barrier hook blocks reads of self-assessment files regardless — this step confirms the build is complete.
-2. Assemble the shared judge prompt from: the pre-registration document (from `$RND_DIR/plan.md`) and the Builder's code, tests, and artifacts. Do NOT include self-assessment content in any judge prompt.
+2. Note that experiment artifacts from each judge will be saved under `$RND_DIR/verifications/T<id>-experiments/judge-a/`, `judge-b/`, and `tiebreaker/` (if a tiebreaker is triggered). These directories are created by the judges themselves during verification.
+3. Assemble the shared judge prompt from: the pre-registration document (from `$RND_DIR/plan.md`) and the Builder's code, tests, and artifacts. Do NOT include self-assessment content in any judge prompt.
 
 ### Step 2 — Spawn 2 Independent Judges
 
@@ -95,6 +96,17 @@ The orchestrator saves the aggregated report to `$RND_DIR/verifications/T<id>-ve
 ## Tiebreaker Report (if applicable)
 
 [Full contents of tiebreaker's report, or omit this section if both judges agreed]
+
+---
+
+## Experiment Summary
+
+[Reference experiment results from each judge. Experiment artifacts are stored at:
+- Judge A: `$RND_DIR/verifications/T<id>-experiments/judge-a/`
+- Judge B: `$RND_DIR/verifications/T<id>-experiments/judge-b/`
+- Tiebreaker (if applicable): `$RND_DIR/verifications/T<id>-experiments/tiebreaker/`
+
+Omit this section if no experiment artifacts were produced.]
 
 ---
 

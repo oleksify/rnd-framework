@@ -9,32 +9,20 @@
  *   SC5: Write/Edit to .rnd/ path with 50 lines → exit 0 (bypass)
  */
 
-import { describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { runHook } from "./helpers";
+import { createTestEnv, runHook, writeInput, editInput, type TestEnv } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH = join(import.meta.dir, "..", "hooks", "chunk-gate");
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "chunk-gate.ts");
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Build a Write hook input payload. */
-function writeInput(filePath: string, content: string): unknown {
-  return { tool_name: "Write", tool_input: { file_path: filePath, content } };
-}
-
-/** Build an Edit hook input payload. */
-function editInput(filePath: string, newString: string): unknown {
-  return {
-    tool_name: "Edit",
-    tool_input: { file_path: filePath, new_string: newString },
-  };
-}
 
 /** Generate a string with exactly `n` lines (no trailing newline). */
 function lines(n: number): string {
@@ -46,7 +34,7 @@ function lines(n: number): string {
 // ---------------------------------------------------------------------------
 
 describe("SC1: Write with 31 lines to non-.rnd/ path is blocked", () => {
-  it("returns exit 2", async () => {
+  test("returns exit 2", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/project/src/file.ts", lines(31)),
@@ -54,7 +42,7 @@ describe("SC1: Write with 31 lines to non-.rnd/ path is blocked", () => {
     expect(result.exitCode).toBe(2);
   });
 
-  it("stderr contains BLOCKED", async () => {
+  test("stderr contains BLOCKED", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/project/src/file.ts", lines(31)),
@@ -62,7 +50,7 @@ describe("SC1: Write with 31 lines to non-.rnd/ path is blocked", () => {
     expect(result.stderr).toContain("BLOCKED");
   });
 
-  it("stdout is empty", async () => {
+  test("stdout is empty", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/project/src/file.ts", lines(31)),
@@ -76,7 +64,7 @@ describe("SC1: Write with 31 lines to non-.rnd/ path is blocked", () => {
 // ---------------------------------------------------------------------------
 
 describe("SC2: Write with 30 lines to non-.rnd/ path passes", () => {
-  it("returns exit 0", async () => {
+  test("returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/project/src/file.ts", lines(30)),
@@ -84,7 +72,7 @@ describe("SC2: Write with 30 lines to non-.rnd/ path passes", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("stdout is empty (no opinion)", async () => {
+  test("stdout is empty (no opinion)", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/project/src/file.ts", lines(30)),
@@ -98,7 +86,7 @@ describe("SC2: Write with 30 lines to non-.rnd/ path passes", () => {
 // ---------------------------------------------------------------------------
 
 describe("SC3: Edit with 31 lines to non-.rnd/ path is blocked", () => {
-  it("returns exit 2", async () => {
+  test("returns exit 2", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/project/src/component.tsx", lines(31)),
@@ -106,7 +94,7 @@ describe("SC3: Edit with 31 lines to non-.rnd/ path is blocked", () => {
     expect(result.exitCode).toBe(2);
   });
 
-  it("stderr contains BLOCKED", async () => {
+  test("stderr contains BLOCKED", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/project/src/component.tsx", lines(31)),
@@ -114,7 +102,7 @@ describe("SC3: Edit with 31 lines to non-.rnd/ path is blocked", () => {
     expect(result.stderr).toContain("BLOCKED");
   });
 
-  it("stdout is empty", async () => {
+  test("stdout is empty", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/project/src/component.tsx", lines(31)),
@@ -128,7 +116,7 @@ describe("SC3: Edit with 31 lines to non-.rnd/ path is blocked", () => {
 // ---------------------------------------------------------------------------
 
 describe("SC4: Edit with 30 lines to non-.rnd/ path passes", () => {
-  it("returns exit 0", async () => {
+  test("returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/project/src/component.tsx", lines(30)),
@@ -136,7 +124,7 @@ describe("SC4: Edit with 30 lines to non-.rnd/ path passes", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("stdout is empty (no opinion)", async () => {
+  test("stdout is empty (no opinion)", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/project/src/component.tsx", lines(30)),
@@ -150,7 +138,7 @@ describe("SC4: Edit with 30 lines to non-.rnd/ path passes", () => {
 // ---------------------------------------------------------------------------
 
 describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
-  it("Write to .rnd/ path with 50 lines returns exit 0", async () => {
+  test("Write to .rnd/ path with 50 lines returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/home/user/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
@@ -158,7 +146,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("Write to .rnd/ path emits permissionDecision=allow", async () => {
+  test("Write to .rnd/ path emits permissionDecision=allow", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/home/user/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
@@ -167,7 +155,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 
-  it("Edit to .rnd/ path with 50 lines returns exit 0", async () => {
+  test("Edit to .rnd/ path with 50 lines returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/home/user/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
@@ -175,12 +163,46 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("Edit to .rnd/ path emits permissionDecision=allow", async () => {
+  test("Edit to .rnd/ path emits permissionDecision=allow", async () => {
     const result = await runHook(
       HOOK_PATH,
       editInput("/home/user/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
     );
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SC6: Non-.rnd/ path during planning phase → blocked with planning message
+// ---------------------------------------------------------------------------
+
+describe("SC6: Non-.rnd/ path during planning phase is blocked", () => {
+  let env: TestEnv;
+
+  beforeEach(async () => {
+    env = await createTestEnv({ withSession: true });
+    await writeFile(join(env.sessionDir, ".planning-phase"), "", "utf-8");
+  });
+
+  afterEach(async () => { await env.cleanup(); });
+
+  test("returns exit 2", async () => {
+    const result = await runHook(
+      HOOK_PATH,
+      writeInput("/project/src/file.ts", lines(5)),
+      { ...env.env, CLAUDE_PLUGIN_ROOT: "" },
+    );
+    expect(result.exitCode).toBe(2);
+  });
+
+  test("stderr contains BLOCKED and planning phase", async () => {
+    const result = await runHook(
+      HOOK_PATH,
+      writeInput("/project/src/file.ts", lines(5)),
+      { ...env.env, CLAUDE_PLUGIN_ROOT: "" },
+    );
+    expect(result.stderr).toContain("BLOCKED");
+    expect(result.stderr).toContain("planning phase");
   });
 });

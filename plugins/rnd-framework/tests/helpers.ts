@@ -9,7 +9,7 @@
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { tmpdir } from "node:os";
 
 // ---------------------------------------------------------------------------
@@ -25,6 +25,19 @@ export interface HookResult {
   exitCode: number;
 }
 
+/**
+ * Environment produced by createTestEnv() for hook integration tests.
+ * configDir is a temp dir that acts as CLAUDE_CONFIG_DIR; env is ready to
+ * pass to runHook() as the env argument.
+ */
+export interface TestEnv {
+  configDir: string;
+  baseDir: string;
+  sessionDir: string;
+  env: Record<string, string>;
+  cleanup: () => Promise<void>;
+}
+
 export interface TempRndDir {
   /** Root of the temporary project-level .rnd directory, e.g. /tmp/rnd-xxxx */
   baseDir: string;
@@ -37,6 +50,25 @@ export interface TempRndDir {
    * Removes the entire baseDir tree. Safe to call multiple times.
    */
   cleanup: () => Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// computeSlug
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes the slug used by rnd-dir.sh for a given directory path.
+ * Format: <basename(dir)>-<first-8-hex-chars-of-sha256(dir)>
+ */
+export async function computeSlug(dir: string): Promise<string> {
+  const proc = Bun.spawn(
+    ["bash", "-c", 'printf "%s" "$TARGET_DIR" | shasum -a 256 | cut -c1-8'],
+    { stdout: "pipe", stderr: "pipe", env: { ...process.env, TARGET_DIR: dir } },
+  );
+  const bytes = await Bun.readableStreamToArrayBuffer(proc.stdout);
+  await proc.exited;
+  const hash = new TextDecoder().decode(bytes).trim();
+  return `${basename(dir)}-${hash}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +187,33 @@ export async function runHookRaw(
 }
 
 // ---------------------------------------------------------------------------
+// createTestEnv
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates an isolated temp environment mimicking rnd-dir.sh output.
+ * opts.withSession=true creates the session tree and .current-session file.
+ */
+export async function createTestEnv(
+  opts: { withSession?: boolean } = {},
+): Promise<TestEnv> {
+  const configDir = await mkdtemp(join(tmpdir(), "rnd-test-env-"));
+  const slug = await computeSlug(process.cwd());
+  const baseDir = join(configDir, ".rnd", slug);
+  await mkdir(baseDir, { recursive: true });
+  const sessionId = "20260305-120000-abcd";
+  const sessionDir = join(baseDir, "sessions", sessionId);
+  if (opts.withSession) {
+    await mkdir(sessionDir, { recursive: true });
+    await writeFile(join(baseDir, ".current-session"), sessionId, "utf-8");
+  }
+  const cleanup = async () => {
+    if (existsSync(configDir)) await rm(configDir, { recursive: true, force: true });
+  };
+  return { configDir, baseDir, sessionDir, env: { CLAUDE_CONFIG_DIR: configDir }, cleanup };
+}
+
+// ---------------------------------------------------------------------------
 // createTempRndDir
 // ---------------------------------------------------------------------------
 
@@ -218,4 +277,33 @@ export async function createTempRndDir(): Promise<TempRndDir> {
   }
 
   return { baseDir, sessionDir, cleanup };
+}
+
+// ---------------------------------------------------------------------------
+// Input builders
+// ---------------------------------------------------------------------------
+
+/** Write hook input payload (chunk-gate, slop-gate). */
+export function writeInput(filePath: string, content: string): unknown {
+  return { tool_name: "Write", tool_input: { file_path: filePath, content } };
+}
+
+/** Edit hook input payload. */
+export function editInput(filePath: string, newString: string): unknown {
+  return { tool_name: "Edit", tool_input: { file_path: filePath, new_string: newString } };
+}
+
+/** Read hook input payload (read-gate). */
+export function readInput(filePath: string): unknown {
+  return { tool_input: { file_path: filePath } };
+}
+
+/** Bash hook input payload (prefer-tools). */
+export function bashInput(command: string): unknown {
+  return { tool_input: { command } };
+}
+
+/** Generic hook payload with tool_name + file_path. */
+export function hookInput(toolName: string, filePath: string): unknown {
+  return { tool_name: toolName, tool_input: { file_path: filePath } };
 }

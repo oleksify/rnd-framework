@@ -226,13 +226,19 @@ rnd-framework/
 ├── commands/                    # 14 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
-│   ├── lib.sh                   # Shared utilities (path parsing, JSON responses, .rnd/ detection)
-│   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
-│   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
-│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
-│   ├── session-start            # SessionStart hook: injects skill context via jq
-│   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns
+│   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
+│   ├── chunk-gate.ts            # Write/Edit hook: auto-allows .rnd/, blocks planning-phase writes, enforces 30-line chunks
+│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ auto-allow
+│   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
+│   ├── session-start.ts         # SessionStart hook: injects skill context
+│   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   ├── slop-gate.ts             # PostToolUse hook: scores code for LLM anti-patterns
+│   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
+│   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
+│   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
+│   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
+│   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
+│   └── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
@@ -296,7 +302,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access. Agent instructions are the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:status` to re-orient.
 - **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:quick` for small tasks.
-- **Cannot identify agents in hooks.** Claude Code hooks see tool inputs but not which agent is calling. Information barriers use path-based blocking (blocks ALL reads of self-assessment files) rather than agent-identity checks.
+- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.ts` hook additionally checks `agent_type` to allow non-verifier agents (e.g., builders, planners) to read their own self-assessments, but the primary enforcement is path-based.
 
 ## Acknowledgements
 

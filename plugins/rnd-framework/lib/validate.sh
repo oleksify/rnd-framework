@@ -98,7 +98,7 @@ if [ -f "$hjson" ]; then
     fail "hooks.json is not valid JSON"
   fi
   # Check referenced scripts exist and are executable
-  for script_ref in $(jq -r '.. | .command? // empty' "$hjson" 2>/dev/null | grep -oE "hooks/[a-z_-]+" | sort -u || true); do
+  for script_ref in $(jq -r '.. | .command? // empty' "$hjson" 2>/dev/null | grep -oE "hooks/[a-z_.-]+" | sort -u || true); do
     script_path="${PLUGIN_ROOT}/${script_ref}"
     script_name=$(basename "$script_ref")
     if [ -f "$script_path" ]; then
@@ -489,10 +489,10 @@ parity_table=(
   "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|over-commenting|slop skill and catalog share over-commenting category"
   "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|error-handling|slop skill and catalog share error-handling category"
   "skills/rnd-slop-detection/SKILL.md|slop-patterns.json|hygiene|slop skill and catalog share hygiene category"
-  "hooks/slop-gate|slop-patterns.json|severity|slop-gate hook and catalog share severity field schema"
-  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|PASS|slop skill and hook share PASS verdict"
-  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|WARN|slop skill and hook share WARN verdict"
-  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate|FAIL|slop skill and hook share FAIL verdict"
+  "hooks/slop-gate.ts|slop-patterns.json|severity|slop-gate hook and catalog share severity field schema"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate.ts|PASS|slop skill and hook share PASS verdict"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate.ts|WARN|slop skill and hook share WARN verdict"
+  "skills/rnd-slop-detection/SKILL.md|hooks/slop-gate.ts|FAIL|slop skill and hook share FAIL verdict"
   # T7: evidence-grounding parity checks
   "skills/rnd-building/SKILL.md|agents/rnd-builder.md|Evidence Gathered|evidence gathering manifest section parity"
   "skills/rnd-verification/SKILL.md|agents/rnd-verifier.md|Evidence Gathered|evidence grounding verification parity"

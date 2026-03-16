@@ -7,7 +7,7 @@
  *   3. stdout is valid JSON containing hookSpecificOutput.additionalContext with setup status
  *   4. additionalContext includes validation result (pass count) and dependency status
  *   5. hooks.json contains a Setup entry pointing to ${CLAUDE_PLUGIN_ROOT}/hooks/setup
- *   6. Script uses set -euo pipefail and sources lib.sh
+ *   6. Script uses #!/usr/bin/env bun shebang and imports from lib.ts
  *   7. Reports missing dependencies clearly without failing (exit 0 even when deps missing)
  */
 
@@ -17,7 +17,7 @@ import { access, constants, readFile } from "node:fs/promises";
 import { runHook } from "./helpers";
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
-const HOOK = join(PLUGIN_ROOT, "hooks", "setup");
+const HOOK = join(PLUGIN_ROOT, "hooks", "setup.ts");
 const HOOKS_JSON = join(PLUGIN_ROOT, "hooks", "hooks.json");
 
 let result: { stdout: string; stderr: string; exitCode: number };
@@ -101,32 +101,33 @@ describe("setup: hooks.json registration", () => {
   });
 });
 
-describe("setup: script quality — uses set -euo pipefail and sources lib.sh", () => {
-  test("script contains set -euo pipefail", async () => {
+describe("setup: script quality — uses Bun.spawnSync", () => {
+  test("script uses Bun.spawnSync (not execSync)", async () => {
     const src = await readFile(HOOK, "utf-8");
-    expect(src).toContain("set -euo pipefail");
-  });
-
-  test("script sources lib.sh", async () => {
-    const src = await readFile(HOOK, "utf-8");
-    expect(src).toContain("lib.sh");
+    expect(src).toContain("Bun.spawnSync");
+    expect(src).not.toContain("execSync");
   });
 });
 
-describe("setup: exit 0 even when bun is unavailable", () => {
-  test("exits 0 even when PATH contains no bun", async () => {
-    // Use /bin:/usr/bin to get bash+jq but exclude bun (in /opt/homebrew or ~/.bun)
-    const r = await runHook(HOOK, undefined, { PATH: "/bin:/usr/bin" });
+describe("setup: exit 0 even when jq is unavailable", () => {
+  // The TypeScript hook runs via bun (required for execution), so bun
+  // cannot be hidden from PATH. Instead, we verify graceful handling
+  // by checking that the hook always exits 0 and produces valid JSON.
+  test("exits 0 even when jq is not in PATH", async () => {
+    const bunDir = process.env.PATH?.split(":").find(d => d.includes("bun")) ?? "";
+    const r = await runHook(HOOK, undefined, { PATH: `/bin:/usr/bin:${bunDir}` });
     expect(r.exitCode).toBe(0);
   });
 
-  test("stdout is still valid JSON when bun is missing", async () => {
-    const r = await runHook(HOOK, undefined, { PATH: "/bin:/usr/bin" });
+  test("stdout is still valid JSON when jq is not in PATH", async () => {
+    const bunDir = process.env.PATH?.split(":").find(d => d.includes("bun")) ?? "";
+    const r = await runHook(HOOK, undefined, { PATH: `/bin:/usr/bin:${bunDir}` });
     expect(() => JSON.parse(r.stdout)).not.toThrow();
   });
 
-  test("additionalContext mentions bun not found when bun is missing", async () => {
-    const r = await runHook(HOOK, undefined, { PATH: "/bin:/usr/bin" });
+  test("additionalContext mentions bun when jq is not in PATH", async () => {
+    const bunDir = process.env.PATH?.split(":").find(d => d.includes("bun")) ?? "";
+    const r = await runHook(HOOK, undefined, { PATH: `/bin:/usr/bin:${bunDir}` });
     const p = JSON.parse(r.stdout);
     const ctx = (p.hookSpecificOutput as Record<string, unknown>)
       .additionalContext as string;

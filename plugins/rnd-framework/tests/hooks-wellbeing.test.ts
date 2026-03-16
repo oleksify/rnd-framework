@@ -5,8 +5,8 @@ import { join } from "node:path";
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
 const HOOKS_JSON_PATH = join(PLUGIN_ROOT, "hooks", "hooks.json");
-const WELLBEING_CMD = "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check'";
-const EVIDENCE_WARN_CMD = "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn'";
+const WELLBEING_CMD = "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check.ts'";
+const EVIDENCE_WARN_CMD = "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn.ts'";
 
 async function loadHooks() {
   const content = await readFile(HOOKS_JSON_PATH, "utf-8");

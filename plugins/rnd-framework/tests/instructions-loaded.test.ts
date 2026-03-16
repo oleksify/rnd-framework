@@ -19,7 +19,7 @@ import { runHook } from "./helpers";
 // ---------------------------------------------------------------------------
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
-const HOOK = join(PLUGIN_ROOT, "hooks", "instructions-loaded");
+const HOOK = join(PLUGIN_ROOT, "hooks", "instructions-loaded.ts");
 const HOOKS_JSON = join(PLUGIN_ROOT, "hooks", "hooks.json");
 
 // ---------------------------------------------------------------------------
@@ -101,17 +101,17 @@ describe("instructions-loaded: reminder is concise", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Criterion 5 (quality): script uses set -euo pipefail and sources lib.sh
+// Criterion 5 (quality): script uses #!/usr/bin/env bun shebang and imports from lib.ts
 // ---------------------------------------------------------------------------
 
 describe("instructions-loaded: script quality", () => {
-  test("script uses set -euo pipefail", async () => {
+  test("script uses bun shebang", async () => {
     const src = await readFile(HOOK, "utf-8");
-    expect(src).toContain("set -euo pipefail");
+    expect(src).toContain("#!/usr/bin/env bun");
   });
 
-  test("script sources lib.sh", async () => {
+  test("script imports from lib.ts", async () => {
     const src = await readFile(HOOK, "utf-8");
-    expect(src).toContain("lib.sh");
+    expect(src).toContain("lib.ts");
   });
 });

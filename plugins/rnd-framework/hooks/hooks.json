@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-compact'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.ts'"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.ts'"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/instructions-loaded'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/instructions-loaded.ts'"
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/setup'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/setup.ts'"
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-start'",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-start.ts'",
             "async": false
           }
         ]
@@ -58,11 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/auto-allow-rnd'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/chunk-gate'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/chunk-gate.ts'"
           }
         ]
       },
@@ -71,11 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/auto-allow-rnd'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/chunk-gate'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/chunk-gate.ts'"
           }
         ]
       },
@@ -84,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools.ts'"
           }
         ]
       },
@@ -93,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/read-gate'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/read-gate.ts'"
           }
         ]
       }
@@ -104,19 +96,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check.ts'"
           }
         ]
       },
@@ -125,19 +117,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn.ts'"
           },
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/wellbeing-check.ts'"
           }
         ]
       }

@@ -13,94 +13,26 @@
  *     compute the same slug and create the .current-session file there.
  */
 
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
-import { mkdtemp, mkdir, writeFile, rm, readFile, symlink, chmod } from "node:fs/promises";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { mkdtemp, rm, writeFile, readFile, symlink, chmod } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { runHook, runHookRaw } from "./helpers";
+import { runHook, runHookRaw, createTestEnv, hookInput } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH = join(import.meta.dir, "..", "hooks", "audit-log");
-
-// The hook is invoked in the test process's CWD, so slug = <basename(CWD)>-<hash(CWD)>
-// We replicate that computation here to know where rnd-dir.sh will look.
-async function computeSlug(dir: string): Promise<string> {
-  const base = basename(dir);
-  // Use env var to pass dir safely — avoids shell injection with special chars in paths
-  const proc = Bun.spawn(
-    ["bash", "-c", 'printf "%s" "$TARGET_DIR" | shasum -a 256 | cut -c1-8'],
-    { stdout: "pipe", stderr: "pipe", env: { ...process.env, TARGET_DIR: dir } },
-  );
-  const bytes = await Bun.readableStreamToArrayBuffer(proc.stdout);
-  await proc.exited;
-  const hash = new TextDecoder().decode(bytes).trim();
-  return `${base}-${hash}`;
-}
-
-// ---------------------------------------------------------------------------
-// Per-test temp directory setup
-// ---------------------------------------------------------------------------
-
-interface TestEnv {
-  configDir: string;
-  slug: string;
-  baseDir: string;
-  sessionDir: string;
-  cleanup: () => Promise<void>;
-}
-
-async function createTestEnv(withSession: boolean): Promise<TestEnv> {
-  const configDir = await mkdtemp(join(tmpdir(), "audit-log-test-"));
-  const cwd = process.cwd();
-  const slug = await computeSlug(cwd);
-  const baseDir = join(configDir, ".rnd", slug);
-  await mkdir(baseDir, { recursive: true });
-
-  const sessionId = "20260305-120000-abcd";
-  const sessionDir = join(baseDir, "sessions", sessionId);
-
-  if (withSession) {
-    await mkdir(sessionDir, { recursive: true });
-    await writeFile(join(baseDir, ".current-session"), sessionId, "utf-8");
-  }
-
-  async function cleanup() {
-    if (existsSync(configDir)) {
-      // Restore permissions before attempting removal (for read-only file tests)
-      try {
-        const auditPath = join(sessionDir, "audit.jsonl");
-        if (existsSync(auditPath)) {
-          await chmod(auditPath, 0o644);
-        }
-      } catch {
-        // Ignore errors — file may not exist
-      }
-      await rm(configDir, { recursive: true, force: true });
-    }
-  }
-
-  return { configDir, slug, baseDir, sessionDir, cleanup };
-}
-
-// Build hook input payload
-function hookInput(toolName: string, filePath: string): unknown {
-  return {
-    tool_name: toolName,
-    tool_input: { file_path: filePath },
-  };
-}
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "audit-log.ts");
 
 // ---------------------------------------------------------------------------
 // Criterion 1 & 4: Exit code and file presence
 // ---------------------------------------------------------------------------
 
 describe("audit-log: exit code", () => {
-  it("exits 0 when an active session exists", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when an active session exists", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const result = await runHook(
         HOOK_PATH,
@@ -113,8 +45,8 @@ describe("audit-log: exit code", () => {
     }
   });
 
-  it("exits 0 when no active session exists (no .current-session file)", async () => {
-    const env = await createTestEnv(false);
+  test("exits 0 when no active session exists (no .current-session file)", async () => {
+    const env = await createTestEnv({ withSession: false });
     try {
       const result = await runHook(
         HOOK_PATH,
@@ -133,8 +65,8 @@ describe("audit-log: exit code", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: no session — no audit.jsonl", () => {
-  it("does not create audit.jsonl when no active session exists", async () => {
-    const env = await createTestEnv(false);
+  test("does not create audit.jsonl when no active session exists", async () => {
+    const env = await createTestEnv({ withSession: false });
     try {
       await runHook(
         HOOK_PATH,
@@ -159,8 +91,8 @@ describe("audit-log: no session — no audit.jsonl", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: active session — audit.jsonl is created", () => {
-  it("creates audit.jsonl in sessionDir after invocation", async () => {
-    const env = await createTestEnv(true);
+  test("creates audit.jsonl in sessionDir after invocation", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -180,8 +112,8 @@ describe("audit-log: active session — audit.jsonl is created", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: JSONL entry keys and values", () => {
-  it("produces a valid JSON object on a single line", async () => {
-    const env = await createTestEnv(true);
+  test("produces a valid JSON object on a single line", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -200,8 +132,8 @@ describe("audit-log: JSONL entry keys and values", () => {
     }
   });
 
-  it("entry has keys: ts, tool, file", async () => {
-    const env = await createTestEnv(true);
+  test("entry has keys: ts, tool, file", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -219,8 +151,8 @@ describe("audit-log: JSONL entry keys and values", () => {
     }
   });
 
-  it("entry.tool matches tool_name from input", async () => {
-    const env = await createTestEnv(true);
+  test("entry.tool matches tool_name from input", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -236,8 +168,8 @@ describe("audit-log: JSONL entry keys and values", () => {
     }
   });
 
-  it("entry.file matches tool_input.file_path from input", async () => {
-    const env = await createTestEnv(true);
+  test("entry.file matches tool_input.file_path from input", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -259,8 +191,8 @@ describe("audit-log: JSONL entry keys and values", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: ts format", () => {
-  it("ts matches ISO 8601 UTC format /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/", async () => {
-    const env = await createTestEnv(true);
+  test("ts matches ISO 8601 UTC format /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHook(
         HOOK_PATH,
@@ -282,8 +214,8 @@ describe("audit-log: ts format", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: multiple invocations", () => {
-  it("appends one line per invocation (3 invocations → 3 lines)", async () => {
-    const env = await createTestEnv(true);
+  test("appends one line per invocation (3 invocations → 3 lines)", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const invocations = [
         hookInput("Write", "/a.ts"),
@@ -304,8 +236,8 @@ describe("audit-log: multiple invocations", () => {
     }
   });
 
-  it("each line is a distinct valid JSON object", async () => {
-    const env = await createTestEnv(true);
+  test("each line is a distinct valid JSON object", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const files = ["/x/first.ts", "/x/second.ts", "/x/third.ts"];
       for (const fp of files) {
@@ -334,8 +266,8 @@ describe("audit-log: multiple invocations", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: special characters in file paths", () => {
-  it("serializes a file path containing spaces correctly", async () => {
-    const env = await createTestEnv(true);
+  test("serializes a file path containing spaces correctly", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const pathWithSpaces = "/tmp/my file with spaces.ts";
       await runHook(
@@ -352,8 +284,8 @@ describe("audit-log: special characters in file paths", () => {
     }
   });
 
-  it("serializes a file path containing double quotes correctly", async () => {
-    const env = await createTestEnv(true);
+  test("serializes a file path containing double quotes correctly", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       // jq --arg ensures safe handling — this tests that protection
       const pathWithQuotes = '/tmp/he said "hello".ts';
@@ -371,8 +303,8 @@ describe("audit-log: special characters in file paths", () => {
     }
   });
 
-  it("serializes a file path containing single quotes correctly", async () => {
-    const env = await createTestEnv(true);
+  test("serializes a file path containing single quotes correctly", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const pathWithSingleQuotes = "/tmp/it's a file.ts";
       await runHook(
@@ -389,8 +321,8 @@ describe("audit-log: special characters in file paths", () => {
     }
   });
 
-  it("serializes a file path containing backslashes correctly", async () => {
-    const env = await createTestEnv(true);
+  test("serializes a file path containing backslashes correctly", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const pathWithBackslash = "/tmp/path\\with\\backslashes.ts";
       await runHook(
@@ -413,8 +345,8 @@ describe("audit-log: special characters in file paths", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: malformed stdin — exits 0", () => {
-  it("exits 0 when stdin is empty string", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when stdin is empty string", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const result = await runHookRaw(
         HOOK_PATH,
@@ -427,8 +359,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
     }
   });
 
-  it("exits 0 when stdin is non-JSON text", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when stdin is non-JSON text", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const result = await runHookRaw(
         HOOK_PATH,
@@ -441,8 +373,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
     }
   });
 
-  it("exits 0 when stdin JSON is missing tool_input key", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when stdin JSON is missing tool_input key", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const result = await runHookRaw(
         HOOK_PATH,
@@ -455,8 +387,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
     }
   });
 
-  it("exits 0 when stdin JSON is missing tool_name key", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when stdin JSON is missing tool_name key", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const result = await runHookRaw(
         HOOK_PATH,
@@ -469,8 +401,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
     }
   });
 
-  it("does not write an audit entry when input is malformed (active session)", async () => {
-    const env = await createTestEnv(true);
+  test("does not write an audit entry when input is malformed (active session)", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHookRaw(
         HOOK_PATH,
@@ -485,8 +417,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
     }
   });
 
-  it("does not write an audit entry when tool_input key is missing (active session)", async () => {
-    const env = await createTestEnv(true);
+  test("does not write an audit entry when tool_input key is missing (active session)", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       await runHookRaw(
         HOOK_PATH,
@@ -506,8 +438,8 @@ describe("audit-log: malformed stdin — exits 0", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: missing jq dependency", () => {
-  it("exits 0 when jq is not on PATH and no audit.jsonl is created", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 and still writes audit.jsonl when jq is not on PATH (TS hook does not use jq)", async () => {
+    const env = await createTestEnv({ withSession: true });
     // Create a temp dir with a fake jq that exits 127, put it first in PATH
     const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-"));
     try {
@@ -524,8 +456,9 @@ describe("audit-log: missing jq dependency", () => {
       );
       expect(result.exitCode).toBe(0);
 
+      // TS hook does not use jq — audit.jsonl is still written
       const auditPath = join(env.sessionDir, "audit.jsonl");
-      expect(existsSync(auditPath)).toBe(false);
+      expect(existsSync(auditPath)).toBe(true);
     } finally {
       await env.cleanup();
       await rm(fakeBin, { recursive: true, force: true });
@@ -538,8 +471,8 @@ describe("audit-log: missing jq dependency", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: missing date dependency", () => {
-  it("exits 0 when date is not on PATH and no audit.jsonl is created", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 and still writes audit.jsonl when date is not on PATH (TS hook uses Date, not date CLI)", async () => {
+    const env = await createTestEnv({ withSession: true });
     // Create a temp dir with a fake date that exits 127, put it first in PATH
     const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-"));
     try {
@@ -556,8 +489,9 @@ describe("audit-log: missing date dependency", () => {
       );
       expect(result.exitCode).toBe(0);
 
+      // TS hook uses new Date() — not the date CLI — so audit.jsonl is still written
       const auditPath = join(env.sessionDir, "audit.jsonl");
-      expect(existsSync(auditPath)).toBe(false);
+      expect(existsSync(auditPath)).toBe(true);
     } finally {
       await env.cleanup();
       await rm(fakeBin, { recursive: true, force: true });
@@ -570,8 +504,8 @@ describe("audit-log: missing date dependency", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: read-only audit.jsonl", () => {
-  it("exits 0 when audit.jsonl exists but is read-only — no crash, no new entry", async () => {
-    const env = await createTestEnv(true);
+  test("exits 0 when audit.jsonl exists but is read-only — no crash, no new entry", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       // Create a read-only audit.jsonl
       const auditPath = join(env.sessionDir, "audit.jsonl");
@@ -603,8 +537,8 @@ describe("audit-log: read-only audit.jsonl", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: Unicode characters in file paths", () => {
-  it("file path with Unicode (café) produces valid JSONL with correct path", async () => {
-    const env = await createTestEnv(true);
+  test("file path with Unicode (café) produces valid JSONL with correct path", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const unicodePath = "/tmp/file-café.ts";
       await runHook(
@@ -621,8 +555,8 @@ describe("audit-log: Unicode characters in file paths", () => {
     }
   });
 
-  it("file path with emoji produces valid JSONL with correct path", async () => {
-    const env = await createTestEnv(true);
+  test("file path with emoji produces valid JSONL with correct path", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const emojiPath = "/tmp/file-\u{1F680}.ts";
       await runHook(
@@ -645,8 +579,8 @@ describe("audit-log: Unicode characters in file paths", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: newline characters in file paths", () => {
-  it("file path with embedded newline produces valid JSONL (newline escaped in JSON)", async () => {
-    const env = await createTestEnv(true);
+  test("file path with embedded newline produces valid JSONL (newline escaped in JSON)", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       // A file path containing a real newline character
       const pathWithNewline = "/tmp/file\nwith-newline.ts";
@@ -669,8 +603,8 @@ describe("audit-log: newline characters in file paths", () => {
     }
   });
 
-  it("file path with literal backslash-n (\\\\n) produces valid JSONL", async () => {
-    const env = await createTestEnv(true);
+  test("file path with literal backslash-n (\\\\n) produces valid JSONL", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       // A file path containing literal backslash followed by n (not a newline)
       const pathWithLiteralBackslashN = "/tmp/file\\nwith-literal.ts";
@@ -694,8 +628,8 @@ describe("audit-log: newline characters in file paths", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: symlinked session directory", () => {
-  it("writes audit.jsonl correctly when session dir is accessed via symlink", async () => {
-    const env = await createTestEnv(true);
+  test("writes audit.jsonl correctly when session dir is accessed via symlink", async () => {
+    const env = await createTestEnv({ withSession: true });
     // Create a symlink to the session dir and point .current-session at it via a symlinked path
     const realSessionId = "20260305-120000-abcd";
     const realSessionDir = env.sessionDir;
@@ -732,8 +666,8 @@ describe("audit-log: symlinked session directory", () => {
 // ---------------------------------------------------------------------------
 
 describe("audit-log: 5 rapid sequential writes", () => {
-  it("5 rapid sequential invocations produce exactly 5 lines in audit.jsonl", async () => {
-    const env = await createTestEnv(true);
+  test("5 rapid sequential invocations produce exactly 5 lines in audit.jsonl", async () => {
+    const env = await createTestEnv({ withSession: true });
     try {
       const files = [
         "/rapid/file1.ts",

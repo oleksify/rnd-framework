@@ -19,13 +19,19 @@ plugins/rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing
-│   ├── lib.sh                   # Shared utilities for all bash hooks (path parsing, JSON responses, .rnd/ detection)
-│   ├── auto-allow-rnd           # Write/Edit hook: auto-allows .rnd/ paths
-│   ├── read-gate                # Read hook: information barrier + .rnd/ auto-allow
-│   ├── prefer-tools             # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
-│   ├── session-start            # SessionStart hook: injects skill context via jq
-│   ├── audit-log                # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   └── slop-gate                # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
+│   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
+│   ├── chunk-gate.ts            # Write/Edit hook: auto-allows .rnd/ paths, blocks planning-phase writes, enforces 30-line chunks
+│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ auto-allow
+│   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
+│   ├── session-start.ts         # SessionStart hook: injects skill context
+│   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
+│   ├── slop-gate.ts             # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
+│   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
+│   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
+│   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
+│   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
+│   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
+│   └── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
@@ -50,11 +56,11 @@ All agents have `memory: user` (persistent cross-project learning), `skills` pre
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
-- **Information barrier** (`read-gate`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
-- **Auto-allow `$RND_DIR` operations** (`auto-allow-rnd`, `read-gate`, `prefer-tools`): All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
-- **Tool discipline** (`prefer-tools`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools
-- **Commit protection** (`prefer-tools`): Blocks `git add` of `.rnd/` as defense-in-depth
-- **Audit logging** (`audit-log`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
+- **Information barrier** (`read-gate.ts`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Auto-allow `$RND_DIR` operations** (`chunk-gate.ts`, `read-gate.ts`, `prefer-tools.ts`): All `Read`, `Write`, `Edit`, and `Bash` operations targeting paths containing `.rnd/` are auto-allowed (no permission prompts), except self-assessment reads
+- **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools
+- **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth
+- **Audit logging** (`audit-log.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
 
 ### Skill System
 
@@ -64,7 +70,7 @@ Skills are directories under `skills/` containing a `SKILL.md` with YAML frontma
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.ts`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
 
 ### Runtime Artifacts
 

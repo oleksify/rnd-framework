@@ -21,7 +21,7 @@ import { describe, test, expect } from "bun:test";
 import { join } from "node:path";
 import { runHook, runHookRaw } from "./helpers";
 
-const HOOK = join(import.meta.dir, "..", "hooks", "read-gate");
+const HOOK = join(import.meta.dir, "..", "hooks", "read-gate.ts");
 
 /** Build the stdin JSON that read-gate expects */
 function input(filePath: string): unknown {

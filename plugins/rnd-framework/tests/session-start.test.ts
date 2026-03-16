@@ -24,7 +24,7 @@ import { runHook } from "./helpers";
 // ---------------------------------------------------------------------------
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
-const HOOK = join(PLUGIN_ROOT, "hooks", "session-start");
+const HOOK = join(PLUGIN_ROOT, "hooks", "session-start.ts");
 const SKILL_PATH = join(PLUGIN_ROOT, "skills", "using-rnd-framework", "SKILL.md");
 
 // A distinctive string from the SKILL.md that will always be present

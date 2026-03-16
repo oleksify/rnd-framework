@@ -5,44 +5,7 @@
 // and emits an advisory warning via hookSpecificOutput.additionalContext.
 // Always exits 0 — purely advisory, never blocks.
 
-const CODE_EXTENSIONS = new Set([
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  ".mjs",
-  ".cjs",
-  ".py",
-  ".rb",
-  ".go",
-  ".rs",
-  ".java",
-  ".c",
-  ".cpp",
-  ".h",
-  ".hpp",
-  ".cs",
-  ".swift",
-  ".kt",
-  ".scala",
-  ".sh",
-  ".bash",
-  ".zsh",
-  ".fish",
-  ".lua",
-  ".php",
-  ".vue",
-  ".svelte",
-  ".ex",
-  ".exs",
-]);
-
-function isCodeFile(filePath: string): boolean {
-  const lastDot = filePath.lastIndexOf(".");
-  if (lastDot === -1) return false;
-  const ext = filePath.slice(lastDot).toLowerCase();
-  return CODE_EXTENSIONS.has(ext);
-}
+import { parseInput, isCodeFile } from "./lib.ts";
 
 const SQL_PATTERNS: Array<RegExp> = [
   /SELECT\s+.*\s+FROM\s+(\w+)/gi,
@@ -84,36 +47,10 @@ function scanAPI(content: string): string[] {
 }
 
 async function main(): Promise<void> {
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of Bun.stdin.stream()) chunks.push(chunk);
-  const raw = chunks.reduce((acc, c) => {
-    const m = new Uint8Array(acc.length + c.length);
-    m.set(acc, 0);
-    m.set(c, acc.length);
-    return m;
-  }, new Uint8Array(0));
-  const stdinText = new TextDecoder().decode(raw);
+  const input = await parseInput();
+  if (input === null) process.exit(0);
 
-  let input: Record<string, unknown>;
-  try {
-    const p = JSON.parse(stdinText);
-    if (typeof p !== "object" || p === null || Array.isArray(p))
-      process.exit(0);
-    input = p as Record<string, unknown>;
-  } catch {
-    process.exit(0);
-  }
-
-  const toolName = input["tool_name"];
-  const toolInput = input["tool_input"];
-  if (
-    typeof toolName !== "string" ||
-    typeof toolInput !== "object" ||
-    toolInput === null ||
-    Array.isArray(toolInput)
-  )
-    process.exit(0);
-  const ti = toolInput as Record<string, unknown>;
+  const { tool_name: toolName, tool_input: ti } = input;
 
   const filePath = ti["file_path"];
   if (typeof filePath !== "string" || filePath.length === 0) process.exit(0);
@@ -132,6 +69,10 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  return mainScan(content);
+}
+
+async function mainScan(content: string): Promise<void> {
   const tables = scanSQL(content);
   const endpoints = scanAPI(content);
 

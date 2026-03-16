@@ -17,7 +17,23 @@
 
 set -euo pipefail
 
-PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# When invoked from the cache (${CLAUDE_PLUGIN_ROOT}), dirname resolves to
+# the cache — not a git repo.  Prefer the git working tree root if available,
+# falling back to the script's own location for direct invocation.
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if git rev-parse --show-toplevel &>/dev/null; then
+  GIT_ROOT="$(git rev-parse --show-toplevel)"
+  # Find the plugin dir inside the repo (look for .claude-plugin/plugin.json)
+  for candidate in "$GIT_ROOT" "$GIT_ROOT/plugins/rnd-framework"; do
+    if [ -f "$candidate/.claude-plugin/plugin.json" ]; then
+      PLUGIN_DIR="$candidate"
+      break
+    fi
+  done
+  PLUGIN_DIR="${PLUGIN_DIR:-$SCRIPT_DIR}"
+else
+  PLUGIN_DIR="$SCRIPT_DIR"
+fi
 PLUGIN_JSON="$PLUGIN_DIR/.claude-plugin/plugin.json"
 CHANGELOG="$PLUGIN_DIR/CHANGELOG.md"
 

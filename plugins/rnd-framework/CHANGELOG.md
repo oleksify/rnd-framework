@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.8 — 2026-03-16
+
+### Fix bump.sh failing when invoked from plugin cache path
+
 ## 0.10.7 — 2026-03-16
 
 ### Port all hooks to TypeScript

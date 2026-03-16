@@ -21,7 +21,7 @@ Parse `$ARGUMENTS` to extract the headline and optional description:
 
 ## Step 2: Run bump.sh
 
-Call `bump.sh` via the Bash tool:
+Call `bump.sh` via the Bash tool. The script auto-detects the source repo from the git working tree, so it works correctly even when invoked from the plugin cache path:
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/lib/bump.sh" "<headline>" "<description>"
@@ -37,7 +37,7 @@ If the script exits non-zero, show the error and stop.
 
 After `bump.sh` succeeds:
 
-1. Read the new version from `"${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"` using the Read tool.
+1. Find the source `plugin.json` — look for `.claude-plugin/plugin.json` relative to the git root (e.g., `<git-root>/plugins/rnd-framework/.claude-plugin/plugin.json`). Read the new version from it.
 2. Show the user a brief summary:
    - New version number
    - CHANGELOG headline (and description if provided)
@@ -57,7 +57,7 @@ Options:
 **If "Commit (Recommended)"** is chosen, run:
 
 ```bash
-git -C "${CLAUDE_PLUGIN_ROOT}" commit -m "Bump version to X.Y.Z"
+git commit -m "Bump version to X.Y.Z"
 ```
 
 where `X.Y.Z` is the new version read from `plugin.json`.

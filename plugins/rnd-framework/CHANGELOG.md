@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.6 — 2026-03-16
+
+### Fix 4 non-functional features
+
+Remove bypassPermissions from builder to restore chunk-gate enforcement. Add anti-deflection rules to prevent dismissing findings as pre-existing. Replace broken cron-based wellbeing with PostToolUse timer hook. Add MANDATORY enforcement language for doc-polish invocation.
+
 ## 0.10.5 — 2026-03-15
 
 ### Add evidence-based decision grounding

@@ -159,9 +159,13 @@ function writePipelineArtifacts(output: HookOutput): void {
     if (!(output.file_path in cumulative.per_file)) cumulative.file_count += 1;
     cumulative.per_file[output.file_path] = output.score;
     cumulative.average_score = cumulative.file_count > 0 ? cumulative.total_score / cumulative.file_count : 0;
-    if (output.score > cumulative.worst_score) {
-      cumulative.worst_score = output.score;
-      cumulative.worst_file = output.file_path;
+    cumulative.worst_score = 0;
+    cumulative.worst_file = "";
+    for (const [file, score] of Object.entries(cumulative.per_file)) {
+      if (score > cumulative.worst_score) {
+        cumulative.worst_score = score;
+        cumulative.worst_file = file;
+      }
     }
     writeFileSync(cumulativePath, JSON.stringify(cumulative, null, 2), "utf-8");
   } catch {

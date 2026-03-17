@@ -2,7 +2,7 @@
  * T8: permissionMode in agent frontmatter + removal from commands
  *
  * Tests verify:
- * 1. 4 non-builder agents contain permissionMode: bypassPermissions
+ * 1. 5 non-builder agents contain permissionMode: bypassPermissions
  * 2. rnd-builder.md does NOT contain permissionMode (chunk-gate must apply)
  * 3. No command .md contains mode: "bypassPermissions"
  * 4. start.md no longer contains the builder-specific bypass prose
@@ -24,6 +24,7 @@ const NON_BUILDER_AGENTS = [
   "rnd-verifier.md",
   "rnd-integrator.md",
   "rnd-data-scientist.md",
+  "rnd-proof-gate.md",
 ];
 
 describe("T8: non-builder agents have permissionMode: bypassPermissions", () => {

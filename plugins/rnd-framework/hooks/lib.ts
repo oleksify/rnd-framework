@@ -30,14 +30,14 @@ export function isCodeFile(filePath: string): boolean {
 // Path utilities
 // ---------------------------------------------------------------------------
 
-/** Returns true if path contains the .rnd/ segment. Pure. */
+/** Returns true if path contains .rnd/ under a .claude config directory. Pure. */
 export function isRndPath(path: string): boolean {
-  return path.includes(".rnd/");
+  return /\.claude[^/]*\/.*\.rnd\//.test(path);
 }
 
-/** Returns true if path contains the plugins/cache/ segment. Pure. */
+/** Returns true if path contains plugins/cache/ under a .claude config directory. Pure. */
 export function isPluginCachePath(path: string): boolean {
-  return path.includes("plugins/cache/");
+  return /\.claude[^/]*\/.*plugins\/cache\//.test(path);
 }
 
 /**

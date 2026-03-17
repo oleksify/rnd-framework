@@ -28,27 +28,33 @@ test("isCodeFile is case-insensitive", () => expect(isCodeFile("foo.TS")).toBe(t
 // isRndPath
 // ---------------------------------------------------------------------------
 
-test("isRndPath returns true for path containing .rnd/", () =>
-  expect(isRndPath("/foo/.rnd/bar")).toBe(true));
+test("isRndPath returns true for .claude/.rnd/ path", () =>
+  expect(isRndPath("/Users/me/.claude/.rnd/project/sessions/abc/plan.md")).toBe(true));
+test("isRndPath returns true for .claude-personal/.rnd/ path", () =>
+  expect(isRndPath("/Users/me/.claude-personal/.rnd/project/sessions/abc/plan.md")).toBe(true));
+test("isRndPath returns false for .rnd/ without .claude prefix", () =>
+  expect(isRndPath("/tmp/attacker/.rnd/fake/plan.md")).toBe(false));
 test("isRndPath returns false for path without .rnd/", () =>
   expect(isRndPath("/foo/bar")).toBe(false));
 test("isRndPath returns false for .rnd with no trailing slash", () =>
-  expect(isRndPath("/foo/.rnd")).toBe(false));
+  expect(isRndPath("/Users/me/.claude/.rnd")).toBe(false));
 
 // ---------------------------------------------------------------------------
 // isPluginCachePath
 // ---------------------------------------------------------------------------
 
-test("isPluginCachePath returns true for absolute plugin cache path", () =>
+test("isPluginCachePath returns true for .claude-personal plugin cache path", () =>
   expect(isPluginCachePath("/Users/me/.claude-personal/plugins/cache/rnd-framework-plugins/rnd-framework/0.10.9/skills/foo/SKILL.md")).toBe(true));
+test("isPluginCachePath returns true for .claude plugin cache path", () =>
+  expect(isPluginCachePath("/Users/me/.claude/plugins/cache/something/file.md")).toBe(true));
 test("isPluginCachePath returns false for unrelated absolute path", () =>
   expect(isPluginCachePath("/Users/me/project/src/index.ts")).toBe(false));
-test("isPluginCachePath returns false for .rnd path", () =>
-  expect(isPluginCachePath("/Users/me/.rnd/project/sessions/abc/plan.md")).toBe(false));
-test("isPluginCachePath returns true for relative path with plugins/cache/", () =>
-  expect(isPluginCachePath("plugins/cache/something")).toBe(true));
+test("isPluginCachePath returns false for plugins/cache/ without .claude prefix", () =>
+  expect(isPluginCachePath("/tmp/malicious/plugins/cache/data.json")).toBe(false));
+test("isPluginCachePath returns false for relative path with plugins/cache/", () =>
+  expect(isPluginCachePath("plugins/cache/something")).toBe(false));
 test("isPluginCachePath returns false when cache has no trailing slash", () =>
-  expect(isPluginCachePath("/Users/me/plugins/cachebreaker/foo")).toBe(false));
+  expect(isPluginCachePath("/Users/me/.claude-personal/plugins/cachebreaker/foo")).toBe(false));
 
 // ---------------------------------------------------------------------------
 // allow

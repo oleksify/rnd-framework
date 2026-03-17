@@ -64,7 +64,7 @@ describe("read-gate: .rnd/ paths without self-assessment are auto-allowed", () =
   test("plain .rnd/ path returns exit 0", async () => {
     const result = await runHook(
       HOOK,
-      input("/home/user/.rnd/project-abc/sessions/20260305-120000-1a2b/plan.md"),
+      input("/home/user/.claude/.rnd/project-abc/sessions/20260305-120000-1a2b/plan.md"),
     );
     expect(result.exitCode).toBe(0);
   });
@@ -72,26 +72,34 @@ describe("read-gate: .rnd/ paths without self-assessment are auto-allowed", () =
   test(".rnd/ path stdout contains permissionDecision allow", async () => {
     const result = await runHook(
       HOOK,
-      input("/home/user/.rnd/project-abc/sessions/20260305-120000-1a2b/plan.md"),
+      input("/home/user/.claude/.rnd/project-abc/sessions/20260305-120000-1a2b/plan.md"),
     );
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 
-  test("deeply nested .rnd/ path is auto-allowed", async () => {
+  test("deeply nested .claude/.rnd/ path is auto-allowed", async () => {
     const result = await runHook(
       HOOK,
-      input("/foo/bar/.rnd/baz/qux/deep/file.md"),
+      input("/home/user/.claude/.rnd/baz/qux/deep/file.md"),
     );
     expect(result.exitCode).toBe(0);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
 
+  test(".rnd/ path without .claude prefix is not auto-allowed", async () => {
+    const result = await runHook(
+      HOOK,
+      input("/foo/bar/.rnd/baz/qux/deep/file.md"),
+    );
+    expect(result.stdout.trim()).toBe("");
+  });
+
   test(".rnd/ build manifest is auto-allowed", async () => {
     const result = await runHook(
       HOOK,
-      input("/Users/me/.rnd/myproject-abc12345/sessions/20260305-120000-1a2b/builds/T2-manifest.md"),
+      input("/Users/me/.claude/.rnd/myproject-abc12345/sessions/20260305-120000-1a2b/builds/T2-manifest.md"),
     );
     expect(result.exitCode).toBe(0);
     const parsed = JSON.parse(result.stdout);
@@ -106,7 +114,7 @@ describe("read-gate: .rnd/ + self-assessment → block takes priority", () => {
   test("path with both .rnd/ and self-assessment returns exit 2", async () => {
     const result = await runHook(
       HOOK,
-      input("/home/user/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
+      input("/home/user/.claude/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
     );
     expect(result.exitCode).toBe(2);
   });
@@ -114,7 +122,7 @@ describe("read-gate: .rnd/ + self-assessment → block takes priority", () => {
   test("path with both .rnd/ and self-assessment has INFORMATION BARRIER on stderr", async () => {
     const result = await runHook(
       HOOK,
-      input("/home/user/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
+      input("/home/user/.claude/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
     );
     expect(result.stderr).toContain("INFORMATION BARRIER");
   });
@@ -122,7 +130,7 @@ describe("read-gate: .rnd/ + self-assessment → block takes priority", () => {
   test("path with both .rnd/ and self-assessment produces no allow output", async () => {
     const result = await runHook(
       HOOK,
-      input("/home/user/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
+      input("/home/user/.claude/.rnd/project/sessions/20260305-120000-1a2b/builds/T1-self-assessment.md"),
     );
     // stdout must NOT contain a permissionDecision allow
     expect(result.stdout).not.toContain("allow");
@@ -389,7 +397,7 @@ describe("read-gate: plugin cache paths are auto-allowed", () => {
 // T5 Criterion 4: .rnd/ auto-allow unaffected by agent_type
 // ---------------------------------------------------------------------------
 describe("read-gate: .rnd/ auto-allow works for all agent types", () => {
-  const rndPath = "/home/user/.rnd/project/sessions/20260305-120000-1a2b/plan.md";
+  const rndPath = "/home/user/.claude/.rnd/project/sessions/20260305-120000-1a2b/plan.md";
 
   test("verifier gets .rnd/ auto-allow for non-self-assessment path", async () => {
     const result = await runHook(

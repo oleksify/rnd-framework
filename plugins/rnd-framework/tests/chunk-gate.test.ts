@@ -141,7 +141,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
   test("Write to .rnd/ path with 50 lines returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
-      writeInput("/home/user/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
+      writeInput("/home/user/.claude/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
     );
     expect(result.exitCode).toBe(0);
   });
@@ -149,7 +149,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
   test("Write to .rnd/ path emits permissionDecision=allow", async () => {
     const result = await runHook(
       HOOK_PATH,
-      writeInput("/home/user/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
+      writeInput("/home/user/.claude/.rnd/sessions/20260305/builds/T1-manifest.md", lines(50)),
     );
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
@@ -158,7 +158,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
   test("Edit to .rnd/ path with 50 lines returns exit 0", async () => {
     const result = await runHook(
       HOOK_PATH,
-      editInput("/home/user/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
+      editInput("/home/user/.claude/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
     );
     expect(result.exitCode).toBe(0);
   });
@@ -166,7 +166,7 @@ describe("SC5: .rnd/ path bypasses chunk limit with explicit allow", () => {
   test("Edit to .rnd/ path emits permissionDecision=allow", async () => {
     const result = await runHook(
       HOOK_PATH,
-      editInput("/home/user/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
+      editInput("/home/user/.claude/.rnd/sessions/20260305/verifications/T1-verification.md", lines(50)),
     );
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");

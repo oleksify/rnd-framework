@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0 — 2026-03-17
+
+### Add Lean 4 formal verification integration
+
 ## 0.10.10 — 2026-03-17
 
 ### Auto-allow plugin cache reads and update v2.1.77 compatibility

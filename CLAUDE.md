@@ -50,6 +50,7 @@ plugins/rnd-framework/
 | `rnd-verifier` | opus | amber | Independent verification — never sees builder reasoning |
 | `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+| `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 
 All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
@@ -103,6 +104,8 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
+    ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
+    ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
     └── iteration-log.md                   # Build-verify cycle tracking
 ```

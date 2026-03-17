@@ -125,6 +125,7 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 
 ## Pipeline Scaling
 
@@ -216,6 +217,9 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         ├── verifications/
         │   ├── T1-verification.md      # Verifier report with evidence
         │   └── T1-experiments/         # Verifier-written independent experiment tests
+        ├── proofs/
+        │   ├── T1-proof-report.md          # Proof Gate results for each task
+        │   └── T1-theorems/                # Lean theorem files
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
         └── iteration-log.md            # Build-verify cycle tracking
@@ -228,7 +232,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 5 specialized agents
+├── agents/                      # 6 specialized agents
 ├── commands/                    # 15 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing

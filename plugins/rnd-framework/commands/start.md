@@ -177,15 +177,29 @@ Otherwise, use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — spawn Verifiers for this wave
 - "Review build artifacts first" — let the user inspect code before verification
 
+## Phase 2.5: Proof Gate (advisory)
+
+After all builders complete and pass Gate 2, attempt formal proofs if Lean is available.
+
+1. **Check Lean availability.** Run `which lean`. If Lean is not found, log "Lean not available — skipping Proof Gate" and proceed directly to Phase 3. No user interaction needed.
+
+2. **Spawn proof-gate agents.** For each completed task in the wave, spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-proof-gate"`. Spawn all agents in a single message (parallel). Each agent prompt must include: the task's pre-registration criteria (from `$RND_DIR/plan.md`) and the path to builder output (`$RND_DIR/builds/T<id>-manifest.md`).
+
+3. **Collect results.** Each agent returns a status (PROVEN_ALL, PROVEN_PARTIAL, NONE_PROVEN, SKIPPED). Log the statuses to the phase summary.
+
+4. **Pass to Verifier.** Proof report paths are available at `$RND_DIR/proofs/T<id>-proof-report.md`. Include them in Phase 3 judge prompts when they exist (see Phase 3 step 1).
+
+No AskUserQuestion — Proof Gate is advisory and auto-continues regardless of proof results.
+
 ## Phase 3: Verify (per task)
 
 This phase uses multi-judge consensus verification. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary below.
 
 For each completed task in the wave:
 
-1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt.
+1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt. If `$RND_DIR/proofs/T<id>-proof-report.md` exists (Lean was available and Phase 2.5 ran), include its path in the judge prompt as additional evidence under "Additional evidence from Proof Gate".
 
-2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each judge receives the same prompt (pre-registration + builder code/tests). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
+2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each judge receives the same prompt (pre-registration + builder code/tests, plus proof report if present). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
    - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
    - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 

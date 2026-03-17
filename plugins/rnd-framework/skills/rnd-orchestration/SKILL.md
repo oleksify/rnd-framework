@@ -36,6 +36,7 @@ This framework applies the scientific method to multi-agent coding:
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets.
 **Builder** — Writes code + tests + honest self-assessment. Does NOT verify own work.
+**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
 **Verifier** — Checks output against pre-registered criteria. Does NOT see Builder's reasoning. In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
 **Integrator** — Merges verified outputs, runs integration/system tests.
 
@@ -98,6 +99,7 @@ Most pipeline agents are spawned with `mode: "bypassPermissions"`:
 1. **Plan** — Planner decomposes, writes pre-registrations, builds dependency matrix. Planner also writes structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream agents can read cached context instead of re-exploring the codebase.
 2. **Schedule** — Orchestrator creates execution waves from dependency matrix.
 3. **Build** — Builder agents work tasks (parallel within waves). Produce code + tests + self-assessment. Each Write/Edit to project files is limited to 30 lines by the chunk-gate PreToolUse hook. Builders present each chunk to the user via `AskUserQuestion` showing the chunk number, WHY it is written this way, and how it CONNECTS TO the broader task — the human reviews and approves before the next chunk proceeds.
+3.5. **Proof Gate** (advisory) — Proof-gate agents attempt Lean 4 proofs for each task's criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable.
 4. **Verify** — Independent Verifier checks each task against pre-registered criteria. PASS/FAIL/ITERATE.
 5. **Iterate** — On FAIL, Builder gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation.

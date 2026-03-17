@@ -8,8 +8,8 @@ import { resolve } from "node:path";
 const PLUGIN_ROOT = resolve(import.meta.dir, "..");
 
 function runValidate(): { status: "pass" | "fail"; passCount: number; failCount: number } {
-  const scriptPath = resolve(PLUGIN_ROOT, "lib", "validate.sh");
-  const result = Bun.spawnSync([scriptPath], { stderr: "pipe" });
+  const scriptPath = resolve(PLUGIN_ROOT, "lib", "validate.ts");
+  const result = Bun.spawnSync(["bun", scriptPath], { stderr: "pipe" });
   const out = new TextDecoder().decode(result.stdout) +
               new TextDecoder().decode(result.stderr);
   const status = result.exitCode === 0 ? "pass" : "fail";

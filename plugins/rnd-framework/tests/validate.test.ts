@@ -1,17 +1,17 @@
 /**
- * Tests for lib/validate.sh
+ * Tests for lib/validate.ts
  *
  * Two test groups:
- *   A) Smoke tests — run validate.sh against the real plugin root
+ *   A) Smoke tests — run validate.ts against the real plugin root via subprocess
  *   B) Synthetic tests — inject defects into minimal plugin structures and
- *      assert validate.sh detects them
+ *      assert validate.ts detects them
  *
  * Each synthetic test:
  *   1. Creates a fully-valid minimal plugin tree in a temp dir
- *   2. Copies the real validate.sh into <tmp>/lib/validate.sh
- *      (so PLUGIN_ROOT resolves to <tmp>)
+ *   2. Copies the real validate.ts into <tmp>/lib/validate.ts
+ *      (so pluginRoot resolves to <tmp>)
  *   3. Injects exactly one defect
- *   4. Runs the copied script and asserts exit 1 + specific FAIL message
+ *   4. Runs the copied script via `bun` and asserts exit 1 + specific FAIL message
  */
 
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
@@ -24,7 +24,7 @@ import { tmpdir } from "node:os";
 // ---------------------------------------------------------------------------
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
-const REAL_VALIDATE_SH = join(PLUGIN_ROOT, "lib", "validate.sh");
+const REAL_VALIDATE_TS = join(PLUGIN_ROOT, "lib", "validate.ts");
 
 // ---------------------------------------------------------------------------
 // RunResult interface + runScript helper
@@ -40,7 +40,7 @@ async function runScript(
   scriptPath: string,
   args: string[] = [],
 ): Promise<RunResult> {
-  const proc = Bun.spawn([scriptPath, ...args], {
+  const proc = Bun.spawn(["bun", scriptPath, ...args], {
     stdin: "ignore",
     stdout: "pipe",
     stderr: "pipe",
@@ -62,7 +62,7 @@ async function runScript(
 
 // ---------------------------------------------------------------------------
 // createMinimalPlugin: sets up a fully-valid baseline plugin structure
-// Returns the tmpDir path and the path to the copied validate.sh
+// Returns the tmpDir path and the path to the copied validate.ts
 // ---------------------------------------------------------------------------
 
 async function createMinimalPlugin(tmpDir: string): Promise<string> {
@@ -129,9 +129,9 @@ async function createMinimalPlugin(tmpDir: string): Promise<string> {
     await chmod(p, 0o755);
   }
 
-  // Copy real validate.sh into <tmp>/lib/validate.sh
-  const validateDest = join(tmpDir, "lib", "validate.sh");
-  await copyFile(REAL_VALIDATE_SH, validateDest);
+  // Copy real validate.ts into <tmp>/lib/validate.ts
+  const validateDest = join(tmpDir, "lib", "validate.ts");
+  await copyFile(REAL_VALIDATE_TS, validateDest);
   await chmod(validateDest, 0o755);
 
   return validateDest;
@@ -142,11 +142,11 @@ async function createMinimalPlugin(tmpDir: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 let tmpDir: string;
-let validateSh: string;  // path inside tmpDir — overwritten per test
+let validateTs: string;  // path inside tmpDir — overwritten per test
 
 beforeEach(async () => {
   tmpDir = await mkdtemp(join(tmpdir(), "validate-test-"));
-  validateSh = await createMinimalPlugin(tmpDir);
+  validateTs = await createMinimalPlugin(tmpDir);
 });
 
 afterEach(async () => {
@@ -154,19 +154,19 @@ afterEach(async () => {
 });
 
 // ===========================================================================
-// A) Smoke tests — run the REAL validate.sh against the REAL plugin root
+// A) Smoke tests — run the REAL validate.ts against the REAL plugin root
 // ===========================================================================
 
 describe("Smoke: real plugin root", () => {
   test("exits 0 and stdout contains 'All' and 'passed'", async () => {
-    const result = await runScript(REAL_VALIDATE_SH);
+    const result = await runScript(REAL_VALIDATE_TS);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("All");
     expect(result.stdout).toContain("passed");
   });
 
   test("--quiet exits 0 and stdout does NOT contain 'PASS' per-check lines but DOES contain 'Summary'", async () => {
-    const result = await runScript(REAL_VALIDATE_SH, ["--quiet"]);
+    const result = await runScript(REAL_VALIDATE_TS, ["--quiet"]);
     expect(result.exitCode).toBe(0);
     // Per-check PASS lines are suppressed in quiet mode
     expect(result.stdout).not.toMatch(/^\s+PASS\s/m);
@@ -176,7 +176,7 @@ describe("Smoke: real plugin root", () => {
 });
 
 // ===========================================================================
-// B) Synthetic tests — inject defects and assert validate.sh catches them
+// B) Synthetic tests — inject defects and assert validate.ts catches them
 // ===========================================================================
 
 // ── Manifest category ───────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ describe("Synthetic: Manifest — missing plugin.json", () => {
     // Remove the plugin.json
     await rm(join(tmpDir, ".claude-plugin", "plugin.json"));
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("plugin.json");
@@ -200,7 +200,7 @@ describe("Synthetic: Manifest — invalid JSON in plugin.json", () => {
       "{ this is not valid json ",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("not valid JSON");
@@ -214,7 +214,7 @@ describe("Synthetic: Manifest — plugin.json missing 'name' field", () => {
       JSON.stringify({ description: "No name here", version: "1.0.0" }),
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("missing 'name'");
@@ -228,7 +228,7 @@ describe("Synthetic: Manifest — plugin.json with non-semver version", () => {
       JSON.stringify({ name: "test-plugin", description: "A test plugin", version: "v1.0" }),
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("not valid semver");
@@ -254,7 +254,7 @@ describe("Synthetic: Hooks — hooks.json references a script that does not exis
       }),
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("not found");
@@ -268,7 +268,7 @@ describe("Synthetic: Hooks — hook script exists but is not executable", () => 
     await writeFile(hookScript, "#!/usr/bin/env bash\nexit 0\n");
     await chmod(hookScript, 0o644);  // not executable
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("not executable");
@@ -282,7 +282,7 @@ describe("Synthetic: Skills — skill directory missing SKILL.md", () => {
     // Create a skill dir with no SKILL.md inside
     await mkdir(join(tmpDir, "skills", "broken-skill"), { recursive: true });
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("missing SKILL.md");
@@ -296,7 +296,7 @@ describe("Synthetic: Skills — SKILL.md with name not matching directory", () =
       "---\nname: wrong-name\ndescription: A test skill\n---\n\n# My Skill\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("mismatch");
@@ -312,7 +312,7 @@ describe("Synthetic: Agents — agent .md missing frontmatter", () => {
       "# My Agent\n\nNo frontmatter at all.\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("missing frontmatter");
@@ -326,7 +326,7 @@ describe("Synthetic: Agents — agent with unknown tool in tools field", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, FakeTool\nmodel: sonnet\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("unknown tool");
@@ -340,7 +340,7 @@ describe("Synthetic: Agents — agent with unknown model", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: gpt-4o\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("unknown model");
@@ -354,7 +354,7 @@ describe("Synthetic: Agents — memory: user is valid", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: user\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     // There must be a PASS line mentioning both 'memory' and 'user'
     const passLines = result.stdout.split("\n").filter(
       (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("user"),
@@ -370,7 +370,7 @@ describe("Synthetic: Agents — memory: project is valid", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: project\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     const passLines = result.stdout.split("\n").filter(
       (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("project"),
     );
@@ -385,7 +385,7 @@ describe("Synthetic: Agents — memory: local is valid", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: local\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     const passLines = result.stdout.split("\n").filter(
       (l) => /^\s+PASS\s/.test(l) && l.includes("memory") && l.includes("local"),
     );
@@ -400,7 +400,7 @@ describe("Synthetic: Agents — memory: banana is invalid", () => {
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\nmemory: banana\n---\n\n# My Agent\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     const failLines = result.stdout.split("\n").filter(
       (l) => /^\s+FAIL\s/.test(l) && l.includes("memory") && l.includes("banana"),
@@ -413,7 +413,7 @@ describe("Synthetic: Agents — no memory field emits no memory pass or fail", (
   test("output does NOT contain any 'memory' PASS or FAIL line", async () => {
     // The baseline minimal plugin agent has no memory field — reuse it as-is
     // (no file rewrite needed; createMinimalPlugin writes an agent without memory)
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     // No PASS or FAIL line should mention "memory"
     const memoryLines = result.stdout.split("\n").filter(
       (l) => /^\s+(PASS|FAIL)\s/.test(l) && l.includes("memory"),
@@ -431,7 +431,7 @@ describe("Synthetic: Commands — command .md missing description in frontmatter
       "---\nargument-hint: something\n---\n\n# My Command\n\n$ARGUMENTS\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("missing");
@@ -447,7 +447,7 @@ describe("Synthetic: Output Styles — output-style .md missing name in frontmat
       "---\ndescription: A style without a name\n---\n\n# My Style\n",
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("missing 'name'");
@@ -461,7 +461,7 @@ describe("Synthetic: Lib Scripts — rnd-dir.sh is missing", () => {
     // Remove the lib/rnd-dir.sh stub
     await rm(join(tmpDir, "lib", "rnd-dir.sh"));
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("not found");
@@ -472,7 +472,7 @@ describe("Synthetic: Lib Scripts — rnd-dir.sh is missing", () => {
 
 describe("Summary table", () => {
   test("summary table appears when all checks pass (valid plugin)", async () => {
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     // The minimal plugin should be valid
     expect(result.stdout).toContain("Summary");
   });
@@ -481,7 +481,7 @@ describe("Summary table", () => {
     // Inject a defect
     await rm(join(tmpDir, ".claude-plugin", "plugin.json"));
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("Summary");
   });
@@ -494,7 +494,7 @@ describe("--quiet flag with failing plugin", () => {
     // Inject a defect
     await rm(join(tmpDir, ".claude-plugin", "plugin.json"));
 
-    const result = await runScript(validateSh, ["--quiet"]);
+    const result = await runScript(validateTs, ["--quiet"]);
     expect(result.exitCode).toBe(1);
     // Per-check FAIL lines should be suppressed
     expect(result.stdout).not.toMatch(/^\s+FAIL\s/m);
@@ -572,7 +572,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-decomposition", "External dependencies");
     await createAgentWithoutMarker(tmpDir, "rnd-planner");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -584,7 +584,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-building", "erify external dependencies");
     await createAgentWithoutMarker(tmpDir, "rnd-builder");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -603,7 +603,7 @@ describe("Synthetic: Content Parity", () => {
       `---\nname: rnd-builder\ndescription: A parity test agent\ntools: Read, Write\nmodel: sonnet\n---\n\n# Agent\n\nerify external dependencies\n`,
     );
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -615,7 +615,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-building", "Unverified external assumptions");
     await createAgentWithoutMarker(tmpDir, "rnd-builder");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -627,7 +627,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-verification", "External contract conformance");
     await createAgentWithoutMarker(tmpDir, "rnd-verifier");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -639,7 +639,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-verification", "assumptions about external systems");
     await createAgentWithoutMarker(tmpDir, "rnd-verifier");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -651,7 +651,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-verification", "ulti-Judge");
     await createAgentWithoutMarker(tmpDir, "rnd-verifier");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -663,7 +663,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-decomposition", "ocal expert");
     await createAgentWithoutMarker(tmpDir, "rnd-planner");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -675,7 +675,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "mcp__julia__julia_eval");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -687,7 +687,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "Validate input data");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -699,7 +699,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "independent cross-check");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -711,7 +711,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "never hardcode");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -723,7 +723,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "read_csv");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -735,7 +735,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "duckdb -c");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -747,7 +747,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-data-science", "Tool Selection");
     await createAgentWithoutMarker(tmpDir, "rnd-data-scientist");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -761,7 +761,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-a.md");
     await createCommandWithoutMarker(tmpDir, "verify");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -773,7 +773,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-b.md");
     await createCommandWithoutMarker(tmpDir, "verify");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -785,7 +785,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "tiebreaker.md");
     await createCommandWithoutMarker(tmpDir, "verify");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -797,7 +797,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-a.md");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -809,7 +809,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "judge-b.md");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -821,7 +821,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "tiebreaker.md");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -833,7 +833,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-multi-judge", "Consensus method");
     await createCommandWithoutMarker(tmpDir, "verify");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -847,7 +847,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-local-experts", ".claude/agents/");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -859,7 +859,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-local-experts", ".claude/skills/");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -871,7 +871,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-local-experts", "Local Experts Discovered");
     await createCommandWithoutMarker(tmpDir, "start");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -885,7 +885,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-local-experts", "Local Experts Discovered");
     await createAgentWithoutMarker(tmpDir, "rnd-planner");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -897,7 +897,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-local-experts", "ocal expert");
     await createSkillWithoutMarker(tmpDir, "rnd-decomposition");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -911,7 +911,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-failure-modes", "failure modes");
     await createAgentWithoutMarker(tmpDir, "rnd-verifier");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -923,7 +923,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-failure-modes", "failure modes");
     await createSkillWithoutMarker(tmpDir, "rnd-verification");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -937,7 +937,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-building", "DONE_WITH_CONCERNS");
     await createAgentWithoutMarker(tmpDir, "rnd-builder");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -949,7 +949,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-building", "NEEDS_CONTEXT");
     await createAgentWithoutMarker(tmpDir, "rnd-builder");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -963,7 +963,7 @@ describe("Synthetic: Content Parity", () => {
     await createSkillWithMarker(tmpDir, "rnd-decomposition", "Correctness:");
     await createAgentWithoutMarker(tmpDir, "rnd-planner");
 
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain("FAIL");
     expect(result.stdout).toContain("parity");
@@ -984,7 +984,7 @@ describe("Agent with tools 'Read, TaskOutput' passes validation", () => {
       join(tmpDir, "agents", "my-agent.md"),
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, TaskOutput\nmodel: sonnet\n---\n\n# My Agent\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     const unknownToolLines = result.stdout.split("\n").filter(
       (l) => /^\s+FAIL\s/.test(l) && l.includes("unknown tool"),
     );
@@ -1002,7 +1002,7 @@ describe("Agent with tools 'Read, FakeTool' still fails validation", () => {
       join(tmpDir, "agents", "my-agent.md"),
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, FakeTool\nmodel: sonnet\n---\n\n# My Agent\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     const failLines = result.stdout.split("\n").filter(
       (l) => /^\s+FAIL\s/.test(l) && l.includes("unknown tool") && l.includes("FakeTool"),
@@ -1017,7 +1017,7 @@ describe("T7: Agent permissionMode: bypassPermissions is valid", () => {
       join(tmpDir, "agents", "my-agent.md"),
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\npermissionMode: bypassPermissions\n---\n\n# My Agent\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     const passLines = result.stdout.split("\n").filter(
       (l) => /^\s+PASS\s/.test(l) && l.includes("permissionMode") && l.includes("bypassPermissions"),
     );
@@ -1031,7 +1031,7 @@ describe("T7: Agent permissionMode: invalid value is rejected", () => {
       join(tmpDir, "agents", "my-agent.md"),
       "---\nname: my-agent\ndescription: A test agent\ntools: Read, Write\nmodel: sonnet\npermissionMode: invalid\n---\n\n# My Agent\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     const failLines = result.stdout.split("\n").filter(
       (l) => /^\s+FAIL\s/.test(l) && l.includes("permissionMode"),
@@ -1046,7 +1046,7 @@ describe("T7: Command model: opus is valid", () => {
       join(tmpDir, "commands", "my-command.md"),
       "---\ndescription: A test command\nmodel: opus\n---\n\n# My Command\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     const passLines = result.stdout.split("\n").filter(
       (l) => /^\s+PASS\s/.test(l) && l.includes("my-command") && l.includes("model"),
     );
@@ -1060,7 +1060,7 @@ describe("T7: Command model: invalid value is rejected", () => {
       join(tmpDir, "commands", "my-command.md"),
       "---\ndescription: A test command\nmodel: gpt-4o\n---\n\n# My Command\n",
     );
-    const result = await runScript(validateSh);
+    const result = await runScript(validateTs);
     expect(result.exitCode).toBe(1);
     const failLines = result.stdout.split("\n").filter(
       (l) => /^\s+FAIL\s/.test(l) && l.includes("my-command") && l.includes("model"),

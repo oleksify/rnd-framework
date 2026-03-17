@@ -3,7 +3,7 @@
  *
  * Covers all success criteria from T4 pre-registration:
  *   1. hooks/setup exists and is executable
- *   2. Running the hook exits 0 when validate.sh passes and bun/jq are available
+ *   2. Running the hook exits 0 when validate.ts passes and bun/jq are available
  *   3. stdout is valid JSON containing hookSpecificOutput.additionalContext with setup status
  *   4. additionalContext includes validation result (pass count) and dependency status
  *   5. hooks.json contains a Setup entry pointing to ${CLAUDE_PLUGIN_ROOT}/hooks/setup
@@ -40,7 +40,7 @@ describe("setup: script exists and is executable", () => {
   });
 });
 
-describe("setup: exits 0 when validate.sh passes and deps available", () => {
+describe("setup: exits 0 when validate.ts passes and deps available", () => {
   test("exits with code 0", () => {
     expect(result.exitCode).toBe(0);
   });
@@ -66,7 +66,7 @@ describe("setup: stdout is valid JSON with hookSpecificOutput.additionalContext"
 });
 
 describe("setup: additionalContext includes validation result and dependency status", () => {
-  test("additionalContext contains pass count from validate.sh", () => {
+  test("additionalContext contains pass count from validate.ts", () => {
     const hso = parsed["hookSpecificOutput"] as Record<string, unknown>;
     const ctx = hso["additionalContext"] as string;
     expect(ctx).toMatch(/\d+ pass/i);

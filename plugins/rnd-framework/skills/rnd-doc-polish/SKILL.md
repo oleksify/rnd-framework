@@ -71,7 +71,7 @@ Fix stale comments. Do not add new comments.
 After making fixes, briefly summarize what was updated:
 
 ```
-Doc polish: updated CLAUDE.md structure tree (added lib/validate.sh),
+Doc polish: updated CLAUDE.md structure tree (added lib/validate.ts),
 fixed README command count (12→14). No stale inline comments found.
 ```
 

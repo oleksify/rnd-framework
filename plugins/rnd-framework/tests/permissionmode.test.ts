@@ -7,7 +7,7 @@
  * 3. No command .md contains mode: "bypassPermissions"
  * 4. start.md no longer contains the builder-specific bypass prose
  * 5. verify.md note about bypassPermissions is updated
- * 6. validate.sh passes
+ * 6. validate.ts passes
  */
 
 import { describe, test, expect } from "bun:test";
@@ -77,10 +77,10 @@ describe("T8: verify.md bypassPermissions note updated", () => {
   });
 });
 
-describe("T8: validate.sh still passes after changes", () => {
-  test("validate.sh --quiet exits 0", () => {
-    const VALIDATE_SH = join(PLUGIN_ROOT, "lib", "validate.sh");
-    const result = spawnSync("bash", [VALIDATE_SH, "--quiet"], { encoding: "utf-8" });
+describe("T8: validate.ts still passes after changes", () => {
+  test("validate.ts --quiet exits 0", () => {
+    const VALIDATE_TS = join(PLUGIN_ROOT, "lib", "validate.ts");
+    const result = spawnSync("bun", [VALIDATE_TS, "--quiet"], { encoding: "utf-8" });
     expect(result.status).toBe(0);
   });
 });

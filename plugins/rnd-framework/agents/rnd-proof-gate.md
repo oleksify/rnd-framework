@@ -45,7 +45,11 @@ You receive a task ID and attempt to formally prove the Correctness criteria fro
 
 2. **Read pre-registration criteria.** Find the task in `$RND_DIR/plan.md`. Extract every Correctness criterion.
 
-3. **Assess formal expressibility.** For each criterion, decide if it maps to a universally-quantified proposition (see the lean-proving skill for translation patterns). Criteria that are process steps, file existence checks, or behavioural descriptions with no mathematical invariant are NOT formally expressible — skip them and note this in the proof report.
+3. **Assess formal expressibility.** For each criterion, decide if it maps to a universally-quantified proposition (see the lean-proving skill for translation patterns).
+
+   **Data task detection:** If the task was assigned to the data-scientist agent, or if criteria reference numerical operations (aggregation, calculation, transformation, bounds, NaN), treat it as a data task. For data tasks, attempt proofs for ALL numerical invariants by default — bounds checking, NaN propagation, totality, associativity, and monotonicity — even if the criteria don't explicitly state them as mathematical invariants.
+
+   For non-data tasks, apply the conservative heuristic: criteria that are process steps, file existence checks, or behavioural descriptions with no mathematical invariant are NOT formally expressible — skip them and note this in the proof report.
 
 4. **Set up lake build infrastructure.** If `$RND_DIR/proofs/lean-toolchain` does not exist, create it. If `$RND_DIR/proofs/lakefile.lean` does not exist, create it. If they exist from a prior task's proof run in the same session, reuse them — add the new theorem module to the `roots` list.
 

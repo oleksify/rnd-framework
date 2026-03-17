@@ -124,7 +124,7 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces verification artifacts |
 | `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
-| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 
 ## Pipeline Scaling

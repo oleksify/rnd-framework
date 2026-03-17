@@ -49,7 +49,7 @@ plugins/rnd-framework/
 | `rnd-builder` | sonnet | green | Implements one task using TDD; produces build manifest + self-assessment |
 | `rnd-verifier` | opus | amber | Independent verification — never sees builder reasoning |
 | `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
-| `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+| `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 
 All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).

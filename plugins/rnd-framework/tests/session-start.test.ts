@@ -65,8 +65,8 @@ async function runSessionStart(opts: {
     const proc = Bun.spawn([HOOK], spawnOpts);
 
     const [stdoutBytes, stderrBytes] = await Promise.all([
-      Bun.readableStreamToArrayBuffer(proc.stdout),
-      Bun.readableStreamToArrayBuffer(proc.stderr),
+      Bun.readableStreamToArrayBuffer(proc.stdout as ReadableStream),
+      Bun.readableStreamToArrayBuffer(proc.stderr as ReadableStream),
       proc.exited,
     ]);
 

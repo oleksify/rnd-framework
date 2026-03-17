@@ -3,11 +3,12 @@
     "target": "ES2022",
     "module": "preserve",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "lib": ["ES2022"],
     "types": ["bun-types"],
-    "strict": false,
+    "strict": true,
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["tests/**/*.ts"]
+  "include": ["hooks/**/*.ts", "tests/**/*.ts"]
 }

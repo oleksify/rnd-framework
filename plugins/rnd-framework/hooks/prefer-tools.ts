@@ -79,4 +79,8 @@ async function main(): Promise<void> {
   console.log(JSON.stringify(allow()));
 }
 
-main();
+try {
+  await main();
+} catch {
+  process.exit(0);
+}

@@ -72,4 +72,8 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+try {
+  await main();
+} catch {
+  process.exit(0);
+}

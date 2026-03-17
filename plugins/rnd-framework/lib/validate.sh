@@ -353,6 +353,25 @@ for style_file in "${PLUGIN_ROOT}"/output-styles/*.md; do
 done
 $QUIET || echo "  (${style_count} output styles found)"
 
+# ── Proofs ───────────────────────────────────────────────────
+
+begin_category "Proofs"
+
+proofs_dir="${PLUGIN_ROOT}/proofs"
+if [ -d "$proofs_dir" ]; then
+  if command -v lean >/dev/null 2>&1 && command -v lake >/dev/null 2>&1; then
+    if (cd "$proofs_dir" && lake build 2>&1); then
+      pass "lake build exits 0 (all proofs compile)"
+    else
+      fail "lake build failed in proofs/"
+    fi
+  else
+    pass "proofs/ exists (skipped — lean not available)"
+  fi
+else
+  pass "no proofs/ directory (skipped)"
+fi
+
 # ── Lib Scripts ──────────────────────────────────────────────────
 
 begin_category "Lib Scripts"

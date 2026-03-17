@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.10 — 2026-03-17
+
+### Auto-allow plugin cache reads and update v2.1.77 compatibility
+
 ## 0.10.9 — 2026-03-16
 
 ### Add experiment-based verification and calibration

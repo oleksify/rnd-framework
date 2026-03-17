@@ -71,6 +71,14 @@ Extract the `version` field. If running inside the plugin's own source repositor
 
 Use `ToolSearch` with query `"julia eval"` to check whether Julia MCP tools are available at runtime. Report if `mcp__julia__julia_eval` or similar tools appear in the results.
 
+## 7. Lean Toolchain
+
+For each of the following tools, run `which <tool>` to check availability, then capture the version. All three are optional — warn but do not fail if missing:
+
+- `lean` — run `lean --version`
+- `lake` — run `lake --version`
+- `elan` — run `elan --version`
+
 ## Output Format
 
 Display all results as a table:
@@ -87,6 +95,9 @@ RND artifact directory   | ✅ ok   | writable, active session exists
 Plugin registration      | ✅ ok   | registered in marketplace.json
 Version sync             | ✅ ok   | cached v0.8.3 = source v0.8.3
 Julia MCP tools          | ✅ ok   | mcp__julia__julia_eval available
+lean                     | ⚠ warn  | not installed (optional)
+lake                     | ⚠ warn  | not installed (optional)
+elan                     | ⚠ warn  | not installed (optional)
 ```
 
 Use `✅ ok` for passing checks, `⚠ warn` for optional/non-critical issues, and `❌ fail` for critical failures.

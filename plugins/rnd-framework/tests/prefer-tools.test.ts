@@ -308,6 +308,19 @@ describe("git add .rnd edge cases", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("BLOCKED");
   });
+
+  test("'cd /path && git add .rnd/file' returns exit 2 with BLOCKED (cd prefix bypass)", async () => {
+    const result = await runHook(HOOK, payload("cd /some/path && git add .rnd/file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  test("'cd /path && git add .rnd.backup' returns exit 0 (not a false positive)", async () => {
+    const result = await runHook(HOOK, payload("cd /some/path && git add .rnd.backup"));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
 });
 
 // ---------------------------------------------------------------------------

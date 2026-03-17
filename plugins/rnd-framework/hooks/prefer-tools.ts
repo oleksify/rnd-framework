@@ -48,7 +48,7 @@ async function main(): Promise<void> {
   if (!command) { console.log(JSON.stringify(allow())); process.exit(0); }
 
   // Auto-allow commands involving .rnd/ paths or rnd-dir.sh (not git add)
-  const isGitAdd = /^git\s+add\b/.test(command);
+  const isGitAdd = /\bgit\s+add\b/.test(command);
   if (!isGitAdd && (command.includes(".rnd/") || command.includes("rnd-dir.sh"))) {
     console.log(JSON.stringify(allow())); process.exit(0);
   }

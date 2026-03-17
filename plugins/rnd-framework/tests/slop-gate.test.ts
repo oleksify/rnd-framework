@@ -67,21 +67,20 @@ async function createSlopTestEnv(withSession: boolean): Promise<SlopTestEnv> {
   return { configDir, slug, baseDir, sessionDir, cleanup };
 }
 
-interface SlopOutput {
-  verdict: string;
-  score: number;
-  file_path: string;
-  line_count: number;
-  matches: Array<{
-    pattern_id: string;
-    line: number;
-    snippet: string;
-    severity: number;
-  }>;
+interface AdvisoryOutput {
+  hookSpecificOutput: { additionalContext: string };
 }
 
-function parseOutput(stdout: string): SlopOutput {
-  return JSON.parse(stdout.trim()) as SlopOutput;
+/** Parses advisory JSON from hook stdout. Returns the additionalContext string. */
+function parseAdvisory(stdout: string): string {
+  const parsed = JSON.parse(stdout.trim()) as AdvisoryOutput;
+  return parsed.hookSpecificOutput.additionalContext;
+}
+
+interface SlopReport {
+  file_path: string; verdict: string; score: number;
+  matches: Array<{ pattern_id: string; line: number; snippet: string; severity: number }>;
+  line_count: number; timestamp: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,14 +88,13 @@ function parseOutput(stdout: string): SlopOutput {
 // ---------------------------------------------------------------------------
 
 describe("slop-gate: exit code", () => {
-  test("exits 0 for a Write with slop code (FAIL verdict)", async () => {
-    // Use dense slop to drive a high score
+  test("exits 0 for a Write with slop code", async () => {
     const slopCode = Array(20).fill("catch (e) {}").join("\n");
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", slopCode));
     expect(result.exitCode).toBe(0);
   });
 
-  test("exits 0 for a Write with clean code (PASS verdict)", async () => {
+  test("exits 0 for a Write with clean code", async () => {
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", "const x = 1;\nconst y = 2;\n"));
     expect(result.exitCode).toBe(0);
   });
@@ -126,26 +124,23 @@ describe("slop-gate: pattern detection — over-commenting", () => {
     const content = "// increment counter\ncounter++\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
     expect(result.stdout).not.toBe("");
-    const output = parseOutput(result.stdout);
-    const overCommentMatches = output.matches.filter((m) => m.pattern_id === "over-commenting");
-    expect(overCommentMatches.length).toBeGreaterThanOrEqual(1);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("Over-commenting");
   });
 
-  test("over-commenting match is in the over-commenting category (pattern_id check)", async () => {
+  test("advisory contains pattern name for over-commenting", async () => {
     const content = "// increment counter\ncounter++\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.matches.some((m) => m.pattern_id === "over-commenting")).toBe(true);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("Over-commenting");
   });
 
-  test("over-commenting match has the correct line number", async () => {
+  test("advisory contains the correct line number for over-commenting match", async () => {
     const content = "const a = 1;\n// increment counter\ncounter++\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    const match = output.matches.find((m) => m.pattern_id === "over-commenting");
-    expect(match).toBeDefined();
+    const advisory = parseAdvisory(result.stdout);
     // "// increment counter" is on line 2
-    expect(match!.line).toBe(2);
+    expect(advisory).toContain("L2:");
   });
 });
 
@@ -158,27 +153,22 @@ describe("slop-gate: pattern detection — empty catch block", () => {
     const content = "function foo() {\n  try {\n    bar();\n  } catch (e) {}\n}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
     expect(result.stdout).not.toBe("");
-    const output = parseOutput(result.stdout);
-    const catchMatches = output.matches.filter((m) => m.pattern_id === "empty-catch-block");
-    expect(catchMatches.length).toBeGreaterThanOrEqual(1);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("Empty catch block");
   });
 
-  test("empty-catch-block match has the correct snippet", async () => {
+  test("advisory contains snippet text for empty-catch-block match", async () => {
     const content = "try {\n  doSomething();\n} catch (e) {}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    const match = output.matches.find((m) => m.pattern_id === "empty-catch-block");
-    expect(match).toBeDefined();
-    expect(match!.snippet).toContain("catch");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("catch");
   });
 
-  test("empty-catch-block match has severity 4", async () => {
+  test("advisory contains remediation text for empty-catch-block", async () => {
     const content = "catch (e) {}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    const match = output.matches.find((m) => m.pattern_id === "empty-catch-block");
-    expect(match).toBeDefined();
-    expect(match!.severity).toBe(4);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("log");
   });
 });
 
@@ -187,25 +177,17 @@ describe("slop-gate: pattern detection — empty catch block", () => {
 // ---------------------------------------------------------------------------
 
 describe("slop-gate: clean code", () => {
-  test("clean code produces verdict PASS", async () => {
+  test("clean code produces no stdout output", async () => {
     const content = "const x = 1;\nconst y = 2;\nconst z = x + y;\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/clean.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.verdict).toBe("PASS");
+    expect(result.stdout).toBe("");
   });
 
-  test("clean code produces an empty matches array", async () => {
+  test("clean code exits 0 with no output", async () => {
     const content = "const x = 1;\nconst y = 2;\nconst z = x + y;\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/clean.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.matches).toEqual([]);
-  });
-
-  test("clean code score is 0", async () => {
-    const content = "const x = 1;\nconst y = 2;\nconst z = x + y;\n";
-    const result = await runHook(HOOK_PATH, writeInput("/src/clean.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.score).toBe(0);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("");
   });
 });
 
@@ -214,37 +196,27 @@ describe("slop-gate: clean code", () => {
 // ---------------------------------------------------------------------------
 
 describe("slop-gate: diff-aware analysis — Edit tool", () => {
-  test("Edit: slop in old_string but clean new_string produces PASS with no matches", async () => {
+  test("Edit: slop in old_string but clean new_string produces no output", async () => {
     const newString = "const x = 1;\n";
     const result = await runHook(HOOK_PATH, editInput("/src/test.ts", newString));
-    const output = parseOutput(result.stdout);
-    expect(output.verdict).toBe("PASS");
-    expect(output.matches).toEqual([]);
+    expect(result.stdout).toBe("");
   });
 
-  test("Edit: clean old_string but slop new_string produces matches", async () => {
+  test("Edit: clean old_string but slop new_string produces advisory output", async () => {
     const newString = "// increment counter\ncounter++\n";
     const result = await runHook(HOOK_PATH, editInput("/src/test.ts", newString));
-    const output = parseOutput(result.stdout);
-    expect(output.matches.some((m) => m.pattern_id === "over-commenting")).toBe(true);
+    expect(result.stdout).not.toBe("");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("Over-commenting");
   });
 
-  test("Edit: line_count reflects new_string length", async () => {
-    // new_string has 1 line
-    const newString = "const x = 1;";
-    const result = await runHook(HOOK_PATH, editInput("/src/test.ts", newString));
-    const output = parseOutput(result.stdout);
-    // new_string "const x = 1;" split by "\n" = 1 line
-    expect(output.line_count).toBe(1);
-  });
-
-  test("Edit: output file_path matches tool_input.file_path", async () => {
+  test("Edit: advisory output contains file path", async () => {
     const result = await runHook(
       HOOK_PATH,
-      editInput("/src/components/Button.tsx", "const x = 1;"),
+      editInput("/src/components/Button.tsx", "// increment counter\ncounter++\n"),
     );
-    const output = parseOutput(result.stdout);
-    expect(output.file_path).toBe("/src/components/Button.tsx");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("/src/components/Button.tsx");
   });
 });
 
@@ -293,14 +265,14 @@ describe("slop-gate: file extension filtering", () => {
     expect(result.stdout).toBe("");
   });
 
-  test(".ts file with anti-patterns produces stdout output", async () => {
+  test(".ts file with anti-patterns produces advisory stdout output", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/src/test.ts", "// increment counter\ncounter++\n"),
     );
     expect(result.stdout).not.toBe("");
-    const output = parseOutput(result.stdout);
-    expect(output.matches.length).toBeGreaterThan(0);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("finding");
   });
 
   test(".py file with anti-patterns produces stdout output", async () => {
@@ -326,61 +298,52 @@ describe("slop-gate: file extension filtering", () => {
 // slop-gate: output JSON structure
 // ---------------------------------------------------------------------------
 
-describe("slop-gate: output JSON structure", () => {
-  test("output has all required keys: verdict, score, matches, file_path, line_count", async () => {
-    const result = await runHook(
-      HOOK_PATH,
-      writeInput("/src/test.ts", "const x = 1;\n"),
-    );
-    const output = parseOutput(result.stdout);
-    expect(output).toHaveProperty("verdict");
-    expect(output).toHaveProperty("score");
-    expect(output).toHaveProperty("matches");
-    expect(output).toHaveProperty("file_path");
-    expect(output).toHaveProperty("line_count");
-  });
-
-  test("verdict is one of PASS, WARN, FAIL", async () => {
-    const result = await runHook(
-      HOOK_PATH,
-      writeInput("/src/test.ts", "const x = 1;\n"),
-    );
-    const output = parseOutput(result.stdout);
-    expect(["PASS", "WARN", "FAIL"]).toContain(output.verdict);
-  });
-
-  test("matches array entries have: pattern_id, line, snippet, severity", async () => {
+describe("slop-gate: output JSON structure (advisory format)", () => {
+  test("when matches exist, stdout is valid JSON with hookSpecificOutput.additionalContext", async () => {
     const result = await runHook(
       HOOK_PATH,
       writeInput("/src/test.ts", "// increment counter\ncounter++\n"),
     );
-    const output = parseOutput(result.stdout);
-    expect(output.matches.length).toBeGreaterThan(0);
-    const match = output.matches[0];
-    expect(match).toHaveProperty("pattern_id");
-    expect(match).toHaveProperty("line");
-    expect(match).toHaveProperty("snippet");
-    expect(match).toHaveProperty("severity");
+    expect(result.stdout).not.toBe("");
+    const parsed = JSON.parse(result.stdout.trim());
+    expect(parsed).toHaveProperty("hookSpecificOutput");
+    expect(parsed.hookSpecificOutput).toHaveProperty("additionalContext");
+    expect(typeof parsed.hookSpecificOutput.additionalContext).toBe("string");
   });
 
-  test("file_path in output matches the input file_path", async () => {
+  test("advisory contains file path in header line", async () => {
     const result = await runHook(
       HOOK_PATH,
-      writeInput("/src/utils/helpers.ts", "const x = 1;\n"),
+      writeInput("/src/utils/helpers.ts", "catch (e) {}\n"),
     );
-    const output = parseOutput(result.stdout);
-    expect(output.file_path).toBe("/src/utils/helpers.ts");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("/src/utils/helpers.ts");
   });
 
-  test("line_count in output matches number of lines in content", async () => {
-    // "line1\nline2\nline3\n" splits to ["line1", "line2", "line3", ""] = 4 lines
-    const content = "const a = 1;\nconst b = 2;\nconst c = 3;\n";
+  test("advisory contains finding count in header line", async () => {
     const result = await runHook(
       HOOK_PATH,
-      writeInput("/src/test.ts", content),
+      writeInput("/src/test.ts", "catch (e) {}\n"),
     );
-    const output = parseOutput(result.stdout);
-    expect(output.line_count).toBe(content.split("\n").length);
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toMatch(/\d+ finding/);
+  });
+
+  test("advisory contains line number for each match", async () => {
+    const result = await runHook(
+      HOOK_PATH,
+      writeInput("/src/test.ts", "// increment counter\ncounter++\n"),
+    );
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toMatch(/L\d+:/);
+  });
+
+  test("when no matches, stdout is empty (not advisory JSON)", async () => {
+    const result = await runHook(
+      HOOK_PATH,
+      writeInput("/src/test.ts", "const x = 1;\n"),
+    );
+    expect(result.stdout).toBe("");
   });
 });
 
@@ -388,49 +351,27 @@ describe("slop-gate: output JSON structure", () => {
 // slop-gate: scoring and verdict thresholds
 // ---------------------------------------------------------------------------
 
-describe("slop-gate: scoring and verdict thresholds", () => {
-  test("verdict PASS when score < 3", async () => {
-    // 1 match with severity 2 across 10 lines = score 0.2 (PASS)
-    const lines = ["// increment counter", ...Array(9).fill("const x = 1;")];
-    const content = lines.join("\n");
+describe("slop-gate: advisory message format", () => {
+  test("single finding uses singular 'finding' in header", async () => {
+    const content = "catch (e) {}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.score).toBeLessThan(3);
-    expect(output.verdict).toBe("PASS");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("1 finding in");
   });
 
-  test("verdict WARN when score is between 3 and 7 inclusive", async () => {
-    // Multiple catch blocks on few lines to get score in WARN range
-    // 2 empty catch blocks (severity 4 each) across 3 lines = 8/3 = 2.67 (PASS)
-    // Need 3 catch blocks across 3 lines = 12/3 = 4 (WARN)
-    const content = "catch (e) {}\ncatch (e) {}\ncatch (e) {}\n";
+  test("multiple findings use plural 'findings' in header", async () => {
+    const content = "catch (e) {}\n// increment counter\ncounter++\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    // 3 matches * severity 4 / 4 lines = score 3 (WARN boundary)
-    expect(output.score).toBeGreaterThanOrEqual(3);
-    expect(output.score).toBeLessThanOrEqual(7);
-    expect(output.verdict).toBe("WARN");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toMatch(/\d+ findings in/);
   });
 
-  test("verdict FAIL when score > 7", async () => {
-    // Single line triggering 3 patterns: empty-catch-block (4) + placeholder-todo (3) + console-log-leftover (3)
-    // = 10 severity on 1 line = score 10 > 7 → FAIL
-    const content = "console.log(x); // TODO fix this; catch (e) {}";
+  test("advisory contains remediation text from pattern catalog", async () => {
+    const content = "catch (e) {}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.score).toBeGreaterThan(7);
-    expect(output.verdict).toBe("FAIL");
-  });
-
-  test("score is normalized by line count (more lines = lower score per match)", async () => {
-    // 1 catch block on 1 line vs 1 catch block on 100 lines
-    const sparse = "catch (e) {}\n" + Array(99).fill("const x = 1;").join("\n");
-    const dense = "catch (e) {}";
-    const resultSparse = await runHook(HOOK_PATH, writeInput("/src/test.ts", sparse));
-    const resultDense = await runHook(HOOK_PATH, writeInput("/src/test.ts", dense));
-    const scoreSparse = parseOutput(resultSparse.stdout).score;
-    const scoreDense = parseOutput(resultDense.stdout).score;
-    expect(scoreSparse).toBeLessThan(scoreDense);
+    const advisory = parseAdvisory(result.stdout);
+    // remediation for empty-catch-block contains "log" or "rethrow"
+    expect(advisory.toLowerCase()).toMatch(/log|rethrow/);
   });
 });
 
@@ -598,24 +539,26 @@ describe("slop-gate: script structure", () => {
 // ---------------------------------------------------------------------------
 
 describe("slop-gate: additional pattern detection", () => {
-  test("detects placeholder-todo", async () => {
+  test("detects placeholder-todo — advisory contains pattern name", async () => {
     const content = "const x = 1;\n// TODO: fix this later\nconst y = 2;\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.matches.some((m) => m.pattern_id === "placeholder-todo")).toBe(true);
+    expect(result.stdout).not.toBe("");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("TODO");
   });
 
-  test("detects console-log-leftover", async () => {
+  test("detects console-log-leftover — advisory contains pattern name", async () => {
     const content = "function foo() {\n  console.log('debug');\n  return 1;\n}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    const output = parseOutput(result.stdout);
-    expect(output.matches.some((m) => m.pattern_id === "console-log-leftover")).toBe(true);
+    expect(result.stdout).not.toBe("");
+    const advisory = parseAdvisory(result.stdout);
+    expect(advisory).toContain("console");
   });
 
-  test("outputs valid JSON (parseable without error)", async () => {
+  test("outputs valid advisory JSON (parseable without error)", async () => {
     const content = "// increment counter\ncounter++\ncatch (e) {}\n";
     const result = await runHook(HOOK_PATH, writeInput("/src/test.ts", content));
-    expect(() => parseOutput(result.stdout)).not.toThrow();
+    expect(() => parseAdvisory(result.stdout)).not.toThrow();
   });
 });
 
@@ -719,21 +662,20 @@ describe("slop-gate: pipeline artifacts — active session", () => {
     }
   });
 
-  test("report verdict matches hook stdout verdict", async () => {
+  test("report file verdict is a valid verdict string", async () => {
     const env = await createSlopTestEnv(true);
     try {
       const content = "catch (e) {}\n";
-      const result = await runHook(
+      await runHook(
         HOOK_PATH,
         writeInput("/src/test.ts", content),
         { CLAUDE_CONFIG_DIR: env.configDir },
       );
-      const stdoutOutput = parseOutput(result.stdout);
       const reportsDir = join(env.sessionDir, "slop-reports");
       const reportFile = join(reportsDir, "src-test.ts.json");
       const raw = await readFile(reportFile, "utf-8");
-      const report = JSON.parse(raw);
-      expect(report.verdict).toBe(stdoutOutput.verdict);
+      const report = JSON.parse(raw) as SlopReport;
+      expect(["PASS", "WARN", "FAIL"]).toContain(report.verdict);
     } finally {
       await env.cleanup();
     }
@@ -800,29 +742,15 @@ describe("slop-gate: pipeline artifacts — active session", () => {
   test("after two Write invocations, total_score is the sum of both file scores", async () => {
     const env = await createSlopTestEnv(true);
     try {
-      const content1 = "catch (e) {}\n";
-      const content2 = "// increment counter\ncounter++\n";
+      await runHook(HOOK_PATH, writeInput("/src/file1.ts", "catch (e) {}\n"), { CLAUDE_CONFIG_DIR: env.configDir });
+      await runHook(HOOK_PATH, writeInput("/src/file2.ts", "// increment counter\ncounter++\n"), { CLAUDE_CONFIG_DIR: env.configDir });
 
-      const result1 = await runHook(
-        HOOK_PATH,
-        writeInput("/src/file1.ts", content1),
-        { CLAUDE_CONFIG_DIR: env.configDir },
-      );
-      const result2 = await runHook(
-        HOOK_PATH,
-        writeInput("/src/file2.ts", content2),
-        { CLAUDE_CONFIG_DIR: env.configDir },
-      );
+      const reportsDir = join(env.sessionDir, "slop-reports");
+      const r1 = JSON.parse(await readFile(join(reportsDir, "src-file1.ts.json"), "utf-8")) as SlopReport;
+      const r2 = JSON.parse(await readFile(join(reportsDir, "src-file2.ts.json"), "utf-8")) as SlopReport;
+      const cumulative = JSON.parse(await readFile(join(reportsDir, "cumulative-score.json"), "utf-8"));
 
-      const score1 = parseOutput(result1.stdout).score;
-      const score2 = parseOutput(result2.stdout).score;
-
-      const cumulativePath = join(env.sessionDir, "slop-reports", "cumulative-score.json");
-      const raw = await readFile(cumulativePath, "utf-8");
-      const cumulative = JSON.parse(raw);
-
-      // Allow small floating-point tolerance
-      expect(Math.abs(cumulative.total_score - (score1 + score2))).toBeLessThan(1e-9);
+      expect(Math.abs(cumulative.total_score - (r1.score + r2.score))).toBeLessThan(1e-9);
     } finally {
       await env.cleanup();
     }
@@ -858,7 +786,7 @@ describe("slop-gate: pipeline artifacts — active session", () => {
     }
   });
 
-  test("stdout output is produced even when pipeline artifacts are written", async () => {
+  test("advisory stdout is produced even when pipeline artifacts are written", async () => {
     const env = await createSlopTestEnv(true);
     try {
       const result = await runHook(
@@ -867,7 +795,7 @@ describe("slop-gate: pipeline artifacts — active session", () => {
         { CLAUDE_CONFIG_DIR: env.configDir },
       );
       expect(result.stdout).not.toBe("");
-      expect(() => parseOutput(result.stdout)).not.toThrow();
+      expect(() => parseAdvisory(result.stdout)).not.toThrow();
     } finally {
       await env.cleanup();
     }
@@ -912,7 +840,7 @@ describe("slop-gate: pipeline artifacts — no active session", () => {
     }
   });
 
-  test("stdout output is still produced when no active session exists", async () => {
+  test("advisory stdout is still produced when no active session exists", async () => {
     const env = await createSlopTestEnv(false);
     try {
       const result = await runHook(
@@ -921,7 +849,7 @@ describe("slop-gate: pipeline artifacts — no active session", () => {
         { CLAUDE_CONFIG_DIR: env.configDir },
       );
       expect(result.stdout).not.toBe("");
-      expect(() => parseOutput(result.stdout)).not.toThrow();
+      expect(() => parseAdvisory(result.stdout)).not.toThrow();
     } finally {
       await env.cleanup();
     }
@@ -1041,17 +969,15 @@ const PROJECT_PATTERN_CUSTOM = {
 };
 
 describe("slop-gate: project pattern loading", () => {
-  test("matches from a valid project pattern appear in stdout JSON output", async () => {
+  test("matches from a valid project pattern appear in advisory stdout output", async () => {
     const env = await createSlopTestEnv(true);
     try {
-      // Write project-patterns.json into the session dir
       await writeFile(
         join(env.sessionDir, "project-patterns.json"),
         JSON.stringify({ patterns: [PROJECT_PATTERN_CUSTOM] }),
         "utf-8",
       );
 
-      // Code that triggers the custom pattern (and no built-in patterns)
       const content = "const x = CUSTOM_PROJECT_FORBIDDEN;\n";
       const result = await runHook(
         HOOK_PATH,
@@ -1060,17 +986,15 @@ describe("slop-gate: project pattern loading", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      const output = parseOutput(result.stdout);
-      const customMatches = output.matches.filter(
-        (m) => m.pattern_id === "custom-project-rule",
-      );
-      expect(customMatches.length).toBeGreaterThanOrEqual(1);
+      expect(result.stdout).not.toBe("");
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("Custom project rule");
     } finally {
       await env.cleanup();
     }
   });
 
-  test("both built-in and project patterns produce matches when project-patterns.json exists", async () => {
+  test("both built-in and project patterns appear in advisory when project-patterns.json exists", async () => {
     const env = await createSlopTestEnv(true);
     try {
       await writeFile(
@@ -1079,7 +1003,6 @@ describe("slop-gate: project pattern loading", () => {
         "utf-8",
       );
 
-      // Code that triggers both the custom pattern and the built-in empty-catch-block pattern
       const content = "catch (e) {}\nconst x = CUSTOM_PROJECT_FORBIDDEN;\n";
       const result = await runHook(
         HOOK_PATH,
@@ -1088,20 +1011,17 @@ describe("slop-gate: project pattern loading", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      const output = parseOutput(result.stdout);
-      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
-      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(true);
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("Empty catch block");
+      expect(advisory).toContain("Custom project rule");
     } finally {
       await env.cleanup();
     }
   });
 
-  test("hook produces output using built-in patterns only when project-patterns.json does not exist", async () => {
+  test("hook produces advisory using built-in patterns only when project-patterns.json does not exist", async () => {
     const env = await createSlopTestEnv(true);
     try {
-      // project-patterns.json is intentionally NOT written
-
-      // Code that triggers a built-in pattern but not the custom pattern
       const content = "catch (e) {}\n";
       const result = await runHook(
         HOOK_PATH,
@@ -1110,11 +1030,9 @@ describe("slop-gate: project pattern loading", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      const output = parseOutput(result.stdout);
-      // Built-in patterns still work
-      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
-      // No custom pattern matches (file doesn't exist)
-      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(false);
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("Empty catch block");
+      expect(advisory).not.toContain("Custom project rule");
     } finally {
       await env.cleanup();
     }
@@ -1123,7 +1041,6 @@ describe("slop-gate: project pattern loading", () => {
   test("hook exits 0 and uses built-in patterns only when project-patterns.json contains invalid JSON", async () => {
     const env = await createSlopTestEnv(true);
     try {
-      // Write malformed JSON
       await writeFile(
         join(env.sessionDir, "project-patterns.json"),
         "{ this is not valid JSON !!!",
@@ -1138,16 +1055,14 @@ describe("slop-gate: project pattern loading", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      const output = parseOutput(result.stdout);
-      // Built-in patterns still work despite malformed project file
-      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("Empty catch block");
     } finally {
       await env.cleanup();
     }
   });
 
-  test("hook produces output using built-in patterns only when no active session exists", async () => {
-    // withSession=false means no .current-session file, so resolveActiveSessionDir returns null
+  test("hook produces advisory using built-in patterns only when no active session exists", async () => {
     const env = await createSlopTestEnv(false);
     try {
       const content = "catch (e) {}\n";
@@ -1158,11 +1073,9 @@ describe("slop-gate: project pattern loading", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      const output = parseOutput(result.stdout);
-      // Built-in patterns still produce matches
-      expect(output.matches.some((m) => m.pattern_id === "empty-catch-block")).toBe(true);
-      // No custom matches (no session dir to load from)
-      expect(output.matches.some((m) => m.pattern_id === "custom-project-rule")).toBe(false);
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("Empty catch block");
+      expect(advisory).not.toContain("Custom project rule");
     } finally {
       await env.cleanup();
     }

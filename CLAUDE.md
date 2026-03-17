@@ -25,7 +25,7 @@ plugins/rnd-framework/
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   ├── slop-gate.ts             # PostToolUse hook: scores code for LLM anti-patterns, reports to pipeline artifacts
+│   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context to agents
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
 │   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies

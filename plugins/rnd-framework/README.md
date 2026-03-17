@@ -104,7 +104,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
-| `rnd-slop-detection` | PostToolUse slop gate — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) and reports to pipeline artifacts |
+| `rnd-slop-detection` | PostToolUse slop gate — surfaces LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) as advisory context to agents |
 | `rnd-standards` | Extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Lean 4 |
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
@@ -242,7 +242,7 @@ rnd-framework/
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   ├── slop-gate.ts             # PostToolUse hook: scores code for LLM anti-patterns
+│   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
 │   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies

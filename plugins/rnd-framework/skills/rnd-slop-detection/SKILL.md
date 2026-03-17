@@ -8,14 +8,14 @@ user-invocable: false
 
 ## Overview
 
-The slop gate is a PostToolUse hook that runs after every `Write` or `Edit` tool call on a code file. It scans the written content against a catalog of structural LLM anti-patterns — patterns that frequently appear in AI-generated code but rarely in thoughtfully hand-written code. The gate is advisory: it never blocks tool calls, always exits 0, and surfaces findings as structured JSON for immediate feedback and pipeline artifact storage.
+The slop gate is a PostToolUse hook that runs after every `Write` or `Edit` tool call on a code file. It scans the written content against a catalog of structural LLM anti-patterns — patterns that frequently appear in AI-generated code but rarely in thoughtfully hand-written code. The gate is advisory: it never blocks tool calls, always exits 0, and surfaces findings as inline advisory context so agents see violations immediately.
 
-**Core principle:** Slop detection is a structural quality signal, not a correctness check. A FAIL verdict does not mean the code is wrong — it means the code contains patterns that suggest mechanical generation rather than careful thought. Remediation is usually fast and always improves readability.
+**Core principle:** Slop detection is a structural quality signal, not a correctness check. Findings don't mean the code is wrong — they mean the code contains patterns that suggest mechanical generation rather than careful thought. Remediation is usually fast and always improves readability.
 
 ## When to Use
 
-- When a slop gate verdict appears in your tool output and you want to understand what triggered it
-- When you receive a WARN or FAIL verdict and need to remediate your code before the Verifier runs
+- When slop gate advisory messages appear after your Write/Edit calls and you want to understand what triggered them
+- When you see findings listed and need to remediate your code before the Verifier runs
 - When reading a `$RND_DIR/slop-reports/` artifact and need to interpret its contents
 - When the Verifier flags a slop report as part of quality criteria evidence
 - Before submitting a build, to proactively scan your own output for structural anti-patterns
@@ -340,28 +340,23 @@ function isValid(input: string) {
 
 ---
 
-## Scoring Algorithm
+## Advisory Output
 
-The slop gate computes a per-file score and maps it to a verdict.
-
-### Score Computation
+When the slop gate finds matches, it outputs an advisory message visible to the agent. The message format:
 
 ```
-score = sum(severity_i for each match i) / line_count
+Slop gate: 2 findings in src/auth.ts
+  L12: Over-commenting: comment restates code — "// increment counter" — Remove comments that merely describe the mechanics
+  L45: Empty catch block — "} catch (e) { }" — At minimum, log or rethrow the error
 ```
 
-Where:
-- `severity_i` is the severity rating (1–5) of the pattern that produced match `i`
-- `line_count` is the total number of lines in the analyzed content
-- Division by line count normalizes score across files of different sizes — a 10-line file with 2 matches scores higher than a 200-line file with 2 matches
+Each line includes:
+- **Line number** (`L12`) — where the violation was found
+- **Pattern name** — which anti-pattern was detected
+- **Snippet** — the matching code fragment (truncated to 120 chars)
+- **Remediation** — what to do about it
 
-### Verdict Thresholds
-
-| Score range | Verdict | Meaning |
-|-------------|---------|---------|
-| score < 3   | PASS    | Structural quality is acceptable |
-| 3 ≤ score ≤ 7 | WARN  | Notable anti-patterns present; consider remediating before Verifier runs |
-| score > 7   | FAIL    | High density of anti-patterns; remediation expected |
+When no matches are found (clean code), the gate produces no output — agents only see messages when there are findings to address.
 
 ### Diff-Aware Analysis
 
@@ -431,12 +426,12 @@ If no active pipeline session exists (no `.current-session` file), the gate does
 
 ## Remediation Workflow
 
-When you receive a WARN or FAIL verdict:
+When you see slop gate findings after a Write or Edit:
 
-1. **Read the matches array.** Each match includes `pattern_id`, `line`, and `snippet`. Go to that line in your code.
+1. **Read the advisory message.** Each line includes the pattern name, line number, snippet, and remediation hint.
 2. **Apply the pattern-specific remediation** from the Pattern Catalog above.
-3. **Re-run the `Write` or `Edit` tool** with the cleaned-up content. The gate will re-analyze and issue a new verdict.
-4. **Aim for PASS before submitting.** A WARN verdict is acceptable if the flagged patterns are genuinely intentional (e.g., a `console.log` in a CLI tool). A FAIL verdict in submitted build output is a quality signal the Verifier will note.
+3. **Re-run the `Write` or `Edit` tool** with the cleaned-up content. The gate will re-analyze and only show findings that remain.
+4. **Address all findings before submitting.** Intentional patterns (e.g., a `console.log` in a CLI tool) can be left, but unintentional slop should be fixed.
 
 ### Remediation by Category
 
@@ -461,7 +456,7 @@ The slop gate is a **structural quality signal**, not a correctness gate. It is 
 | Slop gate | Structural quality — does the code look thoughtfully written? | No (advisory only) |
 | Verifier | Independent criterion evidence — does the artifact meet pre-registered success criteria? | Yes (FAIL blocks) |
 
-A slop FAIL on a file does not mean the Verifier will issue a FAIL. However, a Verifier may treat a high cumulative slop score as evidence against a Quality tier criterion if the pre-registration includes structural quality requirements. Conversely, a slop PASS does not guarantee correctness — the code can be clean and still wrong.
+Slop findings do not block the pipeline. However, a Verifier may treat persistent slop findings as evidence against a Quality tier criterion if the pre-registration includes structural quality requirements. Conversely, clean slop output does not guarantee correctness — the code can be well-structured and still wrong.
 
 **The slop gate answers:** "Does this code look like it was written with care?"
 

@@ -2,19 +2,21 @@
 // PostToolUse hook: slop-gate
 //
 // Reads the slop pattern catalog, analyzes code written by Write/Edit tools
-// for structural anti-patterns, computes a scoring verdict, and outputs
-// structured JSON feedback to stdout.
+// for structural anti-patterns, and outputs an advisory context message when
+// findings are detected so agents see them inline.
 //
 // Behavior:
 //   - Write: analyzes tool_input.content (full file)
 //   - Edit:  analyzes tool_input.new_string only (diff-aware)
+//   - Findings: outputs advisory JSON {hookSpecificOutput: {additionalContext}}
+//   - No findings: exits 0 silently
 //   - Non-code file extensions: exits 0, no output
 //   - Malformed stdin, missing catalog, any error: exits 0, no output
 //   - Always exits 0 (PostToolUse hooks are advisory)
 
 import { resolve } from "node:path";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { parseInput, isCodeFile, resolveRndDir } from "./lib.ts";
+import { advisory, parseInput, isCodeFile, resolveRndDir } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,26 +43,15 @@ interface Match {
   severity: number;
 }
 
+// ---------------------------------------------------------------------------
+// Artifact-only types (not exposed in agent-facing output)
+// ---------------------------------------------------------------------------
+
 type Verdict = "PASS" | "WARN" | "FAIL";
 
-interface HookOutput {
-  verdict: Verdict;
-  score: number;
-  file_path: string;
-  line_count: number;
-  matches: Match[];
-}
-
-// ---------------------------------------------------------------------------
-// Scoring thresholds
-// ---------------------------------------------------------------------------
-
-const WARN_THRESHOLD = 3;
-const FAIL_THRESHOLD = 7;
-
 function computeVerdict(score: number): Verdict {
-  if (score > FAIL_THRESHOLD) return "FAIL";
-  if (score >= WARN_THRESHOLD) return "WARN";
+  if (score > 7) return "FAIL";
+  if (score >= 3) return "WARN";
   return "PASS";
 }
 
@@ -129,7 +120,7 @@ function sanitizePathToFilename(filePath: string): string {
 // Artifact writing
 // ---------------------------------------------------------------------------
 
-function writePipelineArtifacts(output: HookOutput): void {
+function writePipelineArtifacts(filePath: string, lineCount: number, matches: Match[]): void {
   const sessionDir = resolveRndDir();
   if (sessionDir === null || !sessionDir.includes("/sessions/")) return;
 
@@ -137,12 +128,14 @@ function writePipelineArtifacts(output: HookOutput): void {
     const reportsDir = resolve(sessionDir, "slop-reports");
     mkdirSync(reportsDir, { recursive: true });
 
+    const score = computeScore(matches, lineCount);
+    const verdict = computeVerdict(score);
     const report: SlopReport = {
-      file_path: output.file_path, verdict: output.verdict, score: output.score,
-      matches: output.matches, line_count: output.line_count,
+      file_path: filePath, verdict, score,
+      matches, line_count: lineCount,
       timestamp: new Date().toISOString(),
     };
-    const reportPath = resolve(reportsDir, sanitizePathToFilename(output.file_path));
+    const reportPath = resolve(reportsDir, sanitizePathToFilename(filePath));
     writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
 
     const cumulativePath = resolve(reportsDir, "cumulative-score.json");
@@ -154,18 +147,15 @@ function writePipelineArtifacts(output: HookOutput): void {
     }
     if (!cumulative.per_file) cumulative.per_file = {};
 
-    const prevScore = cumulative.per_file[output.file_path] ?? 0;
-    cumulative.total_score += output.score - prevScore;
-    if (!(output.file_path in cumulative.per_file)) cumulative.file_count += 1;
-    cumulative.per_file[output.file_path] = output.score;
+    const prevScore = cumulative.per_file[filePath] ?? 0;
+    cumulative.total_score += score - prevScore;
+    if (!(filePath in cumulative.per_file)) cumulative.file_count += 1;
+    cumulative.per_file[filePath] = score;
     cumulative.average_score = cumulative.file_count > 0 ? cumulative.total_score / cumulative.file_count : 0;
     cumulative.worst_score = 0;
     cumulative.worst_file = "";
-    for (const [file, score] of Object.entries(cumulative.per_file)) {
-      if (score > cumulative.worst_score) {
-        cumulative.worst_score = score;
-        cumulative.worst_file = file;
-      }
+    for (const [file, s] of Object.entries(cumulative.per_file)) {
+      if (s > cumulative.worst_score) { cumulative.worst_score = s; cumulative.worst_file = file; }
     }
     writeFileSync(cumulativePath, JSON.stringify(cumulative, null, 2), "utf-8");
   } catch {
@@ -230,13 +220,20 @@ async function main(): Promise<void> {
 
   const matches = analyzeContent(content, catalog.patterns);
   const lineCount = content.split("\n").length;
-  const score = computeScore(matches, lineCount);
-  const verdict = computeVerdict(score);
 
-  const output: HookOutput = { verdict, score, file_path: filePath, line_count: lineCount, matches };
+  writePipelineArtifacts(filePath, lineCount, matches);
 
-  writePipelineArtifacts(output);
-  process.stdout.write(JSON.stringify(output) + "\n");
+  if (matches.length === 0) process.exit(0);
+
+  const patternMap = new Map(catalog.patterns.map((p) => [p.id, p]));
+  const lines = [`Slop gate: ${matches.length} finding${matches.length === 1 ? "" : "s"} in ${filePath}`];
+  for (const m of matches) {
+    const p = patternMap.get(m.pattern_id);
+    const name = p ? p.name : m.pattern_id;
+    const remediation = p ? p.remediation : "";
+    lines.push(`  L${m.line}: ${name} — "${m.snippet}" — ${remediation}`);
+  }
+  console.log(JSON.stringify(advisory(lines.join("\n"))));
 }
 
 try {

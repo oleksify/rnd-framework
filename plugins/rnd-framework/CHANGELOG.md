@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.2 — 2026-03-17
+
+### Fix slop gate to surface findings as advisory context
+
 ## 0.11.1 — 2026-03-17
 
 ### Audit and harden hooks, rewrite validate.sh as TypeScript

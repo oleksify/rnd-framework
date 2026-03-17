@@ -974,6 +974,43 @@ describe("Synthetic: Content Parity", () => {
 // T7: Agent permissionMode and Command model validation
 // ===========================================================================
 
+// ===========================================================================
+// T3: New Claude Code tools — TaskOutput, TaskStop, EnterWorktree, etc.
+// ===========================================================================
+
+describe("Agent with tools 'Read, TaskOutput' passes validation", () => {
+  test("stdout contains no 'unknown tool' FAIL line and has a tools PASS line", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, TaskOutput\nmodel: sonnet\n---\n\n# My Agent\n",
+    );
+    const result = await runScript(validateSh);
+    const unknownToolLines = result.stdout.split("\n").filter(
+      (l) => /^\s+FAIL\s/.test(l) && l.includes("unknown tool"),
+    );
+    expect(unknownToolLines).toHaveLength(0);
+    const toolsPassLines = result.stdout.split("\n").filter(
+      (l) => /^\s+PASS\s/.test(l) && l.includes("tools are valid") && l.includes("TaskOutput"),
+    );
+    expect(toolsPassLines.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Agent with tools 'Read, FakeTool' still fails validation", () => {
+  test("exits 1 and stdout contains FAIL with 'unknown tool' and 'FakeTool'", async () => {
+    await writeFile(
+      join(tmpDir, "agents", "my-agent.md"),
+      "---\nname: my-agent\ndescription: A test agent\ntools: Read, FakeTool\nmodel: sonnet\n---\n\n# My Agent\n",
+    );
+    const result = await runScript(validateSh);
+    expect(result.exitCode).toBe(1);
+    const failLines = result.stdout.split("\n").filter(
+      (l) => /^\s+FAIL\s/.test(l) && l.includes("unknown tool") && l.includes("FakeTool"),
+    );
+    expect(failLines.length).toBeGreaterThan(0);
+  });
+});
+
 describe("T7: Agent permissionMode: bypassPermissions is valid", () => {
   test("output contains PASS line with permissionMode and bypassPermissions", async () => {
     await writeFile(

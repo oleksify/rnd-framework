@@ -35,6 +35,11 @@ export function isRndPath(path: string): boolean {
   return path.includes(".rnd/");
 }
 
+/** Returns true if path contains the plugins/cache/ segment. Pure. */
+export function isPluginCachePath(path: string): boolean {
+  return path.includes("plugins/cache/");
+}
+
 /**
  * Shells out to lib/rnd-dir.sh and returns the resolved path.
  * Passes all provided flags (e.g. "-c", "--base") directly to the script.

@@ -233,7 +233,7 @@ rnd-framework/
 │   ├── hooks.json               # SessionStart + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
 │   ├── chunk-gate.ts            # Write/Edit hook: auto-allows .rnd/, blocks planning-phase writes, enforces 30-line chunks
-│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ auto-allow
+│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl

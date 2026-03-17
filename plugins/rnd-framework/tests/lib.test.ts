@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { join } from "node:path";
-import { CODE_EXTENSIONS, isCodeFile, isRndPath, allow, advisory } from "../hooks/lib.ts";
+import { CODE_EXTENSIONS, isCodeFile, isRndPath, isPluginCachePath, allow, advisory } from "../hooks/lib.ts";
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
 const LIB_SCRIPT = join(PLUGIN_ROOT, "hooks", "lib.ts");
@@ -34,6 +34,21 @@ test("isRndPath returns false for path without .rnd/", () =>
   expect(isRndPath("/foo/bar")).toBe(false));
 test("isRndPath returns false for .rnd with no trailing slash", () =>
   expect(isRndPath("/foo/.rnd")).toBe(false));
+
+// ---------------------------------------------------------------------------
+// isPluginCachePath
+// ---------------------------------------------------------------------------
+
+test("isPluginCachePath returns true for absolute plugin cache path", () =>
+  expect(isPluginCachePath("/Users/me/.claude-personal/plugins/cache/rnd-framework-plugins/rnd-framework/0.10.9/skills/foo/SKILL.md")).toBe(true));
+test("isPluginCachePath returns false for unrelated absolute path", () =>
+  expect(isPluginCachePath("/Users/me/project/src/index.ts")).toBe(false));
+test("isPluginCachePath returns false for .rnd path", () =>
+  expect(isPluginCachePath("/Users/me/.rnd/project/sessions/abc/plan.md")).toBe(false));
+test("isPluginCachePath returns true for relative path with plugins/cache/", () =>
+  expect(isPluginCachePath("plugins/cache/something")).toBe(true));
+test("isPluginCachePath returns false when cache has no trailing slash", () =>
+  expect(isPluginCachePath("/Users/me/plugins/cachebreaker/foo")).toBe(false));
 
 // ---------------------------------------------------------------------------
 // allow

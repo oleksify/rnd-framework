@@ -171,7 +171,7 @@ $QUIET || echo "  (${skill_count} skills found)"
 
 begin_category "Agents"
 
-valid_tools="Read|Write|Edit|Bash|Glob|Grep|NotebookRead|NotebookEdit|WebFetch|WebSearch|Agent|TodoWrite|AskUserQuestion|TaskCreate|TaskGet|TaskUpdate|TaskList|Skill|SendMessage|EnterPlanMode|ExitPlanMode|ToolSearch"
+valid_tools="Read|Write|Edit|Bash|Glob|Grep|NotebookRead|NotebookEdit|WebFetch|WebSearch|Agent|TodoWrite|AskUserQuestion|TaskCreate|TaskGet|TaskUpdate|TaskList|TaskOutput|TaskStop|Skill|SendMessage|EnterPlanMode|ExitPlanMode|ToolSearch|EnterWorktree|ExitWorktree|TeamCreate|TeamDelete|LSP|CronCreate|CronDelete|CronList"
 valid_models="opus|sonnet|haiku"
 agent_count=0
 for agent_file in "${PLUGIN_ROOT}"/agents/*.md; do

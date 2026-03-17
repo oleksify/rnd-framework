@@ -359,6 +359,33 @@ describe("read-gate: absent agent_type defaults to blocking self-assessment", ()
 });
 
 // ---------------------------------------------------------------------------
+// T2: plugin cache paths are auto-allowed
+// ---------------------------------------------------------------------------
+describe("read-gate: plugin cache paths are auto-allowed", () => {
+  test("skill file in plugin cache returns exit 0 + permissionDecision allow", async () => {
+    const path = "/Users/me/.claude-personal/plugins/cache/rnd-framework-plugins/rnd-framework/0.10.9/skills/rnd-building/SKILL.md";
+    const result = await runHook(HOOK, input(path));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+
+  test("agent file in plugin cache returns exit 0 + permissionDecision allow", async () => {
+    const path = "/Users/me/.claude-personal/plugins/cache/rnd-framework-plugins/rnd-framework/0.10.9/agents/rnd-builder.md";
+    const result = await runHook(HOOK, input(path));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+
+  test("plugin cache self-assessment is blocked (self-assessment takes precedence)", async () => {
+    const result = await runHook(HOOK, input("/Users/me/.claude-personal/plugins/cache/self-assessment.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("INFORMATION BARRIER");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // T5 Criterion 4: .rnd/ auto-allow unaffected by agent_type
 // ---------------------------------------------------------------------------
 describe("read-gate: .rnd/ auto-allow works for all agent types", () => {

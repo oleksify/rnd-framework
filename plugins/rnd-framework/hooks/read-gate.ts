@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
-// PreToolUse hook for Read: enforces the information barrier and auto-allows .rnd/ reads.
+// PreToolUse hook for Read: enforces the information barrier and auto-allows .rnd/ and plugin cache reads.
 //
-// Two responsibilities:
+// Three responsibilities:
 //   1. Information barrier — blocks reads of self-assessment files to prevent the
 //      Verifier from anchoring on Builder reasoning.
-//   2. Auto-allow — permits all other reads targeting .rnd/ paths without prompting.
+//   2. Auto-allow plugin cache — permits reads from plugins/cache/ paths without prompting.
+//   3. Auto-allow .rnd/ — permits reads targeting .rnd/ paths without prompting.
 
-import { parseInput, isRndPath, allow, block } from "./lib.ts";
+import { parseInput, isRndPath, isPluginCachePath, allow, block } from "./lib.ts";
 
 /** Decide what to do given a file path and agent type. Pure. */
 export function decide(
@@ -19,6 +20,7 @@ export function decide(
       !agentType.toLowerCase().includes("verifier");
     if (!isKnownNonVerifier) return "block";
   }
+  if (isPluginCachePath(filePath)) return "allow";
   if (isRndPath(filePath)) return "allow";
   return "no-opinion";
 }

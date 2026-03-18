@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.4 — 2026-03-18
+
+### Add lib/ to tsconfig, standardize hook error wrapping, simplify readStdin
+
 ## 0.11.3 — 2026-03-18
 
 ### Tighten .rnd/ auto-allow and fix chunk-gate line count

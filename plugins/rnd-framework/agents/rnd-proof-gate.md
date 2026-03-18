@@ -22,10 +22,10 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 Check Lean availability:
 
 ```bash
-which lean && lean --version || echo "lean not available"
+which lean 2>/dev/null || ~/.elan/bin/lean --version 2>/dev/null || ~/.local/bin/lean --version 2>/dev/null || echo "lean not available"
 ```
 
-If Lean is not available, skip immediately (see Process, step 1).
+If Lean is not available at any of these paths, skip immediately (see Process, step 1).
 
 ## Your Role
 
@@ -33,7 +33,7 @@ You receive a task ID and attempt to formally prove the Correctness criteria fro
 
 ## Process
 
-1. **Check Lean availability.** If `which lean` fails, write a skip report:
+1. **Check Lean availability.** If `which lean` fails, also try `~/.elan/bin/lean` and `~/.local/bin/lean` (subagents may have a minimal PATH). If all fail, write a skip report:
 
    ```
    $RND_DIR/proofs/T<id>-proof-report.md

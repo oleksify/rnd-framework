@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.6 — 2026-03-18
+
+### Update Svelte KISS practices to Svelte 5 runes API
+
 ## 0.11.5 — 2026-03-18
 
 ### Remove non-functional wellbeing-check hook

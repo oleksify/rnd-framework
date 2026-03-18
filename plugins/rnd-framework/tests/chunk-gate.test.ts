@@ -82,6 +82,20 @@ describe("SC2: Write with 30 lines to non-.rnd/ path passes", () => {
 });
 
 // ---------------------------------------------------------------------------
+// SC2b: 30 lines with trailing newline → still allowed (not counted as 31)
+// ---------------------------------------------------------------------------
+
+describe("SC2b: 30 lines with trailing newline passes", () => {
+  test("returns exit 0 (trailing newline not counted as extra line)", async () => {
+    const result = await runHook(
+      HOOK_PATH,
+      writeInput("/project/src/file.ts", lines(30) + "\n"),
+    );
+    expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // SC3: Edit with 31 lines to non-.rnd/ path → blocked
 // ---------------------------------------------------------------------------
 

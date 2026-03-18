@@ -221,6 +221,18 @@ describe(".rnd in command (not git add) — auto-allow", () => {
     const parsed = JSON.parse(result.stdout);
     expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
   });
+
+  test("cat .rnd/file is blocked (tool discipline overrides .rnd/ auto-allow)", async () => {
+    const result = await runHook(HOOK, payload("cat /path/.rnd/builds/manifest.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+
+  test("sed on .rnd/ file is blocked (tool discipline overrides .rnd/ auto-allow)", async () => {
+    const result = await runHook(HOOK, payload("sed s/foo/bar/ /path/.rnd/plan.md"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
 });
 
 // ---------------------------------------------------------------------------

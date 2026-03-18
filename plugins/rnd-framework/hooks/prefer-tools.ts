@@ -47,13 +47,9 @@ async function main(): Promise<void> {
   const command = (input.tool_input["command"] as string | undefined) ?? "";
   if (!command) { console.log(JSON.stringify(allow())); process.exit(0); }
 
-  // Auto-allow commands involving .rnd/ paths or rnd-dir.sh (not git add)
-  const isGitAdd = /\bgit\s+add\b/.test(command);
-  if (!isGitAdd && (command.includes(".rnd/") || command.includes("rnd-dir.sh"))) {
-    console.log(JSON.stringify(allow())); process.exit(0);
-  }
-
   const stripped = stripCdPrefixes(command);
+
+  // Tool discipline checks — apply even for .rnd/ paths
 
   if (/^(sed|awk)\b/.test(stripped)) {
     block("Use the Edit tool instead of sed/awk. Edit is reviewable, diffable, and handles indentation correctly.");
@@ -75,6 +71,10 @@ async function main(): Promise<void> {
   }
   if (/git\s+add.*\.rnd(\/|\s|$)/.test(command)) {
     block("BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed.");
+  }
+  // Auto-allow remaining commands involving .rnd/ paths or rnd-dir.sh
+  if (command.includes(".rnd/") || command.includes("rnd-dir.sh")) {
+    console.log(JSON.stringify(allow())); process.exit(0);
   }
   console.log(JSON.stringify(allow()));
 }

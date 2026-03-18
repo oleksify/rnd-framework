@@ -24,7 +24,8 @@ import { parseInput, isRndPath, allow, block, resolveRndDir } from "./lib.ts";
  */
 export function countLines(content: string): number {
   if (content.length === 0) return 0;
-  return content.split("\n").length;
+  const parts = content.split("\n");
+  return content.endsWith("\n") ? parts.length - 1 : parts.length;
 }
 
 // ---------------------------------------------------------------------------

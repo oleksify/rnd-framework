@@ -5,7 +5,7 @@
 // and emits an advisory warning via hookSpecificOutput.additionalContext.
 // Always exits 0 — purely advisory, never blocks.
 
-import { parseInput, isCodeFile } from "./lib.ts";
+import { parseInput, isCodeFile, isRndPath } from "./lib.ts";
 
 const SQL_PATTERNS: Array<RegExp> = [
   /SELECT\s+.*\s+FROM\s+(\w+)/gi,
@@ -54,7 +54,7 @@ async function main(): Promise<void> {
 
   const filePath = ti["file_path"];
   if (typeof filePath !== "string" || filePath.length === 0) process.exit(0);
-  if (filePath.includes(".rnd/") || !isCodeFile(filePath)) process.exit(0);
+  if (isRndPath(filePath) || !isCodeFile(filePath)) process.exit(0);
 
   let content: string;
   if (toolName === "Write") {

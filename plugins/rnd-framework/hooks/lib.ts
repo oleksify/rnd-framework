@@ -94,15 +94,8 @@ export interface HookInput {
  * I/O function — not pure.
  */
 export async function readStdin(): Promise<string> {
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of Bun.stdin.stream()) chunks.push(chunk);
-  const merged = chunks.reduce((acc, c) => {
-    const m = new Uint8Array(acc.length + c.length);
-    m.set(acc, 0);
-    m.set(c, acc.length);
-    return m;
-  }, new Uint8Array(0));
-  return new TextDecoder().decode(merged);
+  const buf = await Bun.readableStreamToArrayBuffer(Bun.stdin.stream());
+  return new TextDecoder().decode(buf);
 }
 
 /**

@@ -25,20 +25,24 @@ export function decide(
   return "no-opinion";
 }
 
-const input = await parseInput();
-const filePath =
-  typeof input?.tool_input?.["file_path"] === "string"
-    ? (input.tool_input["file_path"] as string)
-    : "";
-const agentType = input?.agent_type ?? "";
+try {
+  const input = await parseInput();
+  const filePath =
+    typeof input?.tool_input?.["file_path"] === "string"
+      ? (input.tool_input["file_path"] as string)
+      : "";
+  const agentType = input?.agent_type ?? "";
 
-const decision = decide(filePath, agentType);
-if (decision === "block") {
-  block(
-    "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. " +
-    "Direct reading is blocked to maintain information barriers between Builder and Verifier.",
-  );
-} else if (decision === "allow") {
-  console.log(JSON.stringify(allow()));
+  const decision = decide(filePath, agentType);
+  if (decision === "block") {
+    block(
+      "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. " +
+      "Direct reading is blocked to maintain information barriers between Builder and Verifier.",
+    );
+  } else if (decision === "allow") {
+    console.log(JSON.stringify(allow()));
+  }
+  // no-opinion: exit 0, no stdout
+} catch {
+  process.exit(0);
 }
-// no-opinion: exit 0, no stdout

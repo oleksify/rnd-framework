@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { join } from "node:path";
-import { CODE_EXTENSIONS, isCodeFile, isRndPath, isPluginCachePath, allow, advisory } from "../hooks/lib.ts";
+import { CODE_EXTENSIONS, isCodeFile, isRndPath, isPluginCachePath, allow, advisory, countLines } from "../hooks/lib.ts";
 
 const PLUGIN_ROOT = join(import.meta.dir, "..");
 const LIB_SCRIPT = join(PLUGIN_ROOT, "hooks", "lib.ts");
@@ -117,6 +117,16 @@ process.stdout.write(JSON.stringify(r));
 });
 
 // ---------------------------------------------------------------------------
+// countLines
+// ---------------------------------------------------------------------------
+
+test("countLines returns 0 for empty string", () => expect(countLines("")).toBe(0));
+test("countLines returns 1 for single char no newline", () => expect(countLines("a")).toBe(1));
+test("countLines returns 1 for single char with trailing newline", () => expect(countLines("a\n")).toBe(1));
+test("countLines returns 2 for two lines with trailing newline", () => expect(countLines("a\nb\n")).toBe(2));
+test("countLines returns 2 for two lines without trailing newline", () => expect(countLines("a\nb")).toBe(2));
+
+// ---------------------------------------------------------------------------
 // resolveRndDir — shells out to rnd-dir.sh
 // ---------------------------------------------------------------------------
 
@@ -132,4 +142,16 @@ test("resolveRndDir script path resolves relative to hooks dir", async () => {
   const result = resolveRndDir("--base");
   // --base may return null if not in a project, but must not throw
   expect(result === null || typeof result === "string").toBe(true);
+});
+
+test("resolveRndDir memoizes: second call returns same value without re-spawning", async () => {
+  const { resolveRndDir } = await import("../hooks/lib.ts");
+  const first = resolveRndDir("--base");
+  const spawnCount = { n: 0 };
+  const original = Bun.spawnSync;
+  Bun.spawnSync = (...a: Parameters<typeof Bun.spawnSync>) => { spawnCount.n++; return original(...a); };
+  const second = resolveRndDir("--base");
+  Bun.spawnSync = original;
+  expect(second).toBe(first);
+  expect(spawnCount.n).toBe(0);
 });

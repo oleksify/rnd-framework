@@ -11,22 +11,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { parseInput, isRndPath, allow, block, resolveRndDir } from "./lib.ts";
-
-// ---------------------------------------------------------------------------
-// Pure helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Counts lines in a string using the same rule as the bash awk NR approach:
- * each newline character starts a new line; an empty string is 0 lines.
- * A single line with no newline is 1 line.
- */
-export function countLines(content: string): number {
-  if (content.length === 0) return 0;
-  const parts = content.split("\n");
-  return content.endsWith("\n") ? parts.length - 1 : parts.length;
-}
+import { parseInput, isRndPath, allow, block, resolveRndDir, countLines } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // Main

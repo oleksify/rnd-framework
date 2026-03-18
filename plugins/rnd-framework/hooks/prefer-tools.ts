@@ -76,7 +76,7 @@ async function main(): Promise<void> {
   if (command.includes(".rnd/") || command.includes("rnd-dir.sh")) {
     console.log(JSON.stringify(allow())); process.exit(0);
   }
-  console.log(JSON.stringify(allow()));
+  // No opinion — let Claude Code default permission prompt handle everything else
 }
 
 try {

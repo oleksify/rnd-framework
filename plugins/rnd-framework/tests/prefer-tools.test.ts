@@ -165,15 +165,14 @@ describe("echo without redirect — auto-allow", () => {
 });
 
 // ---------------------------------------------------------------------------
-// ls → auto-allow
+// ls → no opinion
 // ---------------------------------------------------------------------------
 
-describe("ls — auto-allow", () => {
-  test("'ls -la' returns exit 0 and stdout contains permissionDecision allow", async () => {
+describe("ls — no opinion", () => {
+  test("'ls -la' returns exit 0 with empty stdout (no opinion)", async () => {
     const result = await runHook(HOOK, payload("ls -la"));
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout);
-    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+    expect(result.stdout.trim()).toBe("");
   });
 });
 
@@ -246,24 +245,22 @@ describe("cd prefix stripping", () => {
     expect(result.stderr).toContain("Edit tool");
   });
 
-  test("'cd /path && cd /other && ls' returns exit 0 with allow (chained cd stripped)", async () => {
+  test("'cd /path && cd /other && ls' returns exit 0 with empty stdout (no opinion)", async () => {
     const result = await runHook(HOOK, payload("cd /path && cd /other && ls"));
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout);
-    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+    expect(result.stdout.trim()).toBe("");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Unmatched commands → auto-allow
+// Unmatched commands → no opinion
 // ---------------------------------------------------------------------------
 
-describe("unmatched commands — auto-allow", () => {
-  test("'npm install' returns exit 0 with permissionDecision allow", async () => {
+describe("unmatched commands — no opinion", () => {
+  test("'npm install' returns exit 0 with empty stdout (no opinion)", async () => {
     const result = await runHook(HOOK, payload("npm install"));
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout);
-    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+    expect(result.stdout.trim()).toBe("");
   });
 });
 
@@ -302,11 +299,10 @@ describe("cd semicolon stripping", () => {
 // ---------------------------------------------------------------------------
 
 describe("git add .rnd edge cases", () => {
-  test("'git add .rnd.backup' returns exit 0 with permissionDecision allow (not blocked)", async () => {
+  test("'git add .rnd.backup' returns exit 0 with empty stdout (no opinion, not blocked)", async () => {
     const result = await runHook(HOOK, payload("git add .rnd.backup"));
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout);
-    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+    expect(result.stdout.trim()).toBe("");
   });
 
   test("'git add .rnd/' returns exit 2 with BLOCKED in stderr", async () => {
@@ -327,11 +323,10 @@ describe("git add .rnd edge cases", () => {
     expect(result.stderr).toContain("BLOCKED");
   });
 
-  test("'cd /path && git add .rnd.backup' returns exit 0 (not a false positive)", async () => {
+  test("'cd /path && git add .rnd.backup' returns exit 0 with empty stdout (no opinion, not a false positive)", async () => {
     const result = await runHook(HOOK, payload("cd /some/path && git add .rnd.backup"));
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout);
-    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+    expect(result.stdout.trim()).toBe("");
   });
 });
 

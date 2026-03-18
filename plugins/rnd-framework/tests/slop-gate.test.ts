@@ -1081,3 +1081,35 @@ describe("slop-gate: project pattern loading", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// slop-gate: line_count correctness (T3) — trailing newline must not add a line
+// ---------------------------------------------------------------------------
+
+describe("slop-gate: line_count — trailing newline handling", () => {
+  test("report line_count is 1 for 'catch (e) {}\\n' (1 line with trailing newline)", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      const content = "catch (e) {}\n";
+      await runHook(HOOK_PATH, writeInput("/src/test.ts", content), { CLAUDE_CONFIG_DIR: env.configDir });
+      const raw = await readFile(join(env.sessionDir, "slop-reports", "src-test.ts.json"), "utf-8");
+      const report = JSON.parse(raw) as SlopReport;
+      expect(report.line_count).toBe(1);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  test("report line_count is 2 for two lines with trailing newline", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      const content = "catch (e) {}\ncatch (e) {}\n";
+      await runHook(HOOK_PATH, writeInput("/src/test.ts", content), { CLAUDE_CONFIG_DIR: env.configDir });
+      const raw = await readFile(join(env.sessionDir, "slop-reports", "src-test.ts.json"), "utf-8");
+      const report = JSON.parse(raw) as SlopReport;
+      expect(report.line_count).toBe(2);
+    } finally {
+      await env.cleanup();
+    }
+  });
+});

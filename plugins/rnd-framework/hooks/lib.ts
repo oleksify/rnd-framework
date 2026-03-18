@@ -40,18 +40,32 @@ export function isPluginCachePath(path: string): boolean {
   return /\.claude[^/]*\/.*plugins\/cache\//.test(path);
 }
 
+/** Counts logical lines in a string. Empty string is 0. Trailing newline does not add an extra line. Pure. */
+export function countLines(content: string): number {
+  if (content.length === 0) return 0;
+  const parts = content.split("\n");
+  return content.endsWith("\n") ? parts.length - 1 : parts.length;
+}
+
 /**
  * Shells out to lib/rnd-dir.sh and returns the resolved path.
  * Passes all provided flags (e.g. "-c", "--base") directly to the script.
  * Returns null if the script fails or returns empty output.
  * Uses Bun.spawnSync — no execSync.
+ * Memoized: repeated calls with the same args return the cached result.
  */
+const _resolveRndDirCache = new Map<string, string | null>();
+
 export function resolveRndDir(...args: string[]): string | null {
+  const key = args.join("\0");
+  if (_resolveRndDirCache.has(key)) return _resolveRndDirCache.get(key)!;
   const scriptPath = resolve(import.meta.dir, "..", "lib", "rnd-dir.sh");
   const result = Bun.spawnSync([scriptPath, ...args], { stderr: "ignore" });
-  if (result.exitCode !== 0) return null;
+  if (result.exitCode !== 0) { _resolveRndDirCache.set(key, null); return null; }
   const out = new TextDecoder().decode(result.stdout).trim();
-  return out.length > 0 ? out : null;
+  const val = out.length > 0 ? out : null;
+  _resolveRndDirCache.set(key, val);
+  return val;
 }
 
 // ---------------------------------------------------------------------------

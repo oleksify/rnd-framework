@@ -16,7 +16,7 @@
 
 import { resolve } from "node:path";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { advisory, parseInput, isCodeFile, resolveRndDir } from "./lib.ts";
+import { advisory, parseInput, isCodeFile, resolveRndDir, countLines } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -219,7 +219,7 @@ async function main(): Promise<void> {
   }
 
   const matches = analyzeContent(content, catalog.patterns);
-  const lineCount = content.split("\n").length;
+  const lineCount = countLines(content);
 
   writePipelineArtifacts(filePath, lineCount, matches);
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.3 — 2026-03-18
+
+### Tighten .rnd/ auto-allow and fix chunk-gate line count
+
 ## 0.11.2 — 2026-03-17
 
 ### Fix slop gate to surface findings as advisory context

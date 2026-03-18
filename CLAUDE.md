@@ -27,6 +27,7 @@ plugins/rnd-framework/
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context to agents
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
+│   ├── stop-failure.ts          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
@@ -52,7 +53,7 @@ plugins/rnd-framework/
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), and KISS rules. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 ### Information Barrier and Permission Hooks
 
@@ -62,6 +63,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths
 - **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth
 - **Audit logging** (`audit-log.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
+- **Stop failure logging** (`stop-failure.ts`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 
@@ -96,7 +98,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 ```
 ~/.claude/.rnd/<dirname>-<hash>/           # Project base
 ├── .current-session                       # Active session ID
-├── calibration.jsonl                      # Verdict accuracy tracking (cross-session)
+├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA)
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, pre-registrations, schedule
     ├── project-patterns.json              # Project-specific slop patterns extracted from CLAUDE.md
@@ -120,7 +122,7 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 
 - **Skills use YAML frontmatter** — `name` and `description` fields between `---` delimiters
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
-- **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, `tools`, `memory`, `color`, `skills`, and optionally `disallowedTools`
+- **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, `tools`, `memory`, `color`, `skills`, and optionally `disallowedTools`, `maxTurns`
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
 - **Test suite** — `tests/` contains Bun tests for hooks and lib scripts; run with `bun test` from `plugins/rnd-framework/`
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort

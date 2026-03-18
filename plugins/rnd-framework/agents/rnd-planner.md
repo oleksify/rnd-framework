@@ -7,6 +7,7 @@ memory: user
 color: "#3B82F6"
 skills: rnd-decomposition, rnd-orchestration, rnd-local-experts
 permissionMode: bypassPermissions
+maxTurns: 250
 ---
 
 You are the **Planner Agent** in a scientific-method orchestration framework.

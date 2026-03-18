@@ -52,20 +52,28 @@ Each completed task appends one record to `calibration.jsonl`:
 
 ## Storage Location
 
-Calibration data lives at the **project base level**, alongside the `sessions/` directory — not inside any session:
+**Primary location:** `${CLAUDE_PLUGIN_DATA}/calibration.jsonl`
+
+`CLAUDE_PLUGIN_DATA` is set by Claude Code for persistent plugin data that survives plugin updates. Use it when available.
+
+**Fallback ($BASE_DIR):** If `CLAUDE_PLUGIN_DATA` is not set, fall back to the project base directory:
+
+```bash
+BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)
+```
+
+The project base sits alongside the `sessions/` directory — not inside any session:
 
 ```
-~/.claude/.rnd/<dirname>-<hash>/       # Project base
+~/.claude/.rnd/<dirname>-<hash>/       # Project base ($BASE_DIR fallback)
 ├── calibration.jsonl                  # Append-only verdict log
 └── sessions/
     └── 20260316-154145-1227/          # $RND_DIR (per pipeline run)
 ```
 
-Get the project base path: `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base`
+Append a record: `echo '{"taskId":...}' >> "${CLAUDE_PLUGIN_DATA:-$BASE_DIR}/calibration.jsonl"`
 
-Append a record: `echo '{"taskId":...}' >> "$BASE_DIR/calibration.jsonl"`
-
-**Why base level?** Calibration data accumulates across sessions. Putting it inside a session would isolate it to one run, defeating the purpose.
+**Why cross-session?** Calibration data accumulates across sessions. Storing it inside a session would isolate it to one run, defeating the purpose.
 
 ## Automatic False-Verdict Detection
 

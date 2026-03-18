@@ -36,4 +36,10 @@ describe("rnd-calibration storage path", () => {
   test("specifies calibration.jsonl at project base level", async () => {
     expect(await read()).toContain("calibration.jsonl");
   });
+  test("references CLAUDE_PLUGIN_DATA as primary storage location", async () => {
+    expect(await read()).toContain("CLAUDE_PLUGIN_DATA");
+  });
+  test("includes fallback instructions mentioning BASE_DIR", async () => {
+    expect(await read()).toMatch(/\$BASE_DIR.*fall\s*back|fall\s*back.*\$BASE_DIR/is);
+  });
 });

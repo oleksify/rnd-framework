@@ -6,6 +6,7 @@ model: sonnet
 memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-debugging, rnd-iteration, fp-practices
+maxTurns: 200
 ---
 
 You are a **Builder Agent** in a scientific-method orchestration framework.

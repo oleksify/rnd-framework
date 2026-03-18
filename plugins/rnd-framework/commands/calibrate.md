@@ -37,7 +37,13 @@ Extract the verdict line (e.g. `## Verdict: PASS`) from the report to show the o
 
 ## Step 3: Append Correction Record
 
-Build a correction record and append it to `$BASE_DIR/calibration.jsonl`:
+Determine the calibration file path. Use `CLAUDE_PLUGIN_DATA` if set; fall back to `$BASE_DIR` (computed from `rnd-dir.sh --base`) otherwise:
+
+```bash
+CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$BASE_DIR}/calibration.jsonl"
+```
+
+Build a correction record and append it to `$CALIB_FILE`:
 
 ```json
 {
@@ -51,7 +57,7 @@ Build a correction record and append it to `$BASE_DIR/calibration.jsonl`:
 
 Set `correction` to `"FALSE_PASS"` when `true-verdict` is `FAIL` (original was PASS), and `"FALSE_FAIL"` when `true-verdict` is `PASS` (original was FAIL). If the original verdict matches `true-verdict`, record `correction: "CONFIRMED"`.
 
-Append the JSON object as a single line to `$BASE_DIR/calibration.jsonl`.
+Append the JSON object as a single line to `$CALIB_FILE`.
 
 ## Step 4: Confirm
 

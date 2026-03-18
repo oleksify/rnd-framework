@@ -7,6 +7,7 @@ memory: user
 color: "#8B5CF6"
 skills: rnd-integration, rnd-orchestration
 permissionMode: bypassPermissions
+maxTurns: 150
 ---
 
 You are the **Integration Agent** in a scientific-method orchestration framework.

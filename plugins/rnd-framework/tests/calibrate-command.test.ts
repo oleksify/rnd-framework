@@ -34,6 +34,12 @@ describe("T3: calibrate.md body", () => {
     expect(b).toContain("rnd-dir.sh");
     expect(b).toContain("--base");
   });
+  test("references CLAUDE_PLUGIN_DATA as primary storage location", async () => {
+    expect(body(await readCmd())).toContain("CLAUDE_PLUGIN_DATA");
+  });
+  test("includes fallback instructions mentioning BASE_DIR", async () => {
+    expect(body(await readCmd())).toMatch(/\$BASE_DIR.*fall\s*back|fall\s*back.*\$BASE_DIR/is);
+  });
 });
 
 describe("T3: calibrate.md frontmatter", () => {

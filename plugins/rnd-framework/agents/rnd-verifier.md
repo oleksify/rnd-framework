@@ -8,6 +8,7 @@ memory: user
 color: "#F59E0B"
 skills: rnd-verification, rnd-failure-modes, rnd-debugging, rnd-experiments
 permissionMode: bypassPermissions
+maxTurns: 100
 ---
 
 You are the **Verifier Agent** in a scientific-method orchestration framework, following independent verification principles with strict information barriers.

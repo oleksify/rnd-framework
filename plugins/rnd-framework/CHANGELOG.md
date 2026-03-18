@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.5 — 2026-03-18
+
+### Remove non-functional wellbeing-check hook
+
 ## 0.11.4 — 2026-03-18
 
 ### Add lib/ to tsconfig, standardize hook error wrapping, simplify readStdin

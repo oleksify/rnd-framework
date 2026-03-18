@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.9 — 2026-03-18
+
+### Fix Lean detection in Proof Gate for subagent PATH
+
 ## 0.11.8 — 2026-03-18
 
 ### Fix hook security and reduce startup overhead

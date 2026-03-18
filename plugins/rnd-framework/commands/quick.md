@@ -24,11 +24,15 @@ If `$ARGUMENTS` is empty (user ran `/rnd-framework:quick` with no task descripti
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
-## Step 0: KISS Detection
+## Step 0: Coding Practices (inline — no Skill tool calls)
 
-Before planning, detect the project's tech stack and load relevant coding practices. Invoke `rnd-framework:kiss-practices` and read the language files matching the project (e.g., `elixir.md` for Elixir projects). Also invoke `rnd-framework:fp-practices` to load functional programming principles. Include both KISS and FP rules in your build context.
+Quick mode does NOT invoke skills via the Skill tool during startup. Instead, apply these principles directly:
 
-Then invoke `rnd-framework:rnd-standards` to scan the project's CLAUDE.md files and generate `$RND_DIR/project-patterns.json` with project-specific coding rules. These patterns extend the slop gate's built-in catalog for this pipeline run.
+- **KISS:** Don't add features nobody asked for. Don't create abstractions for one-time operations. Validate at system boundaries only. Prefer native APIs over packages.
+- **FP:** Prefer pure functions, immutable data, and composition. Separate commands from queries.
+- **Project standards:** Follow the conventions in the project's CLAUDE.md files (already loaded in your context).
+
+The full pipeline (`/rnd-framework:start`) loads language-specific KISS files and extracts project patterns — quick mode trusts the agent to apply these principles from context instead.
 
 ## Step 1: Quick Plan (inline, no subagent needed)
 

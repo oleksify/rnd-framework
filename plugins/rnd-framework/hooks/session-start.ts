@@ -4,10 +4,30 @@ import { resolveRndDir } from "./lib.ts";
 
 const PLUGIN_ROOT = resolve(import.meta.dir, "..");
 
+// Inject a concise stub instead of the full SKILL.md to reduce per-call token overhead.
+// The full skill content is loaded on demand via `Skill` tool when needed.
 const skillPath = resolve(PLUGIN_ROOT, "skills", "using-rnd-framework", "SKILL.md");
 let skillContent: string;
 try {
-  skillContent = await Bun.file(skillPath).text();
+  const full = await Bun.file(skillPath).text();
+  // Extract just the frontmatter-stripped preamble + skill/command tables, skip verbose sections
+  const lines = full.split("\n");
+  // Skip frontmatter
+  let start = 0;
+  if (lines[0]?.trim() === "---") {
+    start = lines.indexOf("---", 1) + 1;
+  }
+  // Keep lines until "## Data Science Tasks" or "## Pipeline Scaling" (whichever comes first)
+  // These mark the start of verbose reference sections
+  const trimSections = ["## Data Science Tasks", "## Pipeline Scaling", "## Skill Priority", "## Skill Types", "## Red Flags"];
+  let end = lines.length;
+  for (let i = start; i < lines.length; i++) {
+    if (trimSections.includes(lines[i]!.trim())) {
+      end = i;
+      break;
+    }
+  }
+  skillContent = lines.slice(start, end).join("\n").trim();
 } catch {
   skillContent = "Error reading using-rnd-framework skill";
 }
@@ -51,8 +71,8 @@ const rndLine = rndDir
 
 const ctx =
   `<EXTREMELY_IMPORTANT>\nYou have rnd-framework.\n\n` +
-  `**Below is the full content of your 'rnd-framework:using-rnd-framework' skill` +
-  ` - your introduction to using the R&D framework. For all other skills, use the 'Skill' tool:**\n\n` +
+  `**Below is the summary of your 'rnd-framework:using-rnd-framework' skill.` +
+  ` For all other skills, use the 'Skill' tool:**\n\n` +
   `${skillContent}${rndLine}${versionWarning}\n\n</EXTREMELY_IMPORTANT>`;
 
 console.log(JSON.stringify({

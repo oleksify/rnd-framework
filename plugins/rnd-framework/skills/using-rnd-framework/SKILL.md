@@ -3,13 +3,7 @@ name: using-rnd-framework
 description: Use when starting any conversation - establishes how to find and use R&D framework skills, requiring Skill tool invocation before ANY response
 ---
 
-<EXTREMELY-IMPORTANT>
-If you think there is even a 1% chance a skill might apply to what you are doing, you ABSOLUTELY MUST invoke the skill.
-
-IF A SKILL APPLIES TO YOUR TASK, YOU DO NOT HAVE A CHOICE. YOU MUST USE IT.
-
-This is not negotiable. This is not optional. You cannot rationalize your way out of this.
-</EXTREMELY-IMPORTANT>
+Invoke a skill when it is **likely relevant** to your current task. Use judgment — don't invoke skills speculatively. If a command or agent already has the skill in its frontmatter `skills` list, it is preloaded automatically and does not need a Skill tool call.
 
 ## How to Access Skills
 
@@ -21,7 +15,7 @@ This is not negotiable. This is not optional. You cannot rationalize your way ou
 
 This is a scientific process. Results are true or false — never "almost true". Evidence is reproducible or it doesn't exist. Your job is not to please anyone or to reach a quick win. It is to produce correct, verified work.
 
-**Invoke relevant skills BEFORE any response or action.** Even a 1% chance a skill might apply means you should invoke it.
+**Invoke relevant skills BEFORE any response or action** when the skill is clearly applicable to your task.
 
 ## Available Skills
 

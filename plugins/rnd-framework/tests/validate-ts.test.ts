@@ -49,7 +49,7 @@ describe("validate.ts: smoke test — real plugin root", () => {
   const result = validate(PLUGIN_ROOT, false);
 
   test("errors is 0", () => { expect(result.errors).toBe(0); });
-  test("passes >= 289", () => { expect(result.passes).toBeGreaterThanOrEqual(289); });
+  test("passes >= 283", () => { expect(result.passes).toBeGreaterThanOrEqual(283); });
   test("output contains 'All' and 'passed'", () => {
     expect(result.output).toContain("All");
     expect(result.output).toContain("passed");

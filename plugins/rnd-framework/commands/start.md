@@ -281,8 +281,7 @@ Once all non-skipped tasks in a wave pass verification:
 
 If SHIP:
 - If more waves remain:
-  - **Break checkpoint:** Invoke `rnd-framework:rnd-wellbeing` to check elapsed session time. If >90 minutes since session start, suggest a break before the next wave using the break messages from the skill. If the user takes a break, pause until they return. If they continue, proceed normally.
-  - If **auto-continue mode is ON** and no break was suggested (or user chose to continue), skip the following `AskUserQuestion` and proceed directly to Phase 2 for the next wave.
+  - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 2 for the next wave.
   - Otherwise, use `AskUserQuestion` with options:
     - "Proceed to next wave (Recommended)" — start Phase 2 for the next wave
     - "Review integration report" — let the user inspect the report first
@@ -302,8 +301,6 @@ Summarize results for the user:
 - Any iterations that occurred
 - Final integration status
 - Remaining concerns or recommendations
-
-**Break checkpoint:** Invoke `rnd-framework:rnd-wellbeing` to check elapsed session time. If >90 minutes, suggest a break before the final commit/cleanup steps.
 
 **MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete.
 

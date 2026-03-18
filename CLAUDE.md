@@ -27,7 +27,6 @@ plugins/rnd-framework/
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context to agents
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
-│   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction

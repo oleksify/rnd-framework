@@ -108,7 +108,6 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-standards` | Extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Lean 4 |
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
-| `rnd-wellbeing` | Developer wellbeing — break suggestions based on session duration, explained incremental coding |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
 | `lean-proving` | Lean 4 formal verification — property bridge strategy, criteria-to-proposition translation, proof strategy ranking, companion tests, lake integration |
@@ -244,7 +243,6 @@ rnd-framework/
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
-│   ├── wellbeing-check.ts       # PostToolUse hook: suggests breaks after 45 minutes
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction

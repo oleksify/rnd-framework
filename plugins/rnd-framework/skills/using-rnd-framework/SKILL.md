@@ -52,7 +52,6 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:code-review` | Use when reviewing code changes — defines the six review categories, four severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-framework:kiss-practices` | Language-specific KISS rules to prevent over-engineering — load during Phase 0 discovery, read only the relevant language files |
 | `rnd-framework:fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
-| `rnd-framework:rnd-wellbeing` | Use at pipeline pause points to suggest breaks and encourage explained, incremental coding |
 | `rnd-framework:rnd-experiments` | Use when verifying — defines how verifiers write independent experiment tests from the spec alone |
 | `rnd-framework:lean-proving` | Use when verifying mathematical properties of Builder code using Lean 4 — translates pre-registration criteria into formal theorems, generates companion tests, runs lake build, and produces T<id>-proof-report.md for the Verifier |
 | `rnd-framework:rnd-calibration` | Use when recording verdict data — JSONL-based calibration stats with automatic false-verdict detection |

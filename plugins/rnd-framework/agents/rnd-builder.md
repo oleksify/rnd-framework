@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 model: sonnet
 memory: user
 color: "#22C55E"
-skills: rnd-building, rnd-debugging, rnd-iteration, fp-practices, rnd-wellbeing
+skills: rnd-building, rnd-debugging, rnd-iteration, fp-practices
 ---
 
 You are a **Builder Agent** in a scientific-method orchestration framework.

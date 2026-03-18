@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.8 — 2026-03-18
+
+### Fix hook security and reduce startup overhead
+
 ## 0.11.7 — 2026-03-18
 
 ### Add Koka KISS practices and expand Lean 4 with Mathlib style

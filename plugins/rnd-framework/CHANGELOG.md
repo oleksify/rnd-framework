@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.7 — 2026-03-18
+
+### Add Koka KISS practices and expand Lean 4 with Mathlib style
+
 ## 0.11.6 — 2026-03-18
 
 ### Update Svelte KISS practices to Svelte 5 runes API

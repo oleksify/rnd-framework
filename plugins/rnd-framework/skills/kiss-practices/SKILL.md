@@ -35,5 +35,6 @@ description: Language-specific KISS (Keep It Simple) rules to prevent over-engin
 | `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `${CLAUDE_SKILL_DIR}/postgresql.md` |
 | DuckDB usage, `*.duckdb` files, or analytical/data tasks | `${CLAUDE_SKILL_DIR}/duckdb.md` |
 | `*.lean`, `lakefile.lean`, `lean-toolchain` | `${CLAUDE_SKILL_DIR}/lean.md` |
+| `*.kk`, `koka.json` | `${CLAUDE_SKILL_DIR}/koka.md` |
 
 **Overriding:** Projects can ship their own `kiss-practices` skill in `.claude/skills/kiss-practices/SKILL.md` to override these defaults with project-specific rules.

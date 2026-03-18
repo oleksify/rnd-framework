@@ -3,13 +3,23 @@
 ## Proofs and Tactics
 
 - Don't use `sorry` as a placeholder — either close the proof or mark the claim as `axiom`
-- Don't use bare `simp` — use `simp [lemma1, lemma2]` with an explicit lemma list so proofs don't break silently on Mathlib updates
-- Don't nest tactic blocks more than 3 levels deep — extract intermediate results as `have` lemmas or standalone `lemma` declarations
+- Don't use bare `simp` — use `simp [lemma1, lemma2]` with an explicit lemma list so proofs don't break on Mathlib updates
+- Don't nest tactic blocks more than 3 levels deep — extract intermediate results as `have` lemmas
+- Place `by` at the end of the preceding line, never on its own line
+- Use focusing dots `·` for subgoals — one tactic per line, indent everything in the block
+- Don't squeeze terminal `simp` calls — unsqueezed is shorter and survives lemma renames
 
-## Decision Procedures and Computation
+## Types and Definitions
 
-- Don't use `decide` for large finite checks — use `native_decide` for runtime evaluation or write a structural proof
-- Don't define custom notation for one-off proofs — use the full name; notation is for reusable domain language, not convenience in a single file
+- Always explicitly declare argument types and return types — implicit inference obscures intent on GitHub/docs
+- Use `where` syntax for structure/class instances — not enclosing braces
+- Prefer arguments left of the colon over universal quantifiers
+- Default definitions to semireducible — use `abbrev` for reducible, `irreducible_def` only when profiling justifies it
+
+## Decision Procedures
+
+- Don't use `decide` for large finite checks — use `native_decide` for runtime evaluation
+- Don't define custom notation for one-off proofs — notation is for reusable domain language
 
 ## Imports
 
@@ -17,5 +27,12 @@
 
 ## Recursion
 
-- Don't write recursive functions without a `termination_by` clause when termination is not structurally obvious — Lean's default heuristic fails silently on complex recursion
-- Don't define `partial` functions to silence termination errors — prove termination or restructure the algorithm
+- Don't write recursive functions without `termination_by` when termination is not structurally obvious
+- Don't define `partial` functions to silence termination errors — prove termination or restructure
+
+## Style
+
+- Prefer `fun x ↦` over `λ` syntax — and `<|` over `$`
+- Keep lines to 100 characters maximum
+- Don't orphan parentheses — keep them with their arguments
+- Use `<|` and `|>` to reduce parenthesis nesting

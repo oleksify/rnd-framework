@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.10 — 2026-03-18
+
+### Adopt Claude Code v2.1.78 features
+
 ## 0.11.9 — 2026-03-18
 
 ### Fix Lean detection in Proof Gate for subagent PATH

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.11 — 2026-03-19
+
+### Adopt Claude Code v2.1.79 features
+
+Added `SessionEnd` hook (`hooks/session-end.ts`) that auto-clears the active RND session when a Claude Code session closes or switches via `/resume`. Previously, stale `.current-session` markers could persist because SessionEnd hooks didn't fire on `/resume` — fixed upstream in v2.1.79. Also documented `CLAUDE_CODE_PLUGIN_SEED_DIR` multi-directory support in README for org-wide plugin distribution. Upstream improvements to non-streaming API fallback (2-minute timeout) and enterprise 429 retry passively improve pipeline agent reliability.
+
 ## 0.11.10 — 2026-03-18
 
 ### Adopt Claude Code v2.1.78 features

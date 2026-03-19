@@ -18,12 +18,13 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # SessionStart bootstrap + PreToolUse + PostToolUse hook routing
+│   ├── hooks.json               # SessionStart + SessionEnd bootstrap + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
 │   ├── chunk-gate.ts            # Write/Edit hook: auto-allows .rnd/ paths, blocks planning-phase writes, enforces 30-line chunks
 │   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
 │   ├── session-start.ts         # SessionStart hook: injects skill context
+│   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context to agents
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
@@ -88,6 +89,8 @@ Skills are directories under `skills/` containing a `SKILL.md` with YAML frontma
 ### Session Bootstrap
 
 The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.ts`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
+
+The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.ts`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 
 ### Runtime Artifacts
 

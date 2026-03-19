@@ -316,7 +316,7 @@ function checkAgentSkillRefs(t: CategoryTracker, filePath: string, agentName: st
   if (!existsSync(filePath)) return 0;
   const content = readFileSync(filePath, "utf8");
   const refs = new Set<string>();
-  for (const m of content.matchAll(/rnd-framework:([a-z-]+)/g)) refs.add(m[1]);
+  for (const m of content.matchAll(/(?<!\/)rnd-framework:([a-z-]+)/g)) refs.add(m[1]);
   let count = 0;
   for (const refName of [...refs].sort()) {
     count++;

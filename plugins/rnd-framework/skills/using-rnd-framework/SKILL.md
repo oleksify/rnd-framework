@@ -26,6 +26,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-building` | Implementing code with TDD discipline |
 | `rnd-framework:rnd-verification` | Independent verification of built work |
 | `rnd-framework:rnd-debugging` | Root cause analysis for bugs and failures |
+| `rnd-framework:rnd-debug-pipeline` | Running the debug pipeline — 4-phase flow, diagnosis report, escalation criteria, Builder handoff |
 | `rnd-framework:rnd-scheduling` | Planning parallel execution waves from dependency analysis |
 | `rnd-framework:rnd-iteration` | Handling build-verify feedback loops |
 | `rnd-framework:rnd-scaling` | Choosing pipeline scale for task complexity |
@@ -70,6 +71,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused, implementable plans |
 | `/rnd-framework:narrative` | Generate a development narrative for a pipeline session from its artifacts |
+| `/rnd-framework:debug` | Debug pipeline: reproduce, diagnose, fix, verify |
 | `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
 
 ## Data Science Tasks

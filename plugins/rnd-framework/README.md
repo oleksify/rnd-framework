@@ -86,6 +86,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
 | `/rnd-framework:narrative` | Generate a development narrative for a pipeline session |
 | `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
+| `/rnd-framework:debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
 
 ## Skills
 
@@ -122,6 +123,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
 | `lean-proving` | Lean 4 formal verification — property bridge strategy, criteria-to-proposition translation, proof strategy ranking, companion tests, lake integration |
 | `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
+| `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 
 ## Agents
 
@@ -135,6 +137,7 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
+| `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
 
 ## Pipeline Scaling
 
@@ -142,6 +145,7 @@ Every task goes through the pipeline, scaled to complexity:
 
 | Complexity | Entry Point | What Happens |
 |---|---|---|
+| Bug (reported symptom) | `/rnd-framework:debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
 | Trivial (fix typo) | `/rnd-framework:quick` | Inline plan → build → verify |
 | Small (<1hr) | `/rnd-framework:quick` | 1 Builder + 1 Verifier |
 | Medium (1-4hr) | `/rnd-framework:start` | Planner + N Builders + N Verifiers + Integrator |
@@ -220,6 +224,8 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
         ├── plan.md                     # Task tree, pre-registrations, schedule
         ├── design-spec.md              # Approved architectural design spec (Design phase output)
+        ├── diagnosis/
+        │   └── T1-diagnosis.md         # Debugger's root cause analysis (debug pipeline only)
         ├── builds/
         │   ├── T1-manifest.md          # What the builder produced
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
@@ -241,8 +247,8 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 6 specialized agents
-├── commands/                    # 15 pipeline commands
+├── agents/                      # 7 specialized agents
+├── commands/                    # 18 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)

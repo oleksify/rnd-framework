@@ -38,6 +38,6 @@ describe("T15: no other command .md file has a model field", () => {
       if (frontmatter(content).includes("model:")) withModel.push(file);
     }
     withModel.sort();
-    expect(withModel).toEqual(["quick.md", "verify.md"]);
+    expect(withModel).toEqual(["debug.md", "quick.md", "verify.md"]);
   });
 });

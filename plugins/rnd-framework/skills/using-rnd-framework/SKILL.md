@@ -74,6 +74,18 @@ This is a scientific process. Results are true or false — never "almost true".
 | `/rnd-framework:debug` | Debug pipeline: reproduce, diagnose, fix, verify |
 | `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
 
+## Quick Mode (Inline)
+
+**When routing a task to quick mode, execute these steps directly. Do NOT invoke the Skill tool for `/rnd-framework:quick`.**
+
+1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)`
+2. **Write plan:** Save a brief pre-registration to `$RND_DIR/plan.md` — task, approach, success criteria
+3. **Build:** Implement the task with tests; follow `rnd-framework:rnd-building` discipline
+4. **Verify:** Spawn a verifier agent (subagent_type: "rnd-framework:rnd-verifier") with the pre-registration and built code
+5. **Iterate or ship:** Budget 2 cycles; if exhausted, escalate to `/rnd-framework:start`
+
+For the full `/rnd-framework:quick` experience (task suggestions, detailed iteration handling), invoke it directly.
+
 ## Data Science Tasks
 
 When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB as a computation backend — use the **`rnd-data-scientist` agent as a standalone specialist**. This agent replaces the standard Build phase for that task:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.19 — 2026-03-20
+
+### Remove chunk-gate hook and 30-line chunking workflow
+
+Delete chunk-gate.ts and its test, remove Write/Edit PreToolUse entries from hooks.json, remove .planning-phase marker from commands, update builder agent to use bypassPermissions, clean all chunk references from skills and docs.
+
 ## 0.11.18 — 2026-03-20
 
 ### Inline quick mode verification to avoid API rate limits

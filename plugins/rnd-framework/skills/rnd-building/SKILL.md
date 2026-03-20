@@ -61,6 +61,8 @@ ls "$RND_DIR/exploration/" 2>/dev/null && echo "exploration cache found"
 
 Read whichever files are relevant to your task. This is faster than re-reading source files the Planner already summarized.
 
+> **Known gotchas:** The orchestrator may inject "Known gotchas" context alongside your assignment — these are language-specific pitfalls captured from previous pipeline runs. Review them before writing any code and avoid the documented patterns. They represent real failures from prior builds, not hypothetical warnings.
+
 ### 2.75. Verify External Dependencies
 
 Before writing any code, verify every external dependency listed in the pre-registration's "External dependencies" field:

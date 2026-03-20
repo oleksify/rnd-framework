@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.15 — 2026-03-20
+
+### Add pipeline learning extraction
+
+Auto-captures non-obvious gotchas from iteration cycles to the user's Learning Library (`$CLAUDE_CONFIG_DIR/learnings/`). When a build fails verification and the fix reveals something non-obvious, the orchestrator extracts the gotcha and writes it to the appropriate language file. Builder prompts now include "Known gotchas" from matching learnings files, preventing agents from repeating known mistakes across sessions.
+
 ## 0.11.14 — 2026-03-20
 
 ### Add multi-session roadmapping

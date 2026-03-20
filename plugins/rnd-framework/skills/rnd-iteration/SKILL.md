@@ -44,6 +44,8 @@ When receiving verification feedback:
 6. **Update self-assessment** — Note what changed and why
 7. **Resubmit** — Same artifacts, updated code and tests
 
+> **Learning extraction:** After a successful iteration (re-verify returns PASS), the orchestrator extracts the root cause as a gotcha and writes it to the Learning Library via the `rnd-framework:rnd-learning` skill. This closes the feedback loop — the fix that unblocked this task becomes a "Known gotcha" that prevents the same failure in future builds.
+
 ## Iteration Budget
 
 | Tier | Max Iterations | Escalation |

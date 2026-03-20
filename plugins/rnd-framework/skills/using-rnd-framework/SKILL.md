@@ -30,6 +30,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-debug-pipeline` | Running the debug pipeline — 4-phase flow, diagnosis report, escalation criteria, Builder handoff |
 | `rnd-framework:rnd-scheduling` | Planning parallel execution waves from dependency analysis |
 | `rnd-framework:rnd-iteration` | Handling build-verify feedback loops |
+| `rnd-framework:rnd-learning` | Extracting or reading pipeline-discovered gotchas — auto-captures learnings from iteration cycles, injects them into builder prompts |
 | `rnd-framework:rnd-scaling` | Choosing pipeline scale for task complexity |
 | `rnd-framework:rnd-roadmapping` | Planning multi-session work — milestone decomposition, progress tracking, and roadmap lifecycle |
 | `rnd-framework:rnd-integration` | Merging verified outputs, system validation |

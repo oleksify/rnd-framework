@@ -145,6 +145,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
+| `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
 
 ## Agents
 

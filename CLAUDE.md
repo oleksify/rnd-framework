@@ -88,6 +88,8 @@ Skills are directories under `skills/` containing a `SKILL.md` with YAML frontma
 
 The `rnd-roadmapping` skill defines the roadmap.md format, milestone statuses, and how agents create and update roadmaps across sessions.
 
+The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to the user's Learning Library during iteration cycles.
+
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
 ### Session Bootstrap

@@ -169,11 +169,13 @@ For each wave in the execution schedule:
 
 1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
 
-2. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+2. **Inject learnings into builder prompts.** For each task in the wave, detect languages from the file extensions listed in the task's "Expected outputs" field (use the extension-to-language mapping from `rnd-framework:rnd-learning`). For each detected language, attempt to read `$CLAUDE_CONFIG_DIR/learnings/{language}.md`. If the file exists, append a `### Known gotchas for {language}` section to that task's builder prompt. If no learnings file exists for a language, skip silently — do not error or warn.
 
-3. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
+3. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. They can run in parallel since tasks within a wave have no cross-dependencies.
 
-4. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
+4. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
+
+5. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
 
    | Status code | Action |
    |-------------|--------|
@@ -182,7 +184,7 @@ For each wave in the execution schedule:
    | `NEEDS_CONTEXT` | Pause this task. Use `AskUserQuestion` to present the builder's stated context gap and ask the user to provide the missing information, restate the requirement, or skip the task. Re-dispatch the builder with the user's answer appended to the original prompt. Do not advance to Gate 2 until the builder returns `DONE` or `DONE_WITH_CONCERNS`. |
    | `BLOCKED` | Pause this task. Use `AskUserQuestion` to present the blocker description and offer escalation options: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". Apply the chosen action before advancing to Gate 2. |
 
-5. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+6. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
 
 **After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
 
@@ -265,7 +267,13 @@ If any tasks got FAIL:
 2. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
 3. The new Builder implements the fix and produces updated code, tests, and artifacts.
 4. Verifier re-checks (same information barrier rules).
-5. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
+5. **If re-verification returns PASS**, extract a learning from the cycle (invoke `rnd-framework:rnd-learning` for format and filing rules):
+   - **Gotcha:** what failed — from the Verifier's NEEDS_ITERATION feedback
+   - **Fix:** what changed — from the Builder's iteration diff
+   - **Language:** determined from file extensions of changed files, using the extension-to-language mapping in `rnd-learning`
+   - Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md` as `## Topic` + 1-3 terse bullets
+   - If the language file is new, create it with a `# {Language} Learnings` heading and add a link in `$CLAUDE_CONFIG_DIR/learnings/INDEX.md`
+6. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
    - "Re-plan this task" — send back to Planner for re-decomposition
    - "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
    - "Stop pipeline" — halt the pipeline for manual intervention

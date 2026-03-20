@@ -20,7 +20,6 @@ plugins/rnd-framework/
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd bootstrap + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
-│   ├── chunk-gate.ts            # Write/Edit hook: auto-allows .rnd/ paths, blocks planning-phase writes, enforces 30-line chunks
 │   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
 │   ├── session-start.ts         # SessionStart hook: injects skill context
@@ -63,7 +62,7 @@ All agents have `memory: user` (persistent cross-project learning), `skills` pre
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.ts`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
-- **Auto-allow `$RND_DIR` and plugin cache operations** (`chunk-gate.ts`, `read-gate.ts`, `prefer-tools.ts`): `Read`, `Write`, and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.ts` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
+- **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.ts`, `prefer-tools.ts`): `Read` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.ts` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
 - **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths
 - **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth
 - **Audit logging** (`audit-log.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
@@ -75,7 +74,7 @@ As of Claude Code v2.1.77, a PreToolUse hook returning `allow` no longer bypasse
 
 **deny rules > hook allow > default permission prompt**
 
-This affects the three hooks that auto-allow `.rnd/` operations: `read-gate.ts`, `chunk-gate.ts`, and `prefer-tools.ts`. If a user or enterprise policy has a deny rule covering `.rnd/` paths, those hooks' auto-allows will be silently overridden and permission prompts will reappear.
+This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.ts` and `prefer-tools.ts`. If a user or enterprise policy has a deny rule covering `.rnd/` paths, those hooks' auto-allows will be silently overridden and permission prompts will reappear.
 
 **Workaround:** Use the `allowRead` and `allowWrite` sandbox settings to explicitly re-allow `.rnd/` paths. These settings take precedence over deny rules and restore the intended auto-allow behavior:
 

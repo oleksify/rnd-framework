@@ -2,9 +2,8 @@
  * T8: permissionMode in agent frontmatter + removal from commands
  *
  * Tests verify:
- * 1. 5 non-builder agents contain permissionMode: bypassPermissions
- * 2. rnd-builder.md does NOT contain permissionMode (chunk-gate must apply)
- * 3. No command .md contains mode: "bypassPermissions"
+ * 1. All 6 agents contain permissionMode: bypassPermissions
+ * 2. No command .md contains mode: "bypassPermissions"
  * 4. start.md no longer contains the builder-specific bypass prose
  * 5. verify.md note about bypassPermissions is updated
  * 6. validate.ts passes
@@ -19,16 +18,17 @@ const PLUGIN_ROOT = join(import.meta.dir, "..");
 const AGENTS_DIR = join(PLUGIN_ROOT, "agents");
 const COMMANDS_DIR = join(PLUGIN_ROOT, "commands");
 
-const NON_BUILDER_AGENTS = [
+const ALL_AGENTS = [
   "rnd-planner.md",
   "rnd-verifier.md",
   "rnd-integrator.md",
   "rnd-data-scientist.md",
   "rnd-proof-gate.md",
+  "rnd-builder.md",
 ];
 
-describe("T8: non-builder agents have permissionMode: bypassPermissions", () => {
-  for (const agentFile of NON_BUILDER_AGENTS) {
+describe("T8: all agents have permissionMode: bypassPermissions", () => {
+  for (const agentFile of ALL_AGENTS) {
     test(`${agentFile} contains permissionMode: bypassPermissions`, async () => {
       const content = await readFile(join(AGENTS_DIR, agentFile), "utf-8");
       expect(content).toContain("permissionMode: bypassPermissions");
@@ -36,19 +36,7 @@ describe("T8: non-builder agents have permissionMode: bypassPermissions", () => 
   }
 });
 
-describe("T8: rnd-builder does NOT have permissionMode (chunk-gate enforcement)", () => {
-  test("rnd-builder.md does not contain permissionMode: bypassPermissions", async () => {
-    const content = await readFile(join(AGENTS_DIR, "rnd-builder.md"), "utf-8");
-    expect(content).not.toContain("permissionMode: bypassPermissions");
-  });
-  test("rnd-builder.md does not contain permissionMode at all", async () => {
-    const content = await readFile(join(AGENTS_DIR, "rnd-builder.md"), "utf-8");
-    expect(content).not.toContain("permissionMode");
-  });
-});
-
 describe("T8: no command file uses mode: bypassPermissions", () => {
-  const COMMAND_GLOB = join(COMMANDS_DIR, "*.md");
   test("grep for mode: bypassPermissions in commands returns no matches", async () => {
     const { readdirSync, readFileSync } = await import("node:fs");
     const files = readdirSync(COMMANDS_DIR).filter((f) => f.endsWith(".md"));

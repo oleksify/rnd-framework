@@ -283,7 +283,7 @@ export async function createTempRndDir(): Promise<TempRndDir> {
 // Input builders
 // ---------------------------------------------------------------------------
 
-/** Write hook input payload (chunk-gate, slop-gate). */
+/** Write hook input payload (slop-gate). */
 export function writeInput(filePath: string, content: string): unknown {
   return { tool_name: "Write", tool_input: { file_path: filePath, content } };
 }

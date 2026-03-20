@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.18 — 2026-03-20
+
+### Inline quick mode verification to avoid API rate limits
+
+Quick mode now verifies inline instead of spawning a separate verifier agent. Reduces API calls from 3+ to 1 per pipeline run, preventing 429 rate limit errors.
+
 ## 0.11.17 — 2026-03-20
 
 ### Add deterministic pattern extraction and multiline slop gate analysis

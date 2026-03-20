@@ -2,6 +2,7 @@
 name: rnd-failure-modes
 description: Use when verifying work or reviewing your own reasoning — a catalog of failure modes and anti-patterns that cause false PASSes, missed defects, and broken quality gates
 user-invocable: false
+effort: low
 ---
 
 # R&D Failure Modes

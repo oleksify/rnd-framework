@@ -2,6 +2,7 @@
 description: "Run independent multi-judge verification on a built task. Two verifier agents check output against pre-registered criteria independently; a tiebreaker resolves disagreement."
 argument-hint: "<task ID like T3, or 'wave-2' to verify all tasks in a wave>"
 model: opus
+effort: high
 ---
 
 # R&D Framework: Verify

@@ -3,6 +3,7 @@ name: rnd-design
 description: "Use when exploring architectural alternatives before planning — generates 2-3 design options with trade-off evaluation, produces a design-spec.md artifact, and gates on explicit user approval before planning proceeds"
 user-invocable: false
 context: fork
+effort: medium
 ---
 
 # R&D Design Exploration

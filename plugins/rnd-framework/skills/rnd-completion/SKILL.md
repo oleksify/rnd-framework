@@ -2,6 +2,7 @@
 name: rnd-completion
 description: "Use after final SHIP verdict — guides branch management, PR creation, cleanup of .rnd/ artifacts, and development branch completion"
 user-invocable: false
+effort: low
 ---
 
 # R&D Completion

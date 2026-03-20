@@ -2,6 +2,7 @@
 name: rnd-decomposition
 description: "Use when breaking a complex task into sub-tasks with pre-registration documents — structured hierarchical decomposition, dependency analysis, and testable success criteria"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Decomposition

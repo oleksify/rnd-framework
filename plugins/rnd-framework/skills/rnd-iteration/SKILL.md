@@ -2,6 +2,7 @@
 name: rnd-iteration
 description: "Use when handling build-verify feedback loops — receiving verification feedback, iteration budgets, escalation to re-planning"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Iteration

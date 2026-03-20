@@ -2,6 +2,7 @@
 name: rnd-building
 description: "Use when implementing code within the R&D pipeline — TDD discipline, pre-registration compliance, honest self-assessment, and verification artifact production"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Building

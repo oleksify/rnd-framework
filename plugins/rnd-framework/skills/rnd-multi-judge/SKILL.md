@@ -2,6 +2,7 @@
 name: rnd-multi-judge
 description: "Use when running independent multi-judge verification with consensus logic — spawns 2 verifier agents, aggregates verdicts, and triggers a tiebreaker on disagreement"
 user-invocable: false
+effort: medium
 ---
 
 # Multi-Judge Consensus Verification

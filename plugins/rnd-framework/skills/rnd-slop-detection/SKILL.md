@@ -2,6 +2,7 @@
 name: rnd-slop-detection
 description: "Use when interpreting slop gate findings, remediating flagged anti-patterns in code, or understanding how the structural quality signal integrates with the verification pipeline"
 user-invocable: false
+effort: low
 ---
 
 # R&D Slop Detection

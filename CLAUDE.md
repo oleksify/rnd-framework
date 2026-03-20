@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Claude Code plugin repository containing the **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 
-The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references it.
+The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references it. Alternatively, the plugin can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
 ## Repository Layout
 
@@ -32,7 +32,8 @@ plugins/rnd-framework/
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
-│   └── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
+│   ├── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
+│   └── statusline.ts            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
@@ -83,7 +84,7 @@ This affects the three hooks that auto-allow `.rnd/` operations: `read-gate.ts`,
 
 ### Skill System
 
-Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`). Claude Code's native plugin system discovers skills by directory convention.
+Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`, `effort`). Claude Code's native plugin system discovers skills by directory convention. The `effort` field (added in v2.1.80) overrides the model's reasoning effort when the skill is invoked: `low` for reference/guidance skills, `medium` for procedural workflows. Commands also support `effort` frontmatter: `low` for read-only operations, `medium` for moderate reasoning, `high` for deep multi-agent orchestration.
 
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
@@ -125,7 +126,7 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 
 ## Key Conventions
 
-- **Skills use YAML frontmatter** — `name` and `description` fields between `---` delimiters
+- **Skills use YAML frontmatter** — `name`, `description`, and `effort` fields between `---` delimiters
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
 - **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, `tools`, `memory`, `color`, `skills`, and optionally `disallowedTools`, `maxTurns`
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`

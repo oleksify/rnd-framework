@@ -25,6 +25,25 @@ Update to the latest version:
 /plugin update rnd-framework@rnd-framework-plugins
 ```
 
+### Inline declaration via settings.json (v2.1.80+)
+
+Claude Code v2.1.80 added support for declaring plugins directly in `settings.json` without going through the marketplace. This is useful for local development or pinning a specific directory.
+
+Add to `.claude/settings.json` (project-level) or `~/.claude/settings.json` (global):
+
+```json
+{
+  "enabledPlugins": {
+    "rnd-framework": {
+      "source": "settings",
+      "path": "./plugins/rnd-framework"
+    }
+  }
+}
+```
+
+The `path` is resolved relative to the settings file's location. Use an absolute path if the plugin lives outside the project tree.
+
 ## Organization-Wide Seeding
 
 For teams that want to pre-install the plugin across all machines, set `CLAUDE_CODE_PLUGIN_SEED_DIR` to a directory containing the plugin. Multiple seed directories can be separated by `:` (Unix) or `;` (Windows):
@@ -256,14 +275,15 @@ rnd-framework/
 │   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
-    │   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
+│   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
 │   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
 │   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context
 │   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
-│   └── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
+│   ├── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
+│   └── statusline.ts            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/

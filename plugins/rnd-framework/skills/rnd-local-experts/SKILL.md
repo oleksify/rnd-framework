@@ -3,6 +3,7 @@ name: rnd-local-experts
 description: "Use when discovering and surfacing project-local agents and skills from the target project's .claude/ directory — scan, read frontmatter, and present a structured summary for the Planner to reference in pre-registrations"
 user-invocable: false
 context: fork
+effort: low
 ---
 
 # R&D Local Expert Discovery

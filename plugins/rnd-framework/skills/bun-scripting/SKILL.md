@@ -1,6 +1,7 @@
 ---
 name: bun-scripting
 description: Use when writing helper scripts, utility tasks, or automation within the R&D pipeline — prefer Bun (TypeScript) over Python when available
+effort: low
 ---
 
 # Bun as Preferred Scripting Runtime

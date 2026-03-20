@@ -1,5 +1,6 @@
 ---
 description: "Check runtime environment readiness: CLI tools, hook scripts, artifact directory, plugin registration, version sync, and Julia MCP tools."
+effort: low
 ---
 
 # R&D Framework: Doctor

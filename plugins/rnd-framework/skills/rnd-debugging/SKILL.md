@@ -2,6 +2,7 @@
 name: rnd-debugging
 description: "Use when encountering any bug, test failure, or unexpected behavior within the R&D pipeline — systematic root cause analysis before proposing fixes"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Debugging

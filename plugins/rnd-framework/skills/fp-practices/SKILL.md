@@ -1,6 +1,7 @@
 ---
 name: fp-practices
 description: "Use alongside KISS practices to guide agents toward functional programming patterns — pure functions, data transformations, composition, command-query separation, and immutability"
+effort: low
 ---
 
 # Functional Programming Practices

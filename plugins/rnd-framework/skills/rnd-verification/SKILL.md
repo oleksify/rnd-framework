@@ -3,6 +3,7 @@ name: rnd-verification
 description: "Use when independently verifying built work against pre-registered criteria — information-barrier verification with evidence-based verdicts and failure mode analysis"
 user-invocable: false
 allowed-tools: [Read, Write, Bash, Grep, Glob]
+effort: medium
 ---
 
 # R&D Verification

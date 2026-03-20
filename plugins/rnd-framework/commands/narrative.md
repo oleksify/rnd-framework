@@ -1,6 +1,7 @@
 ---
 description: "Generate a development narrative for a pipeline session — a prose story of what was built, key decisions, obstacles, insights, and what's left."
 argument-hint: "[session ID like 20260314-090202-b54e | empty for most recent session]"
+effort: low
 ---
 
 # R&D Framework: Development Narrative

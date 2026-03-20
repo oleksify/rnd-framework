@@ -2,6 +2,7 @@
 description: "Debug pipeline: reproduce a bug, diagnose root cause, fix, and verify. Dedicated debugger agent for investigation, Builder for fix."
 argument-hint: "<bug description or symptom>"
 model: opus
+effort: high
 ---
 
 # R&D Framework: Debug Mode

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.13 — 2026-03-20
+
+### Adopt Claude Code v2.1.80 features
+
+Added `effort` frontmatter to all 30 skills and 18 commands — low for reference/guidance, medium for procedural workflows, high for orchestration commands. This lets Claude Code adjust reasoning effort per skill/command invocation, saving tokens on simple operations. Added statusline script (`hooks/statusline.ts`) that displays rate limit usage (5h/7d windows) and current pipeline phase in the Claude Code status bar. Documented `source: 'settings'` inline plugin declaration in README as an alternative to marketplace installation.
+
 ## 0.11.11 — 2026-03-19
 
 ### Adopt Claude Code v2.1.79 features

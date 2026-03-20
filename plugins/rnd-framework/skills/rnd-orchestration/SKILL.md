@@ -2,6 +2,7 @@
 name: rnd-orchestration
 description: "Use when coordinating multi-agent R&D pipeline execution — provides pipeline overview, agent roles, information barriers, and gate criteria"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Orchestration Framework

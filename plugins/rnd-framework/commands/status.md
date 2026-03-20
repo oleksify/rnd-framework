@@ -1,5 +1,6 @@
 ---
 description: "Show the current status of the R&D pipeline: which tasks are planned, built, verified, integrated, or stuck in iteration."
+effort: low
 ---
 
 # R&D Framework: Status

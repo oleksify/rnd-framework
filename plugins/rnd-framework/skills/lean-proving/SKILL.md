@@ -1,6 +1,7 @@
 ---
 name: lean-proving
 description: "Use when verifying mathematical properties of Builder code using Lean 4 — translates pre-registration criteria into formal theorems, generates companion tests, runs lake build, and produces T<id>-proof-report.md for the Verifier"
+effort: medium
 ---
 
 # Lean Proving

@@ -1,6 +1,7 @@
 ---
 description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Schedule → Build → Verify → Integrate."
 argument-hint: "<description of the feature, refactor, or bug fix>"
+effort: high
 ---
 
 # R&D Framework: Full Pipeline

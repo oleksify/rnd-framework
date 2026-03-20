@@ -2,6 +2,7 @@
 name: rnd-debug-pipeline
 description: "Use when running the debug pipeline for a reported bug — defines the 4-phase flow, diagnosis report format, escalation criteria, and Builder handoff"
 user-invocable: false
+effort: medium
 ---
 
 # R&D Debug Pipeline

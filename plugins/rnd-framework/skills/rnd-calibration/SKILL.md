@@ -2,6 +2,7 @@
 name: rnd-calibration
 description: "Use when recording verdict data, detecting false verdicts, or injecting calibration stats into verifier prompts — enables the framework to learn from verification mistakes over time"
 user-invocable: false
+effort: low
 ---
 
 # R&D Calibration

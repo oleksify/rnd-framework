@@ -1,6 +1,7 @@
 ---
 description: "Run only the Planning phase: decompose a task into sub-tasks with pre-registration documents, dependency matrix, and execution schedule."
 argument-hint: "<description of the feature, refactor, or bug fix>"
+effort: high
 ---
 
 # R&D Framework: Plan Only

@@ -1,6 +1,7 @@
 ---
 description: "Bump the plugin patch version and add a CHANGELOG entry. Stages plugin.json and CHANGELOG.md, then offers to commit and optionally tag."
 argument-hint: "<changelog headline> [--- <optional description>]"
+effort: low
 ---
 
 # R&D Framework: Bump Version

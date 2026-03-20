@@ -1,6 +1,7 @@
 ---
 name: kiss-practices
 description: Language-specific KISS (Keep It Simple) rules to prevent over-engineering. Load during Phase 0 discovery — detect project languages and read only the relevant files via `${CLAUDE_SKILL_DIR}/<lang>.md`.
+effort: low
 ---
 
 # KISS Practices

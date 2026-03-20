@@ -1,5 +1,6 @@
 ---
 description: "Resume a partially-completed R&D pipeline from where it left off by scanning artifacts and reconstructing task state."
+effort: medium
 ---
 
 # R&D Framework: Resume

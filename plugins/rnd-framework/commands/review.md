@@ -1,6 +1,7 @@
 ---
 description: "Review recent code changes with multi-judge evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, and style issues."
 argument-hint: "[commit range like HEAD~3..HEAD | directory path | empty for uncommitted changes]"
+effort: high
 ---
 
 # R&D Framework: Code Review

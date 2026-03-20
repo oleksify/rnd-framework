@@ -1,5 +1,6 @@
 ---
 description: "Validate plugin structure: frontmatter, JSON files, hook references, and cross-references."
+effort: low
 ---
 
 # Validate Plugin Structure

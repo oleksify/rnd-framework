@@ -1,6 +1,7 @@
 ---
 name: writing-skills
 description: Use when creating new skills for the rnd-framework plugin — skill file format, frontmatter conventions, and best practices
+effort: low
 ---
 
 # Writing Skills

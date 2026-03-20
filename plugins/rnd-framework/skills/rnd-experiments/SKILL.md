@@ -3,6 +3,7 @@ name: rnd-experiments
 description: "Use when independently verifying built work — defines how verifiers write experiment tests from the spec alone before reading Builder code, preventing false PASSes through mandatory independent validation"
 user-invocable: false
 allowed-tools: [Read, Write, Bash, Grep, Glob]
+effort: medium
 ---
 
 # R&D Experiments

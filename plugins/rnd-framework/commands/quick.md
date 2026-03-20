@@ -2,6 +2,7 @@
 description: "Lightweight R&D mode for small tasks (<1hr). Same principles, collapsed workflow: quick plan → build → independent verify. One Builder, one Verifier."
 argument-hint: "<description of the small task>"
 model: sonnet
+effort: medium
 ---
 
 # R&D Framework: Quick Mode

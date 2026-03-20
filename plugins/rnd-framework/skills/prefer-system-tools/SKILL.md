@@ -1,6 +1,7 @@
 ---
 name: prefer-system-tools
 description: Use when about to write a helper script — check if a native CLI tool can do it directly before reaching for Bun or Python
+effort: low
 ---
 
 # Prefer System Tools Over Scripts

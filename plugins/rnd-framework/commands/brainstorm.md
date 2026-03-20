@@ -1,6 +1,7 @@
 ---
 description: "Brainstorm and refine a vague idea into a focused, implementable plan through structured conversational questioning."
 argument-hint: "[vague idea or topic | empty to start from scratch]"
+effort: medium
 ---
 
 # R&D Framework: Brainstorm

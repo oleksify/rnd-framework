@@ -1,6 +1,7 @@
 ---
 description: "Audit the full codebase with multi-judge evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, and style issues across all tracked files."
 argument-hint: "[optional focus area like \"security\" or \"tests\" | empty for full audit]"
+effort: high
 ---
 
 # R&D Framework: Codebase Audit

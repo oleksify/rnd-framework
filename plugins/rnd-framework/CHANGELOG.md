@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.16 — 2026-03-20
+
+### Add pre-commit code formatting step
+
+New `rnd-formatting` skill that detects the project's code formatter (biome, prettier, mix format, cargo fmt, ruff, gofmt, etc.) from config files and runs it on pipeline-changed files. Runs automatically before doc-polish in both `/start` Phase 6 and `/quick` Step 4. Formatter detection is config-based — never assumes a default. Formatting failures are advisory and do not block the pipeline.
+
 ## 0.11.15 — 2026-03-20
 
 ### Add pipeline learning extraction

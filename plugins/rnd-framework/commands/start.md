@@ -325,7 +325,9 @@ Summarize results for the user:
 - Final integration status
 - Remaining concerns or recommendations
 
-**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete.
+**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. This detects the project's formatter (biome, prettier, mix format, cargo fmt, etc.) and runs it on files changed by the pipeline. Report what was formatted (or that no formatter was detected). If you skip this step, pipeline-written code may not match the project's style.
+
+**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` AFTER formatting but BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete.
 
 Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline

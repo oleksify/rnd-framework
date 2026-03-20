@@ -90,6 +90,8 @@ The `rnd-roadmapping` skill defines the roadmap.md format, milestone statuses, a
 
 The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to the user's Learning Library during iteration cycles.
 
+The `rnd-formatting` skill detects the project's code formatter and runs it on pipeline-changed files before doc-polish and committing.
+
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
 ### Session Bootstrap

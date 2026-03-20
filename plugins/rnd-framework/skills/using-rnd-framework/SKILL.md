@@ -35,7 +35,8 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-roadmapping` | Planning multi-session work — milestone decomposition, progress tracking, and roadmap lifecycle |
 | `rnd-framework:rnd-integration` | Merging verified outputs, system validation |
 | `rnd-framework:rnd-completion` | Post-SHIP branch management and PR creation |
-| `rnd-framework:rnd-doc-polish` | Use after SHIP before committing — checks and updates CLAUDE.md, README.md, project docs, and stale inline comments |
+| `rnd-framework:rnd-formatting` | Use before doc-polish and committing — detects the project's formatter and runs it on pipeline-changed files |
+| `rnd-framework:rnd-doc-polish` | Use after formatting, before committing — checks and updates CLAUDE.md, README.md, project docs, and stale inline comments |
 | `rnd-framework:writing-skills` | Creating new skills for the framework |
 | `rnd-framework:prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
 | `rnd-framework:bun-scripting` | Writing helper scripts — prefer Bun over Python when available |

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.17 — 2026-03-20
+
+### Add deterministic pattern extraction and multiline slop gate analysis
+
+Fix slop gate not catching project-specific CLAUDE.md rule violations. New lib/extract-patterns.ts runs in all commands for reliable coverage. Multiline pattern support in slop-gate.ts enables cross-line detection.
+
 ## 0.11.16 — 2026-03-20
 
 ### Add pre-commit code formatting step

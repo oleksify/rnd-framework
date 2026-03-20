@@ -58,6 +58,12 @@ if [ "$FLAG" = "--base" ]; then
   exit 0
 fi
 
+# --- Handle --roadmap flag ---
+if [ "$FLAG" = "--roadmap" ]; then
+  echo "${BASE_DIR}/roadmap.md"
+  exit 0
+fi
+
 # --- Handle --finish flag ---
 if [ "$FLAG" = "--finish" ]; then
   rm -f "$SESSION_FILE"

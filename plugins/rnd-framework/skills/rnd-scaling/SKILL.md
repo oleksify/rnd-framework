@@ -58,6 +58,16 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 1. Full pipeline + design review gate between Plan and Schedule
 2. Sub-waves within large waves
 
+### Multi-session (multiple days, independent deliverables)
+
+**Entry:** `/rnd-framework:roadmap`
+**Process:**
+1. Decompose the broad goal into milestones via the Planner in roadmap mode
+2. Each milestone = one pipeline session via `/rnd-framework:start`
+3. After each session's SHIP verdict, update roadmap.md and start the next milestone
+
+**Verification:** Per-session — each milestone goes through the full pipeline independently
+
 ### High-Stakes (security, financial, data integrity)
 
 **Entry:** `/rnd-framework:start`
@@ -81,6 +91,9 @@ Does it involve multiple components or files?
 
 Will it take more than a day?
   -> Large tier
+
+Will it span multiple sessions/days with independent deliverables?
+  -> Multi-session tier
 
 Could a failure cause security/financial/data harm?
   -> High-stakes tier

@@ -31,6 +31,7 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-scheduling` | Planning parallel execution waves from dependency analysis |
 | `rnd-framework:rnd-iteration` | Handling build-verify feedback loops |
 | `rnd-framework:rnd-scaling` | Choosing pipeline scale for task complexity |
+| `rnd-framework:rnd-roadmapping` | Planning multi-session work — milestone decomposition, progress tracking, and roadmap lifecycle |
 | `rnd-framework:rnd-integration` | Merging verified outputs, system validation |
 | `rnd-framework:rnd-completion` | Post-SHIP branch management and PR creation |
 | `rnd-framework:rnd-doc-polish` | Use after SHIP before committing — checks and updates CLAUDE.md, README.md, project docs, and stale inline comments |
@@ -58,6 +59,7 @@ This is a scientific process. Results are true or false — never "almost true".
 |---------|---------|
 | `/rnd-framework:start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
 | `/rnd-framework:plan <task>` | Planning only — decompose and pre-register |
+| `/rnd-framework:roadmap` | Plan and manage multi-session roadmaps for large tasks spanning multiple days |
 | `/rnd-framework:build <target>` | Build a task or wave |
 | `/rnd-framework:verify <target>` | Independent verification |
 | `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor — detects architecture, security, correctness, testing, KISS, and style issues |

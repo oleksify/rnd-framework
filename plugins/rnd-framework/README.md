@@ -106,6 +106,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:narrative` | Generate a development narrative for a pipeline session |
 | `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
 | `/rnd-framework:debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
+| `/rnd-framework:roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
 
 ## Skills
 
@@ -143,6 +144,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `lean-proving` | Lean 4 formal verification — property bridge strategy, criteria-to-proposition translation, proof strategy ranking, companion tests, lake integration |
 | `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
+| `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
 
 ## Agents
 
@@ -170,6 +172,26 @@ Every task goes through the pipeline, scaled to complexity:
 | Medium (1-4hr) | `/rnd-framework:start` | Planner + N Builders + N Verifiers + Integrator |
 | Large (multi-day) | `/rnd-framework:start` | Full pipeline + design review gate |
 | High-stakes | `/rnd-framework:start` | Full pipeline + dual independent verification |
+
+## Roadmapping (Multi-Session Tasks)
+
+For tasks that span multiple days or sessions, use `/rnd-framework:roadmap` to decompose the work into milestones before starting any pipeline session.
+
+```
+> /rnd-framework:roadmap Add full authentication system with OAuth, RBAC, and audit logging
+  [Planner decomposes into milestones and writes roadmap.md at the project base]
+  [Shows milestone list with statuses]
+
+> /rnd-framework:roadmap   # run again to continue
+  [Identifies next NOT_STARTED milestone, transitions to IN_PROGRESS]
+  [Routes to /rnd-framework:start with milestone scope]
+```
+
+**Milestone lifecycle:** `NOT_STARTED` → `IN_PROGRESS` → `DONE` (or `SKIPPED`)
+
+Each milestone is one `/rnd-framework:start` session. After a SHIP verdict, the `rnd-completion` skill marks the milestone DONE and records the session ID. The `/start` command detects an existing roadmap in Phase 0 and scopes the session to the current milestone.
+
+See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 
 ## Typical Workflow
 

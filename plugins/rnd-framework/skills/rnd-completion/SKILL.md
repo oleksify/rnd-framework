@@ -29,7 +29,21 @@ Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdi
 >
 > **Session-scoped:** `$RND_DIR` points to a session subdirectory (`<base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`), not the project base. Previous sessions remain on disk and can be browsed with `/rnd-framework:history`.
 
-### 2. Handle Session Completion
+### 2. Update Roadmap (if linked)
+
+If a roadmap milestone is linked to this session, mark it complete:
+
+```bash
+ROADMAP="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap)"
+```
+
+- If `$ROADMAP` points to an existing `roadmap.md` with an `IN_PROGRESS` milestone:
+  - Change its status to `DONE`, record the session ID and a brief summary of deliverables, and update the "Last updated" date
+  - Show the updated roadmap progress to the user
+  - Use `AskUserQuestion` to offer: "Start next milestone (Recommended)", "Finish session", "Review roadmap"
+- If no roadmap exists or no `IN_PROGRESS` milestone: skip silently
+
+### 3. Handle Session Completion
 
 After a SHIP verdict, offer the user these distinct options:
 
@@ -49,19 +63,19 @@ rm -rf "$RND_DIR"
 
 > Finishing a session and cleaning up are independent. Most users will want to finish the session (to start fresh next time) but keep artifacts for audit trails. Use `AskUserQuestion` to present these as explicit choices.
 
-### 3. Clean Up R&D Artifacts
+### 4. Clean Up R&D Artifacts
 
 The "Clean up" option removes `$RND_DIR` (the current session directory). Only do this if the artifacts are no longer needed — verification reports and build manifests can be useful references after merging.
 
 No `.gitignore` changes needed — pipeline artifacts are stored outside the project directory and are never at risk of being committed.
 
-### 4. Create Final Commit
+### 5. Create Final Commit
 
 Stage all verified changes. Write a clear commit message summarizing the feature/fix.
 
 Pipeline artifacts in `$RND_DIR` are outside the project tree and cannot be accidentally staged.
 
-### 5. Branch Management
+### 6. Branch Management
 
 **Don't assume GitHub.** Check `git remote get-url origin` to determine the hosting platform. The remote could be GitLab, Gitea, Codeberg, Forgejo, Tangled, or any other host. Use the appropriate CLI or web workflow — `gh` is GitHub-only, `glab` is GitLab-only, etc. When in doubt, ask the user.
 
@@ -70,7 +84,7 @@ Options:
 - **Create PR/MR** — Push branch, create pull/merge request with summary from integration report
 - **Keep branch** — If more work is planned on this branch
 
-### 6. Report to User
+### 7. Report to User
 
 Summarize:
 - What was built and verified

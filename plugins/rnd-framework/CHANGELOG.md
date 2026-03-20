@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.14 — 2026-03-20
+
+### Add multi-session roadmapping
+
+New `/rnd-framework:roadmap` command and `rnd-roadmapping` skill for planning work that spans multiple sessions across multiple days. A roadmap decomposes a broad goal into milestones (3-7), each executed as a separate pipeline session via `/start`. The `/start` command now checks for existing roadmaps in Phase 0 and suggests the next milestone. Session completion (`rnd-completion`) automatically updates the roadmap after SHIP verdicts. Added `--roadmap` flag to `rnd-dir.sh` for path resolution and a "Multi-session" tier to `rnd-scaling`.
+
 ## 0.11.13 — 2026-03-20
 
 ### Adopt Claude Code v2.1.80 features

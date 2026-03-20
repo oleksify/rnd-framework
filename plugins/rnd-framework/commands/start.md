@@ -69,9 +69,21 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 > **Note:** Quick mode (`/rnd-framework:quick`) skips these skill invocations and applies KISS/FP principles inline to reduce API call overhead.
 
-5. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+5. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
-6. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
+   - **If `roadmap.md` exists:** Read it and display milestone progress (DONE / IN_PROGRESS / NOT_STARTED). Identify the current or next milestone. Use `AskUserQuestion` with options:
+     - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task, proceed to Phase 0.5/1
+     - "Start a different task" — continue with the original `$ARGUMENTS`, ignoring the roadmap
+     - "Manage roadmap" — route to `/rnd-framework:roadmap`
+   - **If `roadmap.md` does not exist:** Based on your codebase exploration, evaluate whether the task seems like a multi-day effort (many components, broad scope, multiple subsystems). If multi-day, use `AskUserQuestion` with options:
+     - "Create a roadmap first (Recommended)" — route to `/rnd-framework:roadmap` with the task description
+     - "Proceed as single session" — continue normal pipeline
+
+     If it seems single-session, skip silently.
+
+6. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+
+7. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
    - **Scope:** What's in and what's out? Any specific files, modules, or areas to focus on or avoid?
    - **Patterns:** Should this follow an existing pattern in the codebase, or introduce a new approach?
    - **Constraints:** Performance requirements, compatibility needs, or dependencies to be aware of?
@@ -79,7 +91,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
    Keep questions concrete — provide 2-4 options per question based on what you discovered in the codebase, not generic open-ended asks.
 
-7. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) KISS rules for the project's tech stack, (d) user answers, (e) any constraints discovered. This context is passed to the Planner.
+8. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) KISS rules for the project's tech stack, (d) user answers, (e) any constraints discovered. This context is passed to the Planner.
 
 **Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 0.5. When in doubt, ask — a few questions now prevents re-planning later.
 

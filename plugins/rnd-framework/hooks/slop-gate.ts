@@ -30,6 +30,7 @@ interface SlopPattern {
   category: string;
   description: string;
   remediation: string;
+  multiline?: boolean;
 }
 
 interface PatternCatalog {
@@ -63,18 +64,21 @@ function analyzeContent(content: string, patterns: SlopPattern[]): Match[] {
   const lines = content.split("\n");
   const matches: Match[] = [];
 
-  for (const pattern of patterns) {
+  for (const pattern of patterns.filter((p) => !p.multiline)) {
     let regex: RegExp;
-    try {
-      regex = new RegExp(pattern.regex);
-    } catch {
-      // Skip invalid regex patterns
-      continue;
-    }
+    try { regex = new RegExp(pattern.regex); } catch { continue; }
     for (let i = 0; i < lines.length; i++) {
       if (regex.test(lines[i])) {
         matches.push({ pattern_id: pattern.id, line: i + 1, snippet: lines[i].trim().slice(0, 120), severity: pattern.severity });
       }
+    }
+  }
+  for (const pattern of patterns.filter((p) => p.multiline)) {
+    let regex: RegExp;
+    try { regex = new RegExp(pattern.regex, "s"); } catch { continue; }
+    const hit = regex.exec(content);
+    if (hit) {
+      matches.push({ pattern_id: pattern.id, line: 0, snippet: hit[0].trim().slice(0, 120), severity: pattern.severity });
     }
   }
   return matches;

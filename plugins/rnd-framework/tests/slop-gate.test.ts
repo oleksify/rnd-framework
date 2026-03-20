@@ -871,6 +871,76 @@ describe("slop-gate: pipeline artifacts — no active session", () => {
 });
 
 // ---------------------------------------------------------------------------
+// slop-gate: end-to-end project pattern detection (T5)
+// ---------------------------------------------------------------------------
+
+const EXTRACT_SCRIPT = join(import.meta.dir, "..", "lib", "extract-patterns.ts");
+
+describe("slop-gate: end-to-end project pattern detection", () => {
+  test("extract-patterns.ts + slop-gate: pattern from CLAUDE.md triggers advisory", async () => {
+    const env = await createSlopTestEnv(true);
+    const projectDir = await mkdtemp(join(tmpdir(), "slop-e2e-project-"));
+    try {
+      // CLAUDE.md with "No `any`" rule
+      await writeFile(join(projectDir, "CLAUDE.md"), "# Rules\n- No `any` type usage\n", "utf-8");
+      // Run extract-patterns.ts with cwd=projectDir so it finds the CLAUDE.md
+      const extractProc = Bun.spawn(
+        ["bun", "run", EXTRACT_SCRIPT, env.sessionDir],
+        { cwd: projectDir, stdout: "pipe", stderr: "pipe" },
+      );
+      await extractProc.exited;
+      // Feed code containing `any` to slop gate
+      const code = "function foo(x: any): any { return x; }\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/foo.ts", code),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+      expect(result.stdout).not.toBe("");
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("any");
+    } finally {
+      await env.cleanup();
+      await rm(projectDir, { recursive: true, force: true });
+    }
+  });
+
+  test("multiline project pattern in project-patterns.json triggers advisory", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      const multilinePattern = {
+        patterns: [{
+          id: "no-early-returns",
+          name: "No early returns",
+          regex: "return[^;]+;[\\s\\S]*?return[^;]+;",
+          severity: 3,
+          category: "project-standard",
+          description: "Rule from CLAUDE.md: No early returns",
+          remediation: "Restructure to use a single return at the end",
+          multiline: true,
+        }],
+      };
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify(multilinePattern, null, 2),
+        "utf-8",
+      );
+      const code = "function foo(x: number): number {\n  if (x > 0) { return x; }\n  return -x;\n}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/foo.ts", code),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+      expect(result.stdout).not.toBe("");
+      const advisory = parseAdvisory(result.stdout);
+      expect(advisory).toContain("early returns");
+    } finally {
+      await env.cleanup();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // slop-gate: RND_DIR resolution failure (T4)
 // ---------------------------------------------------------------------------
 
@@ -1108,6 +1178,111 @@ describe("slop-gate: line_count — trailing newline handling", () => {
       const raw = await readFile(join(env.sessionDir, "slop-reports", "src-test.ts.json"), "utf-8");
       const report = JSON.parse(raw) as SlopReport;
       expect(report.line_count).toBe(2);
+    } finally {
+      await env.cleanup();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// slop-gate: multiline pattern support (T2)
+// ---------------------------------------------------------------------------
+
+const MULTILINE_PATTERN = {
+  id: "multiline-double-return",
+  name: "Multiple returns in function",
+  regex: "return[^}]+\\n[^}]*return",
+  multiline: true,
+  severity: 2,
+  category: "control-flow",
+  description: "Function has multiple return statements.",
+  remediation: "Refactor to a single return point.",
+};
+
+describe("slop-gate: multiline pattern support", () => {
+  test("multiline pattern matches cross-line content", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [MULTILINE_PATTERN] }),
+        "utf-8",
+      );
+      const content = "function foo() {\n  if (x) return 1;\n  return 2;\n}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+      expect(result.stdout).not.toBe("");
+      const adv = parseAdvisory(result.stdout);
+      expect(adv).toContain("Multiple returns in function");
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  test("multiline pattern match reports line 0 in artifact", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [MULTILINE_PATTERN] }),
+        "utf-8",
+      );
+      const content = "function foo() {\n  if (x) return 1;\n  return 2;\n}\n";
+      await runHook(HOOK_PATH, writeInput("/src/test.ts", content), { CLAUDE_CONFIG_DIR: env.configDir });
+      const raw = await readFile(join(env.sessionDir, "slop-reports", "src-test.ts.json"), "utf-8");
+      const report = JSON.parse(raw) as SlopReport;
+      const match = report.matches.find((m) => m.pattern_id === "multiline-double-return");
+      expect(match).toBeDefined();
+      expect(match!.line).toBe(0);
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  test("multiline pattern does not match when content lacks cross-line pattern", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [MULTILINE_PATTERN] }),
+        "utf-8",
+      );
+      // Single return — no cross-line double-return match
+      const content = "function foo() {\n  return 1;\n}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+      // No matches from the multiline pattern (may still have built-in matches, so check artifact)
+      const raw = await readFile(join(env.sessionDir, "slop-reports", "src-test.ts.json"), "utf-8");
+      const report = JSON.parse(raw) as SlopReport;
+      const match = report.matches.find((m) => m.pattern_id === "multiline-double-return");
+      expect(match).toBeUndefined();
+    } finally {
+      await env.cleanup();
+    }
+  });
+
+  test("existing line-by-line patterns still work alongside multiline patterns", async () => {
+    const env = await createSlopTestEnv(true);
+    try {
+      await writeFile(
+        join(env.sessionDir, "project-patterns.json"),
+        JSON.stringify({ patterns: [MULTILINE_PATTERN] }),
+        "utf-8",
+      );
+      const content = "catch (e) {}\n";
+      const result = await runHook(
+        HOOK_PATH,
+        writeInput("/src/test.ts", content),
+        { CLAUDE_CONFIG_DIR: env.configDir },
+      );
+      const adv = parseAdvisory(result.stdout);
+      expect(adv).toContain("Empty catch block");
     } finally {
       await env.cleanup();
     }

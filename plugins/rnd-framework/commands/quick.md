@@ -41,6 +41,8 @@ Determine the RND artifacts directory and create its structure:
 
 ```bash
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
+# Extract project-specific slop patterns from CLAUDE.md files so the Builder avoids them
+bun "${CLAUDE_PLUGIN_ROOT}/lib/extract-patterns.ts" "$RND_DIR"
 ```
 
 Write a brief pre-registration directly:

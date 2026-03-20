@@ -67,6 +67,7 @@ For each extractable rule, produce one JSON object with these fields:
 | `category` | string | Always `"project-standard"` |
 | `description` | string | One sentence describing what the pattern detects. |
 | `remediation` | string | One sentence describing how to fix it. |
+| `multiline` | boolean | Optional. When true, pattern is tested against full file content instead of line-by-line. Use for patterns that need cross-line context. |
 
 **Severity guidance:**
 - `4` — Rules the project marks with NEVER, CRITICAL, or ALWAYS in emphasis (e.g., caps, bold)
@@ -99,7 +100,9 @@ Save the patterns to `$RND_DIR/project-patterns.json` using the same JSON schema
 }
 ```
 
-Use the Write tool to create this file. Compute `$RND_DIR` via:
+If `$RND_DIR/project-patterns.json` already exists (e.g., from the deterministic extraction script run by `commands/start.md`), read it first. Append your extracted patterns to the existing list. Deduplicate by `id` — if a pattern with the same `id` already exists, keep the existing entry (the script's output takes precedence for deterministic rules). Only write new entries that do not have a conflicting `id` in the existing file.
+
+Use the Write tool to create or overwrite this file. Compute `$RND_DIR` via:
 
 ```bash
 RND_DIR="$("/path/to/rnd-dir.sh")"
@@ -130,7 +133,8 @@ If no extractable rules are found, write an empty patterns array:
 {
   "id": "no-early-return",
   "name": "Early return in function body",
-  "regex": "\\breturn\\b.+;(?=[\\s\\S]*?\\breturn\\b)",
+  "regex": "\\breturn\\b[^;]+;[\\s\\S]*?\\breturn\\b",
+  "multiline": true,
   "severity": 4,
   "category": "project-standard",
   "description": "Function contains an early return before the final return statement, violating the single-exit-point rule.",
@@ -138,7 +142,7 @@ If no extractable rules are found, write an empty patterns array:
 }
 ```
 
-**Reasoning:** The rule is marked NEVER (caps emphasis) → severity 4. The regex matches a `return` statement that is followed by another `return` elsewhere in the same context, flagging functions with multiple exits.
+**Reasoning:** The rule is marked NEVER (caps emphasis) → severity 4. The regex requires full-content matching (`multiline: true`) because it must span multiple lines to detect a `return` statement followed by another `return` later in the same file. Without `multiline: true`, the pattern would be tested line-by-line and could never match two `return` statements that appear on separate lines.
 
 ---
 
@@ -195,7 +199,22 @@ If no extractable rules are found, write an empty patterns array:
 
 **Extracted pattern:**
 
-This rule cannot be reliably expressed as a single-line regex. **Skip it** and note in the self-assessment: "max-function-length rule requires multi-line analysis, not expressible as a single regex — skipped."
+This class of structural rule requires matching across multiple lines. Use `multiline: true` to enable full-content matching. For example, a rough heuristic that flags functions longer than 30 lines could match a function keyword followed by 30 or more newlines before the closing brace. The regex will be imprecise for complex nesting, but `multiline: true` is the mechanism that makes cross-line structural patterns possible at all.
+
+```json
+{
+  "id": "max-function-length",
+  "name": "Function exceeds 30 lines",
+  "regex": "\\bfunction\\b[^{]*\\{(?:[^{}]*\\n){30,}",
+  "multiline": true,
+  "severity": 3,
+  "category": "project-standard",
+  "description": "Function body spans more than 30 lines, violating the project length limit.",
+  "remediation": "Split the function into smaller helpers."
+}
+```
+
+**Note:** The regex is a best-effort heuristic. It may miss arrow functions or deeply nested bodies. Note any coverage gaps in the self-assessment.
 
 ---
 

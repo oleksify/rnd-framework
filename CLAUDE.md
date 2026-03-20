@@ -37,7 +37,8 @@ plugins/rnd-framework/
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   └── validate.ts              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   ├── validate.ts              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   └── extract-patterns.ts      # Deterministic CLAUDE.md rule extraction → project-patterns.json
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```

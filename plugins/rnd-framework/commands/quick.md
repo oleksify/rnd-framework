@@ -1,5 +1,5 @@
 ---
-description: "Lightweight R&D mode for small tasks (<1hr). Same principles, collapsed workflow: quick plan → build → independent verify. One Builder, one Verifier."
+description: "Lightweight R&D mode for small tasks (<1hr). Same principles, collapsed workflow: quick plan → build → inline verify. Single conversation, no agent spawns."
 argument-hint: "<description of the small task>"
 model: sonnet
 effort: medium
@@ -75,17 +75,20 @@ After building, assess your own work and set a status code based on your confide
 
 Quick mode does not use `NEEDS_CONTEXT` or `BLOCKED` — as the orchestrator, you can resolve context gaps and dependency issues directly without pausing.
 
-## Step 3: Independent Verify
+## Step 3: Inline Verify
 
 Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`, passing:
-- The pre-registration from step 1
-- Your code and tests
-- If your status was `DONE_WITH_CONCERNS`, include the brief concerns summary so the Verifier knows which areas need extra scrutiny
-- Do NOT pass your full self-assessment
+Verify your own work inline — do NOT spawn a verifier agent. Quick mode verifies in the main conversation to avoid API rate limits from agent spawns.
 
-The verifier returns its report as text output. The orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-verification.md`.
+For each success criterion in the pre-registration:
+1. Run the relevant test or command that produces evidence (e.g., `bun test`, grep for expected output)
+2. Record PASS or FAIL with the evidence (command output, line numbers, observed behavior)
+3. If any criterion fails, enter the iteration loop in Step 4
+
+Save the verification report to `$RND_DIR/verifications/T1-verification.md` with the per-criterion results and an overall verdict (PASS, FAIL, or PASS with quality feedback).
+
+**Note:** This trades the information barrier (independent verifier) for API efficiency. For tasks requiring stronger verification guarantees, use `/rnd-framework:start` which spawns independent verifier agents.
 
 ## Step 4: Iterate or Ship
 
@@ -104,4 +107,4 @@ The verifier returns its report as text output. The orchestrator saves the retur
   - "Iterate one more time" — extend budget by 1
   - "Abandon task" — stop work on this task
 
-Quick mode is faster, not less rigorous. The Verifier still applies full skepticism. Do not skip failure mode analysis or accept soft evidence to save time.
+Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees, use `/rnd-framework:start`.

@@ -501,3 +501,183 @@ describe("HOME fallback", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Criterion 13: Worktree — main checkout and worktree produce identical --base
+// ---------------------------------------------------------------------------
+
+/**
+ * Run a bash command as a subprocess and return stdout (trimmed).
+ * Throws if exit code is non-zero.
+ */
+async function sh(cmd: string, cwd?: string): Promise<string> {
+  const proc = Bun.spawn(["bash", "-c", cmd], {
+    cwd,
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [out, errBuf] = await Promise.all([
+    Bun.readableStreamToArrayBuffer(proc.stdout),
+    Bun.readableStreamToArrayBuffer(proc.stderr),
+    proc.exited,
+  ]);
+  if (proc.exitCode !== 0) {
+    const errText = new TextDecoder().decode(errBuf).trim();
+    throw new Error(`Command failed (exit ${proc.exitCode}): ${cmd}\n${errText}`);
+  }
+  return new TextDecoder().decode(out).trim();
+}
+
+describe("git worktree support", () => {
+  let repoDir: string;
+  let worktreeDir: string;
+  let worktreeCleanup: () => Promise<void>;
+
+  beforeEach(async () => {
+    // Create a temp git repo with at least one commit
+    repoDir = await mkdtemp(join(tmpdir(), "rnd-git-main-"));
+    await sh(`git init -b main "${repoDir}"`);
+    await sh('git config user.email "test@test.com"', repoDir);
+    await sh('git config user.name "Test"', repoDir);
+    await sh("touch README && git add README && git commit -m init", repoDir);
+
+    // Create a worktree alongside the main checkout
+    worktreeDir = await mkdtemp(join(tmpdir(), "rnd-git-worktree-"));
+    // Remove the empty temp dir first — git worktree add requires a non-existent path
+    await rm(worktreeDir, { recursive: true, force: true });
+    await sh(`git worktree add -b wt "${worktreeDir}"`, repoDir);
+
+    worktreeCleanup = async () => {
+      // Remove worktree from git tracking before deleting dir
+      await sh(`git worktree remove --force "${worktreeDir}"`, repoDir).catch(() => {});
+      await rm(repoDir, { recursive: true, force: true });
+      await rm(worktreeDir, { recursive: true, force: true }).catch(() => {});
+    };
+  });
+
+  afterEach(async () => {
+    await worktreeCleanup();
+  });
+
+  test("main checkout and worktree produce the same --base output", async () => {
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+
+    const fromMain = await runScript(["--base"], { cwd: repoDir, env });
+    const fromWorktree = await runScript(["--base"], { cwd: worktreeDir, env });
+
+    expect(fromMain.exitCode).toBe(0);
+    expect(fromWorktree.exitCode).toBe(0);
+    expect(fromMain.stdout).toBe(fromWorktree.stdout);
+  });
+
+  test("--base slug basename comes from repo name, not worktree dir name", async () => {
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+
+    // repoDir name is something like "rnd-git-main-XXXX"
+    // worktreeDir name is "rnd-git-worktree-YYYY" — different basename
+    const repoBasename = repoDir.split("/").at(-1)!;
+
+    const fromMain = await runScript(["--base"], { cwd: repoDir, env });
+    const fromWorktree = await runScript(["--base"], { cwd: worktreeDir, env });
+
+    expect(fromMain.exitCode).toBe(0);
+    expect(fromWorktree.exitCode).toBe(0);
+
+    // Both should use the repo's dirname, not the worktree's dirname
+    const slug = fromMain.stdout.split("/.rnd/").at(-1)!;
+    expect(slug.startsWith(repoBasename)).toBe(true);
+
+    // The worktree path should also have the repo basename
+    const worktreeSlug = fromWorktree.stdout.split("/.rnd/").at(-1)!;
+    expect(worktreeSlug.startsWith(repoBasename)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Criterion 13b: Subdirectory of a git repo produces the same --base as root
+// ---------------------------------------------------------------------------
+
+describe("git subdirectory support", () => {
+  let repoDir: string;
+  let subDir: string;
+  let subdirCleanup: () => Promise<void>;
+
+  beforeEach(async () => {
+    // Create a temp git repo with a subdirectory
+    repoDir = await mkdtemp(join(tmpdir(), "rnd-git-subdir-"));
+    await sh(`git init -b main "${repoDir}"`);
+    await sh('git config user.email "test@test.com"', repoDir);
+    await sh('git config user.name "Test"', repoDir);
+    await sh("touch README && git add README && git commit -m init", repoDir);
+
+    // Create a nested subdirectory
+    subDir = join(repoDir, "src", "lib");
+    await mkdir(subDir, { recursive: true });
+
+    subdirCleanup = async () => {
+      await rm(repoDir, { recursive: true, force: true });
+    };
+  });
+
+  afterEach(async () => {
+    await subdirCleanup();
+  });
+
+  test("--base from a subdirectory matches --base from repo root", async () => {
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+
+    const fromRoot = await runScript(["--base"], { cwd: repoDir, env });
+    const fromSubdir = await runScript(["--base"], { cwd: subDir, env });
+
+    expect(fromRoot.exitCode).toBe(0);
+    expect(fromSubdir.exitCode).toBe(0);
+    expect(fromRoot.stdout).toBe(fromSubdir.stdout);
+  });
+
+  test("slug basename from subdirectory comes from repo name, not '..'", async () => {
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+
+    const fromSubdir = await runScript(["--base"], { cwd: subDir, env });
+
+    expect(fromSubdir.exitCode).toBe(0);
+
+    const slug = fromSubdir.stdout.split("/.rnd/").at(-1)!;
+    // basename must NOT be ".." (that was the bug)
+    expect(slug.startsWith("..")).toBe(false);
+    // basename should come from the repo dir name
+    const repoBasename = repoDir.split("/").at(-1)!;
+    expect(slug.startsWith(repoBasename)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Criterion 14: Non-git directory uses pwd for hashing (fallback)
+// ---------------------------------------------------------------------------
+
+describe("non-git directory fallback", () => {
+  test("--base in a non-git directory uses pwd basename and hash", async () => {
+    // projectDir from beforeEach is a plain temp dir (not a git repo)
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+    const result = await runScript(["--base"], { cwd: projectDir, env });
+
+    expect(result.exitCode).toBe(0);
+
+    // The slug should use the basename of projectDir
+    const projectBasename = projectDir.split("/").at(-1)!;
+    const slugPart = result.stdout.split("/.rnd/").at(-1)!;
+    expect(slugPart.startsWith(projectBasename)).toBe(true);
+    // Hash should still be 8 hex chars at the end
+    expect(slugPart).toMatch(/-[0-9a-f]{8}$/);
+  });
+
+  test("--base is deterministic for non-git directory", async () => {
+    const env = { CLAUDE_CONFIG_DIR: configDir };
+
+    const r1 = await runScript(["--base"], { cwd: projectDir, env });
+    const r2 = await runScript(["--base"], { cwd: projectDir, env });
+
+    expect(r1.exitCode).toBe(0);
+    expect(r1.stdout).toBe(r2.stdout);
+  });
+});

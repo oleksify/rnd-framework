@@ -82,6 +82,16 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.ts` an
 { "allowRead": ["~/.claude/.rnd/**"], "allowWrite": ["~/.claude/.rnd/**"] }
 ```
 
+### --bare Mode (v2.1.81+)
+
+When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate, prefer-tools, audit-log, slop-gate, and all others. Practical consequences:
+
+- The information barrier is not enforced: the Verifier can read Builder self-assessments
+- Tool discipline is not enforced: sed/cat/grep/find bypass is possible
+- Session bootstrap does not run: skills are not injected into context
+
+Bottom line: rnd-framework effectively does not work in `--bare` mode. This is expected — `--bare` is designed for scripted `-p` invocations, not interactive multi-agent orchestration.
+
 ### Skill System
 
 Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`, `effort`). Claude Code's native plugin system discovers skills by directory convention. The `effort` field (added in v2.1.80) overrides the model's reasoning effort when the skill is invoked: `low` for reference/guidance skills, `medium` for procedural workflows. Commands also support `effort` frontmatter: `low` for read-only operations, `medium` for moderate reasoning, `high` for deep multi-agent orchestration.
@@ -94,11 +104,15 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
+**Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.ts`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
+
 ### Session Bootstrap
 
 The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.ts`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.ts`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
+
+**Remote pipelines with `--channels` (v2.1.81+):** The `--channels` flag enables permission-relay mode, forwarding tool approval prompts to the Claude mobile app. This is useful when running rnd-framework pipelines on remote or headless machines where interactive terminal input is unavailable.
 
 ### Runtime Artifacts
 
@@ -107,7 +121,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 **Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create), `--finish` (clear session), `--base` (project base dir), `--roadmap` (path to roadmap.md at project base).
 
 ```
-~/.claude/.rnd/<dirname>-<hash>/           # Project base
+~/.claude/.rnd/<basename>-<hash>/          # Project base; slug = git-common-dir basename + 8-char sha256 of canonicalized git-common-dir; falls back to pwd basename + hash when not in a git repo
 ├── .current-session                       # Active session ID
 ├── roadmap.md                             # Multi-session roadmap (optional, created by /roadmap)
 ├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA)
@@ -126,6 +140,8 @@ The framework stores artifacts in a centralized directory outside the project tr
 ```
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
+
+**Worktree support:** All worktrees of the same repository share the same `.rnd/` base directory. The project slug is derived from `git rev-parse --git-common-dir` (canonicalized to an absolute path via the POSIX `cd + pwd` idiom), so linked worktrees and the main checkout produce identical slugs even though their `pwd` values differ.
 
 ## Commands
 

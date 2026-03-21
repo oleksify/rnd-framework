@@ -246,7 +246,7 @@ Without this barrier:
 
 ## Project Artifacts
 
-The framework stores pipeline artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. The path is based on a hash of the project directory, so each project gets its own isolated artifact space.
+The framework stores pipeline artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. The path is based on a hash of the git common directory (`git rev-parse --git-common-dir`, canonicalized), so each project gets its own isolated artifact space. All worktrees of the same repo share the same base directory. Falls back to `pwd` when not in a git repo.
 
 **Helper script:** `lib/rnd-dir.sh`
 - Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents

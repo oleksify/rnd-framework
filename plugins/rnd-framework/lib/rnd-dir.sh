@@ -9,7 +9,8 @@
 #
 # Session path: <base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/
 # Base path:    <claude-config-dir>/.rnd/<project-slug>/
-# where project-slug = <basename>-<8char-sha256-of-pwd>
+# where project-slug = <basename>-<8char-sha256-of-git-common-dir>
+#   (falls back to <basename(pwd)>-<8char-sha256-of-pwd> when not in a git repo)
 #
 # Config dir priority:
 #   1. CLAUDE_PLUGIN_ROOT (strip /plugins/cache/... suffix)
@@ -33,17 +34,35 @@ else
 fi
 
 # --- Compute project slug ---
-PROJECT_DIR="$(pwd)"
-BASENAME="$(basename "$PROJECT_DIR")"
+# Use git common-dir so all worktrees of the same repo share one .rnd/ base.
+# git rev-parse --git-common-dir returns a relative path (".git") in the main
+# checkout and an absolute path in worktrees — canonicalize to absolute before
+# hashing.  Fall back to pwd when not inside a git repo.
+if GIT_COMMON_DIR_RAW="$(git rev-parse --git-common-dir 2>/dev/null)"; then
+  # Canonicalize: if the path is relative, resolve it via cd+pwd to eliminate
+  # any ".." components (e.g. "../../.git" from a subdirectory).
+  if [[ "$GIT_COMMON_DIR_RAW" = /* ]]; then
+    HASH_INPUT="$GIT_COMMON_DIR_RAW"
+  else
+    HASH_INPUT="$(cd "$(dirname "$(pwd)/${GIT_COMMON_DIR_RAW}")" && pwd)/$(basename "$GIT_COMMON_DIR_RAW")"
+  fi
+  # Use dirname of the canonicalized common-dir to get the main repo root.
+  # This is consistent across all worktrees, unlike --show-toplevel which
+  # returns the worktree path in linked worktrees.
+  BASENAME="$(basename "$(dirname "$HASH_INPUT")")"
+else
+  HASH_INPUT="$(pwd)"
+  BASENAME="$(basename "$HASH_INPUT")"
+fi
 
-# 8-char hex hash of the full path for uniqueness (~4B collision space)
+# 8-char hex hash of the path for uniqueness (~4B collision space)
 if command -v shasum >/dev/null 2>&1; then
-  HASH=$(printf '%s' "$PROJECT_DIR" | shasum -a 256 | cut -c1-8)
+  HASH=$(printf '%s' "$HASH_INPUT" | shasum -a 256 | cut -c1-8)
 elif command -v sha256sum >/dev/null 2>&1; then
-  HASH=$(printf '%s' "$PROJECT_DIR" | sha256sum | cut -c1-8)
+  HASH=$(printf '%s' "$HASH_INPUT" | sha256sum | cut -c1-8)
 else
   # Fallback: use cksum-based hash (less ideal but always available)
-  HASH=$(printf '%s' "$PROJECT_DIR" | cksum | awk '{printf "%08x", $1}' | cut -c1-8)
+  HASH=$(printf '%s' "$HASH_INPUT" | cksum | awk '{printf "%08x", $1}' | cut -c1-8)
 fi
 
 SLUG="${BASENAME}-${HASH}"

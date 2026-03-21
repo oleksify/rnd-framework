@@ -80,6 +80,28 @@ For each of the following tools, run `which <tool>` to check availability, then 
 - `lake` — run `lake --version`
 - `elan` — run `elan --version`
 
+## 8. Claude Code Version
+
+Run the following to detect the installed Claude Code version:
+
+```bash
+claude --version
+```
+
+The output will be in the format `2.1.81 (Claude Code)`. Parse the version number from the first token.
+
+Compare the detected version against these thresholds (in ascending order):
+
+- **v2.1.77** — Hook allow/deny precedence changed: a hook returning `allow` no longer bypasses explicit deny rules. If the installed version is below this, warn that rnd-framework's auto-allow hooks (`read-gate.ts`, `prefer-tools.ts`) may not work correctly and permission prompts will appear unexpectedly.
+- **v2.1.81** — Plugin re-cloning and worktree resumption added. If the installed version is below this, warn that plugins are not re-cloned on each load (cache staleness is possible) and that `--resume` does not work across git worktrees.
+
+If the version is >= v2.1.81, report these features as available:
+- `--bare` mode awareness (hooks are skipped in bare mode — rnd-framework does not work in `--bare` sessions)
+- `--channels` support for forwarding permission prompts to phone during remote pipeline runs
+- Plugin re-cloning on every load (ref-tracked plugins are always fresh)
+
+Use `⚠ warn` for any version below v2.1.81 and `✅ ok` for v2.1.81+.
+
 ## Output Format
 
 Display all results as a table:
@@ -99,6 +121,7 @@ Julia MCP tools          | ✅ ok   | mcp__julia__julia_eval available
 lean                     | ⚠ warn  | not installed (optional)
 lake                     | ⚠ warn  | not installed (optional)
 elan                     | ⚠ warn  | not installed (optional)
+Claude Code version      | ✅ ok   | v2.1.81 (bare/channels/re-cloning available)
 ```
 
 Use `✅ ok` for passing checks, `⚠ warn` for optional/non-critical issues, and `❌ fail` for critical failures.

@@ -9,7 +9,7 @@
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join, basename, dirname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 // ---------------------------------------------------------------------------
@@ -58,17 +58,59 @@ export interface TempRndDir {
 
 /**
  * Computes the slug used by rnd-dir.sh for a given directory path.
- * Format: <basename(dir)>-<first-8-hex-chars-of-sha256(dir)>
+ *
+ * Mirrors rnd-dir.sh logic:
+ *   - If `dir` is inside a git repo, hash the canonicalized git common-dir
+ *     path and use basename(dirname(git-common-dir)) as the name component.
+ *     This is consistent across all worktrees of the same repo.
+ *   - Otherwise hash `dir` itself and use basename(dir).
+ *
+ * Format: <name>-<first-8-hex-chars-of-sha256(hash-input)>
  */
 export async function computeSlug(dir: string): Promise<string> {
+  let hashInput: string;
+  let name: string;
+
+  // Try to get git common-dir (canonicalized to absolute).
+  // Falls back to using dir directly if git is unavailable or not in a repo.
+  try {
+    const gitCommonDirProc = Bun.spawn(
+      ["git", "rev-parse", "--git-common-dir"],
+      { cwd: dir, stdout: "pipe", stderr: "pipe" },
+    );
+    const gitCommonDirBytes = await Bun.readableStreamToArrayBuffer(gitCommonDirProc.stdout);
+    await gitCommonDirProc.exited;
+
+    if (gitCommonDirProc.exitCode === 0) {
+      const rawCommonDir = new TextDecoder().decode(gitCommonDirBytes).trim();
+      // Canonicalize: if relative, resolve against dir to eliminate ".." components
+      const absCommonDir = rawCommonDir.startsWith("/")
+        ? rawCommonDir
+        : resolve(dir, rawCommonDir);
+
+      hashInput = absCommonDir;
+      // Use dirname of the canonicalized common-dir (main repo root), which is
+      // consistent across all worktrees — unlike show-toplevel which returns
+      // the worktree path in linked worktrees.
+      name = basename(dirname(absCommonDir));
+    } else {
+      hashInput = dir;
+      name = basename(dir);
+    }
+  } catch {
+    // git not on PATH or other spawn error — fall back to plain dir hashing
+    hashInput = dir;
+    name = basename(dir);
+  }
+
   const proc = Bun.spawn(
-    ["bash", "-c", 'printf "%s" "$TARGET_DIR" | shasum -a 256 | cut -c1-8'],
-    { stdout: "pipe", stderr: "pipe", env: { ...process.env, TARGET_DIR: dir } },
+    ["bash", "-c", 'printf "%s" "$HASH_INPUT" | shasum -a 256 | cut -c1-8'],
+    { stdout: "pipe", stderr: "pipe", env: { ...process.env, HASH_INPUT: hashInput } },
   );
   const bytes = await Bun.readableStreamToArrayBuffer(proc.stdout);
   await proc.exited;
   const hash = new TextDecoder().decode(bytes).trim();
-  return `${basename(dir)}-${hash}`;
+  return `${name}-${hash}`;
 }
 
 // ---------------------------------------------------------------------------

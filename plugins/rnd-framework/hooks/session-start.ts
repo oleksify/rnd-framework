@@ -59,7 +59,7 @@ if (cachedVersion) {
     if (srcJson["name"] !== "rnd-framework") continue;
     const srcVersion = srcJson["version"] ?? "";
     if (srcVersion && srcVersion !== cachedVersion) {
-      versionWarning = `\n\n⚠ **Plugin version mismatch:** cached v${cachedVersion}, source v${srcVersion}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync.`;
+      versionWarning = `\n\n⚠ **Plugin version mismatch:** cached v${cachedVersion}, source v${srcVersion}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync. (On v2.1.81+, re-cloning is automatic — if you see this, it likely indicates a bug.)`;
     }
     break;
   }

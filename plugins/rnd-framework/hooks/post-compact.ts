@@ -4,13 +4,13 @@
 // and outputting it as hookSpecificOutput.additionalContext.
 // Resilient: always exits 0, never fails.
 
-import { resolveRndDir, advisory } from "./lib.ts";
+import { activeSessionDir, advisory } from "./lib.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 try {
-  const rndDir = resolveRndDir();
-  if (!rndDir || !rndDir.includes("/sessions/")) process.exit(0);
+  const rndDir = activeSessionDir();
+  if (!rndDir) process.exit(0);
 
   const stateFile = join(rndDir, "compact-state.json");
   if (!existsSync(stateFile)) process.exit(0);

@@ -98,15 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log.ts'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate.ts'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.ts'"
           }
         ]
       },
@@ -115,15 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/audit-log.ts'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/slop-gate.ts'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-warn.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.ts'"
           }
         ]
       }

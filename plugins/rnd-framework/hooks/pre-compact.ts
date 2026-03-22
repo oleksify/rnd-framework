@@ -7,7 +7,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from "node:fs";
 import { join, basename } from "node:path";
-import { resolveRndDir } from "./lib.ts";
+import { activeSessionDir, isoTimestamp } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -58,16 +58,14 @@ export function extractIterationCount(rndDir: string): number {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const rndDir = resolveRndDir();
-  // Guard: no active session or session dir not valid
-  if (rndDir === null || !rndDir.includes("/sessions/")) process.exit(0);
-  if (!existsSync(rndDir)) process.exit(0);
+  const rndDir = activeSessionDir();
+  if (!rndDir) process.exit(0);
 
   const state = {
     planSummary: extractPlanSummary(rndDir),
     currentTaskId: extractCurrentTaskId(rndDir),
     iterationCount: extractIterationCount(rndDir),
-    savedAt: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+    savedAt: isoTimestamp(),
   };
 
   try {

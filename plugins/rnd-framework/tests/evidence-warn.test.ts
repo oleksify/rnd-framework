@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { runHook, runHookRaw, writeInput, editInput } from "./helpers";
 
-const HOOK_PATH = join(import.meta.dir, "..", "hooks", "evidence-warn.ts");
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "post-tool-use.ts");
 
 interface EvidenceOutput {
   hookSpecificOutput: { additionalContext: string };
@@ -84,7 +84,7 @@ describe("evidence-warn: API patterns", () => {
 
 describe("evidence-warn: no output when no patterns", () => {
   test("no SQL/API patterns → empty stdout", async () => {
-    const result = await runHook(HOOK_PATH, writeInput("/src/math.ts", "const x = 1 + 2;\nconsole.log(x);"));
+    const result = await runHook(HOOK_PATH, writeInput("/src/math.ts", "const x = 1 + 2;\nconst y = x * 3;\n"));
     expect(result.stdout.trim()).toBe("");
   });
 

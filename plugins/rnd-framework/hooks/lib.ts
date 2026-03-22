@@ -2,6 +2,7 @@
 // hooks/lib.ts — Shared TypeScript utilities for rnd-framework hooks.
 // Import from any hook: import { parseInput, isRndPath, ... } from "./lib.ts"
 
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 // ---------------------------------------------------------------------------
@@ -136,4 +137,56 @@ export async function parseInput(): Promise<HookInput | null> {
       : {},
     agent_type: typeof obj["agent_type"] === "string" ? obj["agent_type"] : "",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Shared hook helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the written content string from Write or Edit tool input.
+ * Write → tool_input.content; Edit → tool_input.new_string.
+ * Returns null for any other tool name or when the expected key is absent or not a string.
+ * Pure.
+ */
+export function extractWriteEditContent(toolName: string, toolInput: Record<string, unknown>): string | null {
+  if (toolName === "Write") {
+    const c = toolInput["content"];
+    return typeof c === "string" ? c : null;
+  }
+  if (toolName === "Edit") {
+    const ns = toolInput["new_string"];
+    return typeof ns === "string" ? ns : null;
+  }
+  return null;
+}
+
+/**
+ * Extracts the file_path string from tool input.
+ * Returns null when file_path is absent or not a string.
+ * Pure.
+ */
+export function extractFilePath(toolInput: Record<string, unknown>): string | null {
+  const fp = toolInput["file_path"];
+  return typeof fp === "string" ? fp : null;
+}
+
+/**
+ * Returns an ISO 8601 UTC timestamp string without milliseconds (e.g. "2025-03-22T09:10:11Z").
+ * Pure (deterministic for a given wall-clock moment).
+ */
+export function isoTimestamp(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+/**
+ * Resolves the active RND session directory, validates it contains /sessions/ and exists on disk.
+ * Returns the directory path if all conditions hold, null otherwise.
+ * IO function — calls resolveRndDir() and existsSync().
+ */
+export function activeSessionDir(): string | null {
+  const dir = resolveRndDir();
+  if (dir === null || !dir.includes("/sessions/")) return null;
+  if (!existsSync(dir)) return null;
+  return dir;
 }

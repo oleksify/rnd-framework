@@ -24,9 +24,9 @@ plugins/rnd-framework/
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
-│   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context to agents
-│   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
+│   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
+│   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
+│   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
 │   ├── stop-failure.ts          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
@@ -65,7 +65,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.ts`, `prefer-tools.ts`): `Read` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.ts` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
 - **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths
 - **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth
-- **Audit logging** (`audit-log.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` during active pipeline sessions
+- **Audit logging, slop analysis, evidence scanning** (`post-tool-use.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`, analyzes code for LLM anti-patterns, and scans for SQL/API references requiring verification reminders
 - **Stop failure logging** (`stop-failure.ts`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
@@ -84,7 +84,7 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.ts` an
 
 ### --bare Mode (v2.1.81+)
 
-When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate, prefer-tools, audit-log, slop-gate, and all others. Practical consequences:
+When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate, prefer-tools, post-tool-use, and all others. Practical consequences:
 
 - The information barrier is not enforced: the Verifier can read Builder self-assessments
 - Tool discipline is not enforced: sed/cat/grep/find bypass is possible

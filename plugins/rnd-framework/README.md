@@ -299,9 +299,9 @@ rnd-framework/
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
-│   ├── audit-log.ts             # PostToolUse hook: logs Write/Edit operations to audit.jsonl
-│   ├── slop-gate.ts             # PostToolUse hook: surfaces LLM anti-patterns as advisory context
-│   ├── evidence-warn.ts         # PostToolUse hook: detects SQL/API references, emits verification reminders
+│   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
+│   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
+│   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction

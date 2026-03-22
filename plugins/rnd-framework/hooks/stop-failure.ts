@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 // hooks/stop-failure.ts — Logs StopFailure API errors to $RND_DIR/stop-failures.jsonl.
 // Always exits 0. StopFailure events do not have tool_name/tool_input; read stdin directly.
-import { appendFileSync, existsSync } from "node:fs";
+import { appendFileSync } from "node:fs";
 import { join } from "node:path";
-import { readStdin, resolveRndDir, advisory } from "./lib.ts";
+import { readStdin, activeSessionDir, isoTimestamp, advisory } from "./lib.ts";
 
 async function main(): Promise<void> {
   const text = await readStdin();
@@ -13,10 +13,9 @@ async function main(): Promise<void> {
   const errorType = typeof obj["error_type"] === "string" ? obj["error_type"] : "unknown";
   const message = typeof obj["message"] === "string" ? obj["message"] : "unknown";
 
-  const rndDir = resolveRndDir();
-  if (rndDir && rndDir.includes("/sessions/") && existsSync(rndDir)) {
-    const ts = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-    const entry = JSON.stringify({ ts, errorType, message }) + "\n";
+  const rndDir = activeSessionDir();
+  if (rndDir) {
+    const entry = JSON.stringify({ ts: isoTimestamp(), errorType, message }) + "\n";
     appendFileSync(join(rndDir, "stop-failures.jsonl"), entry, "utf-8");
   }
 

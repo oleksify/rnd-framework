@@ -25,7 +25,7 @@ import { runHook, runHookRaw, computeSlug, writeInput, editInput } from "./helpe
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH = join(import.meta.dir, "..", "hooks", "slop-gate.ts");
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "post-tool-use.ts");
 
 // ---------------------------------------------------------------------------
 // Pipeline artifact test helpers (T4)

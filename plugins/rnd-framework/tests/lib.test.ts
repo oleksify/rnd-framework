@@ -155,3 +155,100 @@ test("resolveRndDir memoizes: second call returns same value without re-spawning
   expect(second).toBe(first);
   expect(spawnCount.n).toBe(0);
 });
+
+// ---------------------------------------------------------------------------
+// extractWriteEditContent
+// ---------------------------------------------------------------------------
+
+test("extractWriteEditContent returns content for Write tool", async () => {
+  const { extractWriteEditContent } = await import("../hooks/lib.ts");
+  expect(extractWriteEditContent("Write", { content: "x" })).toBe("x");
+});
+
+test("extractWriteEditContent returns new_string for Edit tool", async () => {
+  const { extractWriteEditContent } = await import("../hooks/lib.ts");
+  expect(extractWriteEditContent("Edit", { new_string: "y" })).toBe("y");
+});
+
+test("extractWriteEditContent returns null for non-Write/Edit tool", async () => {
+  const { extractWriteEditContent } = await import("../hooks/lib.ts");
+  expect(extractWriteEditContent("Read", {})).toBe(null);
+});
+
+test("extractWriteEditContent returns null for Write with missing content key", async () => {
+  const { extractWriteEditContent } = await import("../hooks/lib.ts");
+  expect(extractWriteEditContent("Write", {})).toBe(null);
+});
+
+// ---------------------------------------------------------------------------
+// extractFilePath
+// ---------------------------------------------------------------------------
+
+test("extractFilePath returns file_path string", async () => {
+  const { extractFilePath } = await import("../hooks/lib.ts");
+  expect(extractFilePath({ file_path: "/foo.ts" })).toBe("/foo.ts");
+});
+
+test("extractFilePath returns null for missing file_path key", async () => {
+  const { extractFilePath } = await import("../hooks/lib.ts");
+  expect(extractFilePath({})).toBe(null);
+});
+
+test("extractFilePath returns null when file_path is not a string", async () => {
+  const { extractFilePath } = await import("../hooks/lib.ts");
+  expect(extractFilePath({ file_path: 42 })).toBe(null);
+});
+
+// ---------------------------------------------------------------------------
+// isoTimestamp
+// ---------------------------------------------------------------------------
+
+test("isoTimestamp returns ISO 8601 UTC string without milliseconds", async () => {
+  const { isoTimestamp } = await import("../hooks/lib.ts");
+  const ts = isoTimestamp();
+  expect(ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+});
+
+// ---------------------------------------------------------------------------
+// activeSessionDir
+// ---------------------------------------------------------------------------
+
+test("activeSessionDir returns null when resolveRndDir returns null", async () => {
+  const script = `
+import { resolve } from "node:path";
+const LIB = resolve(${JSON.stringify(join(PLUGIN_ROOT, "hooks", "lib.ts"))});
+// Patch Bun.spawnSync before importing lib so resolveRndDir gets null
+const origSpawnSync = Bun.spawnSync;
+Bun.spawnSync = () => ({ exitCode: 1, stdout: new Uint8Array(), stderr: new Uint8Array(), success: false });
+const { activeSessionDir } = await import(LIB);
+const result = activeSessionDir();
+process.stdout.write(JSON.stringify({ result }));
+`;
+  const proc = Bun.spawn(["bun", "--eval", script], { stdout: "pipe", stderr: "pipe" });
+  const [out] = await Promise.all([Bun.readableStreamToArrayBuffer(proc.stdout), proc.exited]);
+  const parsed = JSON.parse(new TextDecoder().decode(out));
+  expect(parsed.result).toBe(null);
+});
+
+test("activeSessionDir returns null when resolveRndDir returns path without /sessions/", async () => {
+  const script = `
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+const LIB = resolve(${JSON.stringify(join(PLUGIN_ROOT, "hooks", "lib.ts"))});
+// Patch Bun.spawnSync before importing lib so resolveRndDir returns /tmp/no-sessions
+const origSpawnSync = Bun.spawnSync;
+Bun.spawnSync = () => ({
+  exitCode: 0,
+  stdout: new TextEncoder().encode("/tmp/no-sessions\\n"),
+  stderr: new Uint8Array(),
+  success: true,
+});
+const { activeSessionDir } = await import(LIB);
+const result = activeSessionDir();
+process.stdout.write(JSON.stringify({ result }));
+`;
+  const proc = Bun.spawn(["bun", "--eval", script], { stdout: "pipe", stderr: "pipe" });
+  const [out] = await Promise.all([Bun.readableStreamToArrayBuffer(proc.stdout), proc.exited]);
+  const parsed = JSON.parse(new TextDecoder().decode(out));
+  expect(parsed.result).toBe(null);
+});

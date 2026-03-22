@@ -24,7 +24,7 @@ import { runHook, runHookRaw, createTestEnv, hookInput } from "./helpers";
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOOK_PATH = join(import.meta.dir, "..", "hooks", "audit-log.ts");
+const HOOK_PATH = join(import.meta.dir, "..", "hooks", "post-tool-use.ts");
 
 // ---------------------------------------------------------------------------
 // Criterion 1 & 4: Exit code and file presence

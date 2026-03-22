@@ -1,28 +1,20 @@
-#!/usr/bin/env bun
-// PostToolUse hook: slop-gate
+// hooks/slop-gate.ts — Pure library module for slop pattern analysis.
 //
-// Reads the slop pattern catalog, analyzes code written by Write/Edit tools
-// for structural anti-patterns, and outputs an advisory context message when
-// findings are detected so agents see them inline.
+// Exported functions: loadCatalog, analyzeContent, computeScore,
+// computeVerdict, sanitizePathToFilename, writePipelineArtifacts, buildSlopAdvisory
 //
-// Behavior:
-//   - Write: analyzes tool_input.content (full file)
-//   - Edit:  analyzes tool_input.new_string only (diff-aware)
-//   - Findings: outputs advisory JSON {hookSpecificOutput: {additionalContext}}
-//   - No findings: exits 0 silently
-//   - Non-code file extensions: exits 0, no output
-//   - Malformed stdin, missing catalog, any error: exits 0, no output
-//   - Always exits 0 (PostToolUse hooks are advisory)
+// This module has no main(), no shebang, no stdin reading.
+// The executable entry point is hooks/post-tool-use.ts.
 
 import { resolve } from "node:path";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { advisory, parseInput, isCodeFile, resolveRndDir, countLines } from "./lib.ts";
+import { resolveRndDir } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface SlopPattern {
+export interface SlopPattern {
   id: string;
   name: string;
   regex: string;
@@ -33,11 +25,11 @@ interface SlopPattern {
   multiline?: boolean;
 }
 
-interface PatternCatalog {
+export interface PatternCatalog {
   patterns: SlopPattern[];
 }
 
-interface Match {
+export interface Match {
   pattern_id: string;
   line: number;
   snippet: string;
@@ -48,9 +40,9 @@ interface Match {
 // Artifact-only types (not exposed in agent-facing output)
 // ---------------------------------------------------------------------------
 
-type Verdict = "PASS" | "WARN" | "FAIL";
+export type Verdict = "PASS" | "WARN" | "FAIL";
 
-function computeVerdict(score: number): Verdict {
+export function computeVerdict(score: number): Verdict {
   if (score > 7) return "FAIL";
   if (score >= 3) return "WARN";
   return "PASS";
@@ -60,7 +52,7 @@ function computeVerdict(score: number): Verdict {
 // Pattern analysis
 // ---------------------------------------------------------------------------
 
-function analyzeContent(content: string, patterns: SlopPattern[]): Match[] {
+export function analyzeContent(content: string, patterns: SlopPattern[]): Match[] {
   const lines = content.split("\n");
   const matches: Match[] = [];
 
@@ -88,7 +80,7 @@ function analyzeContent(content: string, patterns: SlopPattern[]): Match[] {
 // Score computation
 // ---------------------------------------------------------------------------
 
-function computeScore(matches: Match[], lineCount: number): number {
+export function computeScore(matches: Match[], lineCount: number): number {
   if (lineCount === 0) return 0;
   return matches.reduce((sum, m) => sum + m.severity, 0) / lineCount;
 }
@@ -115,7 +107,7 @@ interface CumulativeScore {
  * Sanitizes a file path into a safe filename.
  * /src/utils/foo.ts => src-utils-foo.ts.json
  */
-function sanitizePathToFilename(filePath: string): string {
+export function sanitizePathToFilename(filePath: string): string {
   const stripped = filePath.replace(/^\/+/, "").replace(/\//g, "-");
   return `${stripped}.json`;
 }
@@ -124,7 +116,7 @@ function sanitizePathToFilename(filePath: string): string {
 // Artifact writing
 // ---------------------------------------------------------------------------
 
-function writePipelineArtifacts(filePath: string, lineCount: number, matches: Match[]): void {
+export function writePipelineArtifacts(filePath: string, lineCount: number, matches: Match[]): void {
   const sessionDir = resolveRndDir();
   if (sessionDir === null || !sessionDir.includes("/sessions/")) return;
 
@@ -168,45 +160,25 @@ function writePipelineArtifacts(filePath: string, lineCount: number, matches: Ma
 }
 
 // ---------------------------------------------------------------------------
-// Main
+// Catalog loading
 // ---------------------------------------------------------------------------
 
-async function main(): Promise<void> {
-  const input = await parseInput();
-  if (input === null) process.exit(0);
-
-  const toolName = input.tool_name;
-  const toolInputObj = input.tool_input;
-
-  if (!toolName) process.exit(0);
-
-  const filePath = toolInputObj["file_path"];
-  if (typeof filePath !== "string" || filePath.length === 0) process.exit(0);
-
-  if (!isCodeFile(filePath)) process.exit(0);
-
-  let content: string;
-  if (toolName === "Write") {
-    const c = toolInputObj["content"];
-    if (typeof c !== "string") process.exit(0);
-    content = c;
-  } else if (toolName === "Edit") {
-    const ns = toolInputObj["new_string"];
-    if (typeof ns !== "string") process.exit(0);
-    content = ns;
-  } else {
-    process.exit(0);
-  }
-
+/**
+ * Loads slop-patterns.json (always) and project-patterns.json from the active
+ * session dir (if available). Returns combined PatternCatalog, or null if the
+ * base catalog cannot be loaded.
+ * IO function — reads files from disk.
+ */
+export function loadCatalog(): PatternCatalog | null {
   const catalogPath = resolve(import.meta.dir, "..", "slop-patterns.json");
   let catalog: PatternCatalog;
   try {
     const raw = readFileSync(catalogPath, "utf-8");
     const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null || !Array.isArray(parsed.patterns)) process.exit(0);
+    if (typeof parsed !== "object" || parsed === null || !Array.isArray(parsed.patterns)) return null;
     catalog = parsed as PatternCatalog;
   } catch {
-    process.exit(0);
+    return null;
   }
 
   const sessionDir = resolveRndDir();
@@ -222,13 +194,20 @@ async function main(): Promise<void> {
     }
   }
 
-  const matches = analyzeContent(content, catalog.patterns);
-  const lineCount = countLines(content);
+  return catalog;
+}
 
-  writePipelineArtifacts(filePath, lineCount, matches);
+// ---------------------------------------------------------------------------
+// Advisory formatting
+// ---------------------------------------------------------------------------
 
-  if (matches.length === 0) process.exit(0);
-
+/**
+ * Formats slop matches and the source catalog into an advisory string.
+ * Returns null if there are no matches.
+ * Pure.
+ */
+export function buildSlopAdvisory(filePath: string, matches: Match[], catalog: PatternCatalog): string | null {
+  if (matches.length === 0) return null;
   const patternMap = new Map(catalog.patterns.map((p) => [p.id, p]));
   const lines = [`Slop gate: ${matches.length} finding${matches.length === 1 ? "" : "s"} in ${filePath}`];
   for (const m of matches) {
@@ -237,11 +216,5 @@ async function main(): Promise<void> {
     const remediation = p ? p.remediation : "";
     lines.push(`  L${m.line}: ${name} — "${m.snippet}" — ${remediation}`);
   }
-  console.log(JSON.stringify(advisory(lines.join("\n"))));
-}
-
-try {
-  await main();
-} catch {
-  process.exit(0);
+  return lines.join("\n");
 }

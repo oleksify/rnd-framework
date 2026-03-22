@@ -1,31 +1,30 @@
 # Claude Code Plugins
 
-A collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+A private collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ## Available Plugins
 
 | Plugin | Description |
 |---|---|
 | [rnd-framework](plugins/rnd-framework/) | Multi-agent coding orchestration with structured decomposition, independent verification, and quality gates |
+| [](plugins//) | Creative studio for designing in Framer: brief, moodboard, design tokens, component scaffolding, and code generation |
 
 ## Installation
 
 ### Add the marketplace
 
 ```
-/plugin marketplace add https://tangled.sh/oleksify.me/claude-plugins
-```
-
-Or with a Git URL:
-
-```
-/plugin marketplace add git@tangled.org:oleksify.me/claude-plugins.git
+/plugin marketplace add git@github.com:oleksify/claude-plugins.git
 ```
 
 ### Install a plugin
 
 ```
-/plugin install rnd-framework@rnd-framework-plugins
+/plugin install rnd-framework@oleksify-plugins
+```
+
+```
+/plugin install @oleksify-plugins
 ```
 
 Or use the interactive plugin manager:
@@ -43,7 +42,7 @@ Navigate to the **Discover** tab, select the plugin, and choose an installation 
 ### Update a plugin
 
 ```
-/plugin update rnd-framework@rnd-framework-plugins
+/plugin update rnd-framework@oleksify-plugins
 ```
 
 To enable auto-updates for this marketplace:
@@ -63,7 +62,8 @@ Add to `.claude/settings.local.json` (per-machine, not committed) or `.claude/se
 ```json
 {
   "enabledPlugins": {
-    "rnd-framework@rnd-framework-plugins": false
+    "rnd-framework@oleksify-plugins": false,
+    "@oleksify-plugins": false
   }
 }
 ```
@@ -72,4 +72,4 @@ Settings merge with more specific scopes winning: `.claude/settings.local.json` 
 
 ## License
 
-[MIT](LICENSE)
+Proprietary. See [LICENSE](LICENSE).

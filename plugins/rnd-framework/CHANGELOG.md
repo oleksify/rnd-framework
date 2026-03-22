@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0 — 2026-03-22
+
+### Move to private repo, add plugin to README, proprietary license
+
 ## 0.11.33 — 2026-03-22
 
 ### Fix observation-mask test isolation and injection-scanner stdout fallback

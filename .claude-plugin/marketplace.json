@@ -3,7 +3,7 @@
   "description": "Claude Code plugins: rnd-framework for multi-agent orchestration, for Framer design workflows.",
   "owner": {
     "name": "Oleksii Topolianskyi",
-    "url": "git@tangled.org:oleksify.me/claude-plugins.git"
+    "url": "git@github.com:oleksify/claude-plugins.git"
   },
   "plugins": [
     {

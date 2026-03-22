@@ -141,9 +141,16 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(allow())); process.exit(0);
   }
 
-  // Auto-allow remaining commands involving .rnd/ paths or rnd-dir.sh
+  // Auto-allow remaining commands involving .rnd/ paths, rnd-dir.sh, or plugin lib scripts
   // (placed after tool discipline so cat/sed on .rnd/ paths is still blocked)
   if (command.includes(".rnd/") || command.includes("rnd-dir.sh")) {
+    console.log(JSON.stringify(allow())); process.exit(0);
+  }
+
+  // Auto-allow invocations of plugin lib/ scripts (bump.sh, extract-patterns.ts, etc.)
+  // These get different arguments each time, so exact-match permissions never persist.
+  const pluginRoot = process.env["CLAUDE_PLUGIN_ROOT"] ?? "";
+  if (pluginRoot && command.includes(`${pluginRoot}/lib/`)) {
     console.log(JSON.stringify(allow())); process.exit(0);
   }
 

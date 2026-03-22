@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.33 — 2026-03-22
+
+### Fix observation-mask test isolation and injection-scanner stdout fallback
+
 ## 0.11.32 — 2026-03-22
 
 ### Add formatting and bump options to debug pipeline ship flow

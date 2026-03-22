@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.27 — 2026-03-22
+
+### Fix prefer-tools hook evasion via compound shell commands
+
 ## 0.11.26 — 2026-03-22
 
 ### Add push protection and prompt injection scanner

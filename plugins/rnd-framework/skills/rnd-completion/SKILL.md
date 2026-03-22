@@ -75,6 +75,19 @@ Stage all verified changes. Write a clear commit message summarizing the feature
 
 Pipeline artifacts in `$RND_DIR` are outside the project tree and cannot be accidentally staged.
 
+### 5.5. Version Bump (if applicable)
+
+After committing, use `AskUserQuestion` to offer a version bump for versioned projects (plugins, libraries, packages):
+
+> "Bump version and tag this release?"
+
+Options:
+- "Bump, tag and push (Recommended)" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit the bump, create an annotated git tag, and push both to the remote
+- "Bump and tag only" — run `/rnd-framework:bump`, create a tag, but don't push
+- "Skip versioning" — no bump, continue to branch management
+
+**Skip this step silently** if the project has no `plugin.json`, `package.json`, or other version manifest — it's not a versioned project.
+
 ### 6. Branch Management
 
 **Don't assume GitHub.** Check `git remote get-url origin` to determine the hosting platform. The remote could be GitLab, Gitea, Codeberg, Forgejo, Tangled, or any other host. Use the appropriate CLI or web workflow — `gh` is GitHub-only, `glab` is GitLab-only, etc. When in doubt, ask the user.

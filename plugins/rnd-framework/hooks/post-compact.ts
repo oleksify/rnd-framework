@@ -24,8 +24,12 @@ try {
   const task = typeof state["currentTaskId"] === "string" ? state["currentTaskId"] : "unknown";
   const iter = state["iterationCount"] !== undefined ? String(state["iterationCount"]) : "0";
   const saved = typeof state["savedAt"] === "string" ? state["savedAt"] : "unknown";
+  const needle = typeof state["verificationNeedle"] === "string" ? state["verificationNeedle"] : "";
 
-  const msg = `Pipeline state restored after compaction:\n  Plan: ${plan}\n  Current task: ${task}\n  Iteration: ${iter}\n  State saved at: ${saved}`;
+  let msg = `Pipeline state restored after compaction:\n  Plan: ${plan}\n  Current task: ${task}\n  Iteration: ${iter}\n  State saved at: ${saved}`;
+  if (needle) {
+    msg += `\n\nVERIFICATION CHECK: Confirm your context survived compaction by stating: (1) current task ID: ${task}, (2) iteration count: ${iter}, (3) needle: ${needle}. If you cannot answer these, re-read $RND_DIR/plan.md before continuing.`;
+  }
   console.log(JSON.stringify(advisory(msg)));
 } catch {
   process.exit(0);

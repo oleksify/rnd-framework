@@ -99,6 +99,47 @@ Could a failure cause security/financial/data harm?
   -> High-stakes tier
 ```
 
+## Verification Depth by Criticality
+
+Orthogonal to task size, **criticality** determines how much verification effort each task receives. The Planner should annotate each task in the pre-registration with a criticality tier. The orchestrator reads this annotation to decide verification depth.
+
+### LOW criticality
+**Examples:** Config changes, documentation updates, style fixes, renaming, adding log lines.
+**Verification:** Single-judge verification. No proof gate. Quality tier is advisory-only.
+**Rationale:** False negatives here are cheap to fix. Over-verifying wastes tokens.
+
+### MEDIUM criticality (default)
+**Examples:** Standard features, bug fixes, test additions, refactors with clear scope.
+**Verification:** 2-judge consensus (current default). Standard iteration budget (3).
+**Rationale:** Most tasks live here. The dual-judge approach catches ~95% of issues.
+
+### HIGH criticality
+**Examples:** Security-sensitive code, data migrations, authentication changes, financial calculations, architectural decisions that constrain future work.
+**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5). If Lean is available, invoke proof gate.
+**Rationale:** False negatives here are expensive. The extra verification cost is justified.
+
+### How the Planner annotates criticality
+
+In the pre-registration document, add a `Criticality:` field:
+
+```
+Task ID: T3
+Intent: Add rate limiting to API endpoints
+Criticality: HIGH
+```
+
+If the Planner omits the field, the orchestrator defaults to MEDIUM.
+
+### How the orchestrator applies it
+
+| Criticality | Judges | Iteration budget | Proof gate |
+|-------------|--------|-----------------|------------|
+| LOW | 1 | 2 | Skip |
+| MEDIUM | 2 | 3 | If available |
+| HIGH | 2 | 5 | If available |
+
+This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
+
 ## Anti-Pattern: Skipping the Pipeline
 
 "This is too simple for the pipeline" is never true. The pipeline scales down to one pre-registration line and one verification check. That takes 30 seconds. Skipping it means unverified work.

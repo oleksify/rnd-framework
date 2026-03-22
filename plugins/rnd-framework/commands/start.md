@@ -319,6 +319,7 @@ Summarize results for the user:
 
 Use `AskUserQuestion` to present concrete next steps:
 - "Commit changes (Recommended)" — stage and commit all changes from the pipeline
+- "Bump version, tag and push" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the pipeline produced a releasable change to a versioned project (e.g., a plugin, library, or package).
 - "Run code review first" — run `/rnd-framework:review` on the changes before committing, to catch issues the pipeline may have missed
 - "Create PR" — commit and open a pull request
 - "Show development narrative" — generate a narrative explanation of the pipeline run (see below)

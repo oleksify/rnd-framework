@@ -94,6 +94,7 @@ Save the verification report to `$RND_DIR/verifications/T1-verification.md` with
 
 - **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. **MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. This detects the project's formatter and runs it on files changed by the pipeline. Then invoke `rnd-framework:rnd-doc-polish` to check and update docs. Report what was formatted and what docs were updated. Use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
+  - "Bump version, tag and push" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the task produced a releasable change to a versioned project.
   - "Show development narrative" — generate a narrative explanation of the session: what was built and why, key decisions and trade-offs, obstacles encountered, insights gained, and what's left. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session

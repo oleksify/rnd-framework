@@ -80,6 +80,14 @@ Before writing any code, verify every external dependency listed in the pre-regi
 
 For EACH success criterion in the pre-registration:
 
+**SCAN — Re-anchor before each criterion** (mandatory)
+
+Before starting work on a criterion, output a brief compliance statement in your response (not in thinking). This re-states the criterion and approach, costing ~300 tokens but restoring attention to the pre-registration as context grows. Format:
+
+> SCAN: Working on criterion [N]: [criterion text]. Approach: [approach from pre-registration].
+
+This is the SCAN technique (System Compliance Active Notification). Research shows system prompt tokens lose attention weight as context grows — at 80K tokens, a 1K instruction block commands only ~1% of attention. Generating criterion text in output restores the attention weight. Do not skip this step even if it feels redundant.
+
 **RED — Write a failing test**
 - One test per criterion
 - Clear name describing the expected behavior
@@ -160,6 +168,40 @@ Save to `$RND_DIR/builds/T<id>-self-assessment.md`:
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Real** | Tests actual code | Tests mock behavior |
 | **Intent** | Shows what SHOULD happen | Shows what DOES happen |
+
+## Property-Based Testing
+
+Prefer property-based tests over specific-output tests when the criterion describes an invariant, roundtrip, or ordering guarantee. Research shows 23-37% relative pass@1 improvements because properties are harder to hallucinate incorrectly than specific test cases.
+
+**When to use property-based tests:**
+- Roundtrip/codec: "encode then decode returns the original" instead of `encode('hello') === 'aGVsbG8='`
+- Invariants: "sorted output is always in ascending order" instead of `sort([3,1,2]) === [1,2,3]`
+- Mathematical properties: "hash is deterministic" (same input always produces same output)
+- Preservation: "serialization preserves all fields" instead of testing one specific object
+
+**When specific-output tests are better:**
+- Exact API response shapes (snapshot tests)
+- Known edge cases with fixed expected values
+- Error messages that must match exactly
+- UI rendering assertions
+
+**In practice:** Write the property as a test that generates random valid inputs and asserts the invariant holds. If the language has a property-testing library (fast-check, hypothesis, propcheck), use it. Otherwise, a simple loop over random inputs achieves the same effect.
+
+## Context Management
+
+Verbose tool output fills your context window without proportional value. Research shows that **observation masking** — summarizing verbose outputs rather than processing them raw — is the most effective context management technique for coding agents.
+
+**When test/build output exceeds ~50 lines:**
+- Extract the key signal: pass/fail counts, specific error messages, failing test names, stack traces
+- Summarize in 5-10 lines of your own words before continuing
+- Do not paste or re-read the full output — it consumes context that should be spent on reasoning
+
+**When reading large files:**
+- Use offset/limit parameters to read only relevant sections
+- If you need to understand the full file, read it in chunks and summarize as you go
+- Prefer Grep to find specific patterns rather than reading entire files
+
+**Why this matters:** At 80K context tokens, every 1K of verbose output reduces the attention budget available for your actual task. The model's ability to follow pre-registration criteria degrades as context fills with low-signal observations.
 
 ## Common Rationalizations
 

@@ -53,6 +53,13 @@ export function extractIterationCount(rndDir: string): number {
   }
 }
 
+/** Generates a short random hex string for needle-in-the-haystack verification. Pure (given crypto source). */
+export function generateNeedle(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -66,6 +73,7 @@ async function main(): Promise<void> {
     currentTaskId: extractCurrentTaskId(rndDir),
     iterationCount: extractIterationCount(rndDir),
     savedAt: isoTimestamp(),
+    verificationNeedle: generateNeedle(),
   };
 
   try {

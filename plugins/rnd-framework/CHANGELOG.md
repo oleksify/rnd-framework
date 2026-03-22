@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.21 — 2026-03-22
+
+### Research-driven improvements from LLM drift and hallucination literature
+
+Six improvements based on 2024-2026 academic work: (1) Release automation — add "Bump version, tag and push" option to Phase 6 menus in start.md, quick.md, and rnd-completion skill. (2) SCAN re-anchoring — mandatory compliance re-statement before each Red-Green-Refactor criterion in the builder skill, restoring attention weights as context grows. (3) Property-based testing — guidance in builder skill for when to prefer property tests over specific-output tests. (4) Post-compact verification — needle-in-the-haystack challenge after context compaction to detect degraded recall. (5) Observation masking — context management guidance plus PostToolUse/Bash hook that advises when output exceeds 50 lines. (6) Criticality-based verification scaling — LOW/MEDIUM/HIGH tiers in rnd-scaling skill with differentiated judge count and iteration budgets.
+
 ## 0.11.20 — 2026-03-22
 
 ### Consolidate PostToolUse hooks and add write-gate

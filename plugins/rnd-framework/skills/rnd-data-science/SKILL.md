@@ -162,7 +162,7 @@ Use the same session name throughout the task so state accumulates correctly. If
 
 Write Lean 4 theorems for numerical invariants BEFORE writing any computation code. Read the pre-registration criteria, identify invariants, and formalize them first — spec before code.
 
-**When Lean is unavailable:** Run `which lean` or `lean --version`. If Lean is not installed, skip this phase and note it in the build manifest. Do not block on it.
+**When Lean is unavailable:** Run `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If Lean is not installed, skip this phase and note it in the build manifest. Do not block on it.
 
 ### Common invariants to formalize
 

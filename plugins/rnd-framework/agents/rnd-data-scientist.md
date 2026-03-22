@@ -31,7 +31,7 @@ which duckdb && duckdb --version || echo "duckdb not available"
 Check Lean availability:
 
 ```bash
-which lean && lean --version || echo "lean not available — Lean spec steps will be skipped"
+lake --version 2>/dev/null || elan which lean 2>/dev/null || echo "lean not available — Lean spec steps will be skipped"
 ```
 
 If DuckDB is available, it can be used directly via Bash for SQL-expressible work (see Tool Selection below). No additional loading is required.

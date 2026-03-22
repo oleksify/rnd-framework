@@ -186,7 +186,7 @@ Otherwise, use `AskUserQuestion` with options:
 
 After all builders complete and pass Gate 2, attempt formal proofs if Lean is available.
 
-1. **Check Lean availability.** Run `which lean || test -x ~/.elan/bin/lean || test -x ~/.local/bin/lean`. If none succeed, log "Lean not available — skipping Proof Gate" and proceed directly to Phase 3. No user interaction needed. (Subagents may have a minimal PATH that excludes `~/.local/bin` or `~/.elan/bin`, so the fallback path checks are necessary.)
+1. **Check Lean availability.** Run `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If both fail, log "Lean not available — skipping Proof Gate" and proceed directly to Phase 3. No user interaction needed. (`lake` is the reliable check when elan is installed via Homebrew; `elan which lean` resolves the real binary regardless of PATH shadowing.)
 
 2. **Spawn proof-gate agents.** For each completed task in the wave, spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-proof-gate"`. Spawn all agents in a single message (parallel). Each agent prompt must include: the task's pre-registration criteria (from `$RND_DIR/plan.md`) and the path to builder output (`$RND_DIR/builds/T<id>-manifest.md`).
 

@@ -176,10 +176,10 @@ For each wave in the execution schedule:
 
 **After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
 
-If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to verification (Phase 3).
+If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 2.5 (Proof Gate).
 
 Otherwise, use `AskUserQuestion` with options:
-- "Proceed to verification (Recommended)" — spawn Verifiers for this wave
+- "Proceed to verification (Recommended)" — continue to Phase 2.5 (Proof Gate), then Phase 3
 - "Review build artifacts first" — let the user inspect code before verification
 
 ## Phase 2.5: Proof Gate (advisory)

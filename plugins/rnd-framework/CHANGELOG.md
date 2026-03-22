@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.23 — 2026-03-22
+
+### Add research-backed failure patterns to catalog
+
+Expand rnd-failure-modes from 11 to 18 patterns with 7 new builder/orchestrator drift patterns extracted from 2024-2026 LLM reliability research: Pipeline Ceremony Shortcut, Attention Decay Drift, Resource Hallucination, Mapping Hallucination, Self-Deception Cycle, Observation Flooding, Post-Compaction Amnesia. Each maps to a concrete mitigation already in the framework. Add 4 new red flag phrases.
+
 ## 0.11.22 — 2026-03-22
 
 ### Fix roadmap mode skipping verification

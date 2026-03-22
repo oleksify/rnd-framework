@@ -416,3 +416,195 @@ describe("large command — no crash", () => {
     expect(result.exitCode).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Evasion vector: && chaining
+// ---------------------------------------------------------------------------
+
+describe("evasion — && chaining", () => {
+  test("'npm install && cat package.json' is blocked (cat after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm install && cat package.json"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+
+  test("'ls && sed -i s/old/new/ file' is blocked (sed after &&)", async () => {
+    const result = await runHook(HOOK, payload("ls && sed -i 's/old/new/' file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
+
+  test("'mkdir dir && find . -name *.ts' is blocked (find after &&)", async () => {
+    const result = await runHook(HOOK, payload("mkdir dir && find . -name '*.ts'"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Glob tool");
+  });
+
+  test("'npm run build && head -20 dist/index.js' is blocked (head after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm run build && head -20 dist/index.js"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+
+  test("'npm run build && awk {print $1} file' is blocked (awk after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm run build && awk '{print $1}' file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: ; chaining (non-cd prefix)
+// ---------------------------------------------------------------------------
+
+describe("evasion — ; chaining (non-cd)", () => {
+  test("'ls ; awk {print $1} file' is blocked (awk after non-cd ;)", async () => {
+    const result = await runHook(HOOK, payload("ls ; awk '{print $1}' file"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Edit tool");
+  });
+
+  test("'npm install ; cat package.json' is blocked (cat after non-cd ;)", async () => {
+    const result = await runHook(HOOK, payload("npm install ; cat package.json"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: | pipe
+// ---------------------------------------------------------------------------
+
+describe("evasion — | pipe", () => {
+  test("'npm test | grep FAIL' is blocked (grep after |)", async () => {
+    const result = await runHook(HOOK, payload("npm test | grep FAIL"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Grep tool");
+  });
+
+  test("'true | rg pattern' is blocked (rg after |)", async () => {
+    const result = await runHook(HOOK, payload("true | rg pattern"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Grep tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: || operator
+// ---------------------------------------------------------------------------
+
+describe("evasion — || operator", () => {
+  test("'test -f file || cat fallback.txt' is blocked (cat after ||)", async () => {
+    const result = await runHook(HOOK, payload("test -f file || cat fallback.txt"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: subshell ()
+// ---------------------------------------------------------------------------
+
+describe("evasion — subshell ()", () => {
+  test("'(cat file.txt)' is blocked (cat inside subshell)", async () => {
+    const result = await runHook(HOOK, payload("(cat file.txt)"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+
+  test("'(grep pattern file)' is blocked (grep inside subshell)", async () => {
+    const result = await runHook(HOOK, payload("(grep pattern file)"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Grep tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: $() command substitution
+// ---------------------------------------------------------------------------
+
+describe("evasion — $() command substitution", () => {
+  test("'echo $(grep pattern file)' is blocked (grep inside $())", async () => {
+    const result = await runHook(HOOK, payload("echo $(grep pattern file)"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Grep tool");
+  });
+
+  test("'echo $(cat secrets.txt)' is blocked (cat inside $())", async () => {
+    const result = await runHook(HOOK, payload("echo $(cat secrets.txt)"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion vector: backtick substitution
+// ---------------------------------------------------------------------------
+
+describe("evasion — backtick substitution", () => {
+  test("'echo `cat file.txt`' is blocked (cat inside backticks)", async () => {
+    const result = await runHook(HOOK, payload("echo `cat file.txt`"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Read tool");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Auto-allow still works with chained commands
+// ---------------------------------------------------------------------------
+
+describe("auto-allow with chained commands", () => {
+  test("'npm install && bun run /tmp/.rnd/check.ts' returns allow (rnd path after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm install && bun run /tmp/.rnd/check.ts"));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+
+  test("'npm test && echo results' returns exit 0 with allow (echo without redirect)", async () => {
+    const result = await runHook(HOOK, payload("npm test && echo results"));
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("allow");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// echo/printf mid-chain redirect detection
+// ---------------------------------------------------------------------------
+
+describe("echo/printf redirect detection mid-chain", () => {
+  test("'npm test && echo result > output.txt' is blocked (echo redirect after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm test && echo result > output.txt"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Write tool");
+  });
+
+  test("'npm test && echo result > /dev/null' is allowed (echo to /dev/ after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm test && echo result > /dev/null"));
+    expect(result.exitCode).toBe(0);
+  });
+
+  test("'npm test && echo result > /path/.rnd/builds/out.md' is allowed (echo to .rnd/ after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm test && echo result > /path/.rnd/builds/out.md"));
+    expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// git add .rnd and git push check on full command string (not split)
+// ---------------------------------------------------------------------------
+
+describe("git checks operate on full command string", () => {
+  test("'npm install && git add .rnd/something' is blocked (git add .rnd after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm install && git add .rnd/something"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  test("'npm install && git push origin main' is blocked (git push main after &&)", async () => {
+    const result = await runHook(HOOK, payload("npm install && git push origin main"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+});

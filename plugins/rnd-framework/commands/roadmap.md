@@ -55,8 +55,12 @@ After the Planner finishes, read `$ROADMAP` and display its full contents.
 Use `AskUserQuestion`:
 
 Options:
-- "Start first milestone (Recommended)" — find the first `NOT_STARTED` milestone, confirm
-  its description, then invoke `/rnd-framework:start` with that milestone's Description
+- "Start first milestone (Recommended)" — find the first `NOT_STARTED` milestone, update
+  its status to `IN_PROGRESS` in `$ROADMAP`, then invoke `/rnd-framework:start` with that
+  milestone's Description as the task. **Each milestone must go through the full pipeline:
+  Plan → Build → Verify → Integrate.** Verification is not optional — it is the framework's
+  core guarantee. If already inside a `/rnd-framework:start` session, return the milestone
+  description to the caller to continue with Phase 1 (Plan) instead of re-invoking start.
 - "Review milestones" — re-display the roadmap and re-present this menu
 - "Finish — start later" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish`
   and tell the user the roadmap is saved at `$ROADMAP`
@@ -92,6 +96,8 @@ Options:
 4. On confirm: update `$ROADMAP` — set status to `IN_PROGRESS`, write current session ID
    (from `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`) to its Session field. Then invoke
    `/rnd-framework:start` with the milestone's Description as the task.
+
+**Important:** Each milestone must go through the full pipeline phases (Plan → Build → Verify → Integrate). Do NOT skip verification even if the milestone appears simple. If already inside a `/rnd-framework:start` session, return the milestone description to the calling pipeline to continue with Phase 1 (Plan) — do not attempt to recursively re-invoke `/rnd-framework:start`.
 
 ### Park current work
 

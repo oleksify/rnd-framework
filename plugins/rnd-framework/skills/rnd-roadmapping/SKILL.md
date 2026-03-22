@@ -70,6 +70,18 @@ When a Planner receives a multi-session goal, decompose it into milestones — n
 - Note dependencies inline but keep them minimal — "M3 requires M2's API contract" is fine; a web of cross-dependencies is a decomposition smell
 - The Planner creates individual tasks within each session; milestones are session-level units
 
+## Milestone Execution and Verification
+
+Each milestone goes through the full pipeline independently: **Plan → Build → Verify → Integrate**. Verification is not optional, even for milestones that appear simple. The multi-judge verification in Phase 3 is the framework's core quality guarantee — skipping it means unverified work ships.
+
+When executing a milestone:
+- The milestone description becomes the task for `/rnd-framework:start`
+- The pipeline runs all phases including independent multi-judge verification
+- A SHIP verdict from the Integrator marks the milestone as DONE
+- If already inside a `/rnd-framework:start` session (e.g., Phase 0 created the roadmap), the milestone description flows to Phase 1 (Plan) — do not recursively re-invoke start
+
+**Anti-pattern:** Completing milestone work inline without spawning the pipeline phases. Even small milestones (documentation, config changes) need at least single-judge verification per the scaling skill's criticality tiers.
+
 ## Updating Progress After SHIP
 
 After a SHIP verdict, update roadmap.md:

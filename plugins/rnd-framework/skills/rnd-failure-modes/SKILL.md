@@ -117,6 +117,62 @@ These are the known failure modes this framework has encountered. Each entry inc
 
 ---
 
+### 12. Pipeline Ceremony Shortcut
+
+**How it manifests:** The task looks simple — a config change, a one-line fix, a documentation update — so you skip phases. You build inline without planning, skip verification because "it's obvious," or commit without integration testing. The framework's scaling tiers exist for this exact pressure, but you bypass them.
+
+**Correct behavior:** Even trivial tasks get at minimum a pre-registration line and single-judge verification. The rnd-scaling skill defines the minimum ceremony for each tier. "Too simple to verify" is the pipeline equivalent of "too simple to test."
+
+---
+
+### 13. Attention Decay Drift
+
+**How it manifests:** Deep into a long session, you start ignoring pre-registration criteria, deviating from the planned approach, or forgetting constraints established earlier. Your outputs gradually drift from the original requirements. You may not notice because the drift is gradual — each step seems locally reasonable.
+
+**Correct behavior:** Use SCAN re-anchoring (output a compliance statement before each criterion). Read the pre-registration again — not from memory, from the file. If context has been compacted, re-read `$RND_DIR/plan.md`. Research shows system prompt tokens command only ~1% of attention at 80K context tokens; active re-generation restores the weight.
+
+---
+
+### 14. Resource Hallucination
+
+**How it manifests:** You reference an API that doesn't exist, import a module that was never created, call a function with the wrong signature, or assume a dependency is available that isn't installed. The code looks plausible but uses phantom resources.
+
+**Correct behavior:** Before using any API, function, or module you didn't just create: verify it exists. Read the file, grep for the export, check the package.json. The pre-registration's "External dependencies" field exists to force this verification. If you're importing something, confirm it's real.
+
+---
+
+### 15. Mapping Hallucination
+
+**How it manifests:** You misunderstand how code parts connect — wrong data flow, incorrect call chain, confused ownership between modules. You build something that would work if the architecture were what you imagine, but it's not. Common when working with unfamiliar codebases.
+
+**Correct behavior:** Before implementing, trace the actual data flow and call chain in the existing code. Read the files, follow the imports, understand the relationships. The exploration cache (`$RND_DIR/exploration/`) exists for this. Don't assume architecture — verify it.
+
+---
+
+### 16. Self-Deception Cycle
+
+**How it manifests:** You write tests that encode the same misconceptions as your implementation. The code is wrong, the tests are wrong in the same way, and everything passes. This is especially dangerous with LLM-generated tests because the same model produces both the code and the tests.
+
+**Correct behavior:** Write tests BEFORE implementation (TDD). Test properties and invariants rather than specific outputs when possible — properties are harder to hallucinate incorrectly. Use the rnd-building skill's Property-Based Testing guidance. When verifying, run the builder's tests but also write independent experiments from the spec alone.
+
+---
+
+### 17. Observation Flooding
+
+**How it manifests:** You run a command that produces 500 lines of output. The raw output fills your context window. Your subsequent reasoning degrades because the useful signal (3 lines of error messages) is buried in noise (497 lines of passing test output). You may not realize your capacity for the actual task has diminished.
+
+**Correct behavior:** When tool output exceeds ~50 lines, summarize the key signal: pass/fail counts, error messages, failing test names. Don't paste or re-read the full output. The observation-mask hook will remind you, but apply this discipline proactively.
+
+---
+
+### 18. Post-Compaction Amnesia
+
+**How it manifests:** After context compaction, you lose track of the original requirements, the current task, or constraints established earlier in the session. You continue working but on a subtly different problem. The compact-state.json restoration gives you the facts but not the nuanced understanding.
+
+**Correct behavior:** After compaction, re-read `$RND_DIR/plan.md` and the current task's pre-registration. Answer the post-compact verification challenge (needle-in-the-haystack). If you can't recall the task ID, plan summary, and iteration count without looking them up, your context has degraded — reload before continuing.
+
+---
+
 ## Red Flag Phrases
 
 When you find yourself writing or thinking any of the following, stop and check your reasoning:
@@ -133,6 +189,10 @@ When you find yourself writing or thinking any of the following, stop and check 
 10. **"I already checked something similar"** — prior checks do not transfer; each criterion gets fresh evidence
 11. **"Great!"** (before issuing verdict) — positive affect before evidence is a warning sign
 12. **"I'm confident this is correct"** — confidence without evidence is the definition of Premature Satisfaction
+13. **"too simple to need verification"** — the scaling skill defines minimum ceremony for every tier; nothing is exempt
+14. **"I remember the requirement says..."** — memory degrades; re-read the pre-registration file, don't recall from context
+15. **"this API/function should exist"** — should is not does; grep for it before using it
+16. **"the architecture must work like..."** — must is not does; trace the actual code path before assuming
 
 ---
 

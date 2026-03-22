@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.29 — 2026-03-22
+
+### Add plugin with Framer MCP, 17 skills, 3 agents, 5 commands
+
+Rename marketplace to oleksify-plugins
+
 ## 0.11.28 — 2026-03-22
 
 ### Fix Lean 4 proof gate activation and detection

@@ -4,9 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing the **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
+A Claude Code plugin repository containing two plugins:
 
-The plugin lives at `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references it. Alternatively, the plugin can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
+- **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
+- **** — a creative studio for designing in Framer. Follows a real design process (brief → moodboard → tokens → build → review) to produce design systems and page skeletons.
+
+Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
 ## Repository Layout
 

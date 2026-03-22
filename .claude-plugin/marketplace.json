@@ -1,6 +1,6 @@
 {
   "name": "rnd-framework-plugins",
-  "description": "Claude Code plugins for structured multi-agent orchestration",
+  "description": "Claude Code plugins: rnd-framework for multi-agent orchestration, for Framer design workflows.",
   "owner": {
     "name": "Oleksii Topolianskyi",
     "url": "git@tangled.org:oleksify.me/claude-plugins.git"
@@ -11,6 +11,12 @@
       "description": "Multi-agent coding orchestration with structured decomposition, dependency-based scheduling, independent verification with information barriers, quality gates, and spec-first accountability.",
       "category": "development",
       "source": "./plugins/rnd-framework"
+    },
+    {
+      "name": "rnd-framework",
+      "description": "Creative design studio for Framer: component scaffolding, design token management, and code generation for Framer sites and design systems.",
+      "category": "design",
+      "source": "./plugins/"
     }
   ]
 }

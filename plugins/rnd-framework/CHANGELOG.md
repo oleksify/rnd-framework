@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.31 — 2026-03-22
+
+### Add SendMessage Communication sections to agent files
+
 ## 0.11.30 — 2026-03-22
 
 ### Auto-allow plugin lib/ script invocations to stop repetitive permission prompts

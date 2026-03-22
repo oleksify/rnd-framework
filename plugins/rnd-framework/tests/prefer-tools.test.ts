@@ -189,6 +189,42 @@ describe("git add .rnd — blocked", () => {
 });
 
 // ---------------------------------------------------------------------------
+// git push to main/master/production → blocked
+// ---------------------------------------------------------------------------
+
+describe("git push to protected branches — blocked", () => {
+  test("'git push origin main' returns exit 2 and stderr contains BLOCKED", async () => {
+    const result = await runHook(HOOK, payload("git push origin main"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  test("'git push origin master' returns exit 2", async () => {
+    const result = await runHook(HOOK, payload("git push origin master"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  test("'git push origin production' returns exit 2", async () => {
+    const result = await runHook(HOOK, payload("git push origin production"));
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("BLOCKED");
+  });
+
+  test("'git push origin feature-branch' is not blocked", async () => {
+    const result = await runHook(HOOK, payload("git push origin feature-branch"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr.trim()).toBe("");
+  });
+
+  test("'git push --tags' is not blocked", async () => {
+    const result = await runHook(HOOK, payload("git push --tags"));
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr.trim()).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // rnd-dir.sh in command → auto-allow
 // ---------------------------------------------------------------------------
 

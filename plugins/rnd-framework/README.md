@@ -304,6 +304,7 @@ rnd-framework/
 │   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
 │   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
 │   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
+│   ├── injection-scanner.ts     # PostToolUse hook: scans Read/Bash/MCP output for prompt injection patterns
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction

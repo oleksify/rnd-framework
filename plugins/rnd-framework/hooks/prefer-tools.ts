@@ -72,6 +72,9 @@ async function main(): Promise<void> {
   if (/git\s+add.*\.rnd(\/|\s|$)/.test(command)) {
     block("BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed.");
   }
+  if (/git\s+push\s+.*\b(main|master|production)\b/.test(command)) {
+    block("BLOCKED: Direct push to main/master/production. Use a feature branch and PR instead.");
+  }
   // Auto-allow remaining commands involving .rnd/ paths or rnd-dir.sh
   if (command.includes(".rnd/") || command.includes("rnd-dir.sh")) {
     console.log(JSON.stringify(allow())); process.exit(0);

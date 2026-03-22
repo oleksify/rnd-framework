@@ -135,6 +135,19 @@
           {
             "type": "command",
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/observation-mask.ts'"
+          },
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/injection-scanner.ts'"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/injection-scanner.ts'"
           }
         ]
       }

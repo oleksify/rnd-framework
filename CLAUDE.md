@@ -29,6 +29,7 @@ plugins/rnd-framework/
 │   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
 │   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
 │   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
+│   ├── injection-scanner.ts     # PostToolUse hook: scans Read/Bash/MCP output for prompt injection patterns
 │   ├── stop-failure.ts          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
@@ -66,7 +67,8 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Information barrier** (`read-gate.ts`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
 - **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.ts`, `write-gate.ts`, `prefer-tools.ts`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.ts` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
 - **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths
-- **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth
+- **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches
+- **Prompt injection scanning** (`injection-scanner.ts`): PostToolUse hook scans Read/Bash/MCP tool output for common injection patterns (e.g., "ignore previous instructions", `<system>` tags) and emits advisory warnings
 - **Audit logging, slop analysis, evidence scanning** (`post-tool-use.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`, analyzes code for LLM anti-patterns, and scans for SQL/API references requiring verification reminders
 - **Stop failure logging** (`stop-failure.ts`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 

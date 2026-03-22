@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.24 — 2026-03-22
+
+### Migrate hook filesystem I/O to Bun-native APIs
+
+Replace readFileSync/writeFileSync with Bun.file().text(), Bun.file().json(), and Bun.write() across 5 hook files. post-compact.ts is now fully node:fs-free. Remaining node:fs imports (existsSync for directories, appendFileSync, mkdirSync, readdirSync, statSync) have no Bun alternatives.
+
 ## 0.11.23 — 2026-03-22
 
 ### Add research-backed failure patterns to catalog

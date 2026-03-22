@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.28 — 2026-03-22
+
+### Fix Lean 4 proof gate activation and detection
+
 ## 0.11.27 — 2026-03-22
 
 ### Fix prefer-tools hook evasion via compound shell commands

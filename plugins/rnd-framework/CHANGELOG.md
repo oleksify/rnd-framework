@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.26 — 2026-03-22
+
+### Add push protection and prompt injection scanner
+
+Inspired by dwarvesf/claude-guardrails: (1) prefer-tools.ts now blocks git push to main/master/production branches — deterministic enforcement replacing advisory CLAUDE.md instruction. (2) New injection-scanner.ts PostToolUse hook scans Read, Bash, and MCP tool output for 14 common prompt injection patterns and emits advisory warnings. Registered for PostToolUse/Read and PostToolUse/Bash events. Uses import.meta.main guard for safe test imports.
+
 ## 0.11.25 — 2026-03-22
 
 ### Fix audit findings

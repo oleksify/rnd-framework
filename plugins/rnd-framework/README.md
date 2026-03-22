@@ -291,7 +291,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # 7 specialized agents
-├── commands/                    # 18 pipeline commands
+├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
@@ -303,6 +303,7 @@ rnd-framework/
 │   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
 │   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
 │   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
+│   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
 │   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction

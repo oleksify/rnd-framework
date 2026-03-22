@@ -5,9 +5,9 @@
 // Fire-and-forget: exits 0 always, produces no stdout.
 // Reads: plan.md, builds/T*-manifest.md, iteration-log.md
 
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
-import { activeSessionDir, isoTimestamp } from "./lib.ts";
+import { activeSessionDir, isoTimestamp, generateNeedle } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
 // IO helpers
@@ -28,7 +28,7 @@ export async function extractPlanSummary(rndDir: string): Promise<string> {
 /** Returns task ID from most recent T*-manifest.md, or null. IO function. */
 export async function extractCurrentTaskId(rndDir: string): Promise<string | null> {
   const buildsDir = join(rndDir, "builds");
-  if (!await Bun.file(buildsDir).exists()) return null;
+  if (!existsSync(buildsDir)) return null;
   try {
     const files = readdirSync(buildsDir).filter((f) => /^T\w+-manifest\.md$/.test(f));
     if (files.length === 0) return null;
@@ -51,13 +51,6 @@ export async function extractIterationCount(rndDir: string): Promise<number> {
   } catch {
     return 0;
   }
-}
-
-/** Generates a short random hex string for needle-in-the-haystack verification. Pure (given crypto source). */
-export function generateNeedle(): string {
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // ---------------------------------------------------------------------------

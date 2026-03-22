@@ -179,6 +179,13 @@ export function isoTimestamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+/** Generates a short random hex string for needle-in-the-haystack verification. Pure (given crypto source). */
+export function generateNeedle(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /**
  * Resolves the active RND session directory, validates it contains /sessions/ and exists on disk.
  * Returns the directory path if all conditions hold, null otherwise.

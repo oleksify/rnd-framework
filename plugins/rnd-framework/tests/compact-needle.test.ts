@@ -24,13 +24,13 @@ const POST_COMPACT = join(import.meta.dir, "..", "hooks", "post-compact.ts");
 
 describe("generateNeedle", () => {
   test("returns an 8-character hex string", async () => {
-    const { generateNeedle } = await import("../hooks/pre-compact.ts");
+    const { generateNeedle } = await import("../hooks/lib.ts");
     const needle = generateNeedle();
     expect(needle).toMatch(/^[0-9a-f]{8}$/);
   });
 
   test("returns different values on successive calls", async () => {
-    const { generateNeedle } = await import("../hooks/pre-compact.ts");
+    const { generateNeedle } = await import("../hooks/lib.ts");
     const a = generateNeedle();
     const b = generateNeedle();
     // Extremely unlikely to collide with 32 bits of randomness

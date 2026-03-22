@@ -77,10 +77,15 @@ describe("observation-mask: integration", () => {
   });
 
   test("no output when no active session", async () => {
-    const input = { tool_name: "Bash", stdout: Array.from({ length: 100 }, (_, i) => `x${i}`).join("\n") };
-    const result = await runHook(HOOK_PATH, input);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("");
+    const env = await createTestEnv({ withSession: false });
+    try {
+      const input = { tool_name: "Bash", stdout: Array.from({ length: 100 }, (_, i) => `x${i}`).join("\n") };
+      const result = await runHook(HOOK_PATH, input, env.env);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe("");
+    } finally {
+      await env.cleanup();
+    }
   });
 
   test("no output for malformed stdin", async () => {

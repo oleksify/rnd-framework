@@ -42,7 +42,8 @@ async function main(): Promise<void> {
   const scannable = toolName === "Read" || toolName === "WebFetch" || toolName === "Bash" || toolName.startsWith("mcp__");
   if (!scannable) return;
 
-  const output = typeof obj["tool_output"] === "string" ? obj["tool_output"] : "";
+  const output = typeof obj["tool_output"] === "string" ? obj["tool_output"]
+    : typeof obj["stdout"] === "string" ? obj["stdout"] : "";
   if (!output) return;
 
   const findings = scanForInjection(output);

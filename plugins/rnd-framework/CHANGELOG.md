@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.32 — 2026-03-22
+
+### Add formatting and bump options to debug pipeline ship flow
+
 ## 0.11.31 — 2026-03-22
 
 ### Add SendMessage Communication sections to agent files

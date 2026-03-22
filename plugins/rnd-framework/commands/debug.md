@@ -110,9 +110,10 @@ The Verifier returns its report as text output. Save the returned report to `$RN
 
 ## Step 4: Iterate or Ship
 
-- **PASS** → Use `TaskUpdate` to mark the task `completed`. **MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-doc-polish` BEFORE presenting commit options. Report what was updated (or that everything is current). Then use `AskUserQuestion` with options:
+- **PASS** → Use `TaskUpdate` to mark the task `completed`. **MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. Report what was formatted (or that no formatter was detected). Then invoke `rnd-framework:rnd-doc-polish` BEFORE presenting commit options. Report what was updated (or that everything is current). Then use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
-  - "Show development narrative" — generate a narrative explanation: what the bug was and why it existed, how diagnosis found the root cause, what the fix does, and what was verified. Write as prose (2-4 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
+  - "Bump version, tag and push" — run `/rnd-framework:bump` to add CHANGELOG entry, increment patch version, commit, tag, and push (use when producing a releasable change to a versioned project)
+  - "Show development narrative" — generate a narrative explanation: what the bug was and why it existed, how diagnosis found the root cause, what the fix does, and what was verified. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID
 

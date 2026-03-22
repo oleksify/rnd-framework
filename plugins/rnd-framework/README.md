@@ -296,6 +296,7 @@ rnd-framework/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
 │   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
 │   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
+│   ├── write-gate.ts            # Write/Edit hook: auto-allows .rnd/ path operations
 │   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
 │   ├── session-start.ts         # SessionStart hook: injects skill context
 │   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch

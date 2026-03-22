@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.25 — 2026-03-22
+
+### Fix audit findings
+
+Fix Bun.file().exists() used on directory path in pre-compact.ts extractCurrentTaskId() — always returned null for existing builds directories. Move generateNeedle() from pre-compact.ts to lib.ts to prevent compact-needle tests from silently failing (module-level process.exit killed test runner). Add observation-mask.ts to CLAUDE.md and README.md file trees. Fix README.md command count (18→19).
+
 ## 0.11.24 — 2026-03-22
 
 ### Migrate hook filesystem I/O to Bun-native APIs

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.22 — 2026-03-22
+
+### Fix roadmap mode skipping verification
+
+Roadmap milestones were being completed inline without multi-judge verification. Root cause: recursive /rnd-framework:start invocation when already inside one caused the orchestrator to silently drop pipeline phases. Fix adds anti-recursion guidance to roadmap.md and a Milestone Execution and Verification section to the roadmapping skill that marks inline completion as an anti-pattern.
+
 ## 0.11.21 — 2026-03-22
 
 ### Research-driven improvements from LLM drift and hallucination literature

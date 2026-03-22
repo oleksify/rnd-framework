@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.20 — 2026-03-22
+
+### Consolidate PostToolUse hooks and add write-gate
+
+Merge audit-log.ts, slop-gate.ts, and evidence-warn.ts into a single post-tool-use.ts handler, eliminating 2 redundant Bun process spawns per Write/Edit operation. Convert slop-gate.ts and evidence-warn.ts to pure library modules. Extract shared helpers (extractWriteEditContent, extractFilePath, activeSessionDir, isoTimestamp) to lib.ts. Clean up lifecycle hooks (stop-failure, pre-compact, post-compact) to use shared helpers. Add write-gate.ts PreToolUse hook for Write/Edit to auto-allow .rnd/ path operations without permission prompts.
+
 ## 0.11.19 — 2026-03-20
 
 ### Remove chunk-gate hook and 30-line chunking workflow

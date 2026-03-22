@@ -5,30 +5,30 @@
 // Fire-and-forget: exits 0 always, produces no stdout.
 // Reads: plan.md, builds/T*-manifest.md, iteration-log.md
 
-import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
 import { activeSessionDir, isoTimestamp } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
-// Pure helpers
+// IO helpers
 // ---------------------------------------------------------------------------
 
-/** Returns first 5 lines of plan.md content, or "no plan" if absent. Pure. */
-export function extractPlanSummary(rndDir: string): string {
+/** Returns first 5 lines of plan.md content, or "no plan" if absent. IO function. */
+export async function extractPlanSummary(rndDir: string): Promise<string> {
   const planFile = join(rndDir, "plan.md");
-  if (!existsSync(planFile)) return "no plan";
+  if (!await Bun.file(planFile).exists()) return "no plan";
   try {
-    const content = readFileSync(planFile, "utf-8");
+    const content = await Bun.file(planFile).text();
     return content.split("\n").slice(0, 5).join("\n");
   } catch {
     return "no plan";
   }
 }
 
-/** Returns task ID from most recent T*-manifest.md, or null. Pure. */
-export function extractCurrentTaskId(rndDir: string): string | null {
+/** Returns task ID from most recent T*-manifest.md, or null. IO function. */
+export async function extractCurrentTaskId(rndDir: string): Promise<string | null> {
   const buildsDir = join(rndDir, "builds");
-  if (!existsSync(buildsDir)) return null;
+  if (!await Bun.file(buildsDir).exists()) return null;
   try {
     const files = readdirSync(buildsDir).filter((f) => /^T\w+-manifest\.md$/.test(f));
     if (files.length === 0) return null;
@@ -41,12 +41,12 @@ export function extractCurrentTaskId(rndDir: string): string | null {
   }
 }
 
-/** Returns line count of iteration-log.md, or 0 if absent. Pure. */
-export function extractIterationCount(rndDir: string): number {
+/** Returns line count of iteration-log.md, or 0 if absent. IO function. */
+export async function extractIterationCount(rndDir: string): Promise<number> {
   const logFile = join(rndDir, "iteration-log.md");
-  if (!existsSync(logFile)) return 0;
+  if (!await Bun.file(logFile).exists()) return 0;
   try {
-    const content = readFileSync(logFile, "utf-8");
+    const content = await Bun.file(logFile).text();
     return content.split("\n").length;
   } catch {
     return 0;
@@ -69,15 +69,15 @@ async function main(): Promise<void> {
   if (!rndDir) process.exit(0);
 
   const state = {
-    planSummary: extractPlanSummary(rndDir),
-    currentTaskId: extractCurrentTaskId(rndDir),
-    iterationCount: extractIterationCount(rndDir),
+    planSummary: await extractPlanSummary(rndDir),
+    currentTaskId: await extractCurrentTaskId(rndDir),
+    iterationCount: await extractIterationCount(rndDir),
     savedAt: isoTimestamp(),
     verificationNeedle: generateNeedle(),
   };
 
   try {
-    writeFileSync(join(rndDir, "compact-state.json"), JSON.stringify(state, null, 2), "utf-8");
+    await Bun.write(join(rndDir, "compact-state.json"), JSON.stringify(state, null, 2));
   } catch {
     // Fire-and-forget: never fail
   }

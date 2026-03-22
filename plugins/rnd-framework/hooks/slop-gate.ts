@@ -7,7 +7,7 @@
 // The executable entry point is hooks/post-tool-use.ts.
 
 import { resolve } from "node:path";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { resolveRndDir } from "./lib.ts";
 
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ export function sanitizePathToFilename(filePath: string): string {
 // Artifact writing
 // ---------------------------------------------------------------------------
 
-export function writePipelineArtifacts(filePath: string, lineCount: number, matches: Match[]): void {
+export async function writePipelineArtifacts(filePath: string, lineCount: number, matches: Match[]): Promise<void> {
   const sessionDir = resolveRndDir();
   if (sessionDir === null || !sessionDir.includes("/sessions/")) return;
 
@@ -132,12 +132,12 @@ export function writePipelineArtifacts(filePath: string, lineCount: number, matc
       timestamp: new Date().toISOString(),
     };
     const reportPath = resolve(reportsDir, sanitizePathToFilename(filePath));
-    writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
+    await Bun.write(reportPath, JSON.stringify(report, null, 2));
 
     const cumulativePath = resolve(reportsDir, "cumulative-score.json");
     let cumulative: CumulativeScore;
     try {
-      cumulative = JSON.parse(readFileSync(cumulativePath, "utf-8")) as CumulativeScore;
+      cumulative = await Bun.file(cumulativePath).json() as CumulativeScore;
     } catch {
       cumulative = { total_score: 0, file_count: 0, average_score: 0, worst_file: "", worst_score: 0, per_file: {} };
     }
@@ -153,7 +153,7 @@ export function writePipelineArtifacts(filePath: string, lineCount: number, matc
     for (const [file, s] of Object.entries(cumulative.per_file)) {
       if (s > cumulative.worst_score) { cumulative.worst_score = s; cumulative.worst_file = file; }
     }
-    writeFileSync(cumulativePath, JSON.stringify(cumulative, null, 2), "utf-8");
+    await Bun.write(cumulativePath, JSON.stringify(cumulative, null, 2));
   } catch {
     // Swallow all errors — artifact writing must never fail the hook
   }
@@ -169,12 +169,11 @@ export function writePipelineArtifacts(filePath: string, lineCount: number, matc
  * base catalog cannot be loaded.
  * IO function — reads files from disk.
  */
-export function loadCatalog(): PatternCatalog | null {
+export async function loadCatalog(): Promise<PatternCatalog | null> {
   const catalogPath = resolve(import.meta.dir, "..", "slop-patterns.json");
   let catalog: PatternCatalog;
   try {
-    const raw = readFileSync(catalogPath, "utf-8");
-    const parsed = JSON.parse(raw);
+    const parsed = await Bun.file(catalogPath).json();
     if (typeof parsed !== "object" || parsed === null || !Array.isArray(parsed.patterns)) return null;
     catalog = parsed as PatternCatalog;
   } catch {
@@ -184,8 +183,7 @@ export function loadCatalog(): PatternCatalog | null {
   const sessionDir = resolveRndDir();
   if (sessionDir !== null && sessionDir.includes("/sessions/")) {
     try {
-      const raw = readFileSync(resolve(sessionDir, "project-patterns.json"), "utf-8");
-      const parsed = JSON.parse(raw);
+      const parsed = await Bun.file(resolve(sessionDir, "project-patterns.json")).json();
       if (typeof parsed === "object" && parsed !== null && Array.isArray(parsed.patterns)) {
         catalog = { patterns: catalog.patterns.concat(parsed.patterns as SlopPattern[]) };
       }

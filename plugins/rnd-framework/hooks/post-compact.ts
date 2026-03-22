@@ -1,11 +1,10 @@
 #!/usr/bin/env bun
-// hooks/post-compact.ts — TypeScript port of hooks/post-compact (bash).
-// Re-injects pipeline state after context compaction by reading compact-state.json
-// and outputting it as hookSpecificOutput.additionalContext.
+// hooks/post-compact.ts — Re-injects pipeline state after context compaction
+// by reading compact-state.json and outputting it as hookSpecificOutput.additionalContext.
+// Includes a needle-in-the-haystack verification challenge.
 // Resilient: always exits 0, never fails.
 
 import { activeSessionDir, advisory } from "./lib.ts";
-import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 try {
@@ -13,10 +12,9 @@ try {
   if (!rndDir) process.exit(0);
 
   const stateFile = join(rndDir, "compact-state.json");
-  if (!existsSync(stateFile)) process.exit(0);
+  if (!await Bun.file(stateFile).exists()) process.exit(0);
 
-  const raw = readFileSync(stateFile, "utf-8");
-  const state = JSON.parse(raw) as Record<string, unknown>;
+  const state = await Bun.file(stateFile).json() as Record<string, unknown>;
 
   const plan = typeof state["planSummary"] === "string" ? state["planSummary"] : "";
   if (!plan) process.exit(0);

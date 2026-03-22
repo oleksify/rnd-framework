@@ -182,7 +182,7 @@ export function isoTimestamp(): string {
 /**
  * Resolves the active RND session directory, validates it contains /sessions/ and exists on disk.
  * Returns the directory path if all conditions hold, null otherwise.
- * IO function — calls resolveRndDir() and existsSync().
+ * Uses existsSync for directory check — Bun.file().exists() only works for files, not directories.
  */
 export function activeSessionDir(): string | null {
   const dir = resolveRndDir();

@@ -70,10 +70,10 @@ async function main(): Promise<void> {
 
   // Step 2: Slop analysis
   try {
-    const catalog = loadCatalog();
+    const catalog = await loadCatalog();
     if (catalog !== null) {
       const matches = analyzeContent(content, catalog.patterns);
-      writePipelineArtifacts(filePath, countLines(content), matches);
+      await writePipelineArtifacts(filePath, countLines(content), matches);
       const msg = buildSlopAdvisory(filePath, matches, catalog);
       if (msg !== null) advisoryMessages.push(msg);
     }

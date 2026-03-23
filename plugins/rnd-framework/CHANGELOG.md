@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.3 — 2026-03-23
+
+### Add 10 node/canvas/misc tools and upgrade MCP protocol to 2025-11-25
+
+New tools: get_parent, set_parent, get_rect, walk_tree, select_nodes, get_selection, zoom_into_view, get_canvas_root, check_permission, notify. Protocol upgraded to 2025-11-25.
+
 ## 0.12.2 — 2026-03-23
 
 ### Add component tools, style lookups, and attribute resolution to Framer MCP

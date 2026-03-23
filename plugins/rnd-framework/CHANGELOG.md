@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.2 — 2026-03-23
+
+### Add component tools, style lookups, and attribute resolution to Framer MCP
+
+New: create_component_node, add_component_instance, add_variant, add_gesture_variant tools. New: getColorStyle and getTextStyle lookups. Enhanced: set_node_attributes resolves cs:Name to ColorStyle, font to Font instance, inlineTextStyle to TextStyle. Enhanced: create/update_text_style support color, tag, alignment, transform.
+
 ## 0.12.1 — 2026-03-23
 
 ### Rewrite all 11 Framer skills with Academy-sourced methodology

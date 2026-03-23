@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.5 — 2026-03-23
+
+### Add 17 management tools for full framer-api coverage
+
+Collection ordering, code file management, style removal, locale management, redirect management, plugin data persistence, and code validation tools. Achieves complete coverage of all request-response-compatible framer-api operations.
+
 ## 0.12.4 — 2026-03-23
 
 ### Add asset, page, and component variable tools

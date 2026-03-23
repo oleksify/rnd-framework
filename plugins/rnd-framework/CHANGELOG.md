@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1 — 2026-03-23
+
+### Rewrite all 11 Framer skills with Academy-sourced methodology
+
+Each skill now includes Methodology (sequencing, decision points, best practices), Patterns (cookbook MCP tool call examples), Anti-Patterns, and Academy References. Total skill content grew from 1,078 to 3,938 lines.
+
 ## 0.12.0 — 2026-03-22
 
 ### Move to private repo, add plugin to README, proprietary license

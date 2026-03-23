@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.4 — 2026-03-23
+
+### Add asset, page, and component variable tools
+
+New tools: add_image, add_svg, add_text, clone_web_page, clone_design_page, get_breakpoint_suggestions, add_breakpoint, get_component_variables, add_component_variables, remove_component_variables, set_variable_order.
+
 ## 0.12.3 — 2026-03-23
 
 ### Add 10 node/canvas/misc tools and upgrade MCP protocol to 2025-11-25

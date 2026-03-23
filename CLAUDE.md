@@ -31,6 +31,7 @@ plugins/rnd-framework/
 │   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
 │   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
 │   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
+│   ├── reality-warn.ts          # Pure library module: external service reference detection (imported by post-tool-use.ts)
 │   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
 │   ├── injection-scanner.ts     # PostToolUse hook: scans Read/Bash/MCP output for prompt injection patterns
 │   ├── stop-failure.ts          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
@@ -61,8 +62,16 @@ plugins/rnd-framework/
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
+| `rnd-reality-auditor` | sonnet | teal | Adversarial verification of external service contracts — writes experiments to disprove assumptions against live services |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only). The reality auditor has `WebFetch` (most agents do not) to query live services during adversarial contract verification.
+
+### Execution Phases
+
+The pipeline runs in numbered phases. Phase 2.5 has two blocking sub-phases that run after builds complete and before verification:
+
+- **Phase 2.5a — Proof Gate** (advisory): Lean 4 proofs attempted per task; failures are advisory only.
+- **Phase 2.5b — Reality Audit** (blocking): The `rnd-reality-auditor` runs per task in parallel, scanning builder code for external service interactions and writing adversarial experiments against live services. An `INVALID_FOUND` verdict blocks the pipeline and routes the task back to Phase 4 iteration with the reality report as feedback. `VALIDATED_ALL`, `VALIDATED_PARTIAL`, and `SKIPPED` all proceed to Phase 3.
 
 ### Information Barrier and Permission Hooks
 
@@ -109,6 +118,8 @@ The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to 
 
 The `rnd-formatting` skill detects the project's code formatter and runs it on pipeline-changed files before doc-polish and committing.
 
+The `rnd-reality-auditing` skill defines the adversarial methodology, experiment design patterns, report format, and evidence chain requirements used by the Reality Auditor agent.
+
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
 **Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.ts`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
@@ -142,6 +153,8 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
+    ├── reality/T*-reality-report.md       # Reality Auditor verdicts
+    ├── reality/T*-experiments/            # Reality Auditor experiment tests
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
     └── iteration-log.md                   # Build-verify cycle tracking
 ```

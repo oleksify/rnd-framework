@@ -142,8 +142,54 @@ When running experiments in Step 3, record the output verbatim in the verificati
 
 If an experiment fails, this is a Correctness-tier finding — the implementation did not satisfy the spec as the experiment interpreted it. If the experiment itself was wrong (e.g., misread the criterion), fix the experiment and note the correction, but do not delete it. The correction is part of the evidence trail.
 
+## Reality Experiments
+
+When the Builder's code touches external services — SQL schemas, HTTP APIs, MCP tools, environment variables — write at least one reality experiment per external contract in addition to functional criterion experiments.
+
+Reality experiments are adversarial: frame them as "if this assumption is wrong, this command will show X." Design experiments to disprove the assumption, not confirm it. If the assumption survives, that is your evidence.
+
+### When to write reality experiments
+
+- Builder code references a specific table column, API response field, or env var
+- Builder self-assessment lists unverified external assumptions
+- The pre-registration says the Builder verified something against a live system — independently verify it
+
+### Example: SQL Schema Verification
+
+```
+Builder code assumes: SELECT email, name FROM users
+Adversarial experiment: Run PRAGMA table_info(users) and assert output includes rows for email and name
+If the output does NOT include those columns → the Builder hallucinated the schema
+
+Command: sqlite3 ./dev.db "PRAGMA table_info(users);"
+Disproving condition: email or name row is absent, or the table does not exist
+```
+
+### Example: HTTP API Shape
+
+```
+Builder code assumes: GET /api/v2/users returns { data: User[], total: number }
+Adversarial experiment: curl -s https://api.example.com/api/v2/users | head -c 500
+Disproving condition: Response missing "data" or "total" keys, or is not valid JSON
+```
+
+### Naming convention
+
+Name reality experiment files with the `exp-reality-` prefix:
+
+```
+exp-reality-users-schema.test.ts
+exp-reality-api-users-shape.test.ts
+exp-reality-env-var-database-url.test.ts
+```
+
+Save to the same `$RND_DIR/verifications/T<id>-experiments/` directory as functional experiments.
+
+The full adversarial methodology — hypothesis structure, verdict rules (VALID/INVALID/UNCHECKED), and reality reports — is defined in `rnd-framework:rnd-reality-auditing`. This section tells you to include reality experiments in your experiment suite; that skill tells you how to structure them.
+
 ## Related Skills
 
 - `rnd-framework:rnd-verification` — Full 6-step verification process; experiments are Step 2 and Step 3
 - `rnd-framework:rnd-failure-modes` — Failure modes that experiments are designed to catch (Premature Satisfaction, Trusting Agent Reports)
 - `rnd-framework:rnd-iteration` — What happens when experiment failures trigger NEEDS ITERATION
+- `rnd-framework:rnd-reality-auditing` — Full adversarial methodology for external service contracts; reality experiments follow its structure

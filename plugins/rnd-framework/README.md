@@ -147,6 +147,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
 | `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
+| `rnd-reality-auditing` | Adversarial methodology for reality verification — experiment design, evidence chains, report format for external service contract validation |
 
 ## Agents
 
@@ -161,6 +162,7 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 | `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
+| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Adversarial verification of external service contracts — writes experiments to disprove assumptions against live services |
 
 ## Pipeline Scaling
 

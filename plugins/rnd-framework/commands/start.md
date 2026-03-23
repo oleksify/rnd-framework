@@ -196,13 +196,36 @@ After all builders complete and pass Gate 2, attempt formal proofs if Lean is av
 
 No AskUserQuestion — Proof Gate is advisory and auto-continues regardless of proof results.
 
+## Phase 2.5b: Reality Audit (blocking)
+
+After the Proof Gate completes, run adversarial verification of external service contracts before handing off to the Verifier.
+
+1. **Spawn reality-auditor agents.** For each completed task in the wave, spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-reality-auditor"`. Spawn all agents in a single message (parallel). Each agent prompt must include: the task's pre-registration criteria (from `$RND_DIR/plan.md`) and the path to builder output (`$RND_DIR/builds/T<id>-manifest.md`).
+
+2. **Collect results.** Each agent returns a status. Log the statuses to the phase summary.
+
+   | Status | Meaning |
+   |--------|---------|
+   | `VALIDATED_ALL` | All external contracts verified — no discrepancies found |
+   | `VALIDATED_PARTIAL` | Some contracts verified; remaining were unreachable |
+   | `INVALID_FOUND` | One or more contracts failed adversarial testing — expected vs actual mismatch recorded |
+   | `SKIPPED` | No external service interactions detected in builder code |
+
+3. **Route by status:**
+   - `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `SKIPPED` → proceed to Phase 3.
+   - `INVALID_FOUND` → **BLOCK.** Route the task to Phase 4 (Iteration) with the reality report as feedback. The builder prompt must include the full `$RND_DIR/reality/T<id>-reality-report.md` content — each INVALID entry includes "expected X, found Y" so the builder can fix the specific mismatch.
+
+4. **Pass to Verifier.** Reality report paths are available at `$RND_DIR/reality/T<id>-reality-report.md`. Include them in Phase 3 judge prompts when they exist (see Phase 3 step 1).
+
+No AskUserQuestion — VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED auto-continue. INVALID_FOUND routes directly to Phase 4 without pausing for input.
+
 ## Phase 3: Verify (per task)
 
 This phase uses multi-judge consensus verification. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary below.
 
 For each completed task in the wave:
 
-1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt. If `$RND_DIR/proofs/T<id>-proof-report.md` exists (Lean was available and Phase 2.5 ran), include its path in the judge prompt as additional evidence under "Additional evidence from Proof Gate".
+1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt. If `$RND_DIR/proofs/T<id>-proof-report.md` exists (Lean was available and Phase 2.5 ran), include its path in the judge prompt as additional evidence under "Additional evidence from Proof Gate". If `$RND_DIR/reality/T<id>-reality-report.md` exists (Phase 2.5b ran), include its path in the judge prompt as additional evidence under "Additional evidence from Reality Audit".
 
 2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each judge receives the same prompt (pre-registration + builder code/tests, plus proof report if present). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
    - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`

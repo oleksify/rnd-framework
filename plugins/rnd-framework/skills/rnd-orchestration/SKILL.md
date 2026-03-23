@@ -38,6 +38,7 @@ This framework applies the scientific method to multi-agent coding:
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets.
 **Builder** — Writes code + tests + honest self-assessment. Does NOT verify own work.
 **Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
+**Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
 **Verifier** — Checks output against pre-registered criteria. Does NOT see Builder's reasoning. In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
 **Integrator** — Merges verified outputs, runs integration/system tests.
 
@@ -100,6 +101,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 2. **Schedule** — Orchestrator creates execution waves from dependency matrix.
 3. **Build** — Builder agents work tasks (parallel within waves). Produce code + tests + self-assessment.
 3.5. **Proof Gate** (advisory) — Proof-gate agents attempt Lean 4 proofs for each task's criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable.
+3.5b. **Reality Audit** (blocking) — Reality-auditor agents adversarially test each task's external service contracts. INVALID_FOUND routes the task back to the Builder with "expected X, found Y" feedback before Verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to Verification.
 4. **Verify** — Independent Verifier checks each task against pre-registered criteria. PASS/FAIL/ITERATE.
 5. **Iterate** — On FAIL, Builder gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.6 — 2026-03-23
+
+### Add Reality Auditor agent for external service verification
+
 ## 0.12.5 — 2026-03-23
 
 ### Add 17 management tools for full framer-api coverage

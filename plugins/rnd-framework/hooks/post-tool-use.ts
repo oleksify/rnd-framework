@@ -32,6 +32,7 @@ import {
   writePipelineArtifacts,
 } from "./slop-gate.ts";
 import { scanSQL, scanAPI, buildEvidenceWarning } from "./evidence-warn.ts";
+import { scanExternalRefs, buildRealityWarning } from "./reality-warn.ts";
 
 async function main(): Promise<void> {
   const input = await parseInput();
@@ -90,6 +91,17 @@ async function main(): Promise<void> {
       if (msg !== null) advisoryMessages.push(msg);
     } catch {
       // Evidence scanning failure must not propagate
+    }
+  }
+
+  // Step 4: Reality warning — skip .rnd/ paths
+  if (!isRndPath(filePath)) {
+    try {
+      const refMatches = scanExternalRefs(content);
+      const msg = buildRealityWarning(refMatches);
+      if (msg !== null) advisoryMessages.push(msg);
+    } catch {
+      // Reality warning failure must not propagate
     }
   }
 

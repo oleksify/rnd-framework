@@ -46,8 +46,6 @@ This is a scientific process. Results are true or false — never "almost true".
 | `rnd-framework:rnd-local-experts` | Discovering project-local agents and skills in `.claude/agents/` and `.claude/skills/` and surfacing them for the Planner to reference in pre-registrations |
 | `rnd-framework:rnd-design` | Use when exploring architectural alternatives before planning — generates 2-3 approaches with trade-offs and produces a design spec |
 | `rnd-framework:rnd-failure-modes` | Use when verifying — catalog of known verification anti-patterns and red-flag phrases to watch for |
-| `rnd-framework:rnd-slop-detection` | Use when reviewing code quality — scores code for LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) with evidence-based verdicts |
-| `rnd-framework:rnd-standards` | Use at pipeline start to extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
 | `rnd-framework:code-review` | Use when reviewing code changes — defines the six review categories, four severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-framework:kiss-practices` | Language-specific KISS rules to prevent over-engineering — load during Phase 0 discovery, read only the relevant language files |
 | `rnd-framework:fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
@@ -84,7 +82,7 @@ This is a scientific process. Results are true or false — never "almost true".
 
 **When routing a task to quick mode, execute these steps directly. Do NOT invoke the Skill tool for `/rnd-framework:quick`.**
 
-1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)` then `bun "${CLAUDE_PLUGIN_ROOT}/lib/extract-patterns.ts" "$RND_DIR"`
+1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)`
 2. **Write plan:** Save a brief pre-registration to `$RND_DIR/plan.md` — task, approach, success criteria
 3. **Build:** Implement the task with tests; follow `rnd-framework:rnd-building` discipline
 4. **Verify inline:** Check each success criterion yourself with evidence (run tests, read output, grep for expected patterns). Do NOT spawn a verifier agent — quick mode verifies in the main conversation to avoid rate limits. Save a brief verification note to `$RND_DIR/verifications/T1-verification.md`.

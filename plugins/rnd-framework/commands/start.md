@@ -65,11 +65,9 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 3. **Load coding practices.** Detect which languages/frameworks are present in the project (by file extensions, config files, or dependency manifests). Invoke `rnd-framework:kiss-practices` and read only the relevant language files. Also invoke `rnd-framework:fp-practices` to load functional programming principles. Invoke both skills in a single message (parallel tool calls) to minimize API round-trips. Include both KISS and FP rules in the discovery context passed to the Planner and all downstream agents.
 
-4. **Extract project coding standards.** Invoke `rnd-framework:rnd-standards` to scan the project's CLAUDE.md files, extract machine-checkable coding rules, and generate `$RND_DIR/project-patterns.json`. These patterns extend the slop gate's built-in catalog with project-specific enforcement rules that apply to all downstream Builders.
-
 > **Note:** Quick mode (`/rnd-framework:quick`) skips these skill invocations and applies KISS/FP principles inline to reduce API call overhead.
 
-5. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
+4. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
    - **If `roadmap.md` exists:** Read it and display milestone progress (DONE / IN_PROGRESS / NOT_STARTED). Identify the current or next milestone. Use `AskUserQuestion` with options:
      - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task, proceed to Phase 0.5/1
@@ -81,9 +79,9 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
      If it seems single-session, skip silently.
 
-6. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+5. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
 
-7. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
+6. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
    - **Scope:** What's in and what's out? Any specific files, modules, or areas to focus on or avoid?
    - **Patterns:** Should this follow an existing pattern in the codebase, or introduce a new approach?
    - **Constraints:** Performance requirements, compatibility needs, or dependencies to be aware of?
@@ -91,7 +89,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
    Keep questions concrete — provide 2-4 options per question based on what you discovered in the codebase, not generic open-ended asks.
 
-8. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) KISS rules for the project's tech stack, (d) user answers, (e) any constraints discovered. This context is passed to the Planner.
+7. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) KISS rules for the project's tech stack, (d) user answers, (e) any constraints discovered. This context is passed to the Planner.
 
 **Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 0.5. When in doubt, ask — a few questions now prevents re-planning later.
 

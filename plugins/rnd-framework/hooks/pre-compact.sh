@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# hooks/pre-compact.sh — PreCompact hook for rnd-framework plugin.
+# Saves pipeline state to $RND_DIR/compact-state.json before context compaction.
+#
+# Fire-and-forget: exits 0 always, produces no stdout.
+# Reads: plan.md, builds/T*-manifest.md, iteration-log.md
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+session_dir="$(active_session_dir 2>/dev/null || true)"
+[[ -n "$session_dir" ]] || exit 0
+
+# ---------------------------------------------------------------------------
+# planSummary: first 5 lines of plan.md, or "no plan" if absent
+# ---------------------------------------------------------------------------
+
+plan_file="${session_dir}/plan.md"
+if [[ -f "$plan_file" ]]; then
+  plan_summary="$(awk 'NR<=5' "$plan_file" 2>/dev/null || true)"
+  [[ -n "$plan_summary" ]] || plan_summary="no plan"
+else
+  plan_summary="no plan"
+fi
+
+# ---------------------------------------------------------------------------
+# currentTaskId: basename of most recently modified T*-manifest.md, or null
+# ---------------------------------------------------------------------------
+
+builds_dir="${session_dir}/builds"
+current_task_id_json="null"
+if [[ -d "$builds_dir" ]]; then
+  # ls -t sorts by mtime descending; first match is most recent
+  most_recent=""
+  while IFS= read -r f; do
+    fname="$(basename "$f")"
+    if [[ "$fname" =~ ^T[^-]+-manifest\.md$ ]]; then
+      most_recent="$fname"
+      break
+    fi
+  done < <(ls -t "${builds_dir}/"*-manifest.md 2>/dev/null || true)
+  if [[ -n "$most_recent" ]]; then
+    task_id="${most_recent%-manifest.md}"
+    current_task_id_json="$(printf '%s' "$task_id" | jq -Rs .)"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# iterationCount: line count of iteration-log.md, or 0
+# ---------------------------------------------------------------------------
+
+log_file="${session_dir}/iteration-log.md"
+iteration_count=0
+if [[ -f "$log_file" ]]; then
+  iteration_count="$(wc -l < "$log_file" 2>/dev/null || printf '0')"
+  iteration_count="${iteration_count// /}"
+  [[ "$iteration_count" =~ ^[0-9]+$ ]] || iteration_count=0
+fi
+
+# ---------------------------------------------------------------------------
+# verificationNeedle: 8-char random hex string
+# ---------------------------------------------------------------------------
+
+needle="$(openssl rand -hex 4 2>/dev/null || printf '%s' "$(dd if=/dev/urandom bs=4 count=1 2>/dev/null | xxd -p)" || printf '00000000')"
+
+# ---------------------------------------------------------------------------
+# Write compact-state.json using jq
+# ---------------------------------------------------------------------------
+
+jq -cn \
+  --arg planSummary "$plan_summary" \
+  --argjson currentTaskId "$current_task_id_json" \
+  --argjson iterationCount "$iteration_count" \
+  --arg savedAt "$(iso_timestamp)" \
+  --arg verificationNeedle "$needle" \
+  '{planSummary:$planSummary,currentTaskId:$currentTaskId,iterationCount:$iterationCount,savedAt:$savedAt,verificationNeedle:$verificationNeedle}' \
+  > "${session_dir}/compact-state.json" 2>/dev/null || true
+
+exit 0

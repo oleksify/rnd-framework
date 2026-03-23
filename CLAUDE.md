@@ -22,29 +22,24 @@ plugins/rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd bootstrap + PreToolUse + PostToolUse hook routing
-│   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
-│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
-│   ├── write-gate.ts            # Write/Edit hook: auto-allows .rnd/ path operations
-│   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
-│   ├── session-start.ts         # SessionStart hook: injects skill context
-│   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
-│   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
-│   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
-│   ├── reality-warn.ts          # Pure library module: external service reference detection (imported by post-tool-use.ts)
-│   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
-│   ├── injection-scanner.ts     # PostToolUse hook: scans Read/Bash/MCP output for prompt injection patterns
-│   ├── stop-failure.ts          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
-│   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
-│   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
-│   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
-│   ├── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
-│   └── statusline.ts            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
+│   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
+│   ├── write-gate.sh            # Write/Edit hook: auto-allows .rnd/ path operations
+│   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
+│   ├── session-start.sh         # SessionStart hook: injects skill context
+│   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
+│   ├── post-tool-use.sh         # PostToolUse hook: audit logging for Write/Edit operations
+│   ├── observation-mask.sh      # PostToolUse/Bash hook: advises when output exceeds 50 lines
+│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
+│   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
+│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to extract project standards
+│   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
+│   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
+│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   ├── validate.ts              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   └── extract-patterns.ts      # Deterministic CLAUDE.md rule extraction → project-patterns.json
+│   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```
@@ -62,27 +57,18 @@ plugins/rnd-framework/
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
-| `rnd-reality-auditor` | sonnet | teal | Adversarial verification of external service contracts — writes experiments to disprove assumptions against live services |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only). The reality auditor has `WebFetch` (most agents do not) to query live services during adversarial contract verification.
-
-### Execution Phases
-
-The pipeline runs in numbered phases. Phase 2.5 has two blocking sub-phases that run after builds complete and before verification:
-
-- **Phase 2.5a — Proof Gate** (advisory): Lean 4 proofs attempted per task; failures are advisory only.
-- **Phase 2.5b — Reality Audit** (blocking): The `rnd-reality-auditor` runs per task in parallel, scanning builder code for external service interactions and writing adversarial experiments against live services. An `INVALID_FOUND` verdict blocks the pipeline and routes the task back to Phase 4 iteration with the reality report as feedback. `VALIDATED_ALL`, `VALIDATED_PARTIAL`, and `SKIPPED` all proceed to Phase 3.
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
-- **Information barrier** (`read-gate.ts`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
-- **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.ts`, `write-gate.ts`, `prefer-tools.ts`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.ts` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
-- **Tool discipline** (`prefer-tools.ts`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions
-- **Commit protection** (`prefer-tools.ts`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches
-- **Prompt injection scanning** (`injection-scanner.ts`): PostToolUse hook scans Read/Bash/MCP tool output for common injection patterns (e.g., "ignore previous instructions", `<system>` tags) and emits advisory warnings
-- **Audit logging, slop analysis, evidence scanning** (`post-tool-use.ts`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`, analyzes code for LLM anti-patterns, and scans for SQL/API references requiring verification reminders
-- **Stop failure logging** (`stop-failure.ts`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
+- **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
+- **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions
+- **Commit protection** (`prefer-tools.sh`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches
+- **Audit logging** (`post-tool-use.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`
+- **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 
@@ -90,7 +76,7 @@ As of Claude Code v2.1.77, a PreToolUse hook returning `allow` no longer bypasse
 
 **deny rules > hook allow > default permission prompt**
 
-This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.ts` and `prefer-tools.ts`. If a user or enterprise policy has a deny rule covering `.rnd/` paths, those hooks' auto-allows will be silently overridden and permission prompts will reappear.
+This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.sh` and `prefer-tools.sh`. If a user or enterprise policy has a deny rule covering `.rnd/` paths, those hooks' auto-allows will be silently overridden and permission prompts will reappear.
 
 **Workaround:** Use the `allowRead` and `allowWrite` sandbox settings to explicitly re-allow `.rnd/` paths. These settings take precedence over deny rules and restore the intended auto-allow behavior:
 
@@ -100,7 +86,7 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.ts` an
 
 ### --bare Mode (v2.1.81+)
 
-When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate, prefer-tools, post-tool-use, and all others. Practical consequences:
+When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate.sh, prefer-tools.sh, post-tool-use.sh, and all others. Practical consequences:
 
 - The information barrier is not enforced: the Verifier can read Builder self-assessments
 - Tool discipline is not enforced: sed/cat/grep/find bypass is possible
@@ -118,17 +104,15 @@ The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to 
 
 The `rnd-formatting` skill detects the project's code formatter and runs it on pipeline-changed files before doc-polish and committing.
 
-The `rnd-reality-auditing` skill defines the adversarial methodology, experiment design patterns, report format, and evidence chain requirements used by the Reality Auditor agent.
-
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
-**Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.ts`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
+**Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.sh`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.ts`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
 
-The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.ts`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
+The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 
 **Remote pipelines with `--channels` (v2.1.81+):** The `--channels` flag enables permission-relay mode, forwarding tool approval prompts to the Claude mobile app. This is useful when running rnd-framework pipelines on remote or headless machines where interactive terminal input is unavailable.
 
@@ -145,7 +129,6 @@ The framework stores artifacts in a centralized directory outside the project tr
 ├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA)
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, pre-registrations, schedule
-    ├── project-patterns.json              # Project-specific slop patterns extracted from CLAUDE.md
     ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
     ├── builds/T*-manifest.md              # Builder output records
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
@@ -153,8 +136,6 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
-    ├── reality/T*-reality-report.md       # Reality Auditor verdicts
-    ├── reality/T*-experiments/            # Reality Auditor experiment tests
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
     └── iteration-log.md                   # Build-verify cycle tracking
 ```
@@ -173,8 +154,8 @@ Slash commands use the full plugin namespace: `/rnd-framework:start`, `/rnd-fram
 - **Commands are Markdown files** in `commands/` — filename becomes the command name
 - **Agents are Markdown files** in `agents/` — YAML frontmatter specifies `model`, `tools`, `memory`, `color`, `skills`, and optionally `disallowedTools`, `maxTurns`
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
-- **Test suite** — `tests/` contains Bun tests for hooks and lib scripts; run with `bun test` from `plugins/rnd-framework/`
-- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then Bun scripts (`bun-scripting`), then Python as last resort
+- **Test suite** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`
+- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then bash scripts, then Python as last resort
 - **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)
 
 ## Working on This Codebase

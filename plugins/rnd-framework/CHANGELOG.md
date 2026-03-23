@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.7 — 2026-03-23
+
+### Migrate all hooks from TypeScript to plain bash, remove regex verification systems
+
 ## 0.12.6 — 2026-03-23
 
 ### Add Reality Auditor agent for external service verification

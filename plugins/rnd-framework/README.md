@@ -136,8 +136,6 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
-| `rnd-slop-detection` | PostToolUse slop gate — surfaces LLM anti-patterns (over-commenting, cargo-cult error handling, unnecessary abstractions) as advisory context to agents |
-| `rnd-standards` | Extract project-specific coding rules from CLAUDE.md files and convert them into regex-based slop patterns saved to `$RND_DIR/project-patterns.json` |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Lean 4 |
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
@@ -162,7 +160,6 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
 | `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
-| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Adversarial verification of external service contracts — writes experiments to disprove assumptions against live services |
 
 ## Pipeline Scaling
 
@@ -296,29 +293,25 @@ rnd-framework/
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
-│   ├── lib.ts                   # Shared TypeScript utilities (input parsing, path checks, decision output)
-│   ├── read-gate.ts             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
-│   ├── write-gate.ts            # Write/Edit hook: auto-allows .rnd/ path operations
-│   ├── prefer-tools.ts          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
-│   ├── session-start.ts         # SessionStart hook: injects skill context
-│   ├── session-end.ts           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-tool-use.ts         # PostToolUse hook: audit logging, slop analysis, and evidence scanning for Write/Edit
-│   ├── slop-gate.ts             # Pure library module: LLM anti-pattern detection (imported by post-tool-use.ts)
-│   ├── evidence-warn.ts         # Pure library module: SQL/API reference detection (imported by post-tool-use.ts)
-│   ├── observation-mask.ts      # PostToolUse/Bash hook: advises when output exceeds 50 lines
-│   ├── injection-scanner.ts     # PostToolUse hook: scans Read/Bash/MCP output for prompt injection patterns
-│   ├── setup.ts                 # Setup hook: validates plugin structure and dependencies
-│   ├── instructions-loaded.ts   # InstructionsLoaded hook: reminds to extract project standards
-│   ├── pre-compact.ts           # PreCompact hook: saves pipeline state before context compaction
-│   ├── post-compact.ts          # PostCompact hook: restores pipeline state after compaction
-│   └── statusline.ts            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
+│   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
+│   ├── write-gate.sh            # Write/Edit hook: auto-allows .rnd/ path operations
+│   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows ls/.rnd
+│   ├── session-start.sh         # SessionStart hook: injects skill context
+│   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
+│   ├── post-tool-use.sh         # PostToolUse hook: audit logging for Write/Edit
+│   ├── observation-mask.sh      # PostToolUse/Bash hook: advises when output exceeds 50 lines
+│   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
+│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to read project standards
+│   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
+│   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
+│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   ├── validate.ts              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   └── extract-patterns.ts      # Deterministic CLAUDE.md rule extraction → project-patterns.json
+│   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```
@@ -377,7 +370,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access. Agent instructions are the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:status` to re-orient.
 - **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:quick` for small tasks.
-- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.ts` hook additionally checks `agent_type` to allow non-verifier agents (e.g., builders, planners) to read their own self-assessments, but the primary enforcement is path-based.
+- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook additionally checks `agent_type` to allow non-verifier agents (e.g., builders, planners) to read their own self-assessments, but the primary enforcement is path-based.
 
 ## Acknowledgements
 

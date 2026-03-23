@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-end.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh'"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/stop-failure.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/stop-failure.sh'"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.sh'"
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.sh'"
           }
         ]
       }
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/instructions-loaded.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/instructions-loaded.sh'"
           }
         ]
       }
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/setup.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/setup.sh'"
           }
         ]
       }
@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-start.ts'",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh'",
             "async": false
           }
         ]
@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools.sh'"
           }
         ]
       },
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/read-gate.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/read-gate.sh'"
           }
         ]
       },
@@ -96,7 +96,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh'"
           }
         ]
       },
@@ -105,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh'"
           }
         ]
       }
@@ -116,7 +116,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh'"
           }
         ]
       },
@@ -125,7 +125,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh'"
           }
         ]
       },
@@ -134,20 +134,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/observation-mask.ts'"
-          },
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/injection-scanner.ts'"
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/injection-scanner.ts'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/observation-mask.sh'"
           }
         ]
       }

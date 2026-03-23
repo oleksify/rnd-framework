@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.7 — 2026-03-23
+## 0.13.0 — 2026-03-23
 
 ### Migrate all hooks from TypeScript to plain bash, remove regex verification systems
 

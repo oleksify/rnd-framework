@@ -85,70 +85,70 @@ assert_stderr_contains() {
 # Test cases
 # ---------------------------------------------------------------------------
 
-# T8 Criterion 1a: self-assessment with no agent_type → block (exit 2, INFORMATION BARRIER)
+# self-assessment with no agent_type → block (exit 2, INFORMATION BARRIER)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/builds/T3-self-assessment.md"},"agent_type":""}'
 assert_exit   "self-assessment + empty agent_type → exit 2" 2
 assert_stderr_contains "self-assessment + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion 1b: self-assessment with verifier agent_type → block
+# self-assessment with verifier agent_type → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-verifier"}'
 assert_exit   "self-assessment + verifier → exit 2" 2
 assert_stderr_contains "self-assessment + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion 1c: self-assessment with missing agent_type key (null) → block
+# self-assessment with missing agent_type key (null) → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"}}'
 assert_exit   "self-assessment + null agent_type → exit 2" 2
 assert_stderr_contains "self-assessment + null agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion 2: self-assessment with non-verifier agent_type → exit 0
+# self-assessment with non-verifier agent_type → exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-builder"}'
 assert_exit   "self-assessment + rnd-builder → exit 0" 0
 assert_stdout_empty "self-assessment + rnd-builder → empty stdout"
 
-# T8 Criterion 2b: self-assessment with planner → exit 0
+# self-assessment with planner → exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-planner"}'
 assert_exit   "self-assessment + rnd-planner → exit 0" 0
 
-# T8 Criterion quality: case-insensitive (SELF-ASSESSMENT uppercase) with no agent_type → block
+# case-insensitive (SELF-ASSESSMENT uppercase) with no agent_type → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-SELF-ASSESSMENT.md"},"agent_type":""}'
 assert_exit   "SELF-ASSESSMENT uppercase + empty agent_type → exit 2" 2
 assert_stderr_contains "SELF-ASSESSMENT uppercase + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion quality: case-insensitive (Self-Assessment mixed case) with verifier → block
+# case-insensitive (Self-Assessment mixed case) with verifier → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-Self-Assessment.md"},"agent_type":"rnd-verifier"}'
 assert_exit   "Self-Assessment mixed case + verifier → exit 2" 2
 
-# T8 Criterion 3: .rnd/ path without self-assessment → allow JSON, exit 0
+# .rnd/ path without self-assessment → allow JSON, exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/builds/T3-manifest.md"},"agent_type":""}'
 assert_exit   ".rnd/ path → exit 0" 0
 assert_stdout_contains ".rnd/ path → allow JSON" '"permissionDecision":"allow"'
 
-# T8 Criterion 4: plugin cache path → allow JSON, exit 0
+# plugin cache path → allow JSON, exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/plugins/cache/oleksify-plugins/rnd-framework/0.12.5/skills/rnd-building/SKILL.md"},"agent_type":""}'
 assert_exit   "plugin cache path → exit 0" 0
 assert_stdout_contains "plugin cache path → allow JSON" '"permissionDecision":"allow"'
 
-# T8 Criterion 5: plugin cache path containing self-assessment → block (self-assessment takes priority)
+# plugin cache path containing self-assessment → block (self-assessment takes priority)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/plugins/cache/oleksify-plugins/rnd-framework/0.12.5/builds/T3-self-assessment.md"},"agent_type":""}'
 assert_exit   "plugin cache + self-assessment → exit 2 (barrier first)" 2
 assert_stderr_contains "plugin cache + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion 6: path with both .rnd/ and self-assessment → block (self-assessment takes priority)
+# path with both .rnd/ and self-assessment → block (self-assessment takes priority)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/sessions/20260101/builds/T3-self-assessment.md"},"agent_type":""}'
 assert_exit   ".rnd/ + self-assessment → exit 2 (barrier first)" 2
 assert_stderr_contains ".rnd/ + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# T8 Criterion 6b: .rnd/ + self-assessment, but non-verifier agent → exit 0 (builder is allowed)
+# .rnd/ + self-assessment, but non-verifier agent → exit 0 (builder is allowed)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/sessions/20260101/builds/T3-self-assessment.md"},"agent_type":"rnd-builder"}'
 assert_exit   ".rnd/ + self-assessment + rnd-builder → exit 0" 0
 assert_stdout_empty ".rnd/ + self-assessment + rnd-builder → empty stdout"
 
-# T8 Criterion 7: regular path → exit 0, empty stdout
+# regular path → exit 0, empty stdout
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/Developer/myproject/src/main.ts"},"agent_type":""}'
 assert_exit   "regular path → exit 0" 0
 assert_stdout_empty "regular path → empty stdout"
 
-# T8 Criterion 8: empty stdin → exit 0, empty stdout
+# empty stdin → exit 0, empty stdout
 printf '' | "$HOOK" >/dev/null 2>/dev/null
 HOOK_EXIT=$?
 if [[ "$HOOK_EXIT" -eq 0 ]]; then
@@ -157,7 +157,7 @@ else
   fail "empty stdin → exit 0" "got exit $HOOK_EXIT"
 fi
 
-# T8 Criterion 8b: malformed stdin → exit 0, empty stdout
+# malformed stdin → exit 0, empty stdout
 run_hook 'not json at all'
 assert_exit   "malformed stdin → exit 0" 0
 assert_stdout_empty "malformed stdin → empty stdout"

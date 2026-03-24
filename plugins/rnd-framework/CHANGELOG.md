@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2 — 2026-03-24
+
+### Prevent pipeline task ID leakage into project code
+
 ## 0.13.1 — 2026-03-24
 
 ### Block inline interpreter execution and /tmp writes

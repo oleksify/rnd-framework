@@ -71,27 +71,27 @@ assert_stdout_empty "regular path → empty stdout (no opinion)"
 # /tmp paths → blocked (exit 2, stderr contains "/tmp")
 # ---------------------------------------------------------------------------
 
-# T2 Criterion: Write to /tmp/somefile.txt is blocked
+# Write to /tmp/somefile.txt is blocked
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/somefile.txt"}}'
 assert_exit   "/tmp Write → exit 2" 2
 assert_stderr_contains "/tmp Write → stderr contains /tmp" "/tmp"
 
-# T2 Criterion: Edit to /tmp/script.py is blocked
+# Edit to /tmp/script.py is blocked
 run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/script.py"}}'
 assert_exit   "/tmp Edit → exit 2" 2
 assert_stderr_contains "/tmp Edit → stderr contains /tmp" "/tmp"
 
-# T2 Criterion: Write to /tmp/deep/nested/file.txt is blocked
+# Write to /tmp/deep/nested/file.txt is blocked
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/deep/nested/file.txt"}}'
 assert_exit   "/tmp nested path → exit 2" 2
 assert_stderr_contains "/tmp nested path → stderr contains /tmp" "/tmp"
 
-# T2 Edge case: /tmpfoo/bar does NOT match (doesn't start with /tmp/)
+# Edge case: /tmpfoo/bar does NOT match (doesn't start with /tmp/)
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmpfoo/bar.txt"}}'
 assert_exit   "/tmpfoo/ path → exit 0" 0
 assert_stdout_empty "/tmpfoo/ path → empty stdout (no opinion)"
 
-# T2 Edge case: exactly /tmp (no trailing slash) — no opinion, it's a directory
+# Edge case: exactly /tmp (no trailing slash) — no opinion, it's a directory
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp"}}'
 assert_exit   "/tmp exact → exit 0" 0
 assert_stdout_empty "/tmp exact → empty stdout (no opinion)"

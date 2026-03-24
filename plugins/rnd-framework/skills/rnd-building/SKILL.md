@@ -29,6 +29,7 @@ Implement ONE assigned task against its pre-registered success criteria. Write t
 5. IF SLOP-GATE RETURNS WARN OR FAIL WITH ANY SEVERITY 3+ MATCH, RE-EDIT IMMEDIATELY — DO NOT DEFER
 6. WHEN YOU HIT AN ERROR OR WARNING, INVESTIGATE AND FIX IT — NEVER DEFLECT WITH "PRE-EXISTING" AS A REASON TO SKIP
 7. EXPLAIN BEFORE YOU WRITE — ONE LOGICAL CHANGE PER WRITE/EDIT, NOT WALLS OF CODE
+8. DO NOT EMBED PIPELINE TASK IDs IN PROJECT CODE — NO TASK IDs IN COMMENTS, TEST NAMES, OR VARIABLE NAMES (RND ARTIFACT FILES IN $RND_DIR ARE EXEMPT)
 ```
 
 **On file creation:** Always use the `Write` tool to create files and `Edit` to modify them. Never use `cat > file << 'EOF'`, `echo >`, or other Bash heredoc/redirect patterns to write file content. The dedicated tools are reviewable, diffable, and won't silently mangle content (quoting, escaping, whitespace).
@@ -227,6 +228,7 @@ Before submitting your build:
 - [ ] Output is clean (no errors, warnings)
 - [ ] Every external dependency in the pre-registration was verified against the actual system, with evidence recorded in the build manifest
 - [ ] Build manifest `### Evidence Gathered` section contains file:line citations for each external contract used
+- [ ] No pipeline task IDs (T1, T14, M2, etc.) appear in project code — not in comments, test names, or variable names (RND artifact files in $RND_DIR are exempt)
 
 ## Status Codes
 

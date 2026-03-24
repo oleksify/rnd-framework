@@ -90,7 +90,7 @@ assert_stderr_contains() {
 }
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks sed/awk with stderr mentioning "Edit tool", exit 2
+# Blocks sed/awk with stderr mentioning "Edit tool", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'sed s/foo/bar/ file.txt')"
@@ -102,7 +102,7 @@ assert_exit   "awk → exit 2" 2
 assert_stderr_contains "awk → stderr mentions Edit tool" "Edit tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks cat/head/tail with stderr mentioning "Read tool", exit 2
+# Blocks cat/head/tail with stderr mentioning "Read tool", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'cat somefile')"
@@ -118,7 +118,7 @@ assert_exit   "tail → exit 2" 2
 assert_stderr_contains "tail → stderr mentions Read tool" "Read tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks grep/rg with stderr mentioning "Grep tool", exit 2
+# Blocks grep/rg with stderr mentioning "Grep tool", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'grep pattern file')"
@@ -130,7 +130,7 @@ assert_exit   "rg → exit 2" 2
 assert_stderr_contains "rg → stderr mentions Grep tool" "Grep tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks find with stderr mentioning "Glob tool", exit 2
+# Blocks find with stderr mentioning "Glob tool", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload "find . -name '*.ts'")"
@@ -138,7 +138,7 @@ assert_exit   "find → exit 2" 2
 assert_stderr_contains "find → stderr mentions Glob tool" "Glob tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks echo/printf with file redirect to non-.rnd/, non-/dev/ paths
+# Blocks echo/printf with file redirect to non-.rnd/, non-/dev/ paths
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo foo > output.txt')"
@@ -154,7 +154,7 @@ assert_exit   "echo > /tmp/regular.txt → exit 2" 2
 assert_stderr_contains "echo > /tmp/regular.txt → Write tool" "Write tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Allows echo/printf to /dev/ and .rnd/ paths
+# Allows echo/printf to /dev/ and .rnd/ paths
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo foo > /dev/null')"
@@ -172,7 +172,7 @@ assert_exit   "printf > .rnd/ → exit 0" 0
 assert_stdout_contains "printf > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Allows echo/printf without redirect (outputs allow JSON)
+# Allows echo/printf without redirect (outputs allow JSON)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo hello')"
@@ -184,7 +184,7 @@ assert_exit   "printf without redirect → exit 0" 0
 assert_stdout_contains "printf without redirect → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks git add .rnd/ with stderr "BLOCKED", exit 2
+# Blocks git add .rnd/ with stderr "BLOCKED", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'git add .rnd/something')"
@@ -205,7 +205,7 @@ assert_exit   "git add .rnd.backup → exit 0 (not a .rnd/ path)" 0
 assert_stdout_empty "git add .rnd.backup → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Blocks git push to main/master/production with stderr "BLOCKED", exit 2
+# Blocks git push to main/master/production with stderr "BLOCKED", exit 2
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'git push origin main')"
@@ -230,7 +230,7 @@ assert_exit   "git push --tags → exit 0" 0
 assert_stdout_empty "git push --tags → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Detects prohibited commands after &&, ;, ||, | operators
+# Detects prohibited commands after &&, ;, ||, | operators
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'npm install && cat package.json')"
@@ -274,7 +274,7 @@ assert_exit   "cat after || → exit 2" 2
 assert_stderr_contains "cat after || → Read tool" "Read tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Detects prohibited commands inside $() and backtick substitutions
+# Detects prohibited commands inside $() and backtick substitutions
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo $(grep pattern file)')"
@@ -299,7 +299,7 @@ assert_exit   "grep inside subshell () → exit 2" 2
 assert_stderr_contains "grep inside subshell () → Grep tool" "Grep tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Strips cd prefixes before checking segments
+# Strips cd prefixes before checking segments
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'cd /some/path && sed s/a/b/ f')"
@@ -323,7 +323,7 @@ assert_exit   "cd ; cd ; cat → exit 2" 2
 assert_stderr_contains "cd ; cd ; cat → Read tool" "Read tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Auto-allows commands containing .rnd/ or rnd-dir.sh
+# Auto-allows commands containing .rnd/ or rnd-dir.sh
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'ls /some/.rnd/builds')"
@@ -352,7 +352,7 @@ assert_exit   "sed .rnd/ → exit 2 (tool discipline overrides)" 2
 assert_stderr_contains "sed .rnd/ → Edit tool" "Edit tool"
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Auto-allows commands containing ${CLAUDE_PLUGIN_ROOT}/lib/
+# Auto-allows commands containing ${CLAUDE_PLUGIN_ROOT}/lib/
 # When CLAUDE_PLUGIN_ROOT is unset we use a deterministic fake root to test
 # the matching logic. The hook is invoked with that value in its environment.
 # ---------------------------------------------------------------------------
@@ -372,7 +372,7 @@ assert_exit   "plugin lib/ script → exit 0" 0
 assert_stdout_contains "plugin lib/ script → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
-# T14 Criterion: Empty or malformed stdin → exits 0
+# Empty or malformed stdin → exits 0
 # ---------------------------------------------------------------------------
 
 printf '' | "$HOOK" >/dev/null 2>/dev/null
@@ -435,7 +435,7 @@ assert_exit   "npm test && echo results → exit 0 allow" 0
 assert_stdout_contains "npm test && echo results → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
-# T1 Criterion: Blocks inline interpreter execution (-c/-e flags)
+# Blocks inline interpreter execution (-c/-e flags)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload "python3 -c 'print(\"hi\")'")";
@@ -467,7 +467,7 @@ assert_exit   "ruby -e → exit 2" 2
 assert_stderr_contains "ruby -e → inline" "inline"
 
 # ---------------------------------------------------------------------------
-# T1 Criterion: Blocks piped interpreter execution (bare interpreter after pipe)
+# Blocks piped interpreter execution (bare interpreter after pipe)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload "echo 'code' | python3")";
@@ -479,7 +479,7 @@ assert_exit   "echo | node → exit 2" 2
 assert_stderr_contains "echo | node → inline" "inline"
 
 # ---------------------------------------------------------------------------
-# T1 Criterion: Allows interpreter file execution and module invocation
+# Allows interpreter file execution and module invocation
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'python file.py')"
@@ -527,7 +527,7 @@ assert_exit   "lean file.lean → exit 0 (not an interpreter match)" 0
 assert_stdout_empty "lean file.lean → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# T1 Criterion: Blocks /tmp redirects in non-echo commands
+# Blocks /tmp redirects in non-echo commands
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'npm test > /tmp/log.txt')"
@@ -543,7 +543,7 @@ assert_exit   "command >> /tmp/ → exit 2" 2
 assert_stderr_contains "command >> /tmp/ → /tmp" "/tmp"
 
 # ---------------------------------------------------------------------------
-# T1 Criterion: /dev/ redirect and non-/tmp redirect are NOT blocked
+# /dev/ redirect and non-/tmp redirect are NOT blocked
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'npm test > /dev/null')"

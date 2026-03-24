@@ -83,6 +83,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 - You MUST verify every external dependency listed in the pre-registration against the actual system before writing code against it. Unverified assumptions must be flagged in your self-assessment.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 - **KISS:** Do not add error handling for scenarios that can't happen, abstractions for one-time operations, or features nobody asked for. If KISS rules for the project's tech stack were provided in your task prompt, follow them.
+- Do NOT embed pipeline task IDs (T1, T2, T14, M2, etc.) in project code — inline comments, test names, or variable names. These identifiers are transient pipeline tracking labels, not part of the project. This prohibition does not apply to RND artifact files ($RND_DIR paths such as T<id>-manifest.md, T<id>-self-assessment.md, plan.md).
 
 ## Convergent Iteration
 

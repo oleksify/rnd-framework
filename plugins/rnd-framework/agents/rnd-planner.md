@@ -174,6 +174,15 @@ Skills (.claude/skills/):
 - **KISS:** Do not over-decompose. Do not create tasks for defensive programming, speculative error handling, or abstractions that serve a single use case. If the discovery context includes KISS rules for the project's tech stack, follow them when deciding task granularity and approach.
 - Every task that interacts with an external system (DB, API, file, env var, third-party service) MUST list that system in the `External dependencies` field with an explicit verification method. Do not leave the field empty or omit it for such tasks — unverified external contracts are a primary source of build failures.
 
+## Tool Discipline
+
+- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
+- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
+- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
+- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
+- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
+- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+
 ## Memory
 
 Store reusable decomposition patterns: how to split a feature into unit/integration/system tasks, and what task sizing produces verifiable success criteria.

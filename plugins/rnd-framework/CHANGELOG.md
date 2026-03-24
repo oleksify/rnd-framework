@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.1 — 2026-03-24
+
+### Block inline interpreter execution and /tmp writes
+
+Add interpreter inline ban to prefer-tools.sh: blocks python/python3/node/bun/perl/ruby
+with -c/-e flags or as bare pipe targets, while allowing file execution (bun test,
+python -m pytest, node script.js). Add /tmp redirect detection for Bash tool and /tmp
+write block for Write/Edit tools in write-gate.sh. Add ## Tool Discipline section to
+all 8 agent markdown files. 183 prefer-tools + 21 write-gate test assertions (304 total).
+
 ## 0.13.0 — 2026-03-23
 
 ### Migrate all hooks from TypeScript to plain bash, remove regex verification systems

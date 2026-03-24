@@ -435,6 +435,151 @@ assert_exit   "npm test && echo results → exit 0 allow" 0
 assert_stdout_contains "npm test && echo results → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
+# T1 Criterion: Blocks inline interpreter execution (-c/-e flags)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload "python3 -c 'print(\"hi\")'")";
+assert_exit   "python3 -c → exit 2" 2
+assert_stderr_contains "python3 -c → inline" "inline"
+
+run_hook "$(payload "python -c 'import json; print(json.dumps({}))'")";
+assert_exit   "python -c → exit 2" 2
+assert_stderr_contains "python -c → inline" "inline"
+
+run_hook "$(payload "node -e 'console.log(1)'")";
+assert_exit   "node -e → exit 2" 2
+assert_stderr_contains "node -e → inline" "inline"
+
+run_hook "$(payload "bun -e 'console.log(1)'")";
+assert_exit   "bun -e → exit 2" 2
+assert_stderr_contains "bun -e → inline" "inline"
+
+run_hook "$(payload "bun eval 'code'")";
+assert_exit   "bun eval → exit 2" 2
+assert_stderr_contains "bun eval → inline" "inline"
+
+run_hook "$(payload "perl -e 'print \"hi\"'")";
+assert_exit   "perl -e → exit 2" 2
+assert_stderr_contains "perl -e → inline" "inline"
+
+run_hook "$(payload "ruby -e 'puts \"hi\"'")";
+assert_exit   "ruby -e → exit 2" 2
+assert_stderr_contains "ruby -e → inline" "inline"
+
+# ---------------------------------------------------------------------------
+# T1 Criterion: Blocks piped interpreter execution (bare interpreter after pipe)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload "echo 'code' | python3")";
+assert_exit   "echo | python3 → exit 2" 2
+assert_stderr_contains "echo | python3 → inline" "inline"
+
+run_hook "$(payload "echo 'code' | node")";
+assert_exit   "echo | node → exit 2" 2
+assert_stderr_contains "echo | node → inline" "inline"
+
+# ---------------------------------------------------------------------------
+# T1 Criterion: Allows interpreter file execution and module invocation
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'python file.py')"
+assert_exit   "python file.py → exit 0" 0
+assert_stdout_empty "python file.py → empty stdout (no opinion)"
+
+run_hook "$(payload 'python3 /path/to/script.py')"
+assert_exit   "python3 /path → exit 0" 0
+assert_stdout_empty "python3 /path → empty stdout (no opinion)"
+
+run_hook "$(payload 'python -m pytest')"
+assert_exit   "python -m pytest → exit 0" 0
+assert_stdout_empty "python -m pytest → empty stdout (no opinion)"
+
+run_hook "$(payload 'python3 -m http.server')"
+assert_exit   "python3 -m http.server → exit 0" 0
+assert_stdout_empty "python3 -m http.server → empty stdout (no opinion)"
+
+run_hook "$(payload 'bun test')"
+assert_exit   "bun test → exit 0" 0
+assert_stdout_empty "bun test → empty stdout (no opinion)"
+
+run_hook "$(payload 'bun run start.ts')"
+assert_exit   "bun run start.ts → exit 0" 0
+assert_stdout_empty "bun run start.ts → empty stdout (no opinion)"
+
+run_hook "$(payload 'bun install')"
+assert_exit   "bun install → exit 0" 0
+assert_stdout_empty "bun install → empty stdout (no opinion)"
+
+run_hook "$(payload 'bun add package')"
+assert_exit   "bun add → exit 0" 0
+assert_stdout_empty "bun add → empty stdout (no opinion)"
+
+run_hook "$(payload 'node script.js')"
+assert_exit   "node script.js → exit 0" 0
+assert_stdout_empty "node script.js → empty stdout (no opinion)"
+
+run_hook "$(payload 'lake build')"
+assert_exit   "lake build → exit 0 (not an interpreter match)" 0
+assert_stdout_empty "lake build → empty stdout (no opinion)"
+
+run_hook "$(payload 'lean file.lean')"
+assert_exit   "lean file.lean → exit 0 (not an interpreter match)" 0
+assert_stdout_empty "lean file.lean → empty stdout (no opinion)"
+
+# ---------------------------------------------------------------------------
+# T1 Criterion: Blocks /tmp redirects in non-echo commands
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'npm test > /tmp/log.txt')"
+assert_exit   "npm test > /tmp/ → exit 2" 2
+assert_stderr_contains "npm test > /tmp/ → /tmp" "/tmp"
+
+run_hook "$(payload 'python3 script.py > /tmp/out')"
+assert_exit   "python3 script.py > /tmp/ → exit 2" 2
+assert_stderr_contains "python3 script.py > /tmp/ → /tmp" "/tmp"
+
+run_hook "$(payload 'command >> /tmp/append.txt')"
+assert_exit   "command >> /tmp/ → exit 2" 2
+assert_stderr_contains "command >> /tmp/ → /tmp" "/tmp"
+
+# ---------------------------------------------------------------------------
+# T1 Criterion: /dev/ redirect and non-/tmp redirect are NOT blocked
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'npm test > /dev/null')"
+assert_exit   "npm test > /dev/null → exit 0" 0
+assert_stdout_empty "npm test > /dev/null → empty stdout (no opinion)"
+
+run_hook "$(payload 'npm test > output.log')"
+assert_exit   "npm test > output.log → exit 0" 0
+assert_stdout_empty "npm test > output.log → empty stdout (no opinion)"
+
+# ---------------------------------------------------------------------------
+# /tmp redirect: compound commands starting with echo/printf
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'echo Starting && npm test > /tmp/log.txt')"
+assert_exit   "echo && npm test > /tmp/ → exit 2 (compound, /tmp guard not skipped)" 2
+assert_stderr_contains "echo && npm > /tmp/ → /tmp" "/tmp"
+
+run_hook "$(payload 'printf msg && pytest >> /tmp/out.txt')"
+assert_exit   "printf && pytest >> /tmp/ → exit 2" 2
+assert_stderr_contains "printf && pytest >> /tmp/ → /tmp" "/tmp"
+
+# Simple echo > /tmp/ still gets "Write tool" message from check_echo_redirect
+run_hook "$(payload 'echo content > /tmp/regular.txt')"
+assert_exit   "echo > /tmp/ (simple) → exit 2" 2
+assert_stderr_contains "echo > /tmp/ (simple) → Write tool" "Write tool"
+
+# ---------------------------------------------------------------------------
+# /tmp redirect: no-space before > (cmd>/tmp/out)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'npm test>/tmp/log.txt')"
+assert_exit   "npm test>/tmp/ (no space) → exit 2" 2
+assert_stderr_contains "npm test>/tmp/ (no space) → /tmp" "/tmp"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

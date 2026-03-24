@@ -162,6 +162,15 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder â€
 - Return your verification report as text output. The orchestrator receives it and saves it to `$RND_DIR/verifications/`. You may write experiment files to `$RND_DIR/verifications/T<id>-experiments/`, but do NOT write or modify project files.
 - **KISS:** Do not fail builds for missing "nice to have" patterns (extra validation, defensive error handling, speculative abstractions) unless the pre-registration explicitly requires them. Over-engineering is a defect, not a quality improvement.
 
+## Tool Discipline
+
+- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
+- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
+- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
+- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
+- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` â€” `$RND_DIR` is auto-allowed and persists across the session
+- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+
 ## Multi-Judge Mode
 
 The orchestrator may spawn you as one of two parallel judges, or as a tiebreaker when those judges disagree. See `rnd-framework:rnd-verification` for the full consensus protocol. In brief:

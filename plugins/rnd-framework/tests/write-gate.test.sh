@@ -42,6 +42,11 @@ assert_stdout_empty() {
   if [[ -z "$HOOK_STDOUT" ]]; then pass "$name"; else fail "$name" "expected empty stdout, got: '$HOOK_STDOUT'"; fi
 }
 
+assert_stderr_contains() {
+  local name="$1" needle="$2"
+  if [[ "$HOOK_STDERR" == *"$needle"* ]]; then pass "$name"; else fail "$name" "expected stderr to contain '$needle', got: '$HOOK_STDERR'"; fi
+}
+
 # ---------------------------------------------------------------------------
 # .rnd/ paths → allow JSON, exit 0
 # ---------------------------------------------------------------------------
@@ -62,9 +67,34 @@ run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/Developer
 assert_exit   "regular path → exit 0" 0
 assert_stdout_empty "regular path → empty stdout (no opinion)"
 
-run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/somefile.txt"}}'
-assert_exit   "/tmp path → exit 0" 0
-assert_stdout_empty "/tmp path → empty stdout (no opinion)"
+# ---------------------------------------------------------------------------
+# /tmp paths → blocked (exit 2, stderr contains "/tmp")
+# ---------------------------------------------------------------------------
+
+# T2 Criterion: Write to /tmp/somefile.txt is blocked
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/somefile.txt"}}'
+assert_exit   "/tmp Write → exit 2" 2
+assert_stderr_contains "/tmp Write → stderr contains /tmp" "/tmp"
+
+# T2 Criterion: Edit to /tmp/script.py is blocked
+run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/script.py"}}'
+assert_exit   "/tmp Edit → exit 2" 2
+assert_stderr_contains "/tmp Edit → stderr contains /tmp" "/tmp"
+
+# T2 Criterion: Write to /tmp/deep/nested/file.txt is blocked
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/deep/nested/file.txt"}}'
+assert_exit   "/tmp nested path → exit 2" 2
+assert_stderr_contains "/tmp nested path → stderr contains /tmp" "/tmp"
+
+# T2 Edge case: /tmpfoo/bar does NOT match (doesn't start with /tmp/)
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmpfoo/bar.txt"}}'
+assert_exit   "/tmpfoo/ path → exit 0" 0
+assert_stdout_empty "/tmpfoo/ path → empty stdout (no opinion)"
+
+# T2 Edge case: exactly /tmp (no trailing slash) — no opinion, it's a directory
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp"}}'
+assert_exit   "/tmp exact → exit 0" 0
+assert_stdout_empty "/tmp exact → empty stdout (no opinion)"
 
 # Plugin cache write is NOT auto-allowed (write-gate only allows .rnd/)
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/.claude-personal/plugins/cache/foo/bar.ts"}}'

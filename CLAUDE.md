@@ -24,8 +24,8 @@ plugins/rnd-framework/
 │   ├── hooks.json               # SessionStart + SessionEnd bootstrap + PreToolUse + PostToolUse hook routing
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
-│   ├── write-gate.sh            # Write/Edit hook: auto-allows .rnd/ path operations
-│   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>, auto-allows .rnd/ paths only
+│   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
+│   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/ paths only
 │   ├── session-start.sh         # SessionStart hook: injects skill context
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-tool-use.sh         # PostToolUse hook: audit logging for Write/Edit operations
@@ -65,7 +65,8 @@ All agents have `memory: user` (persistent cross-project learning), `skills` pre
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
 - **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
-- **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, and `echo/printf` with file redirects — enforces use of dedicated Claude Code tools, even for `.rnd/` paths. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions
+- **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed.
+- **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering agents to `$RND_DIR`
 - **Commit protection** (`prefer-tools.sh`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches
 - **Audit logging** (`post-tool-use.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
@@ -89,7 +90,7 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.sh` an
 When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate.sh, prefer-tools.sh, post-tool-use.sh, and all others. Practical consequences:
 
 - The information barrier is not enforced: the Verifier can read Builder self-assessments
-- Tool discipline is not enforced: sed/cat/grep/find bypass is possible
+- Tool discipline is not enforced: sed/cat/grep/find/inline interpreters bypass is possible
 - Session bootstrap does not run: skills are not injected into context
 
 Bottom line: rnd-framework effectively does not work in `--bare` mode. This is expected — `--bare` is designed for scripted `-p` invocations, not interactive multi-agent orchestration.

@@ -83,6 +83,15 @@ If the root cause meets ANY of the following conditions, do NOT produce a target
 
 When escalating, still write the diagnosis report with the evidence gathered, but set `Recommended Fix` to: "ESCALATE — architectural scope. Recommend running `/rnd-framework:start` instead of a targeted fix."
 
+## Tool Discipline
+
+- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
+- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
+- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
+- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
+- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
+- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+
 ## Communication
 
 Notify the orchestrator via `SendMessage` at key points:

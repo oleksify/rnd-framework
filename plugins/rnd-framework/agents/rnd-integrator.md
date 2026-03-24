@@ -77,6 +77,15 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
 - If NO-SHIP, identify the root cause: is it a task-level failure (route back to Builder) or an architectural issue (escalate to Planner for re-decomposition)?
 - Run the existing project test suite to check for regressions. A single regression is grounds for NO-SHIP.
 
+## Tool Discipline
+
+- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
+- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
+- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
+- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
+- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
+- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+
 ## Memory
 
 Store integration patterns that work: which cross-module boundaries are fragile, what interface mismatches have caused NO-SHIP, and how to structure tests that exercise real data flows.

@@ -27,6 +27,7 @@ _CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
 _CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
 _DOLLAR_PAREN_PATTERN='\$\(([^)]*)\)'
 _BACKTICK_PATTERN='`([^`]*)`'
+_TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 
 # ---------------------------------------------------------------------------
 # Global state (set by check_segment, read by main)
@@ -133,6 +134,73 @@ check_segment() {
         HAS_ECHO=1
       fi
       ;;
+    python|python3)
+      # Extract the second word (first argument to the interpreter)
+      local rest="${seg#"$first_word"}"
+      rest="${rest#"${rest%%[! ]*}"}"  # ltrim spaces
+      local second_word="${rest%% *}"
+      if [[ -z "$second_word" ]]; then
+        # Bare interpreter: e.g. "python3" alone — pipe target like echo | python3
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      elif [[ "$second_word" == "-m" ]]; then
+        true  # python -m module — allowed
+      elif [[ "$second_word" == *.py ]] || [[ "$second_word" == */* ]]; then
+        true  # python file.py or python /path/to/script.py — allowed
+      elif [[ "$second_word" == "-c" ]] || [[ "$seg" == *" -c "* ]] || [[ "$seg" == *" -c'"* ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      else
+        true  # No opinion on other usage
+      fi
+      ;;
+    node)
+      local rest="${seg#"$first_word"}"
+      rest="${rest#"${rest%%[! ]*}"}"
+      local second_word="${rest%% *}"
+      if [[ -z "$second_word" ]]; then
+        # Bare node — pipe target
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      else
+        true  # node script.js — allowed
+      fi
+      ;;
+    bun)
+      local rest="${seg#"$first_word"}"
+      rest="${rest#"${rest%%[! ]*}"}"
+      local second_word="${rest%% *}"
+      if [[ -z "$second_word" ]]; then
+        # Bare bun — pipe target
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      elif [[ "$second_word" == "eval" ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      elif [[ "$second_word" == "test" || "$second_word" == "run" || "$second_word" == "install" || \
+              "$second_word" == "add" || "$second_word" == "build" || "$second_word" == "create" || \
+              "$second_word" == "init" || "$second_word" == "pm" || "$second_word" == "x" || \
+              "$second_word" == "upgrade" || "$second_word" == "link" || "$second_word" == "unlink" || \
+              "$second_word" == "patch" || "$second_word" == "deploy" ]]; then
+        true  # Known safe bun subcommand — allowed
+      else
+        true  # No opinion on other bun usage
+      fi
+      ;;
+    perl|ruby)
+      if [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]] || [[ "${seg#"$first_word" }" == "-e"* ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+      else
+        true  # perl/ruby file.pl — allowed
+      fi
+      ;;
   esac
   # Explicit true to ensure the function always exits 0 (important: this
   # function is called as the last command in a while loop body, so its
@@ -213,6 +281,29 @@ fi
 # Block: git push to main/master/production
 if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]](main|master|production)([[:space:]]|$) ]]; then
   block_msg "BLOCKED: Direct push to main/master/production. Use a feature branch and PR instead."
+fi
+
+# ---------------------------------------------------------------------------
+# /tmp redirect guard — checked on the full command string (before splitting)
+# Catches patterns like: npm test > /tmp/log.txt  or  cmd >> /tmp/append.txt
+# For simple echo/printf commands (no shell operators), check_echo_redirect
+# already catches the redirect with a "Write tool" message, so we skip the
+# /tmp guard for those. For compound commands (containing &&, ||, ;, |) we
+# always check, even if the first segment is echo/printf, because the /tmp
+# redirect may be in a later segment that check_echo_redirect never sees.
+# ---------------------------------------------------------------------------
+_is_compound=0
+if [[ "$command" == *"&&"* || "$command" == *"||"* || "$command" == *";"* || "$command" == *"|"* ]]; then
+  _is_compound=1
+fi
+_cmd_first_word="${command%% *}"
+_cmd_name="${_cmd_first_word##*/}"
+_skip_tmp_guard=0
+if [[ "$_is_compound" -eq 0 && ( "$_cmd_name" == "echo" || "$_cmd_name" == "printf" ) ]]; then
+  _skip_tmp_guard=1
+fi
+if [[ "$_skip_tmp_guard" -eq 0 ]] && [[ "$command" =~ $_TMP_REDIRECT_PATTERN ]]; then
+  block_msg "Do not write to /tmp. Use \$RND_DIR for temporary files — it is auto-allowed and persists across the pipeline session."
 fi
 
 # ---------------------------------------------------------------------------

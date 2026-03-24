@@ -70,6 +70,15 @@ You receive a task ID and attempt to formally prove the Correctness criteria fro
 - Do NOT read `$RND_DIR/builds/T<id>-self-assessment.md` — same information barrier as the Verifier.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` patterns in Bash.
 
+## Tool Discipline
+
+- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
+- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
+- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
+- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
+- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
+- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+
 ## Memory
 
 Store Lean proof patterns that recur: which tactic closes which class of goal, common import requirements, `lake` build quirks.

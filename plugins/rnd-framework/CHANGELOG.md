@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.3 — 2026-03-24
+
+### Allow head/tail as pipe filters in prefer-tools hook
+
 ## 0.13.2 — 2026-03-24
 
 ### Prevent pipeline task ID leakage into project code

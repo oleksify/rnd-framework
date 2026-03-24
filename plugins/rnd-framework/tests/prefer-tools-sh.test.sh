@@ -117,6 +117,37 @@ run_hook "$(payload 'tail -f file')"
 assert_exit   "tail → exit 2" 2
 assert_stderr_contains "tail → stderr mentions Read tool" "Read tool"
 
+run_hook "$(payload 'tail -n 10 file.txt')"
+assert_exit   "tail with -n and file arg → exit 2" 2
+assert_stderr_contains "tail with -n and file arg → Read tool" "Read tool"
+
+run_hook "$(payload 'head -n 5 file.txt')"
+assert_exit   "head with -n and file arg → exit 2" 2
+assert_stderr_contains "head with -n and file arg → Read tool" "Read tool"
+
+# ---------------------------------------------------------------------------
+# Allows head/tail as pipe filters (no file argument)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'pnpm check 2>&1 | tail -30')"
+assert_exit   "tail pipe filter with flag-only arg → exit 0" 0
+assert_stdout_empty "tail pipe filter → empty stdout (no opinion)"
+
+run_hook "$(payload 'command | head -n 10')"
+assert_exit   "head pipe filter with -n flag → exit 0" 0
+assert_stdout_empty "head pipe filter -n → empty stdout (no opinion)"
+
+run_hook "$(payload 'tail -30')"
+assert_exit   "tail standalone flag-only (reads stdin) → exit 0" 0
+assert_stdout_empty "tail standalone flag-only → empty stdout (no opinion)"
+
+run_hook "$(payload 'head -20')"
+assert_exit   "head standalone flag-only (reads stdin) → exit 0" 0
+assert_stdout_empty "head standalone flag-only → empty stdout (no opinion)"
+
+run_hook "$(payload 'npm run build && cmd | tail -5')"
+assert_exit   "tail pipe filter in compound command → exit 0" 0
+
 # ---------------------------------------------------------------------------
 # Blocks grep/rg with stderr mentioning "Grep tool", exit 2
 # ---------------------------------------------------------------------------

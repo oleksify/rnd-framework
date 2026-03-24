@@ -111,9 +111,27 @@ check_segment() {
       SEGMENT_BLOCKED=1
       BLOCK_REASON="Use the Edit tool instead of ${cmd}. Edit is reviewable, diffable, and handles indentation correctly."
       ;;
-    cat|head|tail)
+    cat)
       SEGMENT_BLOCKED=1
       BLOCK_REASON="Use the Read tool instead of ${cmd}. Read supports line offsets and limits natively."
+      ;;
+    head|tail)
+      # Allow when used as a pipe filter (no file argument).
+      # A file argument is any word that is not a flag (-*) and not a pure
+      # number (option-values like the 10 in -n 10 are numbers, not paths).
+      local rest="${seg#"$first_word"}"
+      rest="${rest#"${rest%%[! ]*}"}"  # ltrim spaces
+      local has_file_arg=0
+      for word in $rest; do
+        if [[ "$word" != -* ]] && ! [[ "$word" =~ ^[0-9]+$ ]]; then
+          has_file_arg=1
+          break
+        fi
+      done
+      if [[ "$has_file_arg" -eq 1 ]]; then
+        SEGMENT_BLOCKED=1
+        BLOCK_REASON="Use the Read tool instead of ${cmd}. Read supports line offsets and limits natively."
+      fi
       ;;
     grep|rg)
       SEGMENT_BLOCKED=1

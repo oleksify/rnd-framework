@@ -162,6 +162,16 @@ run_hook 'not json at all'
 assert_exit   "malformed stdin → exit 0" 0
 assert_stdout_empty "malformed stdin → empty stdout"
 
+# self-assessment with rnd-proof-gate agent → block (exit 2, INFORMATION BARRIER)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/builds/T3-self-assessment.md"},"agent_type":"rnd-proof-gate"}'
+assert_exit   "self-assessment + rnd-proof-gate → exit 2" 2
+assert_stderr_contains "self-assessment + rnd-proof-gate → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# self-assessment with mixed-case proof-gate agent → block (exit 2, INFORMATION BARRIER)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/builds/T3-self-assessment.md"},"agent_type":"RND-Proof-Gate"}'
+assert_exit   "self-assessment + RND-Proof-Gate (mixed case) → exit 2" 2
+assert_stderr_contains "self-assessment + RND-Proof-Gate (mixed case) → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------

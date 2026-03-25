@@ -47,13 +47,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Get RND_DIR
+# Get RND_DIR and record git root for cross-repo detection (cwd-changed.sh)
 # ---------------------------------------------------------------------------
 
 rnd_dir="$(resolve_rnd_dir -c 2>/dev/null || true)"
 rnd_line=""
 if [[ -n "$rnd_dir" ]]; then
   rnd_line=$'\n\n'"**RND_DIR (pipeline artifact directory for this project):** \`${rnd_dir}\`"
+
+  # Write the session's originating git root to <base_dir>/.session-git-root so
+  # that cwd-changed.sh can detect when the working directory moves to a different
+  # repository.  We use a separate file (not .current-session) so the session ID
+  # format remains stable.  Silently skip when not inside a git repo.
+  base_dir="$(resolve_rnd_dir --base 2>/dev/null || true)"
+  if [[ -n "$base_dir" ]]; then
+    git_project_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -n "$git_project_root" ]]; then
+      printf '%s' "$git_project_root" > "${base_dir}/.session-git-root"
+    fi
+  fi
 fi
 
 # ---------------------------------------------------------------------------

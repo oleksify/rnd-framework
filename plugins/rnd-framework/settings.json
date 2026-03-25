@@ -8,6 +8,6 @@
     "Analyzing"
   ],
   "statusLines": [
-    "${CLAUDE_PLUGIN_ROOT}/hooks/statusline.ts"
+    "${CLAUDE_PLUGIN_ROOT}/hooks/statusline.sh"
   ]
 }

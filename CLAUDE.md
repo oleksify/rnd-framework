@@ -14,6 +14,9 @@ Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a l
 ## Repository Layout
 
 ```
+lib/
+└── plugin-dir-base.sh              # Shared artifact directory logic (sourced by both plugins' dir scripts)
+
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
 ├── agents/                      # Specialized agents (planner, builder, verifier, integrator, data-scientist)
@@ -58,6 +61,7 @@ plugins/rnd-framework/
 | `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
+| `rnd-reality-auditor` | sonnet | red | Adversarial testing of external service assumptions in builder code |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
 
 All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
@@ -65,7 +69,7 @@ All agents have `memory: user` (persistent cross-project learning), `skills` pre
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
-- **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier from anchoring on Builder reasoning
+- **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier and Proof Gate from anchoring on Builder reasoning
 - **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
 - **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed.
 - **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering agents to `$RND_DIR`
@@ -130,6 +134,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 ```
 ~/.claude/.rnd/<basename>-<hash>/          # Project base; slug = git-common-dir basename + 8-char sha256 of canonicalized git-common-dir; falls back to pwd basename + hash when not in a git repo
 ├── .current-session                       # Active session ID
+├── .session-git-root                      # Git root of the project that started the session (written by session-start.sh, read by cwd-changed.sh)
 ├── roadmap.md                             # Multi-session roadmap (optional, created by /roadmap)
 ├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA)
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)

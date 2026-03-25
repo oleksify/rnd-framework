@@ -29,9 +29,9 @@ fi
 # Output must be an advisory (contains additionalContext)
 assert_contains "instructions-loaded output contains additionalContext" '"additionalContext"' "$HOOK_STDOUT"
 
-# Advisory text should mention rnd-framework:rnd-standards
+# Advisory text should mention CLAUDE.md
 ctx="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
-assert_contains "instructions-loaded advisory mentions rnd-standards" "rnd-standards" "$ctx"
+assert_contains "instructions-loaded advisory mentions CLAUDE.md" "CLAUDE.md" "$ctx"
 
 # Advisory text should not be empty
 if [[ -n "$ctx" ]]; then

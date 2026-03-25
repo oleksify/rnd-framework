@@ -112,6 +112,38 @@ fi
 rm -rf "$tmp_config"
 
 # ---------------------------------------------------------------------------
+# With active session and .session-git-root pointing elsewhere → advisory
+# ---------------------------------------------------------------------------
+
+tmp_config2="$(mktemp -d)"
+base_dir2="$(CLAUDE_CONFIG_DIR="$tmp_config2" "$RND_DIR_SH" --base 2>/dev/null || true)"
+
+if [[ -n "$base_dir2" ]]; then
+  session_id2="20260101-130000-beef"
+  session_dir2="${base_dir2}/sessions/${session_id2}"
+  mkdir -p "$session_dir2"
+  printf '%s' "$session_id2" > "${base_dir2}/.current-session"
+
+  # Plant a fake session git root that will never match the real new_cwd git root.
+  printf '%s' "/nonexistent/fake-repo-root" > "${base_dir2}/.session-git-root"
+
+  # Use the real project root as new_cwd — it is a real git repo, so git
+  # rev-parse will return its actual root, which differs from the fake stored root.
+  real_project_root="$(cd "$SCRIPT_DIR/.." && git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$real_project_root" ]]; then
+    run_hook "{\"cwd\":\"$real_project_root\"}" "CLAUDE_CONFIG_DIR=${tmp_config2}"
+    assert_exit "different git repo → exits 0" 0
+    assert_stdout_contains "different git repo → advisory contains 'different repository'" "different repository"
+  else
+    pass "different git repo → skipped (no git root available)"
+  fi
+else
+  fail "rnd-dir.sh --base resolved for positive cwd-changed test" "(rnd-dir.sh failed; skipping)"
+fi
+
+rm -rf "$tmp_config2"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

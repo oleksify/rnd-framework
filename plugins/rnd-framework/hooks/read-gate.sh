@@ -19,6 +19,7 @@ source "${SCRIPT_DIR}/lib.sh"
 main() {
   local -r BARRIER_KEYWORD="self-assessment"
   local -r VERIFIER_KEYWORD="verifier"
+  local -r PROOF_GATE_KEYWORD="proof-gate"
 
   parse_input
   local file_path
@@ -31,7 +32,7 @@ main() {
     # Known non-verifier agents are allowed through.
     # Empty agent_type or any agent containing "verifier" is blocked.
     local agent_lower="${agent_type,,}"
-    if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
+    if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]] || [[ "$agent_lower" == *"${PROOF_GATE_KEYWORD}"* ]]; then
       block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
     fi
     # Non-verifier agent: fall through (no-opinion, exit 0)

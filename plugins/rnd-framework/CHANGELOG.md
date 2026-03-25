@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.4 — 2026-03-25
+
+### Remove stale extract-patterns.ts and slop gate references
+
+The slop gate system was removed but references survived in debug.md, quick.md, prefer-tools.sh, and code-review SKILL.md, breaking both debug and quick pipelines at setup.
+
 ## 0.13.3 — 2026-03-24
 
 ### Allow head/tail as pipe filters in prefer-tools hook

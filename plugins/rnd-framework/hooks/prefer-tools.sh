@@ -354,7 +354,7 @@ if [[ "$command" == *".rnd/"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   exit 0
 fi
 
-# Auto-allow plugin lib/ scripts (bump.sh, extract-patterns.ts, etc.)
+# Auto-allow plugin lib/ scripts (bump.sh, validate.sh, etc.)
 plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
 if [[ -n "$plugin_root" ]] && [[ "$command" == *"${plugin_root}/lib/"* ]]; then
   allow_json

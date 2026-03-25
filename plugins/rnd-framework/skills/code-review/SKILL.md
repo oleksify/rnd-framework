@@ -98,4 +98,3 @@ Verdict is determined by the highest severity finding: critical beats major, maj
 ## Related Skills
 
 - `rnd-framework:rnd-verification` — Evidence-based verification process; code review applies the same evidence standards
-- `rnd-framework:rnd-slop-detection` — Structural anti-pattern detection; slop findings map to KISS compliance and Style categories

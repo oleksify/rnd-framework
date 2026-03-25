@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.2 — 2026-03-25
+
+### Fix 6 major audit findings
+
+Fix inert cwd-changed.sh hook, remove nonexistent command reference in instructions-loaded.sh, mask API key in session-start.sh, fix settings.json statusline extension, extract shared plugin-dir-base.sh to eliminate duplication, add proof-gate to read-gate.sh information barrier
+
 ## 0.14.1 — 2026-03-25
 
 ### Condense command and skill prose for token reduction

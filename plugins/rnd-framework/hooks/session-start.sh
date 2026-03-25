@@ -3,8 +3,7 @@
 # Injects the using-rnd-framework skill content into session context and checks
 # for a version mismatch between the cached plugin and the source in the git root.
 #
-# Always exits 0. Outputs SessionStart JSON with additional_context and
-# hookSpecificOutput.additionalContext containing the skill content.
+# Always exits 0. Outputs SessionStart JSON with hookSpecificOutput.additionalContext.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -111,6 +110,6 @@ ${skill_content}${rnd_line}${version_warning}
 
 jq -cn \
   --arg ctx "$ctx" \
-  '{additional_context:$ctx,hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
+  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
 
 exit 0

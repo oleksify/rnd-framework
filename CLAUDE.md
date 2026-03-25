@@ -21,7 +21,7 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # SessionStart + SessionEnd bootstrap + PreToolUse + PostToolUse hook routing
+│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
@@ -35,6 +35,8 @@ plugins/rnd-framework/
 │   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
 │   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
+│   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
+│   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -70,6 +72,8 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Commit protection** (`prefer-tools.sh`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches
 - **Audit logging** (`post-tool-use.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl`
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
+- **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
+- **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 

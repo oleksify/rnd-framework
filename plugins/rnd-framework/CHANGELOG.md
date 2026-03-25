@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.5 — 2026-03-25
+
+### Adopt v2.1.83 features: CwdChanged/FileChanged hooks, fix SessionStart JSON format
+
+Add CwdChanged hook (warns on cross-repo directory change during active session) and FileChanged hook (advises on external .rnd/ artifact edits). Remove additional_context top-level key from SessionStart JSON output — emit only hookSpecificOutput to match Claude Code's expected format.
+
 ## 0.13.4 — 2026-03-25
 
 ### Remove stale extract-patterns.ts and slop gate references

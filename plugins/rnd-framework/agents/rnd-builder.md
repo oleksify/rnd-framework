@@ -121,6 +121,15 @@ When the status is `DONE_WITH_CONCERNS`, include a brief `concerns:` line in the
 - **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
 - **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
 
+## Team Mode
+
+You may be spawned as a team member with a `team_name` parameter. When this happens:
+
+- Sibling builders in the same wave belong to the same team and work on independent tasks in parallel.
+- If you need to discover siblings, read the team config at `~/.claude/teams/{team-name}/config.json`.
+- The SendMessage communication protocol is unchanged — report DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED as normal.
+- TeamCreate and TeamDelete are orchestrator responsibilities. You do not call them.
+
 ## Memory
 
 Store debugging patterns that recur across builds: off-by-one boundary bugs, missing error handler paths, async timing issues.

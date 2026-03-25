@@ -157,11 +157,19 @@ For each wave in the execution schedule:
 
 2. **Inject learnings into builder prompts.** For each task in the wave, detect languages from the file extensions listed in the task's "Expected outputs" field (use the extension-to-language mapping from `rnd-framework:rnd-learning`). For each detected language, attempt to read `$CLAUDE_CONFIG_DIR/learnings/{language}.md`. If the file exists, append a `### Known gotchas for {language}` section to that task's builder prompt. If no learnings file exists for a language, skip silently — do not error or warn.
 
-3. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`. They can run in parallel since tasks within a wave have no cross-dependencies.
+3. **Create a build team.** Before spawning builders, call `TeamCreate` with a session-scoped team name:
 
-4. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
+   ```
+   team_name: "rnd-build-wave-{N}-{SESSION_ID}"
+   ```
 
-5. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
+   Where `{N}` is the current wave number and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`). Example: `rnd-build-wave-1-20260325-212836-137f`. This scopes the team to the current pipeline session and wave, preventing name collisions across concurrent runs.
+
+4. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created in step 3, and `name` set to `builder-T{id}` (e.g., `builder-T3`). They can run in parallel since tasks within a wave have no cross-dependencies.
+
+5. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
+
+6. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
 
    | Status code | Action |
    |-------------|--------|
@@ -170,7 +178,9 @@ For each wave in the execution schedule:
    | `NEEDS_CONTEXT` | Pause this task. Use `AskUserQuestion` to present the builder's stated context gap and ask the user to provide the missing information, restate the requirement, or skip the task. Re-dispatch the builder with the user's answer appended to the original prompt. Do not advance to Gate 2 until the builder returns `DONE` or `DONE_WITH_CONCERNS`. |
    | `BLOCKED` | Pause this task. Use `AskUserQuestion` to present the blocker description and offer escalation options: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". Apply the chosen action before advancing to Gate 2. |
 
-6. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+7. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+
+8. **Delete the build team.** After all builders have completed and Gate 2 has passed, call `TeamDelete` with the same team name used in step 3 to clean up the session team.
 
 **After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
 
@@ -282,16 +292,25 @@ If any tasks got FAIL:
 ## Phase 4: Iterate (if needed)
 
 1. Extract the Verifier's feedback (not their internal reasoning).
-2. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
-3. The new Builder implements the fix and produces updated code, tests, and artifacts.
-4. Verifier re-checks (same information barrier rules).
-5. **If re-verification returns PASS**, extract a learning from the cycle (invoke `rnd-framework:rnd-learning` for format and filing rules):
+2. **Create an iteration team.** Call `TeamCreate` with:
+
+   ```
+   team_name: "rnd-iter-T{id}-{SESSION_ID}"
+   ```
+
+   Where `{id}` is the task ID being iterated and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`). Example: `rnd-iter-T3-20260325-212836-137f`.
+
+3. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created in step 2, and `name` set to `iter-builder-T{id}`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
+4. The new Builder implements the fix and produces updated code, tests, and artifacts.
+5. **Delete the iteration team.** Call `TeamDelete` with the same team name used in step 2 to clean up after the builder completes.
+6. Verifier re-checks (same information barrier rules).
+7. **If re-verification returns PASS**, extract a learning from the cycle (invoke `rnd-framework:rnd-learning` for format and filing rules):
    - **Gotcha:** what failed — from the Verifier's NEEDS_ITERATION feedback
    - **Fix:** what changed — from the Builder's iteration diff
    - **Language:** determined from file extensions of changed files, using the extension-to-language mapping in `rnd-learning`
    - Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md` as `## Topic` + 1-3 terse bullets
    - If the language file is new, create it with a `# {Language} Learnings` heading and add a link in `$CLAUDE_CONFIG_DIR/learnings/INDEX.md`
-6. Max iterations per the task's criticality (LOW=2, NORMAL=3, HIGH=5). If budget is exhausted, use `AskUserQuestion` to present options:
+8. Max iterations per the task's criticality (LOW=2, NORMAL=3, HIGH=5). If budget is exhausted, use `AskUserQuestion` to present options:
    - "Re-plan this task" — send back to Planner for re-decomposition
    - "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
    - "Stop pipeline" — halt the pipeline for manual intervention

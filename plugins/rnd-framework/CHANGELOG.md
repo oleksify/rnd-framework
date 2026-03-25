@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.9 — 2026-03-25
+
+### Add Team Mode for builder agents
+
+start.md Phase 2 and Phase 4 now wrap builder spawning with TeamCreate/TeamDelete for session-scoped team lifecycle. Builder Agent calls include team_name and name parameters for addressability. build.md standalone command follows the same pattern. rnd-builder.md gains a concise team awareness section. Verifier, Proof Gate, and Reality Audit spawning unchanged.
+
 ## 0.13.8 — 2026-03-25
 
 ### Add criticality-driven verification routing (single-judge default)

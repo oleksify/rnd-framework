@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.7 — 2026-03-25
+
+### Trim agent skill preloads and fold failure modes into verification
+
+Trimmed using-rnd-framework from 167 to 53 lines by removing reference tables. Folded 6 critical failure modes and 14 red flag phrases into rnd-verification as a compact appendix. Removed rarely-used skill preloads from 5 agents: rnd-debugging/rnd-experiments/rnd-failure-modes from verifier, fp-practices from builder, lean-proving from data-scientist, kiss-practices from proof-gate and reality-auditor. Updated validate.sh parity checks. All 293 validation checks pass.
+
 ## 0.13.6 — 2026-03-25
 
 ### Refactor hooks with FP toolkit and expand clean-code skills

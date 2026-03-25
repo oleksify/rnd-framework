@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 memory: user
 color: "#06B6D4"
-skills: rnd-data-science, rnd-debugging, lean-proving
+skills: rnd-data-science, rnd-debugging
 permissionMode: bypassPermissions
 maxTurns: 150
 ---

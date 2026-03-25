@@ -241,9 +241,69 @@ When the two regular-judge verdicts disagree and you are spawned as the tiebreak
 - **The information barrier still applies:** even as tiebreaker, you MUST NOT read any `$RND_DIR/builds/T<id>-self-assessment.md` file. The two judge reports are the only Builder-adjacent material you receive beyond the pre-registration and artifacts.
 - Return your tiebreaker report as text output (the orchestrator saves it to `$RND_DIR/verifications/T<id>-tiebreaker.md`).
 
+## Critical Failure Modes
+
+Scan these before writing any verdict. If you recognize one of these patterns in your own reasoning, stop and correct course. The full catalog of 18 failure modes is in `rnd-framework:rnd-failure-modes` — this appendix covers the six most common in verification contexts.
+
+### 1. Premature Satisfaction
+**Manifestation:** Code looks reasonable so you write PASS without running tests — "seems fine" replaces evidence. You may say "the implementation clearly handles this case."
+**Correct behavior:** Every criterion requires concrete, independently produced evidence — test output you ran yourself, code line references with traced execution paths. Run it. Break it. Trace it.
+
+### 2. Trusting Agent Reports
+**Manifestation:** Builder's manifest says "all tests pass" and you accept it — you check if the claim was made, not if it is true. Verification becomes reading a report about verification.
+**Correct behavior:** Run tests yourself. Read what the tests actually assert. An agent claiming tests pass does not make them pass, and a test asserting the wrong thing can pass while the criterion is unmet.
+
+### 3. Should-Work-Now Fallacy
+**Manifestation:** After seeing a fix applied, you reason "bug was X, they fixed X, therefore it works now" and skip re-running tests because the fix looks right.
+**Correct behavior:** Re-run the tests. Fixes introduce regressions. The logical chain "fix looks correct → criterion met" is not a substitute for execution evidence.
+
+### 4. Anchoring on Builder Self-Assessment
+**Manifestation:** You read the Builder's self-assessment and your verification becomes confirming their claims rather than independently evaluating the spec. Your findings track the Builder's narrative.
+**Correct behavior:** Self-assessment files are blocked by hooks. If you have read one, discard everything you learned from it and restart verification from the pre-registration and artifacts only.
+
+### 5. Incomplete Verification
+**Manifestation:** You verify 4 of 5 criteria and issue a verdict — the 5th was "minor" or "obviously fine" or you ran out of time.
+**Correct behavior:** Every criterion listed in the pre-registration gets a verdict with evidence. An incomplete report is a verification failure — it burns an iteration cycle and sends the pipeline forward with untested assumptions.
+
+### 6. Exit Velocity Bias
+**Manifestation:** You want to finish; the work looks good; you become motivated to find reasons to PASS. Failure mode analysis becomes cursory and you stop probing before trying to break anything.
+**Correct behavior:** The desire to be done is not evidence. Failure mode analysis that "reveals no issues" because you stopped early is not a clean bill of health. If the task is important enough to build, it is important enough to probe properly.
+
+---
+
+### Red Flag Phrases
+
+When you find yourself writing or thinking any of the following, stop and check your reasoning:
+
+1. **"should work now"** — assertion without evidence; run the tests
+2. **"probably passes"** — probability is not evidence; verify it
+3. **"clearly handles this"** — "clearly" hides an unverified assumption; trace it
+4. **"looks correct"** — appearances are not evidence; execute and observe
+5. **"the Builder addressed this"** — the Builder's claim is not the same as the criterion being met
+6. **"this is obviously fine"** — obvious things still need evidence; if it's obvious, verification is fast
+7. **"I'll check the rest next round"** — there is no free next round; report all findings now
+8. **"close enough"** — criteria are binary; close enough is FAIL
+9. **"the tests pass, so it works"** — inspect what the tests assert, not just that they pass
+10. **"I already checked something similar"** — prior checks do not transfer; each criterion gets fresh evidence
+11. **"Great!"** (before issuing verdict) — positive affect before evidence is a warning sign
+12. **"I'm confident this is correct"** — confidence without evidence is the definition of Premature Satisfaction
+13. **"too simple to need verification"** — the scaling skill defines minimum ceremony for every tier; nothing is exempt
+14. **"I remember the requirement says..."** — memory degrades; re-read the pre-registration file, don't recall from context
+
+---
+
+### Before Writing Any Verdict: Quick Scan
+
+1. **Name any failure mode you are falling into.** If you notice one, stop and correct before continuing.
+2. **Check your evidence.** For each criterion you are about to mark PASS, ask: "What concrete, independently produced evidence do I have?" If you cannot answer with a specific test output or line reference, you do not have evidence.
+3. **Scan the red flag phrases above.** Review your draft reasoning. If any phrase appears, revise before submitting.
+4. **Count criteria.** Count your verdicts. Count the criteria in the pre-registration. They must match.
+
+---
+
 ## Related Skills
 
 - `rnd-framework:rnd-experiments` — How to write independent experiment tests from spec in Step 2
-- `rnd-framework:rnd-failure-modes` — Catalog of verification anti-patterns and red-flag phrases; scan before writing any verdict
+- `rnd-framework:rnd-failure-modes` — Full catalog of 18 verification anti-patterns; scan before writing any verdict
 - `rnd-framework:rnd-debugging` — For root cause analysis of failures found during verification
 - `rnd-framework:rnd-iteration` — For how feedback flows back to Builder

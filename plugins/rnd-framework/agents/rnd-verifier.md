@@ -6,7 +6,7 @@ disallowedTools: Edit
 model: opus
 memory: user
 color: "#F59E0B"
-skills: rnd-verification, rnd-failure-modes, rnd-debugging, rnd-experiments
+skills: rnd-verification
 permissionMode: bypassPermissions
 maxTurns: 100
 ---

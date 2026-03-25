@@ -5,7 +5,7 @@ tools: Read, Write, Bash, Glob, Grep
 model: sonnet
 memory: user
 color: "#EC4899"
-skills: lean-proving, kiss-practices
+skills: lean-proving
 permissionMode: bypassPermissions
 maxTurns: 100
 ---

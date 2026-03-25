@@ -5,7 +5,7 @@ tools: Read, Write, Bash, Glob, Grep, WebFetch
 model: sonnet
 memory: user
 color: "#14B8A6"
-skills: rnd-reality-auditing, kiss-practices
+skills: rnd-reality-auditing
 permissionMode: bypassPermissions
 maxTurns: 100
 ---

@@ -6,7 +6,7 @@ permissionMode: bypassPermissions
 model: sonnet
 memory: user
 color: "#22C55E"
-skills: rnd-building, rnd-debugging, rnd-iteration, fp-practices
+skills: rnd-building, rnd-debugging, rnd-iteration
 maxTurns: 200
 ---
 

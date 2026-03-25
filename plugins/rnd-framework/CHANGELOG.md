@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.9 — 2026-03-25
+## 0.14.0 — 2026-03-25
 
 ### Add Team Mode for builder agents
 

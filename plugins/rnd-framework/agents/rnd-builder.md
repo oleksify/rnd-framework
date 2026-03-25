@@ -126,7 +126,7 @@ When the status is `DONE_WITH_CONCERNS`, include a brief `concerns:` line in the
 You may be spawned as a team member with a `team_name` parameter. When this happens:
 
 - Sibling builders in the same wave belong to the same team and work on independent tasks in parallel.
-- If you need to discover siblings, read the team config at `~/.claude/teams/{team-name}/config.json`.
+- If you need to discover siblings, read the team config at `$CLAUDE_CONFIG_DIR/teams/{team-name}/config.json`.
 - The SendMessage communication protocol is unchanged — report DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED as normal.
 - TeamCreate and TeamDelete are orchestrator responsibilities. You do not call them.
 

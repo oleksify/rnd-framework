@@ -108,10 +108,10 @@ Orthogonal to task size, **criticality** determines how much verification effort
 **Verification:** Single-judge verification. No proof gate. Quality tier is advisory-only.
 **Rationale:** False negatives here are cheap to fix. Over-verifying wastes tokens.
 
-### MEDIUM criticality (default)
-**Examples:** Standard features, bug fixes, test additions, refactors with clear scope.
-**Verification:** 2-judge consensus (current default). Standard iteration budget (3).
-**Rationale:** Most tasks live here. The dual-judge approach catches ~95% of issues.
+### NORMAL criticality (default)
+**Examples:** Standard features, bug fixes, refactors with clear scope.
+**Verification:** Single-judge verification. Standard iteration budget (3).
+**Rationale:** Most tasks live here. One independent judge catches the overwhelming majority of issues at a fraction of the token cost.
 
 ### HIGH criticality
 **Examples:** Security-sensitive code, data migrations, authentication changes, financial calculations, architectural decisions that constrain future work.
@@ -128,14 +128,14 @@ Intent: Add rate limiting to API endpoints
 Criticality: HIGH
 ```
 
-If the Planner omits the field, the orchestrator defaults to MEDIUM.
+If the Planner omits the field, the orchestrator defaults to NORMAL.
 
 ### How the orchestrator applies it
 
 | Criticality | Judges | Iteration budget | Proof gate |
 |-------------|--------|-----------------|------------|
 | LOW | 1 | 2 | Skip |
-| MEDIUM | 2 | 3 | If available |
+| NORMAL | 1 | 3 | If available |
 | HIGH | 2 | 5 | If available |
 
 This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.

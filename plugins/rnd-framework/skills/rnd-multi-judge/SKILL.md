@@ -15,11 +15,9 @@ This skill defines the protocol shared by `/rnd-framework:verify` and the Verify
 
 ## When to Use
 
-- Standard and large pipeline tasks (default behavior for `/rnd-framework:start` Phase 3)
+- Tasks with `Criticality: HIGH` in the pre-registration document
 - Any time higher confidence in a verification verdict is required
 - When a task's failure would be expensive to fix downstream
-
-Single-verifier mode (as used in `/rnd-framework:quick`) is acceptable only for trivial tasks.
 
 ## Protocol
 

@@ -219,25 +219,34 @@ No AskUserQuestion — VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED auto-contin
 
 ## Phase 3: Verify (per task)
 
-This phase uses multi-judge consensus verification. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary below.
-
 For each completed task in the wave:
 
 1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt. If `$RND_DIR/proofs/T<id>-proof-report.md` exists (Lean was available and Phase 2.5 ran), include its path in the judge prompt as additional evidence under "Additional evidence from Proof Gate". If `$RND_DIR/reality/T<id>-reality-report.md` exists (Phase 2.5b ran), include its path in the judge prompt as additional evidence under "Additional evidence from Reality Audit".
 
-2. **Spawn 2 independent judges in parallel** — both using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. Each judge receives the same prompt (pre-registration + builder code/tests, plus proof report if present). Neither judge's prompt includes the other judge's report. Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook). After each judge returns its report as text output, the orchestrator saves the returned report to:
-   - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
-   - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
+2. **Read the task's Criticality** from its pre-registration document in `$RND_DIR/plan.md`. If the field is absent or omitted, treat it as NORMAL.
 
-3. **Consensus logic:** Read both reports and compare their `Overall Verdict` lines.
-   - **Both judges agree** → their shared verdict is the final verdict. Proceed to step 5.
-   - **Judges disagree** → proceed to step 4 (tiebreaker).
+3. **Route by criticality:**
 
-4. **Tiebreaker (on disagreement only):** Spawn a third verifier agent with `subagent_type: "rnd-framework:rnd-verifier"`. Pass it: the pre-registration document, the builder's code and tests, AND both prior judge reports (Judge A and Judge B). Do NOT pass self-assessment files — the information barrier applies to the tiebreaker identically to the initial judges. After the tiebreaker returns its report as text output, the orchestrator saves the returned report to `$RND_DIR/verifications/T<id>-tiebreaker.md`. The tiebreaker's verdict is the final verdict.
+   **If Criticality is LOW or NORMAL (or omitted):**
 
-5. **Save aggregated report** to `$RND_DIR/verifications/T<id>-verification.md` containing: Judge A report, Judge B report, tiebreaker report (if used), and the final consensus verdict with consensus method noted.
+   Spawn a single verifier agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. The agent receives the same judge prompt assembled in step 1. After the agent returns its report as text output, the orchestrator saves the returned report directly to `$RND_DIR/verifications/T<id>-verification.md`. The report is the final verdict — no consensus logic, no tiebreaker.
 
-6. **Gate 3:** Check the consensus verdict (not individual judge verdicts).
+   **If Criticality is HIGH:**
+
+   Follow the multi-judge consensus protocol. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary:
+   - Spawn 2 independent verifier agents in parallel (Judge A and Judge B), both using `subagent_type: "rnd-framework:rnd-verifier"`. Save returned reports to `$RND_DIR/verifications/T<id>-judge-a.md` and `$RND_DIR/verifications/T<id>-judge-b.md`.
+   - If both judges agree, their shared verdict is final. If they disagree, spawn a tiebreaker verifier that receives both judge reports; save the tiebreaker report to `$RND_DIR/verifications/T<id>-tiebreaker.md`; the tiebreaker's verdict is final.
+   - Save the aggregated report (Judge A + Judge B + tiebreaker if used, plus **Consensus method** notation) to `$RND_DIR/verifications/T<id>-verification.md`.
+
+**Iteration budget by criticality:**
+
+| Criticality | Max iterations |
+|-------------|---------------|
+| LOW         | 2             |
+| NORMAL (or omitted) | 3    |
+| HIGH        | 5             |
+
+4. **Gate 3:** Check the verdict in `$RND_DIR/verifications/T<id>-verification.md`.
    - **PASS** → All criteria (both tiers) passed. Use `TaskUpdate` to mark `completed`. Move to next.
    - **PASS (quality: NEEDS ITERATION)** → Correctness is fully met; quality tier has feedback. Use `TaskUpdate` to mark `completed`. Record the quality feedback in `$RND_DIR/verifications/T<id>-quality-feedback.md` for a non-blocking iteration round after integration. Quality-tier failures do NOT block integration — proceed with the task marked completed.
    - **NEEDS ITERATION** → A clear, isolated Correctness failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
@@ -282,7 +291,7 @@ If any tasks got FAIL:
    - **Language:** determined from file extensions of changed files, using the extension-to-language mapping in `rnd-learning`
    - Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md` as `## Topic` + 1-3 terse bullets
    - If the language file is new, create it with a `# {Language} Learnings` heading and add a link in `$CLAUDE_CONFIG_DIR/learnings/INDEX.md`
-6. Max 3 iterations. If still failing, use `AskUserQuestion` to present options:
+6. Max iterations per the task's criticality (LOW=2, NORMAL=3, HIGH=5). If budget is exhausted, use `AskUserQuestion` to present options:
    - "Re-plan this task" — send back to Planner for re-decomposition
    - "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
    - "Stop pipeline" — halt the pipeline for manual intervention

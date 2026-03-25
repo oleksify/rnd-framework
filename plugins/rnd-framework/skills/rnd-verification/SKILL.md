@@ -16,6 +16,8 @@ Independently verify a Builder's output against pre-registered success criteria.
 
 ## When to Use
 
+Single-judge verification is the **default verification mode** for tasks with `Criticality: LOW` or `Criticality: NORMAL` (including tasks where no criticality is specified). For `Criticality: HIGH` tasks, the orchestrator uses the `rnd-framework:rnd-multi-judge` protocol instead.
+
 - Verify phase of `/rnd-framework:start` or `/rnd-framework:verify`
 - After any Builder submits work
 - When independent quality assessment is needed

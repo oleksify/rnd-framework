@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.8 — 2026-03-25
+
+### Add criticality-driven verification routing (single-judge default)
+
+Added Criticality: LOW | NORMAL | HIGH field to pre-registration format. Renamed MEDIUM tier to NORMAL in rnd-scaling. Default verification mode is now single-judge (1 verifier) for LOW and NORMAL tasks. Multi-judge consensus (2 verifiers + tiebreaker) is reserved for HIGH criticality tasks (security, auth, data integrity, complex algorithms, data migrations, financial calculations, architectural decisions). Iteration budgets scale with criticality: LOW=2, NORMAL=3, HIGH=5. Updated start.md Phase 3, verify.md, rnd-multi-judge, rnd-verification, rnd-decomposition, and rnd-planner.
+
 ## 0.13.7 — 2026-03-25
 
 ### Trim agent skill preloads and fold failure modes into verification

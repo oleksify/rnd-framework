@@ -69,6 +69,7 @@ Task ID: T<number>
 Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts]
+Criticality: LOW | NORMAL | HIGH
 Success criteria:
   Correctness:
   - [ ] [Functional requirement, test passing, or contract conformance condition]
@@ -83,6 +84,21 @@ External dependencies:
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
+
+### Criticality Tiers
+
+Set `Criticality` based on the risk and consequence of a mistake. When omitted, NORMAL is assumed.
+
+| Tier | Iteration budget | When to use |
+|------|-----------------|-------------|
+| **LOW** | 2 | Config changes, documentation, style fixes, renaming, log lines |
+| **NORMAL** | 3 | Standard features, bug fixes, test additions, refactors |
+| **HIGH** | 5 | Security, auth, data integrity, complex algorithms, data migrations, financial calculations, architectural decisions |
+
+**Selection guide:**
+- LOW: the change is cosmetic or informational — a wrong answer has no runtime effect
+- NORMAL: the default; a wrong answer degrades functionality but is recoverable
+- HIGH: a wrong answer causes data loss, security holes, financial errors, or requires a migration to undo
 
 ### Tiered Criteria: Correctness vs Quality
 

@@ -112,6 +112,7 @@ Task ID: T<number>
 Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
+Criticality: LOW | NORMAL | HIGH
 Success criteria:
   Correctness:
   - [ ] [Functional requirement, test passing, or contract conformance condition]

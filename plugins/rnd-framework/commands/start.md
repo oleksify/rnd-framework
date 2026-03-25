@@ -22,18 +22,15 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 
 Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agents.
 
-
 ## Task Input
 
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:start` with no task description):
 
-1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
+1. **Quick codebase scan:** `git log --oneline -10`, TODO/FIXME comments, recent changes.
+2. **Ask with `AskUserQuestion`:** 2-4 concrete suggestions based on what you found, plus "Describe a different task".
+3. Use the selected or typed task as the task description and proceed to Phase 0.
 
-2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option. Example suggestions might be: recent TODO items, areas with recent churn, or common improvement patterns you spotted. Each option should have a short label and a description explaining what the task would involve.
-
-3. **If the user picks a suggestion**, use it as the task description and continue to Phase 0. **If they type a custom task**, use that instead.
-
-**Never fall back to plain text** to ask what to work on. `AskUserQuestion` is mandatory at every decision point, including this one.
+**Never fall back to plain text** — `AskUserQuestion` is mandatory at every decision point.
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
@@ -41,350 +38,186 @@ If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
 Before planning, explore the codebase and gather requirements. This phase prevents the Planner from decomposing a task based on incomplete understanding.
 
-1. **Explore the codebase.** Spawn an `Explore` agent (or use Glob/Grep directly for small codebases) to understand the areas relevant to the task. Identify: existing patterns, relevant files/modules, architectural conventions, and potential constraints.
+1. **Explore the codebase.** Spawn an `Explore` agent (or Glob/Grep for small codebases). Identify: existing patterns, relevant files/modules, architectural conventions, and constraints.
 
-2. **Discover local experts.** Check whether the target project ships its own agents or skills in `.claude/`. Use Glob to scan:
-   - `.claude/agents/*.md` — project-local agents
-   - `.claude/skills/*/SKILL.md` — project-local skills
+2. **Discover local experts.** Invoke `rnd-framework:rnd-local-experts` to scan `.claude/agents/` and `.claude/skills/` for project-local agents and skills. Pass the structured summary to the Planner so it can reference them in pre-registration documents. If none exist, record `Local Experts Discovered: none` and continue.
 
-   For each discovered file, read the YAML frontmatter and extract the `name` and `description` fields. Assemble a structured summary:
-
-   ```
-   Local Experts Discovered:
-
-   Agents (.claude/agents/):
-     - name: security-reviewer
-       description: "Reviews auth and input validation changes for vulnerabilities"
-
-   Skills (.claude/skills/):
-     - name: project-testing
-       description: "Use when writing tests — covers project-specific test helpers and CI patterns"
-   ```
-
-   If neither `.claude/agents/` nor `.claude/skills/` exists, or both are empty, record `Local Experts Discovered: none` and continue silently. Missing directories are not an error.
-
-3. **Load coding practices.** Detect which languages/frameworks are present in the project (by file extensions, config files, or dependency manifests). Invoke `rnd-framework:kiss-practices` and read only the relevant language files. Also invoke `rnd-framework:fp-practices` to load functional programming principles. Invoke both skills in a single message (parallel tool calls) to minimize API round-trips. Include both KISS and FP rules in the discovery context passed to the Planner and all downstream agents.
-
-> **Note:** Quick mode (`/rnd-framework:quick`) skips these skill invocations and applies KISS/FP principles inline to reduce API call overhead.
+3. **Load coding practices.** Detect which languages/frameworks are present (by file extensions, config files, or dependency manifests). Invoke `rnd-framework:kiss-practices` and `rnd-framework:fp-practices` in a single message (parallel). Include both KISS and FP rules in the discovery context passed to the Planner and all downstream agents.
 
 4. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
-   - **If `roadmap.md` exists:** Read it and display milestone progress (DONE / IN_PROGRESS / NOT_STARTED). Identify the current or next milestone. Use `AskUserQuestion` with options:
-     - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task, proceed to Phase 0.5/1
-     - "Start a different task" — continue with the original `$ARGUMENTS`, ignoring the roadmap
+   - **If `roadmap.md` exists:** Read it and display milestone progress. Use `AskUserQuestion` with options:
+     - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task
+     - "Start a different task" — continue with `$ARGUMENTS`, ignoring the roadmap
      - "Manage roadmap" — route to `/rnd-framework:roadmap`
-   - **If `roadmap.md` does not exist:** Based on your codebase exploration, evaluate whether the task seems like a multi-day effort (many components, broad scope, multiple subsystems). If multi-day, use `AskUserQuestion` with options:
-     - "Create a roadmap first (Recommended)" — route to `/rnd-framework:roadmap` with the task description
-     - "Proceed as single session" — continue normal pipeline
+   - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
 
-     If it seems single-session, skip silently.
+5. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
 
-5. **Identify ambiguities.** Based on your exploration and the task description, note what is unclear or could go multiple ways: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+6. **Ask 3-5 clarifying questions** using `AskUserQuestion`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
 
-6. **Ask 3-5 clarifying questions.** Use `AskUserQuestion` to ask targeted questions about the ambiguities you found. Focus on:
-   - **Scope:** What's in and what's out? Any specific files, modules, or areas to focus on or avoid?
-   - **Patterns:** Should this follow an existing pattern in the codebase, or introduce a new approach?
-   - **Constraints:** Performance requirements, compatibility needs, or dependencies to be aware of?
-   - **Preferences:** Any strong opinions on architecture, naming, or approach?
+7. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts (name + description, or "none"), (c) KISS/FP rules, (d) user answers, (e) constraints. Pass this to the Planner.
 
-   Keep questions concrete — provide 2-4 options per question based on what you discovered in the codebase, not generic open-ended asks.
-
-7. **Compile discovery context.** Summarize: (a) relevant codebase findings, (b) local experts discovered (name + description for each, or "none"), (c) KISS rules for the project's tech stack, (d) user answers, (e) any constraints discovered. This context is passed to the Planner.
-
-**Skip condition:** If the task description is already highly specific (includes file paths, approach details, and clear scope), you may skip Phase 0 and proceed directly to Phase 0.5. When in doubt, ask — a few questions now prevents re-planning later.
+**Skip condition:** If the task description is already highly specific (file paths, approach details, clear scope), skip Phase 0 and proceed to Phase 0.5.
 
 ## Phase 0.5: Design Exploration
 
-Before committing to a plan, explore architectural alternatives so the user can make an informed decision. Invoke `rnd-framework:rnd-design` for the full protocol. Summary below.
+Before committing to a plan, explore architectural alternatives. Invoke `rnd-framework:rnd-design` for the full protocol.
 
-**Skip condition:** If the task description is already highly specific (includes file paths, a concrete implementation approach, and clear scope), skip this phase and proceed directly to Phase 1. Also skip if the task is a small refactor with no meaningful architectural ambiguity.
+**Skip condition:** Skip if the task is highly specific (file paths, concrete approach, clear scope) or a small refactor with no meaningful architectural ambiguity.
 
-If **auto-continue mode is ON**, skip the approval gate — automatically select the recommended approach from the design spec and proceed to Phase 1 without pausing for user input.
+If **auto-continue mode is ON**, automatically select the recommended approach and proceed to Phase 1 without pausing.
 
 Otherwise:
 
-1. **Generate 2-3 architectural alternatives.** Using the discovery context from Phase 0 (codebase findings, user answers, constraints), identify meaningfully different approaches. For each alternative cover: how it works, strengths, weaknesses, effort estimate, and risk level.
-
-2. **Recommend one approach.** State the recommended alternative with specific reasons tied to the constraints you found in Phase 0, the key assumptions that must hold, and what conditions would change the recommendation.
-
-3. **Save design spec.** Write the spec to `$RND_DIR/design-spec.md` using the format defined in `rnd-framework:rnd-design`. Initial status is `STATUS: DRAFT`.
-
-4. **Present for approval.** Output the full design summary as regular text first — include the alternatives comparison table, the full recommendation with all reasoning, key assumptions, and trade-offs. Do NOT abbreviate. Then use `AskUserQuestion` with short option labels (keep descriptions to one sentence — do NOT put the recommendation text in option descriptions):
-   - "Approve design (Recommended)" — accept the recommended approach and proceed to Phase 1
-   - "Approve with modifications" — apply requested changes, re-save, re-present (counts as one iteration)
-   - "Choose a different alternative" — switch to a different listed approach, re-save, re-present
-   - "Request another alternative" — generate a new option, re-save, re-present
-   - "Skip design phase" — proceed to Phase 1 without a design spec (orchestrator decides approach)
-
-5. **Iterate on feedback** (maximum 3 rounds). If the user requests changes, update `$RND_DIR/design-spec.md`, increment the iteration counter, and re-present via `AskUserQuestion`. After 3 rounds without approval, stop and report:
-
-   ```
-   BLOCKED on design approval after 3 iterations. User feedback: [summary].
-   Awaiting guidance on how to proceed.
-   ```
-
-6. **Finalize.** Once approved (or auto-approved in auto-continue mode), update `$RND_DIR/design-spec.md` with `STATUS: APPROVED` and the approved approach name. This spec is passed to the Planner in Phase 1 alongside the discovery context.
+1. **Generate 2-3 architectural alternatives** from Phase 0 context: how it works, strengths, weaknesses, effort, risk.
+2. **Recommend one approach** with reasons tied to Phase 0 constraints, key assumptions, and what would change the recommendation.
+3. **Save design spec** to `$RND_DIR/design-spec.md` (format from `rnd-framework:rnd-design`). Status: `STATUS: DRAFT`.
+4. **Present for approval** — output full design summary as text, then `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
+5. **Iterate on feedback** (max 3 rounds). Update spec and re-present. After 3 rounds without approval, report blocked.
+6. **Finalize** — set `STATUS: APPROVED`, pass spec to Planner.
 
 ## Phase 1: Plan
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"`, passing the task description ($ARGUMENTS) **plus the discovery context from Phase 0** (codebase findings, local experts discovered, user answers, constraints) **and the approved design spec from Phase 0.5** (`$RND_DIR/design-spec.md` content, if it exists and has `STATUS: APPROVED`). This gives the Planner pre-gathered context to inform decomposition — including architectural decisions already made, rejected alternatives, and any project-local agents or skills it may reference in pre-registration documents.
+Spawn `rnd-framework:rnd-planner` with: task description, Phase 0 discovery context, and Phase 0.5 design spec (if `STATUS: APPROVED`). Wait for `$RND_DIR/plan.md`: task tree, pre-registration documents, dependency matrix, execution schedule.
 
-Wait for the planner to produce `$RND_DIR/plan.md` with:
-- Task tree
-- Pre-registration documents (with testable success criteria)
-- Dependency matrix
-- Execution schedule (waves)
+**Gate 1:** Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. Send back until every criterion specifies an observable outcome.
 
-**Gate 1:** Review the plan. Every criterion must be empirically verifiable — a skeptical Verifier must be able to produce a true/false result from evidence alone. Criteria like "works correctly", "handles errors", or "is performant" are automatic rejections. Send back to planner until every criterion specifies an observable outcome.
+**After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion` with options:
+- "Approve plan and auto-continue (Recommended)" — run the full pipeline automatically, pausing only for escalations
+- "Approve plan and start building" — proceed with manual gates at each phase boundary
+- "Request plan revisions"
+- "Add more tasks"
 
-**After Gate 1 passes:** Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
-- "Approve plan and auto-continue (Recommended)" — approve and run the full pipeline automatically, pausing only for escalations (iteration budget exhaustion, NO-SHIP verdicts, final completion)
-- "Approve plan and start building" — proceed to Phase 2 with manual gates at each phase boundary
-- "Request plan revisions" — send feedback to the planner for changes
-- "Add more tasks" — extend the plan before building
+If the user selects "Approve plan and auto-continue", set **auto-continue mode = ON**. This skips happy-path gates in Phases 2, 3, and 5. Escalation gates (budget exhaustion, NO-SHIP, final completion) are always preserved.
 
-If the user selects "Approve plan and auto-continue", set **auto-continue mode = ON** for the remainder of this pipeline run. This skips happy-path `AskUserQuestion` gates in Phases 2, 3, and 5, proceeding with the recommended action automatically. Escalation gates (iteration budget exhaustion, NO-SHIP, final completion) are always preserved regardless of mode.
-
-> **Token awareness:** Auto-continue works best with standard iteration budgets (max 3 per task). The pipeline will still pause at budget exhaustion and NO-SHIP verdicts, so runaway token usage is bounded. For very large plans (5+ tasks), consider running with manual gates to review intermediate results.
-
-Once approved, create a `TaskCreate` entry for each task in the plan. Set `subject` to the task name, `description` to the pre-registration content, and `activeForm` to the present-continuous form (e.g., "Building OAuth handler"). Use `addBlockedBy` on each task to mirror the dependency matrix from the plan — if T3 depends on T1, then T3's `addBlockedBy` should include T1's task ID.
+Once approved, create a `TaskCreate` entry for each task: `subject` = task name, `description` = pre-registration content, `activeForm` = present-continuous form. Use `addBlockedBy` to mirror the dependency matrix.
 
 ## Phase 2: Build (per wave)
 
 For each wave in the execution schedule:
 
-1. **Mark tasks as started:** Use `TaskUpdate` to set each task in the wave to `in_progress`.
+1. **Mark tasks as started:** `TaskUpdate` each task to `in_progress`.
 
-2. **Inject learnings into builder prompts.** For each task in the wave, detect languages from the file extensions listed in the task's "Expected outputs" field (use the extension-to-language mapping from `rnd-framework:rnd-learning`). For each detected language, attempt to read `$CLAUDE_CONFIG_DIR/learnings/{language}.md`. If the file exists, append a `### Known gotchas for {language}` section to that task's builder prompt. If no learnings file exists for a language, skip silently — do not error or warn.
+2. **Inject learnings.** For each task, detect languages from file extensions in "Expected outputs". Read `$CLAUDE_CONFIG_DIR/learnings/{language}.md` and append a `### Known gotchas for {language}` section to the builder prompt. Skip silently if no file exists.
 
-3. **Create a build team.** Before spawning builders, call `TeamCreate` with a session-scoped team name:
+3. **Create a build team:** `TeamCreate` with `team_name: "rnd-build-wave-{N}-{SESSION_ID}"` where `{SESSION_ID}` is the last path segment of `$RND_DIR`.
 
-   ```
-   team_name: "rnd-build-wave-{N}-{SESSION_ID}"
-   ```
+4. **Spawn builders in parallel:** One agent per task with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` from step 3, `name: "builder-T{id}"`.
 
-   Where `{N}` is the current wave number and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`). Example: `rnd-build-wave-1-20260325-212836-137f`. This scopes the team to the current pipeline session and wave, preventing name collisions across concurrent runs.
-
-4. **Parallel tasks within a wave:** Spawn one agent per task using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created in step 3, and `name` set to `builder-T{id}` (e.g., `builder-T3`). They can run in parallel since tasks within a wave have no cross-dependencies.
-
-5. **Wait for all builders in the wave to complete.** The Agent tool is blocking — results return when the agent completes.
-
-6. **Route each builder result by status code.** For each completed builder, read the status code from its completion message and route accordingly:
+5. **Route each result by status code:**
 
    | Status code | Action |
    |-------------|--------|
-   | `DONE` | Proceed to Gate 2 normally. |
-   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Extract the concerns summary from the builder's status message (NOT from the self-assessment). Pass the concerns summary to the Verifier prompt for that task so the Verifier scrutinizes the flagged areas. |
-   | `NEEDS_CONTEXT` | Pause this task. Use `AskUserQuestion` to present the builder's stated context gap and ask the user to provide the missing information, restate the requirement, or skip the task. Re-dispatch the builder with the user's answer appended to the original prompt. Do not advance to Gate 2 until the builder returns `DONE` or `DONE_WITH_CONCERNS`. |
-   | `BLOCKED` | Pause this task. Use `AskUserQuestion` to present the blocker description and offer escalation options: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". Apply the chosen action before advancing to Gate 2. |
+   | `DONE` | Proceed to Gate 2. |
+   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Pass concerns summary to Verifier prompt (from status message, NOT self-assessment). |
+   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info, restate requirement, or skip. Re-dispatch with user's answer. |
+   | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". |
 
-7. **Gate 2:** Confirm each builder produced code, tests, artifacts, and self-assessment. On pass, use `TaskUpdate` to mark each task as `completed`.
+6. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
 
-8. **Delete the build team.** After all builders have completed and Gate 2 has passed, call `TeamDelete` with the same team name used in step 3 to clean up the session team.
+7. **Delete the build team:** `TeamDelete` with the same team name.
 
-**After Gate 2:** Summarize build results to the user: which tasks completed, any deviations from plan, any escalations.
-
-If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 2.5 (Proof Gate).
-
-Otherwise, use `AskUserQuestion` with options:
-- "Proceed to verification (Recommended)" — continue to Phase 2.5 (Proof Gate), then Phase 3
-- "Review build artifacts first" — let the user inspect code before verification
+**After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
+- "Proceed to verification (Recommended)"
+- "Review build artifacts first"
 
 ## Phase 2.5: Proof Gate (advisory)
 
-After all builders complete and pass Gate 2, attempt formal proofs if Lean is available.
-
-1. **Check Lean availability.** Run `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If both fail, log "Lean not available — skipping Proof Gate" and proceed directly to Phase 3. No user interaction needed. (`lake` is the reliable check when elan is installed via Homebrew; `elan which lean` resolves the real binary regardless of PATH shadowing.)
-
-2. **Spawn proof-gate agents.** For each completed task in the wave, spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-proof-gate"`. Spawn all agents in a single message (parallel). Each agent prompt must include: the task's pre-registration criteria (from `$RND_DIR/plan.md`) and the path to builder output (`$RND_DIR/builds/T<id>-manifest.md`).
-
-3. **Collect results.** Each agent returns a status (PROVEN_ALL, PROVEN_PARTIAL, NONE_PROVEN, SKIPPED). Log the statuses to the phase summary.
-
-4. **Pass to Verifier.** Proof report paths are available at `$RND_DIR/proofs/T<id>-proof-report.md`. Include them in Phase 3 judge prompts when they exist (see Phase 3 step 1).
-
-No AskUserQuestion — Proof Gate is advisory and auto-continues regardless of proof results.
+Check Lean: `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If unavailable, log and skip to Phase 2.5b. Otherwise spawn one `rnd-proof-gate` agent per task (parallel) with pre-registration criteria and `$RND_DIR/builds/T<id>-manifest.md`. Log statuses; include proof reports in Phase 3 judge prompts. Auto-continues regardless of results.
 
 ## Phase 2.5b: Reality Audit (blocking)
 
-After the Proof Gate completes, run adversarial verification of external service contracts before handing off to the Verifier.
-
-1. **Spawn reality-auditor agents.** For each completed task in the wave, spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-reality-auditor"`. Spawn all agents in a single message (parallel). Each agent prompt must include: the task's pre-registration criteria (from `$RND_DIR/plan.md`) and the path to builder output (`$RND_DIR/builds/T<id>-manifest.md`).
-
-2. **Collect results.** Each agent returns a status. Log the statuses to the phase summary.
-
-   | Status | Meaning |
-   |--------|---------|
-   | `VALIDATED_ALL` | All external contracts verified — no discrepancies found |
-   | `VALIDATED_PARTIAL` | Some contracts verified; remaining were unreachable |
-   | `INVALID_FOUND` | One or more contracts failed adversarial testing — expected vs actual mismatch recorded |
-   | `SKIPPED` | No external service interactions detected in builder code |
-
-3. **Route by status:**
-   - `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `SKIPPED` → proceed to Phase 3.
-   - `INVALID_FOUND` → **BLOCK.** Route the task to Phase 4 (Iteration) with the reality report as feedback. The builder prompt must include the full `$RND_DIR/reality/T<id>-reality-report.md` content — each INVALID entry includes "expected X, found Y" so the builder can fix the specific mismatch.
-
-4. **Pass to Verifier.** Reality report paths are available at `$RND_DIR/reality/T<id>-reality-report.md`. Include them in Phase 3 judge prompts when they exist (see Phase 3 step 1).
-
-No AskUserQuestion — VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED auto-continue. INVALID_FOUND routes directly to Phase 4 without pausing for input.
+Spawn one `rnd-reality-auditor` agent per task (parallel) with pre-registration criteria and `$RND_DIR/builds/T<id>-manifest.md`. Statuses: `VALIDATED_ALL` (all contracts verified), `VALIDATED_PARTIAL` (some unreachable), `INVALID_FOUND` (mismatch found), `SKIPPED` (no external interactions). `VALIDATED_ALL/PARTIAL/SKIPPED` → proceed to Phase 3. `INVALID_FOUND` → **BLOCK**: route to Phase 4 with `$RND_DIR/reality/T<id>-reality-report.md` as builder feedback. Include reality reports in Phase 3 judge prompts. No AskUserQuestion.
 
 ## Phase 3: Verify (per task)
 
 For each completed task in the wave:
 
-1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists (build is complete) but do NOT read it. Assemble the shared judge prompt from the task's pre-registration document (from `$RND_DIR/plan.md`) and the builder's code, tests, and artifacts. NEVER include self-assessment content in any judge prompt. If `$RND_DIR/proofs/T<id>-proof-report.md` exists (Lean was available and Phase 2.5 ran), include its path in the judge prompt as additional evidence under "Additional evidence from Proof Gate". If `$RND_DIR/reality/T<id>-reality-report.md` exists (Phase 2.5b ran), include its path in the judge prompt as additional evidence under "Additional evidence from Reality Audit".
+1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. Assemble the judge prompt from pre-registration and builder artifacts. Include proof and reality report paths as additional evidence if they exist. Read **Criticality** from the pre-registration (default: NORMAL if absent).
 
-2. **Read the task's Criticality** from its pre-registration document in `$RND_DIR/plan.md`. If the field is absent or omitted, treat it as NORMAL.
+2. **Route by criticality** (budget: LOW=2, NORMAL=3, HIGH=5):
 
-3. **Route by criticality:**
+   | Criticality | Protocol |
+   |-------------|----------|
+   | LOW or NORMAL (or omitted) | Spawn one `rnd-verifier` agent. Save returned report to `$RND_DIR/verifications/T<id>-verification.md`. |
+   | HIGH | Invoke `rnd-framework:rnd-multi-judge`. Spawn 2 verifiers in parallel; save to `T<id>-judge-a.md` and `T<id>-judge-b.md`. Spawn tiebreaker if they disagree; save to `T<id>-tiebreaker.md`. Save aggregated report. |
 
-   **If Criticality is LOW or NORMAL (or omitted):**
+3. **Gate 3:** Check the verdict:
+   - **PASS** → `TaskUpdate` to `completed`. Move to next.
+   - **PASS (quality: NEEDS ITERATION)** → `TaskUpdate` to `completed`. Save quality feedback to `$RND_DIR/verifications/T<id>-quality-feedback.md`. Does NOT block integration.
+   - **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
+   - **FAIL** → Do NOT iterate — route to re-planning.
 
-   Spawn a single verifier agent using the Agent tool with `subagent_type: "rnd-framework:rnd-verifier"`. The agent receives the same judge prompt assembled in step 1. After the agent returns its report as text output, the orchestrator saves the returned report directly to `$RND_DIR/verifications/T<id>-verification.md`. The report is the final verdict — no consensus logic, no tiebreaker.
+**After Gate 3:** Summarize verdicts. Then route:
 
-   **If Criticality is HIGH:**
+- All PASS/PASS(quality): auto-continue to Phase 5, or `AskUserQuestion`: "Proceed to integration (Recommended)", "Iterate on quality first", "Review verification reports".
+- Any NEEDS ITERATION: auto-continue to Phase 4, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
+- Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
 
-   Follow the multi-judge consensus protocol. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary:
-   - Spawn 2 independent verifier agents in parallel (Judge A and Judge B), both using `subagent_type: "rnd-framework:rnd-verifier"`. Save returned reports to `$RND_DIR/verifications/T<id>-judge-a.md` and `$RND_DIR/verifications/T<id>-judge-b.md`.
-   - If both judges agree, their shared verdict is final. If they disagree, spawn a tiebreaker verifier that receives both judge reports; save the tiebreaker report to `$RND_DIR/verifications/T<id>-tiebreaker.md`; the tiebreaker's verdict is final.
-   - Save the aggregated report (Judge A + Judge B + tiebreaker if used, plus **Consensus method** notation) to `$RND_DIR/verifications/T<id>-verification.md`.
-
-**Iteration budget by criticality:**
-
-| Criticality | Max iterations |
-|-------------|---------------|
-| LOW         | 2             |
-| NORMAL (or omitted) | 3    |
-| HIGH        | 5             |
-
-4. **Gate 3:** Check the verdict in `$RND_DIR/verifications/T<id>-verification.md`.
-   - **PASS** → All criteria (both tiers) passed. Use `TaskUpdate` to mark `completed`. Move to next.
-   - **PASS (quality: NEEDS ITERATION)** → Correctness is fully met; quality tier has feedback. Use `TaskUpdate` to mark `completed`. Record the quality feedback in `$RND_DIR/verifications/T<id>-quality-feedback.md` for a non-blocking iteration round after integration. Quality-tier failures do NOT block integration — proceed with the task marked completed.
-   - **NEEDS ITERATION** → A clear, isolated Correctness failure the Builder can fix. Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": 1}` to track count. Enter iteration loop (Phase 4).
-   - **FAIL** → Multiple unmet Correctness criteria or no clear fix path. Do NOT iterate — route to re-planning.
-
-**After Gate 3 (all tasks in wave checked):** Summarize verification verdicts to the user: which tasks passed fully, which passed with quality feedback (quality: NEEDS ITERATION), which need Correctness iteration, which failed outright.
-
-If all tasks PASS or PASS (quality: NEEDS ITERATION) (no Correctness failures):
-- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to integration (Phase 5). Any quality feedback is deferred to the post-integration quality round.
-- Otherwise, use `AskUserQuestion` with options:
-  - "Proceed to integration (Recommended)" — spawn Integrator; quality-tier feedback deferred to post-integration
-  - "Iterate on quality first" — address quality-tier feedback before integration (only if any task has `quality: NEEDS ITERATION`)
-  - "Review verification reports" — let the user inspect reports before integration
-
-If any tasks got NEEDS ITERATION (Correctness failure, but none FAIL):
-- If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 4 iteration on failing tasks.
-- Otherwise, use `AskUserQuestion` with options:
-  - "Iterate on failing tasks (Recommended)" — enter Phase 4 for failing tasks
-  - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
-
-If any tasks got FAIL:
-- Use `AskUserQuestion` with options (even in auto-continue mode — FAIL always pauses):
-  - "Re-plan failing tasks (Recommended)" — send back to Planner for re-decomposition
-  - "Iterate anyway" — treat as NEEDS ITERATION (override Verifier's severity)
-  - "Skip failing tasks and continue" — skip and proceed (see skip procedure below)
-
-**Quality iteration round (after integration SHIP):** After integration succeeds, if any task recorded `quality: NEEDS ITERATION` feedback in `$RND_DIR/verifications/T<id>-quality-feedback.md`:
-- If **auto-continue mode is ON**, defer quality iteration automatically — note the deferred quality feedback in the phase summary and skip the round.
-- Otherwise, use `AskUserQuestion` with options:
-  - "Iterate on quality now" — spawn Builder(s) with quality feedback from the recorded feedback files; re-verify and re-integrate if needed
-  - "Defer quality iteration (Recommended)" — note the feedback in the report and skip; address separately in a future pipeline run
+**Quality iteration round (after integration SHIP):** If any task has deferred quality feedback: auto-continue defers, or `AskUserQuestion`: "Iterate on quality now", "Defer quality iteration (Recommended)".
 
 ## Phase 4: Iterate (if needed)
 
-1. Extract the Verifier's feedback (not their internal reasoning).
-2. **Create an iteration team.** Call `TeamCreate` with:
-
-   ```
-   team_name: "rnd-iter-T{id}-{SESSION_ID}"
-   ```
-
-   Where `{id}` is the task ID being iterated and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`). Example: `rnd-iter-T3-20260325-212836-137f`.
-
-3. Spawn a new Builder agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created in step 2, and `name` set to `iter-builder-T{id}`, passing the original task pre-registration document PLUS the Verifier's feedback in the prompt.
-4. The new Builder implements the fix and produces updated code, tests, and artifacts.
-5. **Delete the iteration team.** Call `TeamDelete` with the same team name used in step 2 to clean up after the builder completes.
+1. Extract Verifier feedback (not internal reasoning).
+2. **Create an iteration team:** `TeamCreate` with `team_name: "rnd-iter-T{id}-{SESSION_ID}"`.
+3. Spawn a new Builder with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` from step 2, `name: "iter-builder-T{id}"`. Include original pre-registration plus Verifier feedback.
+4. Builder implements fix and produces updated artifacts.
+5. **Delete the iteration team:** `TeamDelete` with the same team name.
 6. Verifier re-checks (same information barrier rules).
-7. **If re-verification returns PASS**, extract a learning from the cycle (invoke `rnd-framework:rnd-learning` for format and filing rules):
-   - **Gotcha:** what failed — from the Verifier's NEEDS_ITERATION feedback
-   - **Fix:** what changed — from the Builder's iteration diff
-   - **Language:** determined from file extensions of changed files, using the extension-to-language mapping in `rnd-learning`
-   - Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md` as `## Topic` + 1-3 terse bullets
-   - If the language file is new, create it with a `# {Language} Learnings` heading and add a link in `$CLAUDE_CONFIG_DIR/learnings/INDEX.md`
-8. Max iterations per the task's criticality (LOW=2, NORMAL=3, HIGH=5). If budget is exhausted, use `AskUserQuestion` to present options:
-   - "Re-plan this task" — send back to Planner for re-decomposition
-   - "Skip and continue (Recommended)" — skip this task and proceed (see skip procedure below)
-   - "Stop pipeline" — halt the pipeline for manual intervention
-
-   Use `TaskUpdate` with `metadata: {"iteration": N}` to track each cycle.
+7. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`: gotcha (from Verifier feedback), fix (from Builder diff), language (from changed file extensions). Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md`.
+8. If iteration budget exhausted, `AskUserQuestion`:
+   - "Re-plan this task"
+   - "Skip and continue (Recommended)"
+   - "Stop pipeline"
 
 Track iterations in `$RND_DIR/iteration-log.md`.
 
 ### Skip Procedure
 
-When the user chooses to skip a failing task:
-
-1. Mark the task: `TaskUpdate` with `status: "completed"` and `metadata: {"skipped": true, "reason": "<why it was skipped>"}`.
-2. **Check downstream dependencies.** Use `TaskList` to find any tasks that had this task in their `blockedBy`. For each dependent task:
-   - Warn the user: "Task T{X} depends on skipped task T{Y}. It may fail or produce incomplete results."
-   - Use `AskUserQuestion` to ask whether to also skip the dependent task, proceed anyway, or re-plan.
-3. Inform the Integrator: when spawning the integrator for this wave, explicitly list which tasks were skipped so it can exclude them from merge and note them in the integration report.
+1. `TaskUpdate`: `status: "completed"`, `metadata: {"skipped": true, "reason": "..."}`.
+2. Check downstream dependents via `TaskList`. Warn the user and `AskUserQuestion` for each: skip dependent, proceed anyway, or re-plan.
+3. Inform the Integrator which tasks were skipped so it can exclude them and note them in the integration report.
 
 ## Phase 5: Integrate
 
-Once all non-skipped tasks in a wave pass verification:
-
-1. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"`.
+1. Spawn `rnd-framework:rnd-integrator`.
 2. It merges outputs, runs integration tests, checks for regressions.
 3. **Gate 4:** SHIP or NO-SHIP.
 
-**After Gate 4:** Summarize integration results to the user.
+**After Gate 4:** Summarize results.
 
-If SHIP:
-- If more waves remain:
-  - If **auto-continue mode is ON**, skip the following `AskUserQuestion` and proceed directly to Phase 2 for the next wave.
-  - Otherwise, use `AskUserQuestion` with options:
-    - "Proceed to next wave (Recommended)" — start Phase 2 for the next wave
-    - "Review integration report" — let the user inspect the report first
-- If this was the last wave: "Pipeline complete." Use `AskUserQuestion` with options:
-  - "Review all artifacts" — show the user a summary of everything produced
-  - "Proceed to cleanup (Recommended)" — move to Phase 6
+If SHIP and more waves remain: auto-continue to Phase 2 next wave, or `AskUserQuestion`:
+- "Proceed to next wave (Recommended)"
+- "Review integration report"
 
-If NO-SHIP, use `AskUserQuestion` with options:
-- "Fix failing integration points (Recommended)" — route back to relevant builders
-- "Re-plan affected tasks" — send failing tasks back to the Planner
+If SHIP and last wave: `AskUserQuestion`:
+- "Review all artifacts"
+- "Proceed to cleanup (Recommended)"
+
+If NO-SHIP: `AskUserQuestion`:
+- "Fix failing integration points (Recommended)"
+- "Re-plan affected tasks"
 
 ## Phase 6: Report & Cleanup
 
-Summarize results for the user:
-- What was built
-- Verification results
-- Any iterations that occurred
-- Final integration status
-- Remaining concerns or recommendations
+Summarize: what was built, verification results, iterations, integration status, remaining concerns.
 
-**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. This detects the project's formatter (biome, prettier, mix format, cargo fmt, etc.) and runs it on files changed by the pipeline. Report what was formatted (or that no formatter was detected). If you skip this step, pipeline-written code may not match the project's style.
+**MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish to run the project's formatter on pipeline-changed files.
 
-**MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-doc-polish` AFTER formatting but BEFORE presenting the commit options below. This checks and updates CLAUDE.md, README.md, project docs, and stale inline comments. Report what was updated (or that everything is current). If you skip this step, the pipeline is incomplete.
+**MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-doc-polish` AFTER formatting but BEFORE presenting next steps.
 
-Use `AskUserQuestion` to present concrete next steps:
-- "Commit changes (Recommended)" — stage and commit all changes from the pipeline
-- "Bump version, tag and push" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the pipeline produced a releasable change to a versioned project (e.g., a plugin, library, or package).
-- "Run code review first" — run `/rnd-framework:review` on the changes before committing, to catch issues the pipeline may have missed
-- "Create PR" — commit and open a pull request
-- "Show development narrative" — generate a narrative explanation of the pipeline run (see below)
-- "Review all artifacts" — show the user a summary of everything produced
-- "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
+Use `AskUserQuestion` for next steps:
+- "Commit changes (Recommended)"
+- "Bump version, tag and push"
+- "Run code review first"
+- "Create PR"
+- "Show development narrative"
+- "Review all artifacts"
+- "Finish session"
 
 ### Development Narrative
 
-When the user selects "Show development narrative," produce a human-readable story of the pipeline run. Do NOT spawn agents — generate this yourself from your pipeline context. If your conversation context has been compressed (long runs), re-read `$RND_DIR/plan.md`, `$RND_DIR/builds/T*-manifest.md`, `$RND_DIR/verifications/T*-verification.md`, and `$RND_DIR/iteration-log.md` to refresh your memory before writing. Cover:
+When the user selects "Show development narrative," generate a prose story of the pipeline run (do NOT spawn agents). If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
-1. **What was built and why** — the original request, how it evolved through discovery/design, what the final deliverables are
-2. **Key decisions** — architectural choices made during design exploration, scope decisions during planning, trade-offs chosen and their rationale
-3. **Obstacles and iterations** — any verification failures, iteration cycles, re-plans, blocked tasks, or unexpected issues encountered during the run
-4. **Insights gained** — non-obvious things learned about the codebase, surprising edge cases discovered, patterns that emerged during implementation
-5. **What's left** — open questions, deferred quality feedback, known limitations, or follow-up work suggested by the pipeline
-
-Write it as a narrative (prose paragraphs), not a bullet list. Use the first person plural ("we"). Keep it concise — 3-5 paragraphs, not a report. The goal is to give the developer a sense of connection to the process, not to rehash every detail.
-
-After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option (since it's already been shown).
+After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option.

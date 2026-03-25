@@ -80,10 +80,7 @@ After the agent returns its report as text output, the orchestrator saves the re
 
 **If Criticality is HIGH:**
 
-Follow the multi-judge consensus protocol. Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary:
-- Spawn Judge A and Judge B simultaneously using the Agent tool (`subagent_type: "rnd-framework:rnd-verifier"`). Each judge receives the pre-registration document and the Builder's code and test files. Neither judge's prompt includes the other judge's report. Save returned reports to `$RND_DIR/verifications/T<id>-judge-a.md` and `$RND_DIR/verifications/T<id>-judge-b.md`.
-- If both judges agree, their shared verdict is final. If they disagree, spawn a tiebreaker verifier that receives both judge reports; save the tiebreaker report to `$RND_DIR/verifications/T<id>-tiebreaker.md`; the tiebreaker's verdict is final.
-- Save the aggregated report (Judge A + Judge B + tiebreaker if used, plus final **Consensus method** notation) to `$RND_DIR/verifications/T<id>-verification.md`.
+Invoke `rnd-framework:rnd-multi-judge` for the full protocol. Summary: spawn Judge A and Judge B simultaneously; if they agree their verdict is final, if they disagree spawn a tiebreaker (save to `T<id>-tiebreaker.md`). Save the aggregated report (judges + tiebreaker if used, plus **Consensus method** notation) to `$RND_DIR/verifications/T<id>-verification.md`.
 
 Multiple tasks in a wave can run their verifier agents simultaneously if resources allow.
 
@@ -106,27 +103,23 @@ Process each task's consensus verdict:
 Summarize verification results to the user: which tasks passed fully, which passed with quality feedback (quality: NEEDS ITERATION), which need Correctness iteration, which failed outright. Then use `AskUserQuestion`:
 
 If all tasks PASS or PASS (quality: NEEDS ITERATION) (no Correctness failures):
-- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate` for this wave; quality-tier feedback deferred to post-integration
-- "Iterate on quality first" — address quality-tier feedback before integration (only if any task has `quality: NEEDS ITERATION`)
+- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate`; quality-tier feedback deferred to post-integration
+- "Iterate on quality first" — address quality-tier feedback before integration
 - "Review verification reports" — inspect reports before proceeding
 
 If any tasks got NEEDS ITERATION (Correctness failure, but none FAIL):
 - "Iterate on failing tasks (Recommended)" — re-build and re-verify
 - "Skip failing tasks and continue" — skip and proceed with passing tasks only (see skip procedure below)
-
 If any tasks got FAIL:
 - "Re-plan failing tasks (Recommended)" — send back to Planner for re-decomposition
-- "Iterate anyway" — treat as NEEDS ITERATION (use only if you disagree with the Verifier's severity)
+- "Iterate anyway" — treat as NEEDS ITERATION
 - "Skip failing tasks and continue" — skip and proceed (see skip procedure below)
-
 If iteration budget is exhausted (LOW after 2, NORMAL after 3, HIGH after 5):
 - "Re-plan this task (Recommended)" — decompose differently
-- "Skip and continue" — skip this task and proceed (see skip procedure below)
+- "Skip and continue" — see skip procedure below
 - "Stop pipeline" — halt for manual intervention
 
-**Quality iteration round (after integration SHIP):** After integration succeeds, if any task has `quality: NEEDS ITERATION` feedback recorded in `$RND_DIR/verifications/T<id>-quality-feedback.md`, use `AskUserQuestion`:
-- "Iterate on quality now" — spawn Builder(s) with quality feedback from the recorded feedback files; re-verify after
-- "Defer quality iteration (Recommended)" — note the feedback in the report and skip; address in a future pipeline run
+**Quality iteration round (after integration SHIP):** After integration succeeds, if any task has `quality: NEEDS ITERATION` feedback recorded in `$RND_DIR/verifications/T<id>-quality-feedback.md`, use `AskUserQuestion`: "Iterate on quality now" (spawn Builders with quality feedback, then re-verify) or "Defer quality iteration (Recommended)" (note feedback, address in a future pipeline run).
 
 ## Skip Procedure
 

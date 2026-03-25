@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.1 — 2026-03-25
+
+### Condense command and skill prose for token reduction
+
+Tightened prose in 5 files: start.md (390→223), verify.md (137→130), rnd-verification (311→180), rnd-building (262→180), rnd-decomposition (223→153). Total: 1,323→866 lines (-457, 35% reduction). Replaced duplicated multi-judge protocol summaries with skill references. Compressed templates, converted verbose conditionals to tables, removed redundant explanations. All behavioral semantics preserved.
+
 ## 0.14.0 — 2026-03-25
 
 ### Add Team Mode for builder agents

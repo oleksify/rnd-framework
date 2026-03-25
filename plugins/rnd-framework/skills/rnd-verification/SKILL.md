@@ -8,19 +8,7 @@ effort: medium
 
 # R&D Verification
 
-## Overview
-
-Independently verify a Builder's output against pre-registered success criteria. You are the quality gate checkpoint — nothing proceeds without your PASS.
-
-**Core principle:** Assess work purely against the spec, never influenced by the Builder's framing.
-
-## When to Use
-
-Single-judge verification is the **default verification mode** for tasks with `Criticality: LOW` or `Criticality: NORMAL` (including tasks where no criticality is specified). For `Criticality: HIGH` tasks, the orchestrator uses the `rnd-framework:rnd-multi-judge` protocol instead.
-
-- Verify phase of `/rnd-framework:start` or `/rnd-framework:verify`
-- After any Builder submits work
-- When independent quality assessment is needed
+Independently verify a Builder's output against pre-registered success criteria — the quality gate checkpoint. Nothing proceeds without your PASS. Assess work purely against the spec, never influenced by the Builder's framing. Default mode for `Criticality: LOW` or `NORMAL` tasks; for `Criticality: HIGH` the orchestrator uses `rnd-framework:rnd-multi-judge`.
 
 ## The Iron Laws
 
@@ -32,32 +20,11 @@ Single-judge verification is the **default verification mode** for tasks with `C
 
 ## Information Barrier
 
-You receive ONLY:
-- The pre-registration document (from `$RND_DIR/plan.md`)
-- The Builder's code, tests, and artifacts
-- Relevant codebase context
-
-You do NOT receive and MUST NOT seek:
-- `$RND_DIR/builds/T<id>-self-assessment.md` — BLOCKED BY HOOKS
-- The Builder's reasoning or chain-of-thought
-- Any hints about "what to look for" or "known issues"
-
-**Why this matters:** Without this barrier, verification becomes rubber-stamping. The Builder's framing anchors your assessment, and known issues get "verified" as acceptable rather than caught independently.
+You receive ONLY the pre-registration, Builder's code/tests/artifacts, and codebase context. MUST NOT seek `$RND_DIR/builds/T<id>-self-assessment.md` (blocked by hooks), Builder reasoning, or hints about known issues.
 
 ## Two-Stage Evaluation
 
-Evaluate criteria in two stages, in order:
-
-**Stage 1 — Correctness tier:** Verify all criteria tagged as Correctness. These are must-pass criteria: functional requirements, test passing, contract conformance.
-
-**Stage 2 — Quality tier:** Verify all criteria tagged as Quality. These are should-pass criteria: code quality, naming conventions, patterns, documentation.
-
-**Tier interaction rules:**
-- If ANY Correctness criterion fails: overall verdict is FAIL or NEEDS ITERATION (Quality results are irrelevant to the overall verdict).
-- If ALL Correctness criteria pass AND any Quality criterion fails: overall verdict is `PASS (quality: NEEDS ITERATION)`. Quality failures do NOT block a PASS on Correctness — they produce NEEDS ITERATION on the quality tier only.
-- If ALL criteria (both tiers) pass: overall verdict is PASS.
-
-**Tiered Verdict Table:**
+**Correctness tier:** Must-pass criteria. **Quality tier:** Should-pass criteria. If ANY Correctness criterion fails, Quality results are irrelevant.
 
 | Correctness | Quality | Overall Verdict |
 |-------------|---------|-----------------|
@@ -69,83 +36,35 @@ Evaluate criteria in two stages, in order:
 ## Process
 
 ### 1. Read the Pre-Registration
-
-Understand the intent, approach, and success criteria. These are your ONLY reference for what "correct" means.
-
-**Output:** A clear mental model of what the task requires, with each criterion noted separately before proceeding.
+Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding.
 
 ### 2. Write Independent Experiment Tests
-
-Before reading the Builder's code or tests, write one experiment test per success criterion using the `rnd-framework:rnd-experiments` skill. Derive tests from the pre-registration spec text alone.
-
-**CRITICAL:** You MUST NOT read Builder test files at this stage. Write experiments first, then proceed to Step 3.
-
-For each criterion:
-1. Identify the observable outcome stated in the criterion
-2. Write an experiment test file to `$RND_DIR/verifications/T<id>-experiments/`
-3. Name each file `exp-<criterion-slug>.test.<ext>`
-
-**Output:** Experiment test files in `$RND_DIR/verifications/T<id>-experiments/`, one per criterion.
+Before reading Builder code or tests, write one experiment test per criterion using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<criterion-slug>.test.<ext>`.
 
 ### 3. Run Experiments Against Builder's Code
-
-Run the experiment files written in Step 2 against the Builder's implementation using the project's test runner. Do NOT read the Builder's test files yet.
-
-Record the raw output verbatim. Do not paraphrase results. Each failing experiment is a Correctness-tier finding. If an experiment itself was wrong (e.g., misread the criterion), fix it, note the correction, but do not delete the original — corrections are part of the evidence trail.
-
-**Output:** Verbatim experiment run output recorded, with each criterion's result (PASS/FAIL) noted.
+Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original.
 
 ### 4. Run Builder's Tests and Compare
-
-Now read the Builder's code and tests. Run the Builder's full test suite using the project's test runner. Record results verbatim.
-
-**Test Adequacy:** For each criterion, does the Builder's test actually test the criterion, or just something vaguely related?
-
-Compare outcomes: if a Builder test passes but your experiment fails for the same criterion, this is a significant finding — the Builder's test may be encoding assumptions that differ from the spec.
-
-**Output:** Builder test results recorded verbatim; divergences with experiment results identified and noted per criterion.
+Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.
 
 ### 5. Code Inspection, Failure Mode Analysis, and Cross-Criterion Sweep
+Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-failure-modes`).
 
-Before writing any verdicts, scan your own reasoning for known verification anti-patterns. The `rnd-framework:rnd-failure-modes` skill catalogs these (premature satisfaction, trusting agent reports, incomplete verification) along with red-flag phrases to watch for.
+**a. Failure Mode Analysis** — probe for: boundary/edge cases, off-by-one errors, error handling, unhappy paths, race conditions, security issues, external contract conformance (query the system independently).
 
-**a. Failure Mode Analysis**
-Identify likely failure modes through code inspection:
-- Boundary/edge cases, off-by-one errors
-- Error handling, unhappy paths
-- Race conditions, concurrency issues
-- Security issues (injection, auth bypass, data leaks)
-- Performance under load (if performance criteria exist)
-- External contract conformance — independently query the external system (DB schema, API endpoint, file, env var) and compare the actual contract against what the code assumes; tests that mock external systems may pass with wrong assumptions
+**b. Code Inspection** — check for: dead code, hardcoded values, shortcuts, missing error handling, approach deviation, hardcoded assumptions about external systems (column names, API shapes, env var values) not backed by build manifest evidence. Cross-reference manifest "Evidence Gathered" — contracts without a citation are Correctness-tier failures.
 
-**b. Code Inspection**
-Does the code actually implement the pre-registered approach? Check for:
-- Dead code or hardcoded values
-- Shortcuts that would break in production
-- Missing error handling at system boundaries
-- Deviation from the declared approach
-- Hardcoded assumptions about external systems (column names, API response shapes, file formats, env var values) not backed by verification evidence in the build manifest
-- Evidence Gathered: cross-reference the build manifest's "Evidence Gathered" section against every external contract used in code — if a contract is referenced in the code but has no citation in the manifest, treat it as an ungrounded decision, which is a Correctness-tier failure
+**c. Cross-Criterion Sweep** — before writing any verdicts:
+1. **Systemic patterns:** same defect type across multiple criteria → report as systemic
+2. **Shared root causes:** multiple failures tracing to one defect → identify explicitly
+3. **Fragile passes:** passing criterion resting on assumption invalidated by a failure → flag at-risk
+4. **External assumption probe:** confirm manifest has evidence for every external dependency; flag dependent criteria at-risk if missing
+5. **Completeness check:** verdict + evidence for EVERY criterion; return to steps 3-4 for any missing
 
-**c. Cross-Criterion Sweep**
-
-**Before writing any verdicts**, review all findings from steps 3-5b together:
-
-1. **Systemic patterns:** Does the same defect type (e.g., missing validation, incorrect error handling) appear across multiple criteria? Report it as a systemic issue — not N independent failures.
-2. **Shared root causes:** Do multiple criterion failures trace back to the same underlying defect? Identify the root cause explicitly.
-3. **Fragile passes:** Does any passing criterion depend on an assumption invalidated by a failing criterion? Flag it as at-risk even if its tests currently pass.
-4. **External assumption probe:** For every external dependency in the pre-registration, confirm the build manifest contains verification evidence (schema dump, API response sample, file inspection) in its "Evidence Gathered" section. If evidence is missing, flag all criteria that depend on that external system as at-risk — regardless of whether their tests currently pass. Tests that mock an external system encode the Builder's assumptions; without independent verification, passing tests prove nothing about production behavior.
-5. **Completeness check:** Confirm you have a verdict and evidence for EVERY criterion listed in the pre-registration. If any criterion lacks evidence, return to steps 3-4 for that criterion.
-
-**Do not proceed to Step 6 until this sweep is complete.** Writing verdicts incrementally wastes the Builder's iteration budget and is a verification failure in itself.
-
-**Output:** All findings consolidated, systemic issues identified, every criterion has a verdict backed by evidence.
+**Do not proceed to Step 6 until this sweep is complete.**
 
 ### 6. Produce Verification Report
-
-> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
-
-Return the following report as your text output to the orchestrator:
+> If `$RND_DIR` not set, compute via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
 ```markdown
 # Verification Report: T<id>
@@ -167,81 +86,30 @@ Return the following report as your text output to the orchestrator:
 Do NOT suggest a fix. The Builder must reason about solutions independently.]
 ```
 
-## Verdict Guidelines
+A criterion is binary: met or not met. Evidence must be concrete (test output you ran, line references), not impressionistic ("looks right").
+- **PASS:** ALL criteria met with reproducible evidence, no failure modes, no deviations.
+- **PASS (quality: NEEDS ITERATION):** All Correctness met; one or more Quality unmet. Integration proceeds; quality feedback flagged.
+- **NEEDS ITERATION:** Any Correctness unmet with a clear, isolated fix path.
+- **FAIL:** Any Correctness unmet without a clear fix path; deviation from declared approach; unhandled failure mode.
 
-A criterion is binary: met or not met. There is no "partially met" or "met in spirit".
+**When in doubt between NEEDS ITERATION and FAIL, choose FAIL.** False negatives are recoverable; false positives compound downstream.
 
-- **PASS:** ALL criteria (both tiers) met with reproducible evidence. Failure mode analysis reveals no issues. Code follows declared approach. No deviations, no caveats, no "should be fine".
-- **PASS (quality: NEEDS ITERATION):** All Correctness criteria met, but one or more Quality criteria are unmet. Quality failures do NOT block a PASS on Correctness — they produce NEEDS ITERATION on the quality tier only. Integration proceeds, but quality feedback is flagged for a non-blocking iteration round.
-- **NEEDS ITERATION:** Any Correctness criterion unmet, AND the failure has a clear, isolated fix path. This is NOT a soft pass — it is a scoped FAIL with a clear fix path.
-- **FAIL:** Any Correctness criterion unmet without a clear fix path. Any deviation from declared approach. Any case where failure mode analysis reveals unhandled failure modes.
-
-**When in doubt between NEEDS ITERATION and FAIL (for Correctness criteria), choose FAIL.** False negatives (rejecting good work) are recoverable. False positives (passing broken work) compound downstream.
-
-## Evidence Standards
-
-What counts as evidence for a criterion:
-
-- **Necessary:** Test output you ran yourself (not claimed by Builder). Code inspection with specific line references.
-- **Strong:** Failure mode analysis that actively probed the criterion and revealed no issues.
-- **Insufficient:** "Tests pass" without inspecting what the tests actually assert. "Code looks correct" without tracing execution paths. "Should work" based on pattern recognition.
-
-If your evidence for PASS is "it looks right" — that is not evidence. Run it. Break it. Trace it.
-
-## Clean Code Checklist
-
-This checklist applies **mandatorily to shell code** and **advisorily to all other languages**. For each item, a violation indicator is an observable condition the Verifier can confirm by inspecting code — no subjective judgment required.
+## Clean Code Checklist (shell: mandatory; others: advisory)
 
 | Item | Violation indicator |
 |------|---------------------|
-| **Function purity** — functions compute or act, not both | A function reads/writes a file, calls a network API, or modifies a global AND returns a computed value used by the caller |
-| **No unscoped globals** — variables are declared in the narrowest scope that works | Shell: a variable used only inside a function is declared outside it (no `local`). JS/TS: a module-level `let`/`var` is mutated by multiple unrelated functions |
-| **Side effects at edges** — I/O and mutations live at call-site level, not buried inside pure logic | A pure-looking helper (e.g., `calculate_total`, `format_name`) contains a `curl`, `read`, `write`, database call, or `console.log`/`echo` that is not in its name or documented in a comment |
-| **Descriptive names, no unexplained abbreviations** — identifiers say what they hold or do | A variable or function name is ≤3 characters (excluding loop counters `i`/`j`/`k`) without a comment explaining the abbreviation; or a name uses domain jargon not defined in the pre-registration or a comment |
-| **No magic numbers or magic strings** — all non-obvious literals are named constants | A numeric or string literal appears inline (e.g., `86400`, `"application/json"`, `".rnd"`) without a named constant, and its meaning cannot be inferred from context alone |
-| **DRY — no copy-pasted logic** — identical or near-identical blocks appear at most once | The same logical operation (same sequence of steps, same condition) appears in two or more places with only variable names changed, and no shared function or abstraction exists |
-| **No swallowed errors** — every error is handled, re-raised, or explicitly ignored with a comment | Shell: a command that can fail runs without `|| ...` or `set -e` in effect and its exit code is never checked. Other languages: a caught exception block is empty or contains only a comment saying `// TODO` |
-| **Immutability by default** — bindings are declared immutable unless mutation is specifically required | Shell: a variable set once is not declared `local -r`. JS/TS: a binding assigned once uses `let` instead of `const`. Any language: a function parameter is reassigned inside the function body |
-| **No flag parameters** — booleans passed to alter function behavior indicate the function does two things | A function signature contains a boolean parameter (e.g., `process(data, true)`, `run(verbose=False)`) where `true`/`false` selects between two distinct code paths inside the function |
-| **No commented-out code** — dead code is deleted, not retained as comments | A block of code is commented out with no explanation (e.g., `# old approach`, `// TODO: remove`). Exception: explanatory comments that reference a ticket or decision are acceptable |
+| **Function purity** — compute or act, not both | Function reads/writes file or calls network API AND returns a computed value to its caller |
+| **No unscoped globals** — narrowest scope | Shell: function-only variable declared outside it (no `local`). JS/TS: module-level `let`/`var` mutated by unrelated functions |
+| **Side effects at edges** — I/O at call-site, not buried | Pure-looking helper contains `curl`, `read`, `write`, or DB call not reflected in its name |
+| **Descriptive names** — identifiers say what they hold | Name ≤3 chars (excluding `i`/`j`/`k`) without comment; or uses undefined domain jargon |
+| **No magic numbers/strings** — literals are named constants | Inline literal (e.g., `86400`, `".rnd"`) without a named constant whose meaning is not inferable from context |
+| **DRY** — identical blocks appear at most once | Same logical operation in two or more places with only variable names changed |
+| **No swallowed errors** — every error handled or explicitly ignored | Shell: fallible command without `\|\|`/`set -e` and exit code unchecked. Other: empty catch block |
+| **Immutability by default** — immutable unless mutation required | Shell: set-once variable not `local -r`. JS/TS: once-assigned binding uses `let` |
+| **No flag parameters** — booleans in signatures indicate two functions in one | Function signature has a boolean selecting between two distinct code paths |
+| **No commented-out code** — dead code deleted | Code block commented out with no explanation (exception: ticket/decision references) |
 
-## Common Rationalizations
-
-| Excuse | Reality |
-|--------|---------|
-| "Tests pass, so it works" | Tests are hypotheses. Inspect what they actually assert. Did you run them yourself? |
-| "This is close enough" | Close enough is FAIL. Criteria are binary — met or not met. |
-| "The Builder probably knows best" | You're independent. Assess against spec, not Builder authority. |
-| "I'll just glance at the self-assessment" | VIOLATION. This breaks the entire framework. |
-| "I'll suggest a fix to save time" | Your job is WHAT is wrong. Builder reasons about HOW to fix. |
-| "This clearly works, no need for failure mode analysis" | If it clearly works, failure mode analysis will confirm that quickly. Inspect it. |
-| "I already checked similar code before" | Each criterion gets fresh evidence. Prior checks don't transfer. |
-| "I'll catch the rest next round" | There is no next round for free. Every incomplete report burns an entire build-verify iteration cycle. Report ALL findings NOW. |
-| "This is pre-existing" / "by design" / "not in scope" | Every finding must include a proposed fix. Never dismiss a finding without citing specific documentation that justifies the exception. If an issue exists in the code, it is a finding regardless of when it was introduced. |
-
-## Multi-Judge Mode
-
-The orchestrator may spawn two verifier agents in parallel and use a tiebreaker when they disagree. This section defines how to behave in each role.
-
-### Regular Judge
-
-When you are spawned as one of two parallel judges:
-
-- Produce your verification report **independently**, following the standard Process above from start to finish.
-- You have **no knowledge of the other judge** — their findings, verdicts, or reasoning. Do not speculate about what they will find.
-- The information barrier applies in full: you MUST NOT read self-assessment files, even in multi-judge mode.
-- Return your report as text output (the orchestrator will distinguish reports by agent identity and save them).
-
-### Tiebreaker
-
-When the two regular-judge verdicts disagree and you are spawned as the tiebreaker:
-
-- You will receive **both prior verification reports** as input.
-- Your task is to issue a **final verdict** (PASS, FAIL, or NEEDS ITERATION) for the task.
-- You must **justify your decision by citing specific evidence from both reports** — which findings you find convincing, which you find unpersuasive, and why.
-- You are not re-running the full verification from scratch; you are adjudicating between two completed independent assessments. However, you may inspect code or run tests to resolve a specific factual dispute if needed.
-- **The information barrier still applies:** even as tiebreaker, you MUST NOT read any `$RND_DIR/builds/T<id>-self-assessment.md` file. The two judge reports are the only Builder-adjacent material you receive beyond the pre-registration and artifacts.
-- Return your tiebreaker report as text output (the orchestrator saves it to `$RND_DIR/verifications/T<id>-tiebreaker.md`).
+See `rnd-framework:rnd-failure-modes` for the full catalog of verification anti-patterns and excuses. See `rnd-framework:rnd-multi-judge` for the full multi-judge protocol.
 
 ## Critical Failure Modes
 
@@ -307,5 +175,6 @@ When you find yourself writing or thinking any of the following, stop and check 
 
 - `rnd-framework:rnd-experiments` — How to write independent experiment tests from spec in Step 2
 - `rnd-framework:rnd-failure-modes` — Full catalog of 18 verification anti-patterns; scan before writing any verdict
+- `rnd-framework:rnd-multi-judge` — Full protocol for parallel judge and tiebreaker roles
 - `rnd-framework:rnd-debugging` — For root cause analysis of failures found during verification
 - `rnd-framework:rnd-iteration` — For how feedback flows back to Builder

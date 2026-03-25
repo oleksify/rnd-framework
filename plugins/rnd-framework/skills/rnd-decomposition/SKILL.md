@@ -15,10 +15,8 @@ Decompose tasks into structured sub-task trees using hierarchical decomposition.
 
 ## When to Use
 
-- Starting any non-trivial feature or refactor
 - Planning phase of `/rnd-framework:start` or `/rnd-framework:plan`
-- When a task has multiple moving parts
-- When success criteria are unclear
+- Any non-trivial feature, refactor, or task with multiple moving parts or unclear success criteria
 
 ## The Iron Law
 
@@ -26,10 +24,7 @@ Decompose tasks into structured sub-task trees using hierarchical decomposition.
 NO CODING WITHOUT PRE-REGISTRATION
 ```
 
-Every task must have testable success criteria declared before implementation begins. This prevents:
-- Scope creep during implementation
-- Subjective "it looks right" verification
-- Builder-Verifier misalignment on what "done" means
+Every task must have testable success criteria declared before implementation begins — preventing scope creep, subjective verification, and Builder-Verifier misalignment.
 
 ## Hierarchical Decomposition
 
@@ -66,42 +61,25 @@ A criterion is testable if a skeptical Verifier can evaluate it from evidence al
 
 ## Exploration Cache
 
-Before decomposition, the Planner writes structured exploration findings to `$RND_DIR/exploration/` so downstream agents (Builder, Verifier) can reference them instead of re-exploring the same files.
+Before decomposition, write structured exploration findings to `$RND_DIR/exploration/` (create with `mkdir -p "$RND_DIR/exploration"`) so downstream agents can reference them instead of re-exploring the same files.
 
-### Output Directory
-
-`$RND_DIR/exploration/`
-
-Create with: `mkdir -p "$RND_DIR/exploration"`
-
-### File Naming
-
-One file per explored area, using descriptive kebab-case names:
-- `hooks-architecture.md` — hook system structure and patterns
-- `test-patterns.md` — testing conventions and helpers
-- `existing-agents.md` — current agent configurations
-
-### File Structure
-
-Each exploration file follows this format:
+One file per explored area, using descriptive kebab-case names (e.g., `hooks-architecture.md`, `test-patterns.md`). Each file follows this structure:
 
 ```markdown
 # [Area Name]
 
 ## Files Examined
-- [file path] — [one-line description of what it contains]
+- [file path] — [one-line description]
 
 ## Key Patterns
 - [pattern or convention observed]
 
 ## Relevant Dependencies
-- [dependency or coupling that builders should know about]
+- [coupling that builders should know about]
 
 ## Notes for Builders
-- [anything that would be non-obvious from reading the file alone]
+- [anything non-obvious from reading the file alone]
 ```
-
-Each file contains structured findings about one area of the codebase relevant to the planned tasks.
 
 ## Pre-Registration Document
 
@@ -132,12 +110,6 @@ External dependencies:
 
 Every success criterion belongs to exactly one tier:
 
-**Correctness** — functional requirements, test passing, contract conformance, API behavior. These are must-pass. Any unmet Correctness criterion causes a FAIL verdict that blocks progress.
-
-**Quality** — code quality, naming conventions, patterns, documentation, style. These are should-pass. Unmet Quality criteria trigger NEEDS ITERATION on the quality tier, but do NOT cause a FAIL on Correctness. Integration can proceed; quality iteration is non-blocking.
-
-**Classification guide:**
-
 | Correctness (must-pass) | Quality (should-pass) |
 |---|---|
 | "Returns 401 for expired tokens" | "Function names follow project naming convention" |
@@ -147,59 +119,17 @@ Every success criterion belongs to exactly one tier:
 
 **Decision rule:** Ask "does a user or downstream system observe this outcome?" If yes → Correctness. If it only affects maintainability or developer experience → Quality.
 
-### Good vs Bad Success Criteria
+Unmet Correctness criteria cause FAIL (blocks progress). Unmet Quality criteria trigger NEEDS ITERATION but do not block integration.
 
-**Good (testable Correctness):**
-- "Returns 401 for expired tokens"
-- "Processes 1000 records in under 2 seconds"
-- "Creates a file at `~/.config/app/settings.json` on first run"
-- "Calling `validate(null)` throws `ValidationError`"
-
-**Good (testable Quality):**
-- "Function names follow the project naming convention (camelCase for JS files)"
-- "All public functions have JSDoc comments with `@param` and `@returns`"
-- "No inline magic numbers — all thresholds use named constants"
-
-**Bad (vague — rewrite before using):**
-- "Works correctly" → rewrite as Correctness
-- "Handles errors gracefully" → rewrite as Correctness (specify the observable outcome)
-- "Is performant" → rewrite as Correctness (specify threshold)
-- "Code is clean and well-structured" → rewrite as Quality (specify the convention)
+**Good criteria are concrete and observable** — "Returns 401 for expired tokens", "Processes 1000 records in under 2 seconds". **Bad criteria are vague** — "works correctly", "handles errors gracefully", "is performant" — rewrite with specific observable outcomes before using.
 
 ## Dependency Analysis
 
-After decomposition, build a dependency matrix:
-
-1. For each task, list what it depends on
-2. Identify tasks with zero dependencies -> Wave 1
-3. Tasks depending only on Wave 1 -> Wave 2
-4. Continue until all tasks are scheduled
-5. Flag parallel opportunities within each wave
+After decomposition, build a dependency matrix: list what each task depends on, then assign tasks with zero dependencies to Wave 1, tasks depending only on Wave 1 to Wave 2, and so on. Flag parallel opportunities within each wave.
 
 ## Output
 
-> **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs the absolute path to the current session's artifact directory (e.g., `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`). Use `-c` flag to create the directory structure.
-
-Save the complete plan to `$RND_DIR/plan.md`:
-
-```markdown
-# RND Plan: [Feature Name]
-
-## Task Tree
-[Hierarchical list of tasks with IDs]
-
-## Pre-Registration Documents
-[One per task]
-
-## Dependency Matrix
-[Table showing task dependencies]
-
-## Execution Schedule
-[Waves with parallel groupings]
-
-## Iteration Budgets
-[Default 3 per task, note any exceptions]
-```
+Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to create). Save the complete plan to `$RND_DIR/plan.md` with sections: Task Tree, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets (default 3 per task).
 
 ## Verification Checklist
 

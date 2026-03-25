@@ -9,35 +9,28 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+readonly SKILL_PATH="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
+readonly CACHED_PLUGIN="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
+
+# Headers at which to trim the skill for token efficiency (first match wins)
+readonly TRIM_HEADERS="^## Data Science Tasks$|^## Pipeline Scaling$|^## Skill Priority$|^## Skill Types$|^## Red Flags$"
+
+# ---------------------------------------------------------------------------
 # Read and process SKILL.md
 # ---------------------------------------------------------------------------
 
-skill_file="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
 skill_content=""
 
-if [[ -f "$skill_file" ]]; then
-  # Strip YAML frontmatter: skip lines between first --- and second ---
-  # sed -n '/^---$/,/^---$/!p' prints lines NOT in the range, but also skips
-  # the delimiter lines themselves due to the negation. However this approach
-  # has an edge case on BSD sed. Use awk for clarity:
-  raw_content="$(awk '
-    BEGIN { in_front=0; past_front=0; count=0 }
-    /^---$/ && !past_front {
-      count++
-      if (count == 1) { in_front=1; next }
-      if (count == 2) { in_front=0; past_front=1; next }
-    }
-    !in_front && past_front { print }
-  ' "$skill_file" 2>/dev/null || true)"
+if [[ -f "$SKILL_PATH" ]]; then
+  # Strip YAML frontmatter using lib.sh strip_frontmatter
+  raw_content="$(strip_frontmatter < "$SKILL_PATH" 2>/dev/null || true)"
 
-  # Trim at first verbose section header
-  trim_line="$(printf '%s\n' "$raw_content" | grep -n -m1 \
-    -e '^## Data Science Tasks$' \
-    -e '^## Pipeline Scaling$' \
-    -e '^## Skill Priority$' \
-    -e '^## Skill Types$' \
-    -e '^## Red Flags$' \
-    2>/dev/null | cut -d: -f1 | head -1)"
+  # Trim at first verbose section header to limit token usage
+  trim_line="$(printf '%s\n' "$raw_content" | grep -n -m1 -E "$TRIM_HEADERS" \
+    2>/dev/null | cut -d: -f1 | head -1 || true)"
 
   if [[ -n "$trim_line" && "$trim_line" -gt 0 ]]; then
     skill_content="$(printf '%s\n' "$raw_content" | awk -v n="$((trim_line - 1))" 'NR<=n')"
@@ -67,12 +60,11 @@ fi
 # Version mismatch check
 # ---------------------------------------------------------------------------
 
-cached_plugin="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
 version_warning=""
 cached_version=""
 
-if [[ -f "$cached_plugin" ]]; then
-  cached_version="$(jq -r '.version // ""' "$cached_plugin" 2>/dev/null || true)"
+if [[ -f "$CACHED_PLUGIN" ]]; then
+  cached_version="$(jq_extract "$(cat "$CACHED_PLUGIN")" '.version')"
 fi
 
 if [[ -n "$cached_version" ]]; then
@@ -84,9 +76,9 @@ if [[ -n "$cached_version" ]]; then
       "${git_root}/.claude-plugin/plugin.json"
     do
       [[ -f "$candidate" ]] || continue
-      src_name="$(jq -r '.name // ""' "$candidate" 2>/dev/null || true)"
+      src_name="$(jq_extract "$(cat "$candidate")" '.name')"
       [[ "$src_name" == "rnd-framework" ]] || continue
-      src_version="$(jq -r '.version // ""' "$candidate" 2>/dev/null || true)"
+      src_version="$(jq_extract "$(cat "$candidate")" '.version')"
       if [[ -n "$src_version" && "$src_version" != "$cached_version" ]]; then
         version_warning=$'\n\n'"⚠ **Plugin version mismatch:** cached v${cached_version}, source v${src_version}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync. (On v2.1.81+, re-cloning is automatic — if you see this, it likely indicates a bug.)"
       fi

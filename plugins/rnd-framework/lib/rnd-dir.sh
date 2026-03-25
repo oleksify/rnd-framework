@@ -68,6 +68,7 @@ fi
 SLUG="${BASENAME}-${HASH}"
 BASE_DIR="${CONFIG_DIR}/.rnd/${SLUG}"
 SESSION_FILE="${BASE_DIR}/.current-session"
+readonly SESSION_ID_REGEX='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'
 
 FLAG="${1:-}"
 
@@ -95,7 +96,7 @@ if [ "$FLAG" = "-c" ]; then
   if [ -f "$SESSION_FILE" ]; then
     SESSION_ID="$(cat "$SESSION_FILE")"
     # Validate format: YYYYMMDD-HHMMSS-XXXX
-    if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+    if ! [[ "$SESSION_ID" =~ $SESSION_ID_REGEX ]]; then
       echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
       exit 1
     fi
@@ -110,7 +111,7 @@ if [ "$FLAG" = "-c" ]; then
     else
       # Another process created it first; read theirs
       SESSION_ID="$(cat "$SESSION_FILE")"
-      if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+      if ! [[ "$SESSION_ID" =~ $SESSION_ID_REGEX ]]; then
         echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
         exit 1
       fi
@@ -125,7 +126,7 @@ fi
 # --- No flags: output session path if session active, else base dir ---
 if [ -f "$SESSION_FILE" ]; then
   SESSION_ID="$(cat "$SESSION_FILE")"
-  if ! echo "$SESSION_ID" | grep -qE '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'; then
+  if ! [[ "$SESSION_ID" =~ $SESSION_ID_REGEX ]]; then
     echo "error: invalid session ID format in ${SESSION_FILE}: '${SESSION_ID}'" >&2
     exit 1
   fi

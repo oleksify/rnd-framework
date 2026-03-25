@@ -16,32 +16,40 @@ source "${SCRIPT_DIR}/lib.sh"
 # Main
 # ---------------------------------------------------------------------------
 
-parse_input
-file_path="$(extract_file_path "$TOOL_INPUT")"
-agent_type="${AGENT_TYPE}"
+main() {
+  local -r BARRIER_KEYWORD="self-assessment"
+  local -r VERIFIER_KEYWORD="verifier"
 
-lower="${file_path,,}"
+  parse_input
+  local file_path
+  file_path="$(extract_file_path "$TOOL_INPUT")"
+  local agent_type="${AGENT_TYPE}"
 
-if [[ "$lower" == *"self-assessment"* ]]; then
-  # Known non-verifier agents are allowed through.
-  # Empty agent_type or any agent containing "verifier" is blocked.
-  agent_lower="${agent_type,,}"
-  if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"verifier"* ]]; then
-    block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
+  local lower="${file_path,,}"
+
+  if [[ "$lower" == *"${BARRIER_KEYWORD}"* ]]; then
+    # Known non-verifier agents are allowed through.
+    # Empty agent_type or any agent containing "verifier" is blocked.
+    local agent_lower="${agent_type,,}"
+    if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
+      block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
+    fi
+    # Non-verifier agent: fall through (no-opinion, exit 0)
+    exit 0
   fi
-  # Non-verifier agent: fall through (no-opinion, exit 0)
-  exit 0
-fi
 
-if is_plugin_cache_path "$file_path"; then
-  allow_json
-  exit 0
-fi
+  if is_plugin_cache_path "$file_path"; then
+    allow_json
+    exit 0
+  fi
 
-if is_rnd_path "$file_path"; then
-  allow_json
-  exit 0
-fi
+  if is_rnd_path "$file_path"; then
+    allow_json
+    exit 0
+  fi
 
-# No opinion — exit 0 with no stdout
-exit 0
+  # No opinion — exit 0 with no stdout
+  exit 0
+}
+
+main

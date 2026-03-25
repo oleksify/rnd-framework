@@ -186,6 +186,23 @@ What counts as evidence for a criterion:
 
 If your evidence for PASS is "it looks right" — that is not evidence. Run it. Break it. Trace it.
 
+## Clean Code Checklist
+
+This checklist applies **mandatorily to shell code** and **advisorily to all other languages**. For each item, a violation indicator is an observable condition the Verifier can confirm by inspecting code — no subjective judgment required.
+
+| Item | Violation indicator |
+|------|---------------------|
+| **Function purity** — functions compute or act, not both | A function reads/writes a file, calls a network API, or modifies a global AND returns a computed value used by the caller |
+| **No unscoped globals** — variables are declared in the narrowest scope that works | Shell: a variable used only inside a function is declared outside it (no `local`). JS/TS: a module-level `let`/`var` is mutated by multiple unrelated functions |
+| **Side effects at edges** — I/O and mutations live at call-site level, not buried inside pure logic | A pure-looking helper (e.g., `calculate_total`, `format_name`) contains a `curl`, `read`, `write`, database call, or `console.log`/`echo` that is not in its name or documented in a comment |
+| **Descriptive names, no unexplained abbreviations** — identifiers say what they hold or do | A variable or function name is ≤3 characters (excluding loop counters `i`/`j`/`k`) without a comment explaining the abbreviation; or a name uses domain jargon not defined in the pre-registration or a comment |
+| **No magic numbers or magic strings** — all non-obvious literals are named constants | A numeric or string literal appears inline (e.g., `86400`, `"application/json"`, `".rnd"`) without a named constant, and its meaning cannot be inferred from context alone |
+| **DRY — no copy-pasted logic** — identical or near-identical blocks appear at most once | The same logical operation (same sequence of steps, same condition) appears in two or more places with only variable names changed, and no shared function or abstraction exists |
+| **No swallowed errors** — every error is handled, re-raised, or explicitly ignored with a comment | Shell: a command that can fail runs without `|| ...` or `set -e` in effect and its exit code is never checked. Other languages: a caught exception block is empty or contains only a comment saying `// TODO` |
+| **Immutability by default** — bindings are declared immutable unless mutation is specifically required | Shell: a variable set once is not declared `local -r`. JS/TS: a binding assigned once uses `let` instead of `const`. Any language: a function parameter is reassigned inside the function body |
+| **No flag parameters** — booleans passed to alter function behavior indicate the function does two things | A function signature contains a boolean parameter (e.g., `process(data, true)`, `run(verbose=False)`) where `true`/`false` selects between two distinct code paths inside the function |
+| **No commented-out code** — dead code is deleted, not retained as comments | A block of code is commented out with no explanation (e.g., `# old approach`, `// TODO: remove`). Exception: explanatory comments that reference a ticket or decision are acceptable |
+
 ## Common Rationalizations
 
 | Excuse | Reality |

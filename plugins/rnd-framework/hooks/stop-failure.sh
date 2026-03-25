@@ -4,8 +4,8 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
-error_type="$(printf '%s' "$raw" | jq -r '.error_type // "unknown"' 2>/dev/null || true)"
-message="$(printf '%s' "$raw" | jq -r '.message // "unknown"' 2>/dev/null || true)"
+error_type="$(jq_extract "$raw" '.error_type')"
+message="$(jq_extract "$raw" '.message')"
 [[ -n "$error_type" ]] || error_type="unknown"
 [[ -n "$message" ]] || message="unknown"
 

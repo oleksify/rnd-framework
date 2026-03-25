@@ -11,13 +11,14 @@ rnd_dir="$(active_session_dir 2>/dev/null || true)"
 state_file="${rnd_dir}/compact-state.json"
 [[ -f "$state_file" ]] || exit 0
 
-plan="$(jq -r '.planSummary // ""' "$state_file" 2>/dev/null || true)"
+state_json="$(cat "$state_file" 2>/dev/null || true)"
+plan="$(jq_extract "$state_json" '.planSummary')"
 [[ -n "$plan" ]] || exit 0
 
-task="$(jq -r '.currentTaskId // "unknown"' "$state_file" 2>/dev/null || true)"
-iter="$(jq -r '.iterationCount // "0"' "$state_file" 2>/dev/null || true)"
-saved="$(jq -r '.savedAt // "unknown"' "$state_file" 2>/dev/null || true)"
-needle="$(jq -r '.verificationNeedle // ""' "$state_file" 2>/dev/null || true)"
+task="$(jq_extract "$state_json" '.currentTaskId // "unknown"')"
+iter="$(jq_extract "$state_json" '.iterationCount // "0"')"
+saved="$(jq_extract "$state_json" '.savedAt // "unknown"')"
+needle="$(jq_extract "$state_json" '.verificationNeedle')"
 
 msg="Pipeline state restored after compaction:
   Plan: ${plan}

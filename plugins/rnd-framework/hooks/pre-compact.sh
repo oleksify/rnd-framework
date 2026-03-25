@@ -10,12 +10,19 @@ session_dir="$(active_session_dir 2>/dev/null || true)"
 [[ -n "$session_dir" ]] || exit 0
 
 # ---------------------------------------------------------------------------
-# planSummary: first 5 lines of plan.md, or "no plan" if absent
+# Constants
+# ---------------------------------------------------------------------------
+
+readonly MANIFEST_REGEX='^T[^-]+-manifest\.md$'
+readonly PLAN_HEAD_LINES=5
+
+# ---------------------------------------------------------------------------
+# planSummary: first N lines of plan.md, or "no plan" if absent
 # ---------------------------------------------------------------------------
 
 plan_file="${session_dir}/plan.md"
 if [[ -f "$plan_file" ]]; then
-  plan_summary="$(awk 'NR<=5' "$plan_file" 2>/dev/null || true)"
+  plan_summary="$(awk -v n="$PLAN_HEAD_LINES" 'NR<=n' "$plan_file" 2>/dev/null || true)"
   [[ -n "$plan_summary" ]] || plan_summary="no plan"
 else
   plan_summary="no plan"
@@ -32,7 +39,7 @@ if [[ -d "$builds_dir" ]]; then
   most_recent=""
   while IFS= read -r f; do
     fname="$(basename "$f")"
-    if [[ "$fname" =~ ^T[^-]+-manifest\.md$ ]]; then
+    if [[ "$fname" =~ $MANIFEST_REGEX ]]; then
       most_recent="$fname"
       break
     fi

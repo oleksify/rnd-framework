@@ -120,3 +120,81 @@ active_session_dir() {
 iso_timestamp() {
   date -u '+%Y-%m-%dT%H:%M:%SZ'
 }
+
+# ---------------------------------------------------------------------------
+# FP utilities
+# ---------------------------------------------------------------------------
+
+# Extracts a jq field from JSON; prints the value or empty string; always returns 0.
+jq_extract() {
+  local json="$1"
+  local field="$2"
+  local result
+  result="$(printf '%s' "$json" | jq -r "${field} // empty" 2>/dev/null)" || true
+  printf '%s' "$result"
+  return 0
+}
+
+# Returns 0 when value is non-empty, 1 when empty; prints optional message to stderr on empty.
+# Usage: guard_nonempty "$val" "description" || return 0
+guard_nonempty() {
+  local value="$1"
+  local message="${2:-}"
+  if [[ -n "$value" ]]; then
+    return 0
+  fi
+  [[ -z "$message" ]] || printf '%s\n' "$message" >&2
+  return 1
+}
+
+# Reads stdin, removes YAML frontmatter (lines between first --- and second --- inclusive), prints remainder.
+strip_frontmatter() {
+  awk '
+    /^---$/ && !seen_open { seen_open=1; next }
+    /^---$/ && seen_open && !seen_close { seen_close=1; next }
+    seen_close || !seen_open { print }
+  '
+}
+
+# Reads stdin line-by-line, applies the named function to each line, prints results.
+map_lines() {
+  local fn="$1"
+  local line
+  while IFS= read -r line; do
+    "$fn" "$line"
+  done
+}
+
+# Reads stdin line-by-line, prints only lines where the named function returns 0.
+filter_lines() {
+  local fn="$1"
+  local line
+  while IFS= read -r line; do
+    if "$fn" "$line"; then
+      printf '%s\n' "$line"
+    fi
+  done
+}
+
+# Reads stdin line-by-line, accumulates via function(accumulator, line), prints final accumulator.
+reduce_lines() {
+  local fn="$1"
+  local acc="$2"
+  local line
+  while IFS= read -r line; do
+    acc="$("$fn" "$acc" "$line")"
+  done
+  printf '%s' "$acc"
+}
+
+# Pure alternative to parse_input: reads stdin JSON, prints tool_name, tool_input_json, agent_type on 3 lines; always returns 0.
+parse_input_stdout() {
+  local raw
+  raw="$(cat)"
+  local tool_name tool_input agent_type
+  tool_name="$(printf '%s' "$raw" | jq -r '.tool_name // ""' 2>/dev/null)" || tool_name=""
+  tool_input="$(printf '%s' "$raw" | jq -c '.tool_input // {}' 2>/dev/null)" || tool_input=""
+  agent_type="$(printf '%s' "$raw" | jq -r '.agent_type // ""' 2>/dev/null)" || agent_type=""
+  printf '%s\n%s\n%s\n' "$tool_name" "$tool_input" "$agent_type"
+  return 0
+}

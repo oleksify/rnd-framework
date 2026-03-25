@@ -5,25 +5,32 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# Pipeline phase names (constants)
+readonly PHASE_IDLE="Idle"
+readonly PHASE_PLANNING="Planning"
+readonly PHASE_BUILDING="Building"
+readonly PHASE_VERIFYING="Verifying"
+readonly PHASE_INTEGRATING="Integrating"
+
 raw="$(cat)"
 
 # Extract rate limit percentages (round to nearest integer).
-five_hour_pct="$(printf '%s' "$raw" | jq -r '.rate_limits.fiveHour.used_percentage // empty' 2>/dev/null || true)"
-seven_day_pct="$(printf '%s' "$raw" | jq -r '.rate_limits.sevenDay.used_percentage // empty' 2>/dev/null || true)"
+five_hour_pct="$(jq_extract "$raw" '.rate_limits.fiveHour.used_percentage')"
+seven_day_pct="$(jq_extract "$raw" '.rate_limits.sevenDay.used_percentage')"
 
 # Detect pipeline phase by checking session directories.
-phase="Idle"
+phase="$PHASE_IDLE"
 session_dir="$(active_session_dir 2>/dev/null || true)"
 
 if [[ -n "$session_dir" ]]; then
   if ls "${session_dir}/integration/"*.md 2>/dev/null | grep -q .; then
-    phase="Integrating"
+    phase="$PHASE_INTEGRATING"
   elif ls "${session_dir}/verifications/"*.md 2>/dev/null | grep -q .; then
-    phase="Verifying"
+    phase="$PHASE_VERIFYING"
   elif ls "${session_dir}/builds/"*.md 2>/dev/null | grep -q .; then
-    phase="Building"
+    phase="$PHASE_BUILDING"
   elif [[ -f "${session_dir}/plan.md" ]]; then
-    phase="Planning"
+    phase="$PHASE_PLANNING"
   fi
 fi
 

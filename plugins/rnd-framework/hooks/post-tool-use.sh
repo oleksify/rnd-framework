@@ -8,8 +8,9 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
-tool_name="$(printf '%s' "$raw" | jq -r '.tool_name // ""' 2>/dev/null || true)"
-file_path="$(printf '%s' "$raw" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
+tool_name="$(jq_extract "$raw" '.tool_name')"
+tool_input="$(jq_extract "$raw" '.tool_input')"
+file_path="$(jq_extract "$tool_input" '.file_path')"
 
 [[ -n "$file_path" ]] || exit 0
 

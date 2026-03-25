@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.6 — 2026-03-25
+
+### Refactor hooks with FP toolkit and expand clean-code skills
+
 ## 0.13.5 — 2026-03-25
 
 ### Adopt v2.1.83 features: CwdChanged/FileChanged hooks, fix SessionStart JSON format

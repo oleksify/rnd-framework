@@ -22,19 +22,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Regex patterns stored in variables to avoid bash special-char issues in
 # [[ =~ ]] when the pattern itself contains && or special sequences.
 # ---------------------------------------------------------------------------
-_CD_AND_PATTERN='^cd[[:space:]]+[^&;]+&&'
-_CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
-_CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
-_DOLLAR_PAREN_PATTERN='\$\(([^)]*)\)'
-_BACKTICK_PATTERN='`([^`]*)`'
-_TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
+readonly _CD_AND_PATTERN='^cd[[:space:]]+[^&;]+&&'
+readonly _CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
+readonly _CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
+readonly _DOLLAR_PAREN_PATTERN='\$\(([^)]*)\)'
+readonly _BACKTICK_PATTERN='`([^`]*)`'
+readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 
-# ---------------------------------------------------------------------------
-# Global state (set by check_segment, read by main)
-# ---------------------------------------------------------------------------
-SEGMENT_BLOCKED=0
-BLOCK_REASON=""
-HAS_ECHO=0
+# Magic constants extracted as readonly module-level variables
+readonly _PROTECTED_BRANCHES="main master production"
+readonly _BUN_SAFE_SUBCOMMANDS="test run install add build create init pm x upgrade link unlink patch deploy"
 
 # ---------------------------------------------------------------------------
 # check_echo_redirect: prints "block" or "allow"
@@ -90,10 +87,12 @@ strip_cd_prefix() {
 
 # ---------------------------------------------------------------------------
 # check_segment: checks one command segment.
-# Sets SEGMENT_BLOCKED=1 + BLOCK_REASON on violation.
-# Sets HAS_ECHO=1 for safe echo/printf.
+# Prints one of:
+#   "blocked:<reason>"  — command should be blocked
+#   "echo_safe"         — echo/printf without unsafe redirect
+#   "allowed"           — command is safe (no opinion emitted to caller)
 #
-# NOTE: All conditional branches MUST end with an explicit `true` or a
+# NOTE: All conditional branches MUST end with an explicit `printf` or a
 # command that always exits 0, because this function is called from inside
 # a while loop and with set -e active. If the LAST command executed before
 # return exits non-zero, set -e fires on the caller.
@@ -108,12 +107,12 @@ check_segment() {
 
   case "$cmd" in
     sed|awk)
-      SEGMENT_BLOCKED=1
-      BLOCK_REASON="Use the Edit tool instead of ${cmd}. Edit is reviewable, diffable, and handles indentation correctly."
+      printf 'blocked:Use the Edit tool instead of %s. Edit is reviewable, diffable, and handles indentation correctly.' "$cmd"
+      return 0
       ;;
     cat)
-      SEGMENT_BLOCKED=1
-      BLOCK_REASON="Use the Read tool instead of ${cmd}. Read supports line offsets and limits natively."
+      printf 'blocked:Use the Read tool instead of %s. Read supports line offsets and limits natively.' "$cmd"
+      return 0
       ;;
     head|tail)
       # Allow when used as a pipe filter (no file argument).
@@ -129,27 +128,28 @@ check_segment() {
         fi
       done
       if [[ "$has_file_arg" -eq 1 ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Use the Read tool instead of ${cmd}. Read supports line offsets and limits natively."
+        printf 'blocked:Use the Read tool instead of %s. Read supports line offsets and limits natively.' "$cmd"
+        return 0
       fi
       ;;
     grep|rg)
-      SEGMENT_BLOCKED=1
-      BLOCK_REASON="Use the Grep tool instead of ${cmd}. Grep supports regex, file globs, and output modes."
+      printf 'blocked:Use the Grep tool instead of %s. Grep supports regex, file globs, and output modes.' "$cmd"
+      return 0
       ;;
     find)
-      SEGMENT_BLOCKED=1
-      BLOCK_REASON="Use the Glob tool instead of find. Glob supports patterns like **/*.ts."
+      printf 'blocked:Use the Glob tool instead of find. Glob supports patterns like **/*.ts.'
+      return 0
       ;;
     echo|printf)
       local redirect_result
       redirect_result="$(check_echo_redirect "$seg")"
       if [[ "$redirect_result" == "block" ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs."
+        printf 'blocked:Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs.'
+        return 0
       else
         # Safe echo/printf (no redirect, or redirect to .rnd/ or /dev/)
-        HAS_ECHO=1
+        printf 'echo_safe'
+        return 0
       fi
       ;;
     python|python3)
@@ -159,17 +159,20 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare interpreter: e.g. "python3" alone — pipe target like echo | python3
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       elif [[ "$second_word" == "-m" ]]; then
-        true  # python -m module — allowed
+        printf 'allowed'
+        return 0
       elif [[ "$second_word" == *.py ]] || [[ "$second_word" == */* ]]; then
-        true  # python file.py or python /path/to/script.py — allowed
+        printf 'allowed'
+        return 0
       elif [[ "$second_word" == "-c" ]] || [[ "$seg" == *" -c "* ]] || [[ "$seg" == *" -c'"* ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       else
-        true  # No opinion on other usage
+        printf 'allowed'
+        return 0
       fi
       ;;
     node)
@@ -178,13 +181,14 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare node — pipe target
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       else
-        true  # node script.js — allowed
+        printf 'allowed'
+        return 0
       fi
       ;;
     bun)
@@ -193,52 +197,54 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare bun — pipe target
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       elif [[ "$second_word" == "eval" ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
-      elif [[ "$second_word" == "test" || "$second_word" == "run" || "$second_word" == "install" || \
-              "$second_word" == "add" || "$second_word" == "build" || "$second_word" == "create" || \
-              "$second_word" == "init" || "$second_word" == "pm" || "$second_word" == "x" || \
-              "$second_word" == "upgrade" || "$second_word" == "link" || "$second_word" == "unlink" || \
-              "$second_word" == "patch" || "$second_word" == "deploy" ]]; then
-        true  # Known safe bun subcommand — allowed
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       else
-        true  # No opinion on other bun usage
+        printf 'allowed'
+        return 0
       fi
       ;;
     perl|ruby)
       if [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]] || [[ "${seg#"$first_word" }" == "-e"* ]]; then
-        SEGMENT_BLOCKED=1
-        BLOCK_REASON="Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use \$RND_DIR instead of /tmp."
+        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        return 0
       else
-        true  # perl/ruby file.pl — allowed
+        printf 'allowed'
+        return 0
       fi
       ;;
   esac
-  # Explicit true to ensure the function always exits 0 (important: this
-  # function is called as the last command in a while loop body, so its
-  # exit code becomes the while block's exit code — must be 0 or set -e fires)
-  true
+  # Default: no opinion on this command
+  printf 'allowed'
 }
 
 # ---------------------------------------------------------------------------
 # split_and_check: splits command into segments and checks each.
-# Returns early (non-locally, via setting SEGMENT_BLOCKED) on first violation.
+# Prints structured result on stdout:
+#   "blocked:<reason>"  — first violation found
+#   "echo_safe"         — at least one safe echo/printf, no violations
+#   "allowed"           — no violations
 # ---------------------------------------------------------------------------
 split_and_check() {
   local command="$1"
+  local _has_echo=0
+  local _result
 
   # Step 1: extract $(...) contents and check them as additional segments
   local temp="$command"
   while [[ "$temp" =~ $_DOLLAR_PAREN_PATTERN ]]; do
     local inner="${BASH_REMATCH[1]}"
-    check_segment "${inner# }"
-    if [[ "$SEGMENT_BLOCKED" -eq 1 ]]; then return; fi
+    _result="$(check_segment "${inner# }")" || true
+    if [[ "$_result" == blocked:* ]]; then
+      printf '%s' "$_result"
+      return 0
+    fi
     temp="${temp/${BASH_REMATCH[0]}/}"
   done
 
@@ -246,8 +252,11 @@ split_and_check() {
   temp="$command"
   while [[ "$temp" =~ $_BACKTICK_PATTERN ]]; do
     local inner="${BASH_REMATCH[1]}"
-    check_segment "${inner# }"
-    if [[ "$SEGMENT_BLOCKED" -eq 1 ]]; then return; fi
+    _result="$(check_segment "${inner# }")" || true
+    if [[ "$_result" == blocked:* ]]; then
+      printf '%s' "$_result"
+      return 0
+    fi
     temp="${temp/${BASH_REMATCH[0]}/}"
   done
 
@@ -261,6 +270,9 @@ split_and_check() {
   split_cmd="${split_cmd//;/$'\n'}"
   split_cmd="${split_cmd//|/$'\n'}"
 
+  # Use herestring so the while loop runs in the current shell (not a subshell),
+  # allowing _has_echo to be visible after the loop. <<< adds a trailing newline
+  # so read never sees a no-newline EOF that would silently drop the last segment.
   while IFS= read -r seg; do
     # Strip leading/trailing whitespace
     seg="${seg#"${seg%%[! ]*}"}"
@@ -271,10 +283,21 @@ split_and_check() {
     # Strip trailing )
     seg="${seg%\)}"
     if [[ -z "$seg" ]]; then continue; fi
-    check_segment "$seg"
-    if [[ "$SEGMENT_BLOCKED" -eq 1 ]]; then return; fi
+    _result="$(check_segment "$seg")" || true
+    if [[ "$_result" == blocked:* ]]; then
+      printf '%s' "$_result"
+      return 0
+    fi
+    if [[ "$_result" == "echo_safe" ]]; then
+      _has_echo=1
+    fi
   done <<< "$split_cmd"
-  true
+
+  if [[ "$_has_echo" -eq 1 ]]; then
+    printf 'echo_safe'
+  else
+    printf 'allowed'
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -296,10 +319,12 @@ if [[ "$command" =~ git[[:space:]]+add.*\.rnd(/|[[:space:]]|$) ]]; then
   block_msg "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."
 fi
 
-# Block: git push to main/master/production
-if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]](main|master|production)([[:space:]]|$) ]]; then
+# Block: git push to protected branches (listed in _PROTECTED_BRANCHES)
+_branch_pattern="${_PROTECTED_BRANCHES// /|}"
+if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]]($_branch_pattern)([[:space:]]|$) ]]; then
   block_msg "BLOCKED: Direct push to main/master/production. Use a feature branch and PR instead."
 fi
+unset _branch_pattern
 
 # ---------------------------------------------------------------------------
 # /tmp redirect guard — checked on the full command string (before splitting)
@@ -329,17 +354,17 @@ fi
 # (runs before .rnd/ auto-allow so cat/sed on .rnd/ paths is still blocked)
 # ---------------------------------------------------------------------------
 
-split_and_check "$command"
+_discipline_result="$(split_and_check "$command")" || true
 
-if [[ "$SEGMENT_BLOCKED" -eq 1 ]]; then
-  block_msg "$BLOCK_REASON"
+if [[ "$_discipline_result" == blocked:* ]]; then
+  block_msg "${_discipline_result#blocked:}"
 fi
 
 # ---------------------------------------------------------------------------
 # echo/printf without unsafe redirect — auto-allow
 # ---------------------------------------------------------------------------
 
-if [[ "$HAS_ECHO" -eq 1 ]]; then
+if [[ "$_discipline_result" == "echo_safe" ]]; then
   allow_json
   exit 0
 fi

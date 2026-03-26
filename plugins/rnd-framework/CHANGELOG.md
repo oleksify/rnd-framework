@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.9 — 2026-03-26
+
+### Add Factory Droid platform support
+
+Platform shim: config dir detection (DROID_CONFIG_DIR, DROID_PLUGIN_ROOT), path regex widening for ~/.factory/ paths, hooks.json matcher expansion (Bash|Execute, Write|Create). Also includes audit fixes: validate.md reference, shellcheck directives, credential env var support in start.ts.
+
 ## 0.14.8 — 2026-03-26
 
 ### Add Glob/Grep PreToolUse hooks, align permission regex with is_plugin_artifact_path

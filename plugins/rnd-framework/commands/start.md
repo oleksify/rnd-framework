@@ -101,11 +101,9 @@ For each wave in the execution schedule:
 
 2. **Inject learnings.** For each task, detect languages from file extensions in "Expected outputs". Read `$CLAUDE_CONFIG_DIR/learnings/{language}.md` and append a `### Known gotchas for {language}` section to the builder prompt. Skip silently if no file exists.
 
-3. **Create a build team:** `TeamCreate` with `team_name: "rnd-build-wave-{N}-{SESSION_ID}"` where `{SESSION_ID}` is the last path segment of `$RND_DIR`.
+3. **Spawn builders in parallel:** One agent per task with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`. Use `run_in_background: true` for all but the last builder to maximize parallelism. Do NOT use `TeamCreate` — teams conflict with the global task list.
 
-4. **Spawn builders in parallel:** One agent per task with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` from step 3, `name: "builder-T{id}"`.
-
-5. **Route each result by status code:**
+4. **Route each result by status code:**
 
    | Status code | Action |
    |-------------|--------|
@@ -114,9 +112,7 @@ For each wave in the execution schedule:
    | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info, restate requirement, or skip. Re-dispatch with user's answer. |
    | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". |
 
-6. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
-
-7. **Delete the build team:** `TeamDelete` with the same team name.
+5. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
 
 **After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
 - "Proceed to verification (Recommended)"
@@ -160,11 +156,9 @@ For each completed task in the wave:
 ## Phase 4: Iterate (if needed)
 
 1. Extract Verifier feedback (not internal reasoning).
-2. **Create an iteration team:** `TeamCreate` with `team_name: "rnd-iter-T{id}-{SESSION_ID}"`.
-3. Spawn a new Builder with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` from step 2, `name: "iter-builder-T{id}"`. Include original pre-registration plus Verifier feedback.
-4. Builder implements fix and produces updated artifacts.
-5. **Delete the iteration team:** `TeamDelete` with the same team name.
-6. Verifier re-checks (same information barrier rules).
+2. Spawn a new Builder with `subagent_type: "rnd-framework:rnd-builder"`, `name: "iter-builder-T{id}"`, `mode: "bypassPermissions"`. Include original pre-registration plus Verifier feedback.
+3. Builder implements fix and produces updated artifacts.
+4. Verifier re-checks (same information barrier rules).
 7. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`: gotcha (from Verifier feedback), fix (from Builder diff), language (from changed file extensions). Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md`.
 8. If iteration budget exhausted, `AskUserQuestion`:
    - "Re-plan this task"

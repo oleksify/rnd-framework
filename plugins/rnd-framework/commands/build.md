@@ -22,19 +22,15 @@ If $ARGUMENTS is empty (user ran `/rnd-framework:build` with no arguments):
 
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
 - Use `TaskUpdate` to mark the task `in_progress`.
-- Call `TeamCreate` with `team_name: "rnd-build-task-T{id}-{SESSION_ID}"`, where `{id}` is the task number and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`).
-- Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created above, and `name: "builder-T{id}"`.
-- After the builder completes and Gate 2 passes, call `TeamDelete` with the same team name to clean up.
+- Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`.
 
 If $ARGUMENTS specifies a wave (e.g., "wave-2"):
 - Use `TaskUpdate` to mark ALL tasks in the wave as `in_progress`.
-- Call `TeamCreate` with `team_name: "rnd-build-wave-{N}-{SESSION_ID}"`, where `{N}` is the wave number and `{SESSION_ID}` is the last path segment of `$RND_DIR` (e.g., `20260325-212836-137f`).
-- Spawn agents in parallel for ALL tasks in that wave, each using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `team_name` set to the team name created above, and `name` set to `builder-T{id}` (e.g., `builder-T3`).
-- After all builders complete and Gate 2 passes, call `TeamDelete` with the same team name to clean up.
+- Spawn agents in parallel for ALL tasks in that wave, each using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`. Use `run_in_background: true` for all but the last builder to maximize parallelism.
 
 If $ARGUMENTS is "next":
 - Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.
-- Mark those tasks `in_progress` and build them using the same wave Team Mode pattern above (TeamCreate → parallel Agent spawns with team_name and name → Gate 2 → TeamDelete).
+- Mark those tasks `in_progress` and build them using the same wave pattern above (parallel Agent spawns with name and mode).
 
 After each builder agent returns, check its status code from the completion message before proceeding:
 

@@ -9,7 +9,7 @@ A multi-platform plugin repository compatible with **Claude Code** and **Factory
 - **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 - **** — a creative studio for designing in Framer. Follows a real design process (brief → moodboard → tokens → build → review) to produce design systems and page skeletons.
 
-Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
+Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them (includes `owner` and `category` fields for Claude Code discovery). The `.factory-plugin/marketplace.json` omits those fields per Factory Droid's validator requirements. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
 ## Repository Layout
 
@@ -64,7 +64,7 @@ plugins/rnd-framework/
 | `rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests, issues SHIP/NO-SHIP |
 | `rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 | `rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
-| `rnd-reality-auditor` | sonnet | red | Adversarial testing of external service assumptions in builder code |
+| `rnd-reality-auditor` | sonnet | teal | Adversarial testing of external service assumptions in builder code |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
 
 All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, verifier/debugger/integrator/data-scientist: 150, proof-gate: 100), and `effort` levels (opus agents: high, sonnet agents: medium). The builder additionally has `isolation: worktree` for safe parallel execution. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).

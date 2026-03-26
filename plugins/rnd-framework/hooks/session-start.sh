@@ -66,6 +66,11 @@ if [[ -n "$rnd_dir" ]]; then
     if [[ -n "$git_project_root" ]]; then
       printf '%s' "$git_project_root" > "${base_dir}/.session-git-root"
     fi
+
+    # Cache base dir for fast-path lookups in active_session_dir (avoids
+    # re-running git+shasum on every subsequent hook invocation).
+    cache_dir="${base_dir%/*}"
+    printf '%s' "$base_dir" > "${cache_dir}/.active-base-dir" 2>/dev/null || true
   fi
 fi
 

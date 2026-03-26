@@ -8,14 +8,15 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-raw="$(cat)"
-task_id="$(jq_extract "$raw" '.task_id')"
-task_description="$(jq_extract "$raw" '.task_description')"
-
+# Short-circuit: skip audit if no active session
 session_dir="$(active_session_dir 2>/dev/null || true)"
-if [[ -n "$session_dir" ]]; then
-  jq -cn --arg ts "$(iso_timestamp)" --arg id "$task_id" --arg desc "$task_description" \
-    '{ts:$ts,event:"task_created",task_id:$id,task_description:$desc}' >> "${session_dir}/audit.jsonl" || true
-fi
+[[ -n "$session_dir" ]] || exit 0
+
+raw="$(cat)"
+# Single jq call: extract fields and build audit entry directly
+printf '%s' "$raw" | jq -c --arg ts "$(iso_timestamp)" '
+  {ts: $ts, event: "task_created",
+   task_id: (.task_id // ""), task_description: (.task_description // "")}' \
+  >> "${session_dir}/audit.jsonl" 2>/dev/null || true
 
 exit 0

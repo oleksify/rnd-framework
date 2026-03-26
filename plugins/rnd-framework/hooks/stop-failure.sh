@@ -5,16 +5,13 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
-error_type="$(jq_extract "$raw" '.error_type')"
-message="$(jq_extract "$raw" '.message')"
-[[ -n "$error_type" ]] || error_type="unknown"
-[[ -n "$message" ]] || message="unknown"
 
 rnd_dir="$(active_session_dir 2>/dev/null || true)"
 if [[ -n "$rnd_dir" ]]; then
-  entry="$(jq -cn --arg ts "$(iso_timestamp)" --arg et "$error_type" --arg msg "$message" \
-    '{ts:$ts,errorType:$et,message:$msg}')"
-  printf '%s\n' "$entry" >> "${rnd_dir}/stop-failures.jsonl" || true
+  # Single jq call: extract fields and build log entry directly
+  printf '%s' "$raw" | jq -c --arg ts "$(iso_timestamp)" '
+    {ts: $ts, errorType: (.error_type // "unknown"), message: (.message // "unknown")}' \
+    >> "${rnd_dir}/stop-failures.jsonl" 2>/dev/null || true
 fi
 
 advisory_json "API error encountered. Wait a moment before retrying, or adjust rate limits if errors persist."

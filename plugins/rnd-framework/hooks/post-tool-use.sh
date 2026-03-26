@@ -8,17 +8,14 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-raw="$(cat)"
-tool_name="$(jq_extract "$raw" '.tool_name')"
-tool_input="$(jq_extract "$raw" '.tool_input')"
-file_path="$(jq_extract "$tool_input" '.file_path')"
-
-[[ -n "$file_path" ]] || exit 0
-
+# Short-circuit: skip audit if no active session (avoids all jq work)
 session_dir="$(active_session_dir 2>/dev/null || true)"
-if [[ -n "$session_dir" ]]; then
-  jq -cn --arg ts "$(iso_timestamp)" --arg tool "$tool_name" --arg file "$file_path" \
-    '{ts:$ts,tool:$tool,file:$file}' >> "${session_dir}/audit.jsonl" || true
-fi
+[[ -n "$session_dir" ]] || exit 0
+
+raw="$(cat)"
+# Single jq call: extract tool_name and file_path, append audit entry directly
+printf '%s' "$raw" | jq -c --arg ts "$(iso_timestamp)" '
+  {ts: $ts, tool: (.tool_name // ""), file: (.tool_input.file_path // "")}
+  | select(.file != "")' >> "${session_dir}/audit.jsonl" 2>/dev/null || true
 
 exit 0

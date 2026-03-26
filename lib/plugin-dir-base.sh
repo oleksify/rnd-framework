@@ -120,6 +120,11 @@ _plugin_dir_create_session() {
   for _sub in "$@"; do
     mkdir -p "${_session_dir}/${_sub}"
   done
+
+  # Cache base dir for fast-path lookups in active_session_dir
+  local _rnd_parent="${BASE_DIR%/*}"
+  printf '%s' "$BASE_DIR" > "${_rnd_parent}/.active-base-dir" 2>/dev/null || true
+
   echo "$_session_dir"
 }
 

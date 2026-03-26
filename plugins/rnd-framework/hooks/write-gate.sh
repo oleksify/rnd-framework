@@ -5,8 +5,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
-tool_input="$(jq_extract "$raw" '.tool_input')"
-file_path="$(jq_extract "$tool_input" '.file_path')"
+file_path="$(printf '%s' "$raw" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
 
 if [[ "$file_path" == /tmp/* ]]; then
   block_msg "BLOCKED: Do not write to /tmp/. Use \$RND_DIR for temporary files — it is auto-allowed and preserves artifacts across the pipeline session."

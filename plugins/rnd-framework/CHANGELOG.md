@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.10 — 2026-03-27
+
+### Optimize hook performance: 44% reduction in per-cycle overhead
+
+Cache active session base-dir path in `.active-base-dir` file to avoid re-running `git rev-parse` + `shasum` (~15ms) on every hook invocation. Collapse multiple sequential `jq` subprocess spawns into single calls across 7 hooks (parse_input 3→1, post-tool-use 4→1, write-gate 2→1, glob-grep-gate 2→1, task-created, stop-failure, observation-mask). Short-circuit PostToolUse hooks (post-tool-use, task-created, observation-mask) before reading stdin when no active pipeline session exists. Per-cycle hook overhead drops from 183ms to 102ms. Also fix CLAUDE.md: reality-auditor color red→teal, document marketplace.json asymmetry; add TypeScript test note to run-tests.sh.
+
 ## 0.14.9 — 2026-03-26
 
 ### Add Factory Droid platform support

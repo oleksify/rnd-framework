@@ -76,14 +76,21 @@ block_msg() {
 # ---------------------------------------------------------------------------
 
 # Reads all of stdin into a variable, then extracts TOOL_NAME, TOOL_INPUT,
-# and AGENT_TYPE using jq. Sets those variables in the caller's scope.
+# and AGENT_TYPE using a single jq call. Sets those variables in the caller's scope.
 # On malformed input, sets all to empty strings.
 parse_input() {
-  local raw
+  local raw parsed
   raw="$(cat)"
-  TOOL_NAME="$(printf '%s' "$raw" | jq -r '.tool_name // ""' 2>/dev/null || true)"
-  TOOL_INPUT="$(printf '%s' "$raw" | jq -c '.tool_input // {}' 2>/dev/null || true)"
-  AGENT_TYPE="$(printf '%s' "$raw" | jq -r '.agent_type // ""' 2>/dev/null || true)"
+  parsed="$(printf '%s' "$raw" | jq -r '
+    [(.tool_name // ""), (.tool_input // {} | tojson), (.agent_type // "")]
+    | join("\t")' 2>/dev/null || true)"
+  if [[ -n "$parsed" ]]; then
+    IFS=$'\t' read -r TOOL_NAME TOOL_INPUT AGENT_TYPE <<< "$parsed"
+  else
+    TOOL_NAME=""
+    TOOL_INPUT=""
+    AGENT_TYPE=""
+  fi
 }
 
 # Extracts file_path from a tool_input JSON string.
@@ -114,11 +121,56 @@ resolve_rnd_dir() {
 
 # Returns the active session directory path when it exists and contains /sessions/.
 # Prints nothing and returns 1 otherwise.
+# Uses a process-level cache and a fast-path that reads a cached base-dir file
+# written by session-start.sh, avoiding the expensive git+shasum computation
+# (~15ms) on every hook invocation.
+_ACTIVE_SESSION_CACHE=""
+_ACTIVE_SESSION_RESOLVED=0
 active_session_dir() {
+  if [[ "$_ACTIVE_SESSION_RESOLVED" -eq 1 ]]; then
+    [[ -n "$_ACTIVE_SESSION_CACHE" ]] || return 1
+    printf '%s' "$_ACTIVE_SESSION_CACHE"
+    return 0
+  fi
+  _ACTIVE_SESSION_RESOLVED=1
+
+  # Fast path: read cached base dir written by session-start.sh
+  local config_dir
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+    config_dir="${CLAUDE_PLUGIN_ROOT%%/plugins/cache/*}"
+    [[ "$config_dir" != "$CLAUDE_PLUGIN_ROOT" ]] || config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+  elif [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
+    config_dir="$CLAUDE_CONFIG_DIR"
+  elif [[ -n "${DROID_CONFIG_DIR:-}" ]]; then
+    config_dir="$DROID_CONFIG_DIR"
+  elif [[ -n "${DROID_PLUGIN_ROOT:-}" ]]; then
+    config_dir="$HOME/.factory"
+  else
+    config_dir="$HOME/.claude"
+  fi
+
+  local cache_file="${config_dir}/.rnd/.active-base-dir"
+  if [[ -f "$cache_file" ]]; then
+    local base_dir
+    base_dir="$(< "$cache_file")"
+    if [[ -n "$base_dir" && -f "${base_dir}/.current-session" ]]; then
+      local session_id
+      session_id="$(< "${base_dir}/.current-session")"
+      local dir="${base_dir}/sessions/${session_id}"
+      if [[ -d "$dir" ]]; then
+        _ACTIVE_SESSION_CACHE="$dir"
+        printf '%s' "$dir"
+        return 0
+      fi
+    fi
+  fi
+
+  # Slow path: fall back to resolve_rnd_dir (git+shasum)
   local dir
   dir="$(resolve_rnd_dir)" || return 1
   [[ "$dir" == */sessions/* ]] || return 1
   [[ -d "$dir" ]] || return 1
+  _ACTIVE_SESSION_CACHE="$dir"
   printf '%s' "$dir"
 }
 

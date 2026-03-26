@@ -5,10 +5,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
-tool_input="$(jq_extract "$raw" '.tool_input')"
-
-# Glob uses .path, Grep uses .path — extract whichever is present
-path="$(jq_extract "$tool_input" '.path')"
+path="$(printf '%s' "$raw" | jq -r '.tool_input.path // ""' 2>/dev/null || true)"
 
 if [[ -n "$path" ]] && is_plugin_artifact_path "$path"; then
   allow_json

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.5 — 2026-03-26
+
+### Fix plugin-dir-base.sh missing from plugin cache by adding local copies
+
 ## 0.14.4 — 2026-03-26
 
 ### Adopt v2.1.84 platform features: agent effort levels, builder worktree isolation, TaskCreated hook

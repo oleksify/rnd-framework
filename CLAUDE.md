@@ -15,7 +15,7 @@ Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a l
 
 ```
 lib/
-└── plugin-dir-base.sh              # Shared artifact directory logic (sourced by both plugins' dir scripts)
+└── plugin-dir-base.sh              # Canonical copy of shared artifact directory logic (each plugin has its own copy for cache compatibility)
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
@@ -44,6 +44,7 @@ plugins/rnd-framework/
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
+│   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 │   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants

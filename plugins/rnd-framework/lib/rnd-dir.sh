@@ -15,8 +15,8 @@ set -euo pipefail
 
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=../../../lib/plugin-dir-base.sh
-source "${_SCRIPT_DIR}/../../../lib/plugin-dir-base.sh" ".rnd" "${1:-}"
+# shellcheck source=plugin-dir-base.sh
+source "${_SCRIPT_DIR}/plugin-dir-base.sh" ".rnd" "${1:-}"
 
 [[ "$FLAG" = "--base"    ]] && { echo "$BASE_DIR";              exit 0; }
 [[ "$FLAG" = "--roadmap" ]] && { echo "${BASE_DIR}/roadmap.md"; exit 0; }

@@ -632,5 +632,18 @@ assert_stderr_contains "npm test>/tmp/ (no space) → /tmp" "/tmp"
 # Summary
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# .factory/ path auto-allow (platform-aware)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'ls /Users/alice/.factory/.rnd/builds')"
+assert_exit   ".factory/.rnd/ in command → exit 0" 0
+assert_stdout_contains ".factory/.rnd/ in command → allow JSON" '"permissionDecision":"allow"'
+
+# echo redirect to .factory/.rnd/ should be allowed
+run_hook "$(payload 'echo DONE > /Users/alice/.factory/.rnd/builds/out.md')"
+assert_exit   "echo > .factory/.rnd/ → exit 0" 0
+assert_stdout_contains "echo > .factory/.rnd/ → allow JSON" '"permissionDecision":"allow"'
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]]

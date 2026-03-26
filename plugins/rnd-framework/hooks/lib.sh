@@ -9,25 +9,25 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 # Returns 0 if path is under a plugin artifact directory (.rnd/, .rnd/, etc.)
-# within a .claude config directory.
+# within a .claude or .factory config directory.
 is_plugin_artifact_path() {
   local path="$1"
-  [[ "$path" =~ \.claude[^/]*/.*\.rnd/ ]]
+  [[ "$path" =~ \.(claude[^/]*|factory)/.*\.rnd/ ]]
 }
 
 # Backward-compatible alias.
 is_rnd_path() { is_plugin_artifact_path "$1"; }
 
-# Returns 0 if path contains plugins/cache/ under a .claude config directory.
+# Returns 0 if path contains plugins/cache/ under a .claude or .factory config directory.
 is_plugin_cache_path() {
   local path="$1"
-  [[ "$path" =~ \.claude[^/]*/.*plugins/cache/ ]]
+  [[ "$path" =~ \.(claude[^/]*|factory)/.*plugins/cache/ ]]
 }
 
-# Returns 0 if path contains learnings/ under a .claude config directory.
+# Returns 0 if path contains learnings/ under a .claude or .factory config directory.
 is_learnings_path() {
   local path="$1"
-  [[ "$path" =~ \.claude[^/]*/.*learnings/ ]]
+  [[ "$path" =~ \.(claude[^/]*|factory)/.*learnings/ ]]
 }
 
 # Returns 0 if the file has a recognised source-code extension.

@@ -150,4 +150,63 @@ else
   assert_eq "rnd-dir.sh -c outputs a directory path that exists" "yes" "no: '$ARTIST_RESULT'"
 fi
 
+# ---------------------------------------------------------------------------
+# Factory Droid platform detection: DROID_CONFIG_DIR overrides default.
+#
+# When DROID_CONFIG_DIR is set (and no Claude env vars), rnd-dir.sh -c must
+# produce a path under that directory.
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- Factory Droid: DROID_CONFIG_DIR ---'
+
+TMPFACTORY="${TMPBASE}/factory"
+mkdir -p "$TMPFACTORY"
+
+RND_DROID_RESULT=""
+RND_DROID_EXIT=0
+# Unset Claude vars to isolate Factory Droid env
+RND_DROID_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT DROID_CONFIG_DIR="$TMPFACTORY" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_DROID_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with DROID_CONFIG_DIR exits 0" "0" "$RND_DROID_EXIT"
+
+if [[ "$RND_DROID_RESULT" == "${TMPFACTORY}"/* ]]; then
+  assert_eq "rnd-dir.sh -c path is under DROID_CONFIG_DIR" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path is under DROID_CONFIG_DIR" "yes" "no: '$RND_DROID_RESULT'"
+fi
+
+ARTIST_DROID_RESULT=""
+ARTIST_DROID_EXIT=0
+# Unset Claude vars to isolate Factory Droid env
+ARTIST_DROID_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT DROID_CONFIG_DIR="$TMPFACTORY" bash "${CACHE_ARTIST}/rnd-dir.sh" -c 2>&1)" || ARTIST_DROID_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with DROID_CONFIG_DIR exits 0" "0" "$ARTIST_DROID_EXIT"
+
+if [[ "$ARTIST_DROID_RESULT" == "${TMPFACTORY}"/* ]]; then
+  assert_eq "rnd-dir.sh -c path is under DROID_CONFIG_DIR" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path is under DROID_CONFIG_DIR" "yes" "no: '$ARTIST_DROID_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
+# Factory Droid platform detection: DROID_PLUGIN_ROOT (no config dir set)
+# must fall back to $HOME/.factory as the config directory.
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- Factory Droid: DROID_PLUGIN_ROOT fallback ---'
+
+FAKEHOME="${TMPBASE}/fakehome"
+mkdir -p "$FAKEHOME"
+
+RND_DROID2_RESULT=""
+RND_DROID2_EXIT=0
+# Unset Claude vars; set a controlled HOME so we can verify ~/.factory path
+RND_DROID2_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT HOME="$FAKEHOME" DROID_PLUGIN_ROOT="/droid/plugins/cache/x" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_DROID2_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with DROID_PLUGIN_ROOT exits 0" "0" "$RND_DROID2_EXIT"
+
+if [[ "$RND_DROID2_RESULT" == "${FAKEHOME}/.factory/"* ]]; then
+  assert_eq "rnd-dir.sh -c path uses \$HOME/.factory fallback" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path uses \$HOME/.factory fallback" "yes" "no: '$RND_DROID2_RESULT'"
+fi
+
 report

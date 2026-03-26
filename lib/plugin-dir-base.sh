@@ -42,8 +42,17 @@ if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
   fi
 elif [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
   CONFIG_DIR="$CLAUDE_CONFIG_DIR"
+elif [[ -n "${DROID_CONFIG_DIR:-}" ]]; then
+  # Factory Droid sets DROID_CONFIG_DIR; use it directly as the config root
+  CONFIG_DIR="$DROID_CONFIG_DIR"
 else
-  CONFIG_DIR="$HOME/.claude"
+  # Factory Droid sets DROID_PLUGIN_ROOT when no explicit config dir is given;
+  # fall back to ~/.factory/ on that platform, ~/.claude/ everywhere else
+  if [[ -n "${DROID_PLUGIN_ROOT:-}" ]]; then
+    CONFIG_DIR="$HOME/.factory"
+  else
+    CONFIG_DIR="$HOME/.claude"
+  fi
 fi
 
 # --- Compute project slug ---

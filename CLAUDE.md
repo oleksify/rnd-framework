@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing two plugins:
+A multi-platform plugin repository compatible with **Claude Code** and **Factory Droid**. Contains two plugins:
 
 - **rnd-framework** — a scientific-method orchestration system for multi-agent coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 - **** — a creative studio for designing in Framer. Follows a real design process (brief → moodboard → tokens → build → review) to produce design systems and page skeletons.
@@ -96,6 +96,15 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.sh` an
 ```json
 { "allowRead": ["~/.claude/.rnd/**"], "allowWrite": ["~/.claude/.rnd/**"] }
 ```
+
+### Multi-Platform Support (Claude Code + Factory Droid)
+
+Both plugins run on Claude Code and Factory Droid from a single codebase. Factory Droid claims full Claude Code plugin compatibility and aliases `CLAUDE_PLUGIN_ROOT` to `DROID_PLUGIN_ROOT`. The platform shim handles remaining differences:
+
+- **Config directory detection** (`plugin-dir-base.sh`): Detects `DROID_CONFIG_DIR` or `DROID_PLUGIN_ROOT` env vars and resolves to `~/.factory/` instead of `~/.claude/`. Precedence: `CLAUDE_PLUGIN_ROOT` (strip cache) > `CLAUDE_CONFIG_DIR` > `DROID_CONFIG_DIR` > `DROID_PLUGIN_ROOT` (→ `~/.factory/`) > `~/.claude/` (default).
+- **Path matching** (`lib.sh`, `prefer-tools.sh`, `artifact-gate.sh`): Regexes match both `~/.claude*/` and `~/.factory/` paths using `\.(claude[^/]*|factory)/`.
+- **Hook matchers** (`hooks.json`): Tool name matchers cover both platforms — `Bash|Execute`, `Write|Create` — so hooks fire for both Claude Code and Factory Droid tool names. Tools with identical names (`Read`, `Edit`, `Glob`, `Grep`) need no widening.
+- **Missing hook events**: Factory Droid lacks `PostCompact`, `CwdChanged`, `FileChanged`, `TaskCreated`, `InstructionsLoaded`, `Setup`, `StopFailure`. These hooks simply don't fire — no code change needed.
 
 ### --bare Mode (v2.1.81+)
 

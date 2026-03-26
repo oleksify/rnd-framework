@@ -1,6 +1,6 @@
 # Claude Code Plugins
 
-A private collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
+A private collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [Factory Droid](https://docs.factory.ai/welcome).
 
 ## Available Plugins
 

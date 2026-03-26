@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.4 — 2026-03-26
+
+### Adopt v2.1.84 platform features: agent effort levels, builder worktree isolation, TaskCreated hook
+
 ## 0.14.3 — 2026-03-26
 
 ### Auto-allow learnings directory reads in read-gate hook

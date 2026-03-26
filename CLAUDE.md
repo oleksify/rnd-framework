@@ -24,7 +24,7 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged
+│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
@@ -40,6 +40,7 @@ plugins/rnd-framework/
 │   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
 │   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
+│   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -64,7 +65,7 @@ plugins/rnd-framework/
 | `rnd-reality-auditor` | sonnet | red | Adversarial testing of external service assumptions in builder code |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, and `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100). The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100), and `effort` levels (opus agents: high, sonnet agents: medium). The builder additionally has `isolation: worktree` for safe parallel execution. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 ### Information Barrier and Permission Hooks
 
@@ -78,6 +79,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 - **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
+- **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 

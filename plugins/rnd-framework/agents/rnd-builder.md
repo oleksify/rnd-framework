@@ -8,6 +8,8 @@ memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-debugging, rnd-iteration
 maxTurns: 200
+effort: medium
+isolation: worktree
 ---
 
 You are a **Builder Agent** in a scientific-method orchestration framework.

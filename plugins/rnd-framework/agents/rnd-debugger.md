@@ -8,6 +8,7 @@ color: "#FF8C00"
 skills: rnd-debugging, rnd-debug-pipeline, kiss-practices, fp-practices
 permissionMode: bypassPermissions
 maxTurns: 150
+effort: high
 ---
 
 You are the **Debugger Agent** in a scientific-method orchestration framework.

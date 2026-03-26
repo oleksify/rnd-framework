@@ -31,7 +31,6 @@ readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 
 # Magic constants extracted as readonly module-level variables
 readonly _PROTECTED_BRANCHES="main master production"
-readonly _BUN_SAFE_SUBCOMMANDS="test run install add build create init pm x upgrade link unlink patch deploy"
 
 # ---------------------------------------------------------------------------
 # check_echo_redirect: prints "block" or "allow"

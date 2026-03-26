@@ -8,7 +8,7 @@ memory: user
 color: "#F59E0B"
 skills: rnd-verification
 permissionMode: bypassPermissions
-maxTurns: 100
+maxTurns: 150
 effort: high
 ---
 

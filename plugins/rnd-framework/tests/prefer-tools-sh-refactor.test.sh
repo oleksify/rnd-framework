@@ -268,7 +268,7 @@ check_readonly "_DOLLAR_PAREN_PATTERN"
 check_readonly "_BACKTICK_PATTERN"
 check_readonly "_TMP_REDIRECT_PATTERN"
 check_readonly "_PROTECTED_BRANCHES"
-check_readonly "_BUN_SAFE_SUBCOMMANDS"
+
 
 # ---------------------------------------------------------------------------
 # Cleanup

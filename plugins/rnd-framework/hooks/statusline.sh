@@ -23,11 +23,11 @@ phase="$PHASE_IDLE"
 session_dir="$(active_session_dir 2>/dev/null || true)"
 
 if [[ -n "$session_dir" ]]; then
-  if ls "${session_dir}/integration/"*.md 2>/dev/null | grep -q .; then
+  if compgen -G "${session_dir}/integration/"*.md > /dev/null 2>&1; then
     phase="$PHASE_INTEGRATING"
-  elif ls "${session_dir}/verifications/"*.md 2>/dev/null | grep -q .; then
+  elif compgen -G "${session_dir}/verifications/"*.md > /dev/null 2>&1; then
     phase="$PHASE_VERIFYING"
-  elif ls "${session_dir}/builds/"*.md 2>/dev/null | grep -q .; then
+  elif compgen -G "${session_dir}/builds/"*.md > /dev/null 2>&1; then
     phase="$PHASE_BUILDING"
   elif [[ -f "${session_dir}/plan.md" ]]; then
     phase="$PHASE_PLANNING"

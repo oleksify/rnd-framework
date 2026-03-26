@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.7 — 2026-03-26
+
+### Fix audit findings: remove dead code, standardize hooks, increase verifier turn limit
+
+Remove unused `_BUN_SAFE_SUBCOMMANDS` from prefer-tools.sh. Replace `ls | grep` with `compgen -G` in statusline.sh. Remove `main()` wrappers from 4 hooks to match majority top-level pattern. Increase verifier agent maxTurns from 100 to 150 for full codebase audits.
+
 ## 0.14.6 — 2026-03-26
 
 ### Fix hook auto-allow for plugin artifact paths, MCP schema for object-valued attributes, and remove Team Mode from pipeline

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.6 — 2026-03-26
+
+### Fix hook auto-allow for plugin artifact paths, MCP schema for object-valued attributes, and remove Team Mode from pipeline
+
+Generalize hook auto-allow from .rnd/-only to all plugin artifact paths (.rnd/, .rnd/). Widen Framer MCP attributeValueSchema to accept nested objects (border, gradient, link). Add border.color cs: resolution. Correct framer-styles skill (shadow/blur are UI-only). Add permissionMode to agents. Remove TeamCreate/TeamDelete from pipeline commands.
+
 ## 0.14.5 — 2026-03-26
 
 ### Fix plugin-dir-base.sh missing from plugin cache by adding local copies

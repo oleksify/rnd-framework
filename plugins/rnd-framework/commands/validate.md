@@ -8,7 +8,7 @@ effort: low
 Run the validation script to check the rnd-framework plugin for structural errors:
 
 ```bash
-bun "${CLAUDE_PLUGIN_ROOT}/lib/validate.ts"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/validate.sh"
 ```
 
 Report the results to the user. If any checks fail, explain what's wrong and suggest fixes.

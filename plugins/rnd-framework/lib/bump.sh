@@ -60,7 +60,7 @@ fi
 
 # --- Read and increment version ---
 CURRENT_VERSION="$(jq -r '.version' "$PLUGIN_JSON")"
-if ! echo "$CURRENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+if ! [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "error: current version '${CURRENT_VERSION}' is not valid semver (expected X.Y.Z)" >&2
   exit 1
 fi

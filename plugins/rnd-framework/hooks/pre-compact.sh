@@ -4,6 +4,7 @@
 #
 # Fire-and-forget: exits 0 always, produces no stdout.
 # Reads: plan.md, builds/T*-manifest.md, iteration-log.md
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 session_dir="$(active_session_dir 2>/dev/null || true)"
@@ -66,7 +67,7 @@ fi
 # verificationNeedle: 8-char random hex string
 # ---------------------------------------------------------------------------
 
-needle="$(openssl rand -hex 4 2>/dev/null || printf '%s' "$(dd if=/dev/urandom bs=4 count=1 2>/dev/null | xxd -p)" || printf '00000000')"
+needle="$(od -An -N4 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || printf '00000000')"
 
 # ---------------------------------------------------------------------------
 # Write compact-state.json using jq

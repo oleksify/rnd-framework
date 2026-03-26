@@ -124,10 +124,13 @@ VMSCRIPT
 
 # Simpler: just run the original session-start.sh with PLUGIN_ROOT env var overridden.
 # We rebuild SESSION_START in vm_dir, substituting PLUGIN_ROOT computation.
+# Dynamically find the PLUGIN_ROOT line and replace it.
+# This avoids hardcoded line numbers that break when comments/directives are added.
+plugin_root_line="$(grep -n 'PLUGIN_ROOT=' "$SESSION_START" | head -1 | cut -d: -f1)"
 {
-  head -7 "$SESSION_START"
+  head -"$(( plugin_root_line - 1 ))" "$SESSION_START"
   printf 'PLUGIN_ROOT="%s"\n' "${vm_dir}"
-  tail -n +10 "$SESSION_START"
+  tail -n +"$(( plugin_root_line + 1 ))" "$SESSION_START"
 } > "${vm_dir}/hooks/session-start.sh"
 chmod +x "${vm_dir}/hooks/session-start.sh"
 

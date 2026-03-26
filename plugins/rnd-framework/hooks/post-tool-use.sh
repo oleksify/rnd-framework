@@ -5,6 +5,7 @@
 # Write or Edit tool call during an active session.
 #
 # Always exits 0. Produces no stdout.
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"

@@ -156,6 +156,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Test: validate.md command references an existing script
+# ---------------------------------------------------------------------------
+VALIDATE_CMD="${SCRIPT_DIR}/../commands/validate.md"
+if [[ -f "$VALIDATE_CMD" ]]; then
+  # Extract the script path pattern from the command file (e.g., validate.sh or validate.ts)
+  script_ref="$(grep -oE 'lib/validate\.[a-z]+' "$VALIDATE_CMD" | head -1)"
+  if [[ -n "$script_ref" ]] && [[ -f "${SCRIPT_DIR}/../${script_ref}" ]]; then
+    run_case "validate.md references existing script (${script_ref})" pass
+  else
+    run_case "validate.md references existing script (got: ${script_ref:-none})" fail
+  fi
+else
+  run_case "validate.md command file exists" fail
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 printf '\nTotal: %d pass, %d fail\n' "$pass" "$fail"

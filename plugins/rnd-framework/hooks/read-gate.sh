@@ -8,10 +8,8 @@
 #   3. Auto-allow learnings — permits reads from learnings/ paths without prompting.
 #   4. Auto-allow .rnd/ — permits reads targeting .rnd/ paths without prompting.
 
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/lib.sh"
+# shellcheck source=./lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # ---------------------------------------------------------------------------
 # Main

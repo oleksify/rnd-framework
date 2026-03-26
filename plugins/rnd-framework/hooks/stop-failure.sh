@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # hooks/stop-failure.sh — Logs StopFailure API errors to $RND_DIR/stop-failures.jsonl.
 # Always exits 0. StopFailure events do not have tool_name/tool_input; read stdin directly.
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"

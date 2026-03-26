@@ -15,9 +15,12 @@ state_json="$(cat "$state_file" 2>/dev/null || true)"
 plan="$(jq_extract "$state_json" '.planSummary')"
 [[ -n "$plan" ]] || exit 0
 
-task="$(jq_extract "$state_json" '.currentTaskId // "unknown"')"
-iter="$(jq_extract "$state_json" '.iterationCount // "0"')"
-saved="$(jq_extract "$state_json" '.savedAt // "unknown"')"
+task="$(jq_extract "$state_json" '.currentTaskId')"
+task="${task:-unknown}"
+iter="$(jq_extract "$state_json" '.iterationCount')"
+iter="${iter:-0}"
+saved="$(jq_extract "$state_json" '.savedAt')"
+saved="${saved:-unknown}"
 needle="$(jq_extract "$state_json" '.verificationNeedle')"
 
 msg="Pipeline state restored after compaction:

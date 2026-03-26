@@ -4,6 +4,7 @@
 # for a version mismatch between the cached plugin and the source in the git root.
 #
 # Always exits 0. Outputs SessionStart JSON with hookSpecificOutput.additionalContext.
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -76,7 +77,7 @@ version_warning=""
 cached_version=""
 
 if [[ -f "$CACHED_PLUGIN" ]]; then
-  cached_version="$(jq_extract "$(cat "$CACHED_PLUGIN")" '.version')"
+  cached_version="$(jq_extract "$(< "$CACHED_PLUGIN")" '.version')"
 fi
 
 if [[ -n "$cached_version" ]]; then
@@ -88,9 +89,9 @@ if [[ -n "$cached_version" ]]; then
       "${git_root}/.claude-plugin/plugin.json"
     do
       [[ -f "$candidate" ]] || continue
-      src_name="$(jq_extract "$(cat "$candidate")" '.name')"
+      src_name="$(jq_extract "$(< "$candidate")" '.name')"
       [[ "$src_name" == "rnd-framework" ]] || continue
-      src_version="$(jq_extract "$(cat "$candidate")" '.version')"
+      src_version="$(jq_extract "$(< "$candidate")" '.version')"
       if [[ -n "$src_version" && "$src_version" != "$cached_version" ]]; then
         version_warning=$'\n\n'"⚠ **Plugin version mismatch:** cached v${cached_version}, source v${src_version}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync. (On v2.1.81+, re-cloning is automatic — if you see this, it likely indicates a bug.)"
       fi

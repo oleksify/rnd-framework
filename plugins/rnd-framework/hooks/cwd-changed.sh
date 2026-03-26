@@ -5,6 +5,7 @@
 #
 # Exits 0 with advisory context if a mismatch is detected, or silently if not.
 
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # Read the new cwd from hook input

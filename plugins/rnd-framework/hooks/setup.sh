@@ -2,6 +2,7 @@
 # hooks/setup.sh — Reports plugin validation status and jq availability.
 # Always exits 0 — status reporter, not a gate.
 set -euo pipefail
+# shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

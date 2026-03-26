@@ -59,8 +59,17 @@ run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/Users/alice/.claude-pe
 assert_exit   ".rnd/ Edit path → exit 0" 0
 assert_stdout_contains ".rnd/ Edit path → allow JSON" '"permissionDecision":"allow"'
 
+# .rnd/ paths → allow JSON, exit 0
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/.claude-personal/.rnd/design-51e58f69/sessions/20260322/plan.md"}}'
+assert_exit   ".rnd/ Write path → exit 0" 0
+assert_stdout_contains ".rnd/ Write path → allow JSON" '"permissionDecision":"allow"'
+
+run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/Users/alice/.claude/.rnd/project-abc/sessions/20260322/brief.md"}}'
+assert_exit   ".rnd/ Edit path → exit 0" 0
+assert_stdout_contains ".rnd/ Edit path → allow JSON" '"permissionDecision":"allow"'
+
 # ---------------------------------------------------------------------------
-# Non-.rnd/ paths → no opinion (empty stdout), exit 0
+# Non-artifact paths → no opinion (empty stdout), exit 0
 # ---------------------------------------------------------------------------
 
 run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/Developer/project/src/main.ts"}}'

@@ -12,7 +12,7 @@ if [[ "$file_path" == /tmp/* ]]; then
   block_msg "BLOCKED: Do not write to /tmp/. Use \$RND_DIR for temporary files — it is auto-allowed and preserves artifacts across the pipeline session."
 fi
 
-if is_rnd_path "$file_path"; then
+if is_plugin_artifact_path "$file_path"; then
   allow_json
 fi
 exit 0

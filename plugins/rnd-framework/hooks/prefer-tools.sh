@@ -45,7 +45,7 @@ check_echo_redirect() {
   while [[ "$stripped" =~ \>\ */dev/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
-  # Remove > <path>/.rnd/<token> sequences (handles multiple)
+  # Remove > <path>/.rnd/ or .rnd/ token sequences (handles multiple)
   while [[ "$stripped" =~ \>\ *[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
@@ -314,9 +314,9 @@ if [[ -z "$command" ]]; then exit 0; fi
 # Git guards — checked on the full command string (before splitting)
 # ---------------------------------------------------------------------------
 
-# Block: git add .rnd/ (must be followed by / or space or end, not .rnd.something)
+# Block: git add .rnd/ or .rnd/ (must be followed by / or space or end)
 if [[ "$command" =~ git[[:space:]]+add.*\.rnd(/|[[:space:]]|$) ]]; then
-  block_msg "BLOCKED: .rnd/ is a pipeline artifact directory and must never be committed."
+  block_msg "BLOCKED: Plugin artifact directories (.rnd/, .rnd/) must never be committed."
 fi
 
 # Block: git push to protected branches (listed in _PROTECTED_BRANCHES)
@@ -370,11 +370,11 @@ if [[ "$_discipline_result" == "echo_safe" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Auto-allow .rnd/ paths and rnd-dir.sh commands
-# (placed after tool discipline so sed/cat on .rnd/ is still blocked)
+# Auto-allow plugin artifact paths (.rnd/, .rnd/) and dir helper commands
+# (placed after tool discipline so sed/cat on these paths is still blocked)
 # ---------------------------------------------------------------------------
 
-if [[ "$command" == *".rnd/"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
+if [[ "$command" =~ \.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   allow_json
   exit 0
 fi

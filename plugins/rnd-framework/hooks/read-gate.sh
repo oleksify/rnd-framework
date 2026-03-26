@@ -50,7 +50,7 @@ main() {
     exit 0
   fi
 
-  if is_rnd_path "$file_path"; then
+  if is_plugin_artifact_path "$file_path"; then
     allow_json
     exit 0
   fi

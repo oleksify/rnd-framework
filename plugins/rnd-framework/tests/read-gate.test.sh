@@ -123,6 +123,11 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/
 assert_exit   ".rnd/ path → exit 0" 0
 assert_stdout_contains ".rnd/ path → allow JSON" '"permissionDecision":"allow"'
 
+# .rnd/ path without self-assessment → allow JSON, exit 0
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/.rnd/design-51e58f69/sessions/20260322/brief.md"},"agent_type":""}'
+assert_exit   ".rnd/ path → exit 0" 0
+assert_stdout_contains ".rnd/ path → allow JSON" '"permissionDecision":"allow"'
+
 # plugin cache path → allow JSON, exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/plugins/cache/oleksify-plugins/rnd-framework/0.12.5/skills/rnd-building/SKILL.md"},"agent_type":""}'
 assert_exit   "plugin cache path → exit 0" 0

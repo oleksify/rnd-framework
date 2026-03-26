@@ -72,6 +72,36 @@ else
   assert_eq "is_plugin_cache_path: project plugins/cache/ without .claude returns 1" "1" "1"
 fi
 
+printf '\n%s\n' '--- is_learnings_path ---'
+
+# Matches .claude-personal/learnings/
+if is_learnings_path "/Users/alice/.claude-personal/learnings/INDEX.md"; then
+  assert_eq "is_learnings_path: .claude-personal/learnings/ returns 0" "0" "0"
+else
+  assert_eq "is_learnings_path: .claude-personal/learnings/ returns 0" "0" "1"
+fi
+
+# Matches .claude/learnings/
+if is_learnings_path "/Users/alice/.claude/learnings/javascript.md"; then
+  assert_eq "is_learnings_path: .claude/learnings/ returns 0" "0" "0"
+else
+  assert_eq "is_learnings_path: .claude/learnings/ returns 0" "0" "1"
+fi
+
+# Does NOT match project learnings/ without .claude prefix
+if is_learnings_path "/Users/alice/Developer/project/learnings/notes.md"; then
+  assert_eq "is_learnings_path: project learnings/ without .claude prefix returns 1" "1" "0"
+else
+  assert_eq "is_learnings_path: project learnings/ without .claude prefix returns 1" "1" "1"
+fi
+
+# Does NOT match regular path
+if is_learnings_path "/Users/alice/Developer/project/src/main.ts"; then
+  assert_eq "is_learnings_path: regular path returns 1" "1" "0"
+else
+  assert_eq "is_learnings_path: regular path returns 1" "1" "1"
+fi
+
 printf '\n%s\n' '--- allow_json ---'
 
 output="$(allow_json)"

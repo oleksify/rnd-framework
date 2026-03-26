@@ -26,7 +26,7 @@ plugins/rnd-framework/
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
-│   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
+│   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
 │   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/ paths only
 │   ├── session-start.sh         # SessionStart hook: injects skill context
@@ -70,7 +70,7 @@ All agents have `memory: user` (persistent cross-project learning), `skills` pre
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier and Proof Gate from anchoring on Builder reasoning
-- **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files
+- **Auto-allow `$RND_DIR` and plugin cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on `.rnd/` paths are auto-allowed. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed. For `Bash`, `.rnd/` paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on `.rnd/` paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
 - **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed.
 - **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering agents to `$RND_DIR`
 - **Commit protection** (`prefer-tools.sh`): Blocks `git add` of `.rnd/` as defense-in-depth; blocks `git push` to main/master/production branches

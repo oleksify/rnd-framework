@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# PreToolUse hook for Read: enforces the information barrier and auto-allows .rnd/ and plugin cache reads.
+# PreToolUse hook for Read: enforces the information barrier and auto-allows .rnd/, plugin cache, and learnings reads.
 #
-# Three responsibilities:
+# Four responsibilities:
 #   1. Information barrier — blocks reads of self-assessment files to prevent the
 #      Verifier from anchoring on Builder reasoning.
 #   2. Auto-allow plugin cache — permits reads from plugins/cache/ paths without prompting.
-#   3. Auto-allow .rnd/ — permits reads targeting .rnd/ paths without prompting.
+#   3. Auto-allow learnings — permits reads from learnings/ paths without prompting.
+#   4. Auto-allow .rnd/ — permits reads targeting .rnd/ paths without prompting.
 
 set -euo pipefail
 
@@ -40,6 +41,11 @@ main() {
   fi
 
   if is_plugin_cache_path "$file_path"; then
+    allow_json
+    exit 0
+  fi
+
+  if is_learnings_path "$file_path"; then
     allow_json
     exit 0
   fi

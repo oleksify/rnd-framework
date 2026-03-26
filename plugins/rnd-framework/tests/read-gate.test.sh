@@ -172,6 +172,21 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/builds/
 assert_exit   "self-assessment + RND-Proof-Gate (mixed case) → exit 2" 2
 assert_stderr_contains "self-assessment + RND-Proof-Gate (mixed case) → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
+# learnings path → allow JSON, exit 0
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/learnings/INDEX.md"},"agent_type":""}'
+assert_exit   "learnings path → exit 0" 0
+assert_stdout_contains "learnings path → allow JSON" '"permissionDecision":"allow"'
+
+# learnings path under .claude/ → allow JSON, exit 0
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/learnings/javascript.md"},"agent_type":""}'
+assert_exit   "learnings path under .claude/ → exit 0" 0
+assert_stdout_contains "learnings path under .claude/ → allow JSON" '"permissionDecision":"allow"'
+
+# learnings path containing self-assessment → block (self-assessment takes priority)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/learnings/self-assessment-notes.md"},"agent_type":""}'
+assert_exit   "learnings + self-assessment in path → exit 2 (barrier first)" 2
+assert_stderr_contains "learnings + self-assessment in path → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------

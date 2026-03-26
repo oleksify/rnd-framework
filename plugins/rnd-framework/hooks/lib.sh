@@ -20,6 +20,12 @@ is_plugin_cache_path() {
   [[ "$path" =~ \.claude[^/]*/.*plugins/cache/ ]]
 }
 
+# Returns 0 if path contains learnings/ under a .claude config directory.
+is_learnings_path() {
+  local path="$1"
+  [[ "$path" =~ \.claude[^/]*/.*learnings/ ]]
+}
+
 # Returns 0 if the file has a recognised source-code extension.
 is_code_file() {
   local path="$1"

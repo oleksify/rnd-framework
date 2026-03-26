@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.3 — 2026-03-26
+
+### Auto-allow learnings directory reads in read-gate hook
+
 ## 0.14.2 — 2026-03-25
 
 ### Fix 6 major audit findings

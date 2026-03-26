@@ -194,15 +194,15 @@ assert_exit   "echo > /dev/null → exit 0" 0
 run_hook "$(payload 'echo foo > /dev/stderr')"
 assert_exit   "echo > /dev/stderr → exit 0" 0
 
-run_hook "$(payload 'echo DONE > /home/user/.rnd/builds/T1-self-assessment.md')"
+run_hook "$(payload 'echo DONE > /home/user/.claude/.rnd/builds/T1-self-assessment.md')"
 assert_exit   "echo > .rnd/ → exit 0" 0
 assert_stdout_contains "echo > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload "printf 'DONE' > /home/user/.rnd/builds/T1-manifest.md")"
+run_hook "$(payload "printf 'DONE' > /home/user/.claude/.rnd/builds/T1-manifest.md")"
 assert_exit   "printf > .rnd/ → exit 0" 0
 assert_stdout_contains "printf > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'echo DONE > /home/user/.rnd/design-abc/sessions/20260322/brief.md')"
+run_hook "$(payload 'echo DONE > /home/user/.claude/.rnd/design-abc/sessions/20260322/brief.md')"
 assert_exit   "echo > .rnd/ → exit 0" 0
 assert_stdout_contains "echo > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
@@ -365,11 +365,11 @@ assert_stderr_contains "cd ; cd ; cat → Read tool" "Read tool"
 # Auto-allows commands containing .rnd/ or rnd-dir.sh
 # ---------------------------------------------------------------------------
 
-run_hook "$(payload 'ls /some/.rnd/builds')"
+run_hook "$(payload 'ls /Users/alice/.claude/.rnd/builds')"
 assert_exit   ".rnd/ in command → exit 0" 0
 assert_stdout_contains ".rnd/ in command → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'bun run /tmp/.rnd/builds/check.ts')"
+run_hook "$(payload 'bun run /Users/alice/.claude/.rnd/builds/check.ts')"
 assert_exit   ".rnd/ in non-ls command → exit 0" 0
 assert_stdout_contains ".rnd/ in non-ls command → allow JSON" '"permissionDecision":"allow"'
 
@@ -377,7 +377,7 @@ run_hook "$(payload 'RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"')"
 assert_exit   "rnd-dir.sh in command → exit 0" 0
 assert_stdout_contains "rnd-dir.sh → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'npm install && bun run /tmp/.rnd/check.ts')"
+run_hook "$(payload 'npm install && bun run /Users/alice/.claude/.rnd/check.ts')"
 assert_exit   ".rnd/ after && → exit 0 allow" 0
 assert_stdout_contains ".rnd/ after && → allow JSON" '"permissionDecision":"allow"'
 
@@ -392,11 +392,11 @@ assert_exit   "rnd-dir.sh in command → exit 0" 0
 assert_stdout_contains "rnd-dir.sh → allow JSON" '"permissionDecision":"allow"'
 
 # Tool discipline overrides .rnd/ auto-allow
-run_hook "$(payload 'cat /path/.rnd/builds/manifest.md')"
+run_hook "$(payload 'cat /Users/alice/.claude/.rnd/builds/manifest.md')"
 assert_exit   "cat .rnd/ → exit 2 (tool discipline overrides)" 2
 assert_stderr_contains "cat .rnd/ → Read tool" "Read tool"
 
-run_hook "$(payload 'sed s/foo/bar/ /path/.rnd/plan.md')"
+run_hook "$(payload 'sed s/foo/bar/ /Users/alice/.claude/.rnd/plan.md')"
 assert_exit   "sed .rnd/ → exit 2 (tool discipline overrides)" 2
 assert_stderr_contains "sed .rnd/ → Edit tool" "Edit tool"
 
@@ -457,7 +457,7 @@ assert_stderr_contains "echo redirect after && → Write tool" "Write tool"
 run_hook "$(payload 'npm test && echo result > /dev/null')"
 assert_exit   "echo > /dev/null after && → exit 0" 0
 
-run_hook "$(payload 'npm test && echo result > /path/.rnd/builds/out.md')"
+run_hook "$(payload 'npm test && echo result > /Users/alice/.claude/.rnd/builds/out.md')"
 assert_exit   "echo > .rnd/ after && → exit 0" 0
 
 # git add .rnd/ after && should be blocked via full-command git guard

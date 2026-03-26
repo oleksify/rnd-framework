@@ -108,6 +108,24 @@
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh'"
           }
         ]
+      },
+      {
+        "matcher": "Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/glob-grep-gate.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/glob-grep-gate.sh'"
+          }
+        ]
       }
     ],
     "CwdChanged": [

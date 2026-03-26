@@ -41,6 +41,7 @@ plugins/rnd-framework/
 │   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
+│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ and .rnd/ path operations
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -66,13 +67,13 @@ plugins/rnd-framework/
 | `rnd-reality-auditor` | sonnet | red | Adversarial testing of external service assumptions in builder code |
 | `rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder |
 
-All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, debugger/integrator/data-scientist: 150, verifier/proof-gate: 100), and `effort` levels (opus agents: high, sonnet agents: medium). The builder additionally has `isolation: worktree` for safe parallel execution. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+All agents have `memory: user` (persistent cross-project learning), `skills` preloading (domain-specific skills injected at startup), KISS rules, `maxTurns` limits to prevent runaway sessions (planner: 250, builder: 200, verifier/debugger/integrator/data-scientist: 150, proof-gate: 100), and `effort` levels (opus agents: high, sonnet agents: medium). The builder additionally has `isolation: worktree` for safe parallel execution. The verifier additionally has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the Verifier and Proof Gate from anchoring on Builder reasoning
-- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`): `Read` operations on plugin artifact paths (`.rnd/`, `.rnd/`) are auto-allowed. `Write` and `Edit` operations on these paths are auto-allowed. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
+- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `prefer-tools.sh`, `glob-grep-gate.sh`): `Read` operations on plugin artifact paths (`.rnd/`, `.rnd/`) are auto-allowed. `Write` and `Edit` operations on these paths are auto-allowed. `Glob` and `Grep` operations targeting these paths are auto-allowed. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
 - **Tool discipline** (`prefer-tools.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed.
 - **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering agents to the plugin artifact directory
 - **Commit protection** (`prefer-tools.sh`): Blocks `git add` of plugin artifact directories (`.rnd/`, `.rnd/`) as defense-in-depth; blocks `git push` to main/master/production branches

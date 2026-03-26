@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.8 — 2026-03-26
+
+### Add Glob/Grep PreToolUse hooks, align permission regex with is_plugin_artifact_path
+
+Add glob-grep-gate.sh to auto-allow Glob and Grep operations on .rnd/. artifact paths. Tighten prefer-tools.sh Bash auto-allow and check_echo_redirect regexes to require .claude prefix, consistent with is_plugin_artifact_path. Add 18 tests for the new hook.
+
 ## 0.14.7 — 2026-03-26
 
 ### Fix audit findings: remove dead code, standardize hooks, increase verifier turn limit

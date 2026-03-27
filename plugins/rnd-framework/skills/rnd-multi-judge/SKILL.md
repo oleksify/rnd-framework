@@ -11,7 +11,7 @@ effort: medium
 
 Multi-judge verification increases confidence in verdicts by requiring independent agreement between two verifiers. A single verifier's PASS or FAIL may reflect blind spots; two independent judges who agree are significantly more reliable. When they disagree, a third tiebreaker judge resolves the conflict.
 
-This skill defines the protocol shared by `/rnd-framework:verify` and the Verify phase of `/rnd-framework:start`.
+This skill defines the protocol shared by `/rnd-framework:rnd-verify` and the Verify phase of `/rnd-framework:rnd-start`.
 
 ## When to Use
 

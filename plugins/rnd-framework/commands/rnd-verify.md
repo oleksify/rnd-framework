@@ -103,7 +103,7 @@ Process each task's consensus verdict:
 Summarize verification results to the user: which tasks passed fully, which passed with quality feedback (quality: NEEDS ITERATION), which need Correctness iteration, which failed outright. Then use `AskUserQuestion`:
 
 If all tasks PASS or PASS (quality: NEEDS ITERATION) (no Correctness failures):
-- "Proceed to integration (Recommended)" — run `/rnd-framework:integrate`; quality-tier feedback deferred to post-integration
+- "Proceed to integration (Recommended)" — run `/rnd-framework:rnd-integrate`; quality-tier feedback deferred to post-integration
 - "Iterate on quality first" — address quality-tier feedback before integration
 - "Review verification reports" — inspect reports before proceeding
 

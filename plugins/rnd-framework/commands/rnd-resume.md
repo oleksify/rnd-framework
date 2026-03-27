@@ -17,7 +17,7 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 If `$RND_DIR` is empty, does not exist, or does not contain `plan.md`, display:
 
-> No active pipeline session found. Start a new pipeline with `/rnd-framework:start <task>`.
+> No active pipeline session found. Start a new pipeline with `/rnd-framework:rnd-start <task>`.
 
 Then stop — do not proceed further.
 
@@ -153,4 +153,4 @@ Then use `AskUserQuestion` to present the appropriate next-action options based 
 - "Review all artifacts" — display a summary of all produced artifacts
 - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID
 
-Once the user selects an action, invoke the corresponding phase logic from `/rnd-framework:start` to continue the pipeline from that point.
+Once the user selects an action, invoke the corresponding phase logic from `/rnd-framework:rnd-start` to continue the pipeline from that point.

@@ -16,7 +16,7 @@ Track verification verdicts over time so the framework can detect systematic bia
 ## When to Use
 
 - After any task completes a full build-verify cycle (automated via orchestrator)
-- When a manual ground-truth correction is needed (`/rnd-framework:calibrate`)
+- When a manual ground-truth correction is needed (`/rnd-framework:rnd-calibrate`)
 - When the orchestrator constructs verifier prompts (inject calibration summary)
 - When diagnosing a pipeline that keeps cycling without converging
 
@@ -95,7 +95,7 @@ Set `falseVerdictFlag: "FALSE_FAIL"` on the record.
 
 ## Manual Ground-Truth Recording
 
-When automatic detection cannot determine the correct verdict (ambiguous iteration, external cause), use `/rnd-framework:calibrate` to record a manual correction.
+When automatic detection cannot determine the correct verdict (ambiguous iteration, external cause), use `/rnd-framework:rnd-calibrate` to record a manual correction.
 
 The command prompts for:
 1. Task ID to correct

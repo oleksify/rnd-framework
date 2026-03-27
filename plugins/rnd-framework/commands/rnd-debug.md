@@ -7,13 +7,13 @@ effort: high
 
 # R&D Framework: Debug Mode
 
-For reported bugs that need root cause analysis before fixing. A dedicated debugger agent investigates and produces a structured diagnosis report. The Builder receives the report and implements the fix without re-investigating. Use `/rnd-framework:start` if the bug turns out to be architectural.
+For reported bugs that need root cause analysis before fixing. A dedicated debugger agent investigates and produces a structured diagnosis report. The Builder receives the report and implements the fix without re-investigating. Use `/rnd-framework:rnd-start` if the bug turns out to be architectural.
 
-> **Iteration budget: 2** (same as quick mode). If the fix fails verification twice, escalate to `/rnd-framework:start` for proper decomposition.
+> **Iteration budget: 2** (same as quick mode). If the fix fails verification twice, escalate to `/rnd-framework:rnd-start` for proper decomposition.
 
 ## Task Input
 
-If `$ARGUMENTS` is empty (user ran `/rnd-framework:debug` with no bug description):
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-debug` with no bug description):
 
 Use `AskUserQuestion` to gather the bug report. Present options:
 - "Describe the bug" — ask the user to describe what fails, under what conditions, and any error messages
@@ -62,7 +62,7 @@ Check the `Escalation Recommendation` field in the report:
 **DIAGNOSED (PROCEED)** → Continue to Step 2.
 
 **ESCALATE** → Use `AskUserQuestion` with options:
-- "Escalate to /rnd-framework:start" — the bug is architectural; start a full pipeline
+- "Escalate to /rnd-framework:rnd-start" — the bug is architectural; start a full pipeline
 - "Continue anyway" — proceed to Step 2 with the partial diagnosis (Builder will have limited context)
 
 **CANNOT_REPRODUCE** → Use `AskUserQuestion` with options:
@@ -110,7 +110,7 @@ The Verifier returns its report as text output. Save the returned report to `$RN
 
 - **PASS** → Use `TaskUpdate` to mark the task `completed`. **MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. Report what was formatted (or that no formatter was detected). Then invoke `rnd-framework:rnd-doc-polish` BEFORE presenting commit options. Report what was updated (or that everything is current). Then use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
-  - "Bump version, tag and push" — run `/rnd-framework:bump` to add CHANGELOG entry, increment patch version, commit, tag, and push (use when producing a releasable change to a versioned project)
+  - "Bump version, tag and push" — run `/rnd-framework:rnd-bump` to add CHANGELOG entry, increment patch version, commit, tag, and push (use when producing a releasable change to a versioned project)
   - "Show development narrative" — generate a narrative explanation: what the bug was and why it existed, how diagnosis found the root cause, what the fix does, and what was verified. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID
@@ -120,7 +120,7 @@ The Verifier returns its report as text output. Save the returned report to `$RN
 - **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating fix (N/2)"`. Summarize the verification failure. Pass the failed criteria and evidence back to the Builder (do NOT include the Verifier's internal reasoning or suggested fixes). Spawn a new Builder iteration (Step 2), then re-verify (Step 3).
 
   If iteration budget (2) is exhausted, use `AskUserQuestion` with options:
-  - "Escalate to full pipeline" — the bug needs deeper decomposition; switch to `/rnd-framework:start`
+  - "Escalate to full pipeline" — the bug needs deeper decomposition; switch to `/rnd-framework:rnd-start`
   - "Iterate one more time" — extend budget by 1
   - "Abandon task" — stop work on this bug
 

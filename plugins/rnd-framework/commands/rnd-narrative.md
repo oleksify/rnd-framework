@@ -19,7 +19,7 @@ Parse `$ARGUMENTS` to find the target session:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-If no session directory is found, tell the user: "No pipeline sessions found for this project. Run `/rnd-framework:start` or `/rnd-framework:quick` first." and stop.
+If no session directory is found, tell the user: "No pipeline sessions found for this project. Run `/rnd-framework:rnd-start` or `/rnd-framework:rnd-quick` first." and stop.
 
 ## Step 2: Read Artifacts
 

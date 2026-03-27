@@ -44,7 +44,7 @@ Spawn an agent with `subagent_type: "rnd-framework:rnd-planner"`. Pass this prom
 > **Roadmap mode.** Decompose the following broad goal into 3–7 milestones following
 > the `rnd-framework:rnd-roadmapping` skill format. Each milestone must be
 > independently valuable, scoped to roughly one pipeline session, and described in
-> enough detail that its Description can be pasted into `/rnd-framework:start`.
+> enough detail that its Description can be pasted into `/rnd-framework:rnd-start`.
 > Write the completed roadmap.md to: `$ROADMAP`
 > Goal: `$ARGUMENTS` (or the user's stated goal if $ARGUMENTS was empty)
 
@@ -56,10 +56,10 @@ Use `AskUserQuestion`:
 
 Options:
 - "Start first milestone (Recommended)" — find the first `NOT_STARTED` milestone, update
-  its status to `IN_PROGRESS` in `$ROADMAP`, then invoke `/rnd-framework:start` with that
+  its status to `IN_PROGRESS` in `$ROADMAP`, then invoke `/rnd-framework:rnd-start` with that
   milestone's Description as the task. **Each milestone must go through the full pipeline:
   Plan → Build → Verify → Integrate.** Verification is not optional — it is the framework's
-  core guarantee. If already inside a `/rnd-framework:start` session, return the milestone
+  core guarantee. If already inside a `/rnd-framework:rnd-start` session, return the milestone
   description to the caller to continue with Phase 1 (Plan) instead of re-invoking start.
 - "Review milestones" — re-display the roadmap and re-present this menu
 - "Finish — start later" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish`
@@ -95,9 +95,9 @@ Options:
 3. Confirm with `AskUserQuestion`: "Start this milestone now?" — "Yes, start now" / "Cancel".
 4. On confirm: update `$ROADMAP` — set status to `IN_PROGRESS`, write current session ID
    (from `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`) to its Session field. Then invoke
-   `/rnd-framework:start` with the milestone's Description as the task.
+   `/rnd-framework:rnd-start` with the milestone's Description as the task.
 
-**Important:** Each milestone must go through the full pipeline phases (Plan → Build → Verify → Integrate). Do NOT skip verification even if the milestone appears simple. If already inside a `/rnd-framework:start` session, return the milestone description to the calling pipeline to continue with Phase 1 (Plan) — do not attempt to recursively re-invoke `/rnd-framework:start`.
+**Important:** Each milestone must go through the full pipeline phases (Plan → Build → Verify → Integrate). Do NOT skip verification even if the milestone appears simple. If already inside a `/rnd-framework:rnd-start` session, return the milestone description to the calling pipeline to continue with Phase 1 (Plan) — do not attempt to recursively re-invoke `/rnd-framework:rnd-start`.
 
 ### Park current work
 

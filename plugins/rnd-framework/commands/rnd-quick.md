@@ -7,13 +7,13 @@ effort: medium
 
 # R&D Framework: Quick Mode
 
-For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. Design exploration is skipped in quick mode — use `/rnd-framework:start` if the task requires architectural trade-off analysis.
+For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. Design exploration is skipped in quick mode — use `/rnd-framework:rnd-start` if the task requires architectural trade-off analysis.
 
-> **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:start` for proper decomposition.
+> **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:rnd-start` for proper decomposition.
 
 ## Task Input
 
-If `$ARGUMENTS` is empty (user ran `/rnd-framework:quick` with no task description):
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-quick` with no task description):
 
 1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
 
@@ -33,7 +33,7 @@ Quick mode does NOT invoke skills via the Skill tool during startup. Instead, ap
 - **FP:** Prefer pure functions, immutable data, and composition. Separate commands from queries.
 - **Project standards:** Follow the conventions in the project's CLAUDE.md files (already loaded in your context).
 
-The full pipeline (`/rnd-framework:start`) loads language-specific KISS files and extracts project patterns — quick mode trusts the agent to apply these principles from context instead.
+The full pipeline (`/rnd-framework:rnd-start`) loads language-specific KISS files and extracts project patterns — quick mode trusts the agent to apply these principles from context instead.
 
 ## Step 1: Quick Plan (inline, no subagent needed)
 
@@ -86,13 +86,13 @@ For each success criterion in the pre-registration:
 
 Save the verification report to `$RND_DIR/verifications/T1-verification.md` with the per-criterion results and an overall verdict (PASS, FAIL, or PASS with quality feedback).
 
-**Note:** This trades the information barrier (independent verifier) for API efficiency. For tasks requiring stronger verification guarantees, use `/rnd-framework:start` which spawns independent verifier agents.
+**Note:** This trades the information barrier (independent verifier) for API efficiency. For tasks requiring stronger verification guarantees, use `/rnd-framework:rnd-start` which spawns independent verifier agents.
 
 ## Step 4: Iterate or Ship
 
 - **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. **MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. This detects the project's formatter and runs it on files changed by the pipeline. Then invoke `rnd-framework:rnd-doc-polish` to check and update docs. Report what was formatted and what docs were updated. Use `AskUserQuestion` with options:
   - "Commit changes (Recommended)" — stage and commit the changes
-  - "Bump version, tag and push" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the task produced a releasable change to a versioned project.
+  - "Bump version, tag and push" — run `/rnd-framework:rnd-bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the task produced a releasable change to a versioned project.
   - "Show development narrative" — generate a narrative explanation of the session: what was built and why, key decisions and trade-offs, obstacles encountered, insights gained, and what's left. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Do NOT spawn agents — generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
   - "Review artifacts" — show the user the verification report and code changes
   - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
@@ -102,8 +102,8 @@ Save the verification report to `$RND_DIR/verifications/T1-verification.md` with
 - **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating [task name] (N/2)"` to track the cycle. Summarize the verification failure to the user. Get feedback, fix, re-verify.
 
   If iteration budget (2) is exhausted, use `AskUserQuestion` with options:
-  - "Escalate to full pipeline" — switch to `/rnd-framework:start` for deeper decomposition
+  - "Escalate to full pipeline" — switch to `/rnd-framework:rnd-start` for deeper decomposition
   - "Iterate one more time" — extend budget by 1
   - "Abandon task" — stop work on this task
 
-Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees, use `/rnd-framework:start`.
+Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees, use `/rnd-framework:rnd-start`.

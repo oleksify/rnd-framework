@@ -15,7 +15,7 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), m
 
 ## When to Use
 
-- Integration phase of `/rnd-framework:start` or `/rnd-framework:integrate`
+- Integration phase of `/rnd-framework:rnd-start` or `/rnd-framework:rnd-integrate`
 - After all tasks in a wave have PASS verdicts
 - For final wave: full system validation against original requirements
 

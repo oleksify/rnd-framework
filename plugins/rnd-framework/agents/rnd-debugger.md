@@ -82,7 +82,7 @@ If the root cause meets ANY of the following conditions, do NOT produce a target
 - The root cause is a **design flaw** — a structural decision that affects how multiple components interact
 - Fixing the bug would require **changing an API contract** or interface shared by multiple callers
 
-When escalating, still write the diagnosis report with the evidence gathered, but set `Recommended Fix` to: "ESCALATE — architectural scope. Recommend running `/rnd-framework:start` instead of a targeted fix."
+When escalating, still write the diagnosis report with the evidence gathered, but set `Recommended Fix` to: "ESCALATE — architectural scope. Recommend running `/rnd-framework:rnd-start` instead of a targeted fix."
 
 ## Tool Discipline
 
@@ -99,7 +99,7 @@ Notify the orchestrator via `SendMessage` at key points:
 
 1. **On start:** "Debugging T<id>: [bug description]"
 2. **On completion (targeted fix):** "T<id> diagnosis complete — report at $RND_DIR/diagnosis/T<id>-diagnosis.md — root cause: [one-line summary]"
-3. **On escalation:** "T<id> diagnosis complete — ESCALATING: bug is architectural ([N] files implicated, [reason]). Recommend `/rnd-framework:start`."
+3. **On escalation:** "T<id> diagnosis complete — ESCALATING: bug is architectural ([N] files implicated, [reason]). Recommend `/rnd-framework:rnd-start`."
 4. **On non-reproduction:** "T<id> bug could not be reproduced — [what was tried]. Awaiting guidance."
 
 Never finish work silently. The orchestrator depends on these messages to advance the pipeline.

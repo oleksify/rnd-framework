@@ -66,7 +66,7 @@ PROCEED | ESCALATE — [one sentence reason]
 
 ## Escalation Criteria
 
-Escalate to `/rnd-framework:start` instead of proceeding when ANY of the following are true:
+Escalate to `/rnd-framework:rnd-start` instead of proceeding when ANY of the following are true:
 
 - **3 or more files affected** — the bug is systemic, not isolated
 - **Design flaw** — the root cause is an architectural decision, not a coding mistake
@@ -80,7 +80,7 @@ When escalating, save the partial diagnosis report with `ESCALATE` in the recomm
 | Code | Meaning |
 |------|---------|
 | `DIAGNOSED` | Root cause found; Builder handoff ready |
-| `ESCALATE` | Too complex; use `/rnd-framework:start` |
+| `ESCALATE` | Too complex; use `/rnd-framework:rnd-start` |
 | `CANNOT_REPRODUCE` | Bug not reproducible; user clarification needed |
 
 ## Related Skills

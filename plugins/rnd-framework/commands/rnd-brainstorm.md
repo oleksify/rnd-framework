@@ -6,7 +6,7 @@ effort: medium
 
 # R&D Framework: Brainstorm
 
-A conversational pipeline for idea exploration. No agents, no building — just structured questioning that funnels a vague idea into a focused design plan ready for `/rnd-framework:start`.
+A conversational pipeline for idea exploration. No agents, no building — just structured questioning that funnels a vague idea into a focused design plan ready for `/rnd-framework:rnd-start`.
 
 ## Setup
 
@@ -48,7 +48,7 @@ After this phase, summarize what you've learned in 3-5 bullet points and confirm
 
 ## Phase 3: Explore
 
-Based on the expanded understanding, identify **2-4 meaningfully different directions** the idea could go. These are not implementation approaches (that's `/rnd-framework:start`'s design phase) — they're conceptual directions.
+Based on the expanded understanding, identify **2-4 meaningfully different directions** the idea could go. These are not implementation approaches (that's `/rnd-framework:rnd-start`'s design phase) — they're conceptual directions.
 
 For each direction, provide:
 - **Name:** Short, memorable label
@@ -114,7 +114,7 @@ Synthesize everything into a **focused design plan**. Write it as structured mar
 
 ## Next Steps
 
-- [ ] Implement via `/rnd-framework:start [paste this plan]`
+- [ ] Implement via `/rnd-framework:rnd-start [paste this plan]`
 - [ ] Or save for later and revisit
 ```
 
@@ -124,7 +124,7 @@ Present the plan as regular text output (not abbreviated). Then proceed to Phase
 
 Use `AskUserQuestion` to present options:
 
-- "Implement now with /rnd-framework:start (Recommended)" — save the plan to `$RND_DIR/brainstorm.md` and suggest the user run `/rnd-framework:start` with the plan as the task description
+- "Implement now with /rnd-framework:rnd-start (Recommended)" — save the plan to `$RND_DIR/brainstorm.md` and suggest the user run `/rnd-framework:rnd-start` with the plan as the task description
 - "Save for later" — save the plan to `$RND_DIR/brainstorm.md` and tell the user the file path so they can reference it in a future session
 - "Refine further" — go back to Phase 4 with additional questions (max 2 refinement rounds)
 - "Discard" — don't save anything; the brainstorming session ends

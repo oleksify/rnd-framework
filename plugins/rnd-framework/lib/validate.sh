@@ -625,8 +625,10 @@ check_command_refs() {
       record_pass "command '${cmd_name}' agent ref '${full_ref}' resolves"
     elif in_array "$full_ref" "${VALID_SKILL_REFS[@]+"${VALID_SKILL_REFS[@]}"}"; then
       record_pass "command '${cmd_name}' skill ref '${full_ref}' resolves"
+    elif in_array "$full_ref" "${VALID_COMMAND_REFS[@]+"${VALID_COMMAND_REFS[@]}"}"; then
+      record_pass "command '${cmd_name}' command ref '${full_ref}' resolves"
     else
-      record_fail "command '${cmd_name}' agent ref '${full_ref}' — agent not found"
+      record_fail "command '${cmd_name}' ref '${full_ref}' — not found as agent, skill, or command"
     fi
   done
   XREF_COUNT=$(( XREF_COUNT + count ))
@@ -636,6 +638,7 @@ XREF_COUNT=0
 declare -a VALID_SKILLS=()
 declare -a VALID_AGENT_REFS=()
 declare -a VALID_SKILL_REFS=()
+declare -a VALID_COMMAND_REFS=()
 
 validate_cross_refs() {
   begin_category "Cross-References"
@@ -663,6 +666,16 @@ validate_cross_refs() {
     VALID_SKILL_REFS+=("rnd-framework:${s}")
   done
 
+  # Build valid command refs list
+  local cmds_dir="${PLUGIN_ROOT}/commands"
+  if [[ -d "$cmds_dir" ]]; then
+    for file in "${cmds_dir}"/*.md; do
+      if [[ ! -f "$file" ]]; then continue; fi
+      fname="${file##*/}"
+      VALID_COMMAND_REFS+=("rnd-framework:${fname%.md}")
+    done
+  fi
+
   # Check using-rnd-framework skill refs
   local urfm="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
   check_urfm_skill_refs "$urfm"
@@ -677,7 +690,6 @@ validate_cross_refs() {
   fi
 
   # Check command refs
-  local cmds_dir="${PLUGIN_ROOT}/commands"
   if [[ -d "$cmds_dir" ]]; then
     for file in "${cmds_dir}"/*.md; do
       if [[ ! -f "$file" ]]; then continue; fi
@@ -709,16 +721,16 @@ PARITY_TABLE=(
   "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:read_csv:DuckDB CSV function reference"
   "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:duckdb -c:DuckDB CLI invocation pattern"
   "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:Tool Selection:DuckDB vs Julia decision table"
-  "skills/rnd-multi-judge/SKILL.md:commands/verify.md:judge-a.md:multi-judge judge-a file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/verify.md:judge-b.md:multi-judge judge-b file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/verify.md:tiebreaker.md:multi-judge tiebreaker file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/start.md:judge-a.md:multi-judge judge-a file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/start.md:judge-b.md:multi-judge judge-b file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/start.md:tiebreaker.md:multi-judge tiebreaker file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/verify.md:Consensus method:multi-judge consensus method field"
-  "skills/rnd-local-experts/SKILL.md:commands/start.md:.claude/agents/:local expert agents discovery path"
-  "skills/rnd-local-experts/SKILL.md:commands/start.md:.claude/skills/:local expert skills discovery path"
-  "skills/rnd-local-experts/SKILL.md:commands/start.md:Local Experts Discovered:local expert discovery summary field"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:judge-a.md:multi-judge judge-a file naming"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:judge-b.md:multi-judge judge-b file naming"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:tiebreaker.md:multi-judge tiebreaker file naming"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:judge-a.md:multi-judge judge-a file naming in start"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:judge-b.md:multi-judge judge-b file naming in start"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:tiebreaker.md:multi-judge tiebreaker file naming in start"
+  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:Consensus method:multi-judge consensus method field"
+  "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:.claude/agents/:local expert agents discovery path"
+  "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:.claude/skills/:local expert skills discovery path"
+  "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:Local Experts Discovered:local expert discovery summary field"
   "skills/rnd-local-experts/SKILL.md:agents/rnd-planner.md:Local Experts Discovered:local expert discovery field in planner"
   "skills/rnd-local-experts/SKILL.md:skills/rnd-decomposition/SKILL.md:ocal expert:local expert field in decomposition skill"
   "skills/rnd-failure-modes/SKILL.md:skills/rnd-verification/SKILL.md:failure modes:failure modes catalog reference in verification skill"

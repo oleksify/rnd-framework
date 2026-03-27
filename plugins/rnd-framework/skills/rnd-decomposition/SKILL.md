@@ -15,7 +15,7 @@ Decompose tasks into structured sub-task trees using hierarchical decomposition.
 
 ## When to Use
 
-- Planning phase of `/rnd-framework:start` or `/rnd-framework:plan`
+- Planning phase of `/rnd-framework:rnd-start` or `/rnd-framework:rnd-plan`
 - Any non-trivial feature, refactor, or task with multiple moving parts or unclear success criteria
 
 ## The Iron Law

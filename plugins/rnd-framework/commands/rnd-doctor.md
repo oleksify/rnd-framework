@@ -128,7 +128,7 @@ Use `✅ ok` for passing checks, `⚠ warn` for optional/non-critical issues, an
 
 After displaying the table, use `AskUserQuestion` to suggest next steps based on results:
 
-- If all checks pass (no `❌ fail`): "Run /rnd-framework:start (Recommended)", "Run /rnd-framework:validate"
+- If all checks pass (no `❌ fail`): "Run /rnd-framework:rnd-start (Recommended)", "Run /rnd-framework:rnd-validate"
 - If any check fails: "Fix reported issues (Recommended)", and for each failure provide a targeted suggestion:
   - Missing CLI tool: "Install <tool> via homebrew: `brew install <tool>`"
   - Non-executable hook scripts: "Fix permissions: `chmod +x ${CLAUDE_PLUGIN_ROOT}/hooks/*`"

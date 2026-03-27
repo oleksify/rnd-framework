@@ -16,7 +16,7 @@ Some projects ship their own Claude Code agents and skills in `.claude/agents/` 
 
 ## When to Use
 
-- Phase 0 (Discovery) of `/rnd-framework:start` — before the Planner runs
+- Phase 0 (Discovery) of `/rnd-framework:rnd-start` — before the Planner runs
 - Anytime you need to know what project-specific agents or skills are available
 - When the Planner is assembling pre-registration documents and wants to delegate to a local specialist
 

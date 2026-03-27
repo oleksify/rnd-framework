@@ -27,7 +27,7 @@ Explore architectural alternatives and produce a design spec before committing t
 **When NOT to use:**
 
 - Small or well-defined tasks where the approach is already specified
-- `/rnd-framework:quick` mode — skip design phase entirely in quick mode
+- `/rnd-framework:rnd-quick` mode — skip design phase entirely in quick mode
 - When the user has already committed to a specific approach ("implement it using X")
 - When the task is a refactor with clear scope and no architectural ambiguity
 
@@ -219,7 +219,7 @@ The design spec feeds into decomposition as architectural context. The Planner s
 - Use the constraints section to set non-functional success criteria
 - Use the alternatives section to document rejected paths (so Builders don't re-explore them)
 
-In `/rnd-framework:quick` mode, this phase is skipped. In `/rnd-framework:start`, this phase is inserted only when the orchestrator's scaling rules call for it.
+In `/rnd-framework:rnd-quick` mode, this phase is skipped. In `/rnd-framework:rnd-start`, this phase is inserted only when the orchestrator's scaling rules call for it.
 
 ## Verification Checklist
 

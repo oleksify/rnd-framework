@@ -77,13 +77,13 @@ Present findings using `AskUserQuestion`:
   - "Review audit report details" — show the full `$RND_DIR/audit-report.md`
 
 - If **ISSUES_FOUND**: "Audit complete — major issues found. See `$RND_DIR/audit-report.md`." Options:
-  - "Fix with /rnd-framework:quick (Recommended)" — lightweight pipeline for small fixes
-  - "Fix with /rnd-framework:start" — full pipeline for larger changes
+  - "Fix with /rnd-framework:rnd-quick (Recommended)" — lightweight pipeline for small fixes
+  - "Fix with /rnd-framework:rnd-start" — full pipeline for larger changes
   - "Review audit report details" — show the full report
   - "Dismiss" — acknowledge and exit without action
 
 - If **CRITICAL_ISSUES**: "Audit complete — critical issues found. See `$RND_DIR/audit-report.md`." Options:
-  - "Fix with /rnd-framework:start (Recommended)" — full pipeline for systematic fixes
-  - "Fix with /rnd-framework:quick" — lightweight pipeline for isolated fixes
+  - "Fix with /rnd-framework:rnd-start (Recommended)" — full pipeline for systematic fixes
+  - "Fix with /rnd-framework:rnd-quick" — lightweight pipeline for isolated fixes
   - "Review audit report details" — show the full report
   - "Dismiss" — acknowledge and exit without action

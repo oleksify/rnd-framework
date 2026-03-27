@@ -8,7 +8,7 @@ effort: high
 
 ## Task Input
 
-If `$ARGUMENTS` is empty (user ran `/rnd-framework:plan` with no task description):
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-plan` with no task description):
 
 1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
 
@@ -36,8 +36,8 @@ Run ONLY the planning phase for: $ARGUMENTS
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
 6. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
-   - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:build`
-   - "Request plan revisions" — describe what to change and re-run `/rnd-framework:plan`
+   - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:rnd-build`
+   - "Request plan revisions" — describe what to change and re-run `/rnd-framework:rnd-plan`
    - "Add more tasks" — extend the plan before building
 
 Do NOT proceed to build/verify/integrate. The user will decide when to continue.

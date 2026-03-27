@@ -15,8 +15,8 @@ After a pipeline run produces code, run the project's formatter before doc-polis
 
 ## When to Use
 
-- In `/rnd-framework:start` Phase 6, before `rnd-doc-polish`
-- In `/rnd-framework:quick` Step 4, before `rnd-doc-polish`
+- In `/rnd-framework:rnd-start` Phase 6, before `rnd-doc-polish`
+- In `/rnd-framework:rnd-quick` Step 4, before `rnd-doc-polish`
 
 ## Process
 

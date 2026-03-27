@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.11 — 2026-03-27
+
+### Add rnd- prefix to all command filenames for Droid namespace disambiguation
+
+Rename all 19 command files from `X.md` to `rnd-X.md` (e.g., `start.md` → `rnd-start.md`). In Factory Droid, which doesn't auto-namespace plugin commands, these now appear as `/rnd-start` instead of `/start`, preventing collisions with other plugins. In Claude Code, they appear as `/rnd-framework:rnd-start`. Updated all cross-references across 29 files (CLAUDE.md, README, 16 commands, 12 skills, 1 agent, validate.sh, tests). Added command-to-command cross-reference validation to validate.sh (325 total checks).
+
 ## 0.14.10 — 2026-03-27
 
 ### Optimize hook performance: 44% reduction in per-cycle overhead

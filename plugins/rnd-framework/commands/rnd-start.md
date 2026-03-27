@@ -24,7 +24,7 @@ Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agent
 
 ## Task Input
 
-If `$ARGUMENTS` is empty (user ran `/rnd-framework:start` with no task description):
+If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-start` with no task description):
 
 1. **Quick codebase scan:** `git log --oneline -10`, TODO/FIXME comments, recent changes.
 2. **Ask with `AskUserQuestion`:** 2-4 concrete suggestions based on what you found, plus "Describe a different task".
@@ -49,7 +49,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
    - **If `roadmap.md` exists:** Read it and display milestone progress. Use `AskUserQuestion` with options:
      - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task
      - "Start a different task" — continue with `$ARGUMENTS`, ignoring the roadmap
-     - "Manage roadmap" — route to `/rnd-framework:roadmap`
+     - "Manage roadmap" — route to `/rnd-framework:rnd-roadmap`
    - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
 
 5. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.

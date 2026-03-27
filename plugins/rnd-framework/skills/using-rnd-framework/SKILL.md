@@ -16,13 +16,13 @@ This is a scientific process. Results are true or false — never "almost true".
 
 ## Quick Mode (Inline)
 
-**When routing a task to quick mode, execute these steps directly. Do NOT invoke the Skill tool for `/rnd-framework:quick`.**
+**When routing a task to quick mode, execute these steps directly. Do NOT invoke the Skill tool for `/rnd-framework:rnd-quick`.**
 
 1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)`
 2. **Write plan:** Save a brief pre-registration to `$RND_DIR/plan.md` — task, approach, success criteria
 3. **Build:** Implement the task with tests; follow `rnd-framework:rnd-building` discipline
 4. **Verify inline:** Check each success criterion yourself with evidence (run tests, read output, grep for expected patterns). Do NOT spawn a verifier agent — quick mode verifies in the main conversation to avoid rate limits. Save a brief verification note to `$RND_DIR/verifications/T1-verification.md`.
-5. **Iterate or ship:** Budget 2 cycles; if exhausted, escalate to `/rnd-framework:start`
+5. **Iterate or ship:** Budget 2 cycles; if exhausted, escalate to `/rnd-framework:rnd-start`
 
 ## Data Science Tasks
 
@@ -37,7 +37,7 @@ When a task involves analytical or numerical work — financial calculations, da
 
 ## Red Flags
 
-Stop rationalizing: "too simple for R&D" → use `/rnd-framework:quick`; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
+Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-quick`; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
 
 ## User Interaction
 

@@ -17,7 +17,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 
 ### Trivial (fix typo, add log line)
 
-**Entry:** `/rnd-framework:quick`
+**Entry:** `/rnd-framework:rnd-quick`
 **Process:**
 1. Write a one-line pre-registration (inline, no subagent)
 2. Make the change yourself
@@ -29,7 +29,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 
 ### Small (<1 hour of work)
 
-**Entry:** `/rnd-framework:quick`
+**Entry:** `/rnd-framework:rnd-quick`
 **Process:**
 1. Write a brief pre-registration (inline)
 2. Implement with TDD (use `rnd-framework:rnd-building`)
@@ -41,7 +41,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 
 ### Medium (multiple components, 1-4 hours)
 
-**Entry:** `/rnd-framework:start`
+**Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Spawn `rnd-framework:rnd-planner` for hierarchical decomposition
 2. Schedule waves with dependency analysis
@@ -53,24 +53,24 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 
 ### Large (multi-day, many components)
 
-**Entry:** `/rnd-framework:start`
+**Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Full pipeline + design review gate between Plan and Schedule
 2. Sub-waves within large waves
 
 ### Multi-session (multiple days, independent deliverables)
 
-**Entry:** `/rnd-framework:roadmap`
+**Entry:** `/rnd-framework:rnd-roadmap`
 **Process:**
 1. Decompose the broad goal into milestones via the Planner in roadmap mode
-2. Each milestone = one pipeline session via `/rnd-framework:start`
+2. Each milestone = one pipeline session via `/rnd-framework:rnd-start`
 3. After each session's SHIP verdict, update roadmap.md and start the next milestone
 
 **Verification:** Per-session — each milestone goes through the full pipeline independently
 
 ### High-Stakes (security, financial, data integrity)
 
-**Entry:** `/rnd-framework:start`
+**Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Full pipeline
 2. Dual independent verification (two separate Verifiers)

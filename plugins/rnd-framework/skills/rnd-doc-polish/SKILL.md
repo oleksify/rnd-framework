@@ -15,9 +15,9 @@ After a pipeline run ships verified code, documentation often lags behind. This 
 
 ## When to Use
 
-- After SHIP verdict in `/rnd-framework:start` (Phase 6, before commit options)
-- After PASS verdict in `/rnd-framework:quick` (Step 4, before commit options)
-- Manually via `/rnd-framework:review` or `/rnd-framework:audit` when doc staleness is suspected
+- After SHIP verdict in `/rnd-framework:rnd-start` (Phase 6, before commit options)
+- After PASS verdict in `/rnd-framework:rnd-quick` (Step 4, before commit options)
+- Manually via `/rnd-framework:rnd-review` or `/rnd-framework:rnd-audit` when doc staleness is suspected
 
 ## Process
 
@@ -84,4 +84,4 @@ If nothing needed updating, say: "Doc polish: all documentation is current."
 - Do not rewrite prose or improve wording — only fix factual staleness
 - Do not add comments to code — only fix existing stale ones
 - Do not create new documentation files
-- Do not touch CHANGELOG.md — that's handled by `/rnd-framework:bump`
+- Do not touch CHANGELOG.md — that's handled by `/rnd-framework:rnd-bump`

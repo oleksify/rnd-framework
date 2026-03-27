@@ -15,7 +15,7 @@ After the final integration wave receives a SHIP verdict, guide the completion w
 
 ## When to Use
 
-- After final `/rnd-framework:integrate final` returns SHIP
+- After final `/rnd-framework:rnd-integrate final` returns SHIP
 - When wrapping up a completed R&D pipeline run
 - Before merging development work into main branch
 
@@ -27,7 +27,7 @@ Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdi
 
 > **Note on RND_DIR:** If not already set in session context, compute it by running `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. Artifacts are stored in a centralized directory outside the project (e.g., `~/.claude/.rnd/project-abc123`), not inside the project tree.
 >
-> **Session-scoped:** `$RND_DIR` points to a session subdirectory (`<base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`), not the project base. Previous sessions remain on disk and can be browsed with `/rnd-framework:history`.
+> **Session-scoped:** `$RND_DIR` points to a session subdirectory (`<base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`), not the project base. Previous sessions remain on disk and can be browsed with `/rnd-framework:rnd-history`.
 
 ### 2. Update Roadmap (if linked)
 
@@ -82,8 +82,8 @@ After committing, use `AskUserQuestion` to offer a version bump for versioned pr
 > "Bump version and tag this release?"
 
 Options:
-- "Bump, tag and push (Recommended)" — run `/rnd-framework:bump` to add a CHANGELOG entry, increment the patch version, commit the bump, create an annotated git tag, and push both to the remote
-- "Bump and tag only" — run `/rnd-framework:bump`, create a tag, but don't push
+- "Bump, tag and push (Recommended)" — run `/rnd-framework:rnd-bump` to add a CHANGELOG entry, increment the patch version, commit the bump, create an annotated git tag, and push both to the remote
+- "Bump and tag only" — run `/rnd-framework:rnd-bump`, create a tag, but don't push
 - "Skip versioning" — no bump, continue to branch management
 
 **Skip this step silently** if the project has no `plugin.json`, `package.json`, or other version manifest — it's not a versioned project.
@@ -114,4 +114,4 @@ Summarize:
 
 ## Related Commands
 
-- `/rnd-framework:history` — Browse artifacts from past sessions
+- `/rnd-framework:rnd-history` — Browse artifacts from past sessions

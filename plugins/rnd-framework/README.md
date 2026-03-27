@@ -82,31 +82,31 @@ Only plugins explicitly set to `false` at a more specific scope are disabled. Pl
 
 After configuring, start a Claude Code session in the project and check:
 - The session should show `rnd-framework` in the startup context
-- `/rnd-framework:status` should work
+- `/rnd-framework:rnd-status` should work
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `/rnd-framework:start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
-| `/rnd-framework:plan <task>` | Planning only — decompose and produce task specifications |
-| `/rnd-framework:build <T3\|wave-2\|next>` | Build a specific task or wave |
-| `/rnd-framework:verify <T3\|wave-2\|all>` | Independent verification with information barriers |
-| `/rnd-framework:integrate <wave-2\|final>` | Merge verified outputs, run integration tests |
-| `/rnd-framework:status` | Show pipeline status dashboard |
-| `/rnd-framework:quick <task>` | Lightweight mode for small tasks |
-| `/rnd-framework:history` | Browse past pipeline sessions for this project |
-| `/rnd-framework:resume` | Resume a partially-completed pipeline from where it left off |
-| `/rnd-framework:validate` | Validate plugin structure: frontmatter, hooks, cross-references |
-| `/rnd-framework:doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP, Lean toolchain |
-| `/rnd-framework:bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
-| `/rnd-framework:review` | Review code changes with multi-judge evidence-based rigor |
-| `/rnd-framework:audit` | Full codebase audit against project standards |
-| `/rnd-framework:brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
-| `/rnd-framework:narrative` | Generate a development narrative for a pipeline session |
-| `/rnd-framework:calibrate` | Record manual ground-truth verdict corrections for calibration |
-| `/rnd-framework:debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
-| `/rnd-framework:roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
+| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
+| `/rnd-framework:rnd-plan <task>` | Planning only — decompose and produce task specifications |
+| `/rnd-framework:rnd-build <T3\|wave-2\|next>` | Build a specific task or wave |
+| `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification with information barriers |
+| `/rnd-framework:rnd-integrate <wave-2\|final>` | Merge verified outputs, run integration tests |
+| `/rnd-framework:rnd-status` | Show pipeline status dashboard |
+| `/rnd-framework:rnd-quick <task>` | Lightweight mode for small tasks |
+| `/rnd-framework:rnd-history` | Browse past pipeline sessions for this project |
+| `/rnd-framework:rnd-resume` | Resume a partially-completed pipeline from where it left off |
+| `/rnd-framework:rnd-validate` | Validate plugin structure: frontmatter, hooks, cross-references |
+| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP, Lean toolchain |
+| `/rnd-framework:rnd-bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
+| `/rnd-framework:rnd-review` | Review code changes with multi-judge evidence-based rigor |
+| `/rnd-framework:rnd-audit` | Full codebase audit against project standards |
+| `/rnd-framework:rnd-brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
+| `/rnd-framework:rnd-narrative` | Generate a development narrative for a pipeline session |
+| `/rnd-framework:rnd-calibrate` | Record manual ground-truth verdict corrections for calibration |
+| `/rnd-framework:rnd-debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
+| `/rnd-framework:rnd-roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
 
 ## Skills
 
@@ -167,30 +167,30 @@ Every task goes through the pipeline, scaled to complexity:
 
 | Complexity | Entry Point | What Happens |
 |---|---|---|
-| Bug (reported symptom) | `/rnd-framework:debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
-| Trivial (fix typo) | `/rnd-framework:quick` | Inline plan → build → verify |
-| Small (<1hr) | `/rnd-framework:quick` | 1 Builder + 1 Verifier |
-| Medium (1-4hr) | `/rnd-framework:start` | Planner + N Builders + N Verifiers + Integrator |
-| Large (multi-day) | `/rnd-framework:start` | Full pipeline + design review gate |
-| High-stakes | `/rnd-framework:start` | Full pipeline + dual independent verification |
+| Bug (reported symptom) | `/rnd-framework:rnd-debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
+| Trivial (fix typo) | `/rnd-framework:rnd-quick` | Inline plan → build → verify |
+| Small (<1hr) | `/rnd-framework:rnd-quick` | 1 Builder + 1 Verifier |
+| Medium (1-4hr) | `/rnd-framework:rnd-start` | Planner + N Builders + N Verifiers + Integrator |
+| Large (multi-day) | `/rnd-framework:rnd-start` | Full pipeline + design review gate |
+| High-stakes | `/rnd-framework:rnd-start` | Full pipeline + dual independent verification |
 
 ## Roadmapping (Multi-Session Tasks)
 
-For tasks that span multiple days or sessions, use `/rnd-framework:roadmap` to decompose the work into milestones before starting any pipeline session.
+For tasks that span multiple days or sessions, use `/rnd-framework:rnd-roadmap` to decompose the work into milestones before starting any pipeline session.
 
 ```
-> /rnd-framework:roadmap Add full authentication system with OAuth, RBAC, and audit logging
+> /rnd-framework:rnd-roadmap Add full authentication system with OAuth, RBAC, and audit logging
   [Planner decomposes into milestones and writes roadmap.md at the project base]
   [Shows milestone list with statuses]
 
-> /rnd-framework:roadmap   # run again to continue
+> /rnd-framework:rnd-roadmap   # run again to continue
   [Identifies next NOT_STARTED milestone, transitions to IN_PROGRESS]
-  [Routes to /rnd-framework:start with milestone scope]
+  [Routes to /rnd-framework:rnd-start with milestone scope]
 ```
 
 **Milestone lifecycle:** `NOT_STARTED` → `IN_PROGRESS` → `DONE` (or `SKIPPED`)
 
-Each milestone is one `/rnd-framework:start` session. After a SHIP verdict, the `rnd-completion` skill marks the milestone DONE and records the session ID. The `/start` command detects an existing roadmap in Phase 0 and scopes the session to the current milestone.
+Each milestone is one `/rnd-framework:rnd-start` session. After a SHIP verdict, the `rnd-completion` skill marks the milestone DONE and records the session ID. The `/rnd-start` command detects an existing roadmap in Phase 0 and scopes the session to the current milestone.
 
 See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 
@@ -199,36 +199,36 @@ See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 ### Big feature
 
 ```
-> /rnd-framework:start Add OAuth2 login with Google provider
+> /rnd-framework:rnd-start Add OAuth2 login with Google provider
   [Phase 0: Discovery — requirements gathering]
   [Phase 0.5: Design Exploration — 2-3 architectural alternatives with trade-offs, user approves design spec]
   [Planner produces task tree, pre-registrations, dependency matrix from approved design]
   [Review the plan, adjust if needed]
 
-> /rnd-framework:build wave-1
+> /rnd-framework:rnd-build wave-1
   [Builder agents work on Wave 1 tasks in parallel]
 
-> /rnd-framework:verify wave-1
+> /rnd-framework:rnd-verify wave-1
   [Independent Verifier checks each task against criteria]
 
-> /rnd-framework:build wave-2
+> /rnd-framework:rnd-build wave-2
   [...continues through waves...]
 
-> /rnd-framework:integrate final
+> /rnd-framework:rnd-integrate final
   [System validation, regression check, SHIP/NO-SHIP]
 ```
 
 ### Small task
 
 ```
-> /rnd-framework:quick Fix the race condition in token refresh
+> /rnd-framework:rnd-quick Fix the race condition in token refresh
   [Quick plan → build → independent verify → done]
 ```
 
 ### Check progress
 
 ```
-> /rnd-framework:status
+> /rnd-framework:rnd-status
 ```
 
 ## How Information Barriers Work
@@ -254,7 +254,7 @@ The framework stores pipeline artifacts in a centralized directory outside the p
 - Use `--finish` to clear the session ID after a pipeline run
 - Use `--base` to get the project base dir (without session path)
 
-Each pipeline run gets a unique session ID. Previous sessions remain on disk and can be browsed with `/rnd-framework:history`.
+Each pipeline run gets a unique session ID. Previous sessions remain on disk and can be browsed with `/rnd-framework:rnd-history`.
 
 **Artifact layout** (`$RND_DIR`):
 
@@ -352,7 +352,7 @@ In each agent's YAML frontmatter, change the `model:` field:
 
 ### Adjust iteration budget
 
-Edit the iteration limit in the `/rnd-framework:start` command (default: 3).
+Edit the iteration limit in the `/rnd-framework:rnd-start` command (default: 3).
 
 ### Add domain-specific verification
 
@@ -368,8 +368,8 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 ## Limitations
 
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access. Agent instructions are the primary enforcement.
-- **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:status` to re-orient.
-- **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:quick` for small tasks.
+- **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:rnd-status` to re-orient.
+- **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:rnd-quick` for small tasks.
 - **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook additionally checks `agent_type` to allow non-verifier agents (e.g., builders, planners) to read their own self-assessments, but the primary enforcement is path-based.
 
 ## Acknowledgements

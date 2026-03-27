@@ -4,8 +4,8 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-raw="$(cat)"
-path="$(printf '%s' "$raw" | jq -r '.tool_input.path // ""' 2>/dev/null || true)"
+parse_input
+path="$(printf '%s' "$TOOL_INPUT" | jq -r '.path // ""' 2>/dev/null || true)"
 
 if [[ -n "$path" ]] && is_plugin_artifact_path "$path"; then
   allow_json

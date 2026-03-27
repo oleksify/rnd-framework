@@ -80,7 +80,7 @@ fi
 
 BASE_DIR="${CONFIG_DIR}/${_pdb_artifact_dir}/${_pdb_basename}-${_pdb_hash}"
 SESSION_FILE="${BASE_DIR}/.current-session"
-SESSION_ID_REGEX='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'
+SESSION_ID_REGEX='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$'
 
 unset _pdb_artifact_dir _pdb_git_raw _pdb_hash_input _pdb_basename _pdb_hash
 
@@ -106,7 +106,7 @@ _plugin_dir_create_session() {
   else
     local _ts _hex
     _ts="$(date '+%Y%m%d-%H%M%S')"
-    _hex="$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n' | cut -c1-4)"
+    _hex="$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n' | cut -c1-8)"
     _session_id="${_ts}-${_hex}"
     mkdir -p "$BASE_DIR"
     if ! ( set -o noclobber; printf '%s' "$_session_id" > "$SESSION_FILE" ) 2>/dev/null; then

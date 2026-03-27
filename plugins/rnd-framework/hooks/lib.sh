@@ -106,7 +106,7 @@ extract_file_path() {
 
 # Regex for valid session IDs (YYYYMMDD-HHMMSS-xxxx) as written by rnd-dir.sh.
 # Guard prevents a re-declaration error when lib.sh is sourced more than once.
-[[ -v SESSION_ID_RE ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'
+[[ -v SESSION_ID_RE ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$'
 
 # Calls rnd-dir.sh relative to the lib.sh location and prints the path.
 # Accepts optional flags (e.g. -c, --base) passed through to rnd-dir.sh.
@@ -254,14 +254,3 @@ reduce_lines() {
   printf '%s' "$acc"
 }
 
-# Pure alternative to parse_input: reads stdin JSON, prints tool_name, tool_input_json, agent_type on 3 lines; always returns 0.
-parse_input_stdout() {
-  local raw
-  raw="$(cat)"
-  local tool_name tool_input agent_type
-  tool_name="$(printf '%s' "$raw" | jq -r '.tool_name // ""' 2>/dev/null)" || tool_name=""
-  tool_input="$(printf '%s' "$raw" | jq -c '.tool_input // {}' 2>/dev/null)" || tool_input=""
-  agent_type="$(printf '%s' "$raw" | jq -r '.agent_type // ""' 2>/dev/null)" || agent_type=""
-  printf '%s\n%s\n%s\n' "$tool_name" "$tool_input" "$agent_type"
-  return 0
-}

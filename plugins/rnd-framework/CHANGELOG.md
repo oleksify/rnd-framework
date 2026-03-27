@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.13 — 2026-03-27
+
+### Fix all audit findings: entropy, stdin parsing, unused code, style consistency
+
+Increase session ID entropy from 2 to 4 bytes in all 3 plugin-dir-base.sh copies; widen SESSION_ID_REGEX and SESSION_ID_RE to accept 4-8 hex chars for backward compatibility. Standardize stdin parsing in write-gate.sh and glob-grep-gate.sh to use parse_input from lib.sh. Remove unused parse_input_stdout function from lib.sh. Remove redundant set -euo pipefail from setup.sh and instructions-loaded.sh (lib.sh provides it). Update tests for new regex and removed function.
+
 ## 0.14.12 — 2026-03-27
 
 ### Fix audit findings: verifier rules, session validation, hook consistency

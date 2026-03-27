@@ -213,7 +213,7 @@ fi
 printf '\n%s\n' '--- SESSION_ID_RE constant ---'
 
 assert_eq "SESSION_ID_RE is defined" "0" "$([ -n "${SESSION_ID_RE:-}" ] && echo 0 || echo 1)"
-assert_eq "SESSION_ID_RE value matches expected pattern" '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$' "${SESSION_ID_RE:-}"
+assert_eq "SESSION_ID_RE value matches expected pattern" '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$' "${SESSION_ID_RE:-}"
 
 # Verify the constant is readonly
 if ( SESSION_ID_RE="mutated" ) 2>/dev/null; then

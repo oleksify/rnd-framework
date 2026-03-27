@@ -162,35 +162,7 @@ result="$(printf '' | reduce_lines _concat "init")"
 assert_eq "reduce_lines: empty input returns initial" "init" "$result"
 
 # ---------------------------------------------------------------------------
-# parse_input_stdout
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- parse_input_stdout ---'
-
-# Parses valid JSON and prints 3 lines
-valid_json='{"tool_name":"Write","tool_input":{"file_path":"/tmp/x.txt"},"agent_type":"user"}'
-output="$(printf '%s' "$valid_json" | parse_input_stdout)"
-line1="$(printf '%s' "$output" | sed -n '1p')"
-line2="$(printf '%s' "$output" | sed -n '2p')"
-line3="$(printf '%s' "$output" | sed -n '3p')"
-assert_eq "parse_input_stdout: line 1 is tool_name" "Write" "$line1"
-assert_contains "parse_input_stdout: line 2 contains file_path" "file_path" "$line2"
-assert_eq "parse_input_stdout: line 3 is agent_type" "user" "$line3"
-
-# Returns 0 for valid JSON
-printf '%s' "$valid_json" | parse_input_stdout > /dev/null
-assert_eq "parse_input_stdout: returns 0 for valid JSON" "0" "$?"
-
-# Malformed JSON: prints three empty lines, returns 0
-bad_output="$(printf 'not-json' | parse_input_stdout)"
-bad_line1="$(printf '%s' "$bad_output" | sed -n '1p')"
-bad_line2="$(printf '%s' "$bad_output" | sed -n '2p')"
-bad_line3="$(printf '%s' "$bad_output" | sed -n '3p')"
-assert_eq "parse_input_stdout: malformed JSON line 1 is empty" "" "$bad_line1"
-assert_eq "parse_input_stdout: malformed JSON line 2 is empty" "" "$bad_line2"
-assert_eq "parse_input_stdout: malformed JSON line 3 is empty" "" "$bad_line3"
-
-printf 'not-json' | parse_input_stdout > /dev/null
-assert_eq "parse_input_stdout: returns 0 for malformed JSON" "0" "$?"
+# (parse_input_stdout removed — was unused by any hook)
 
 # ---------------------------------------------------------------------------
 # parse_input backward compatibility

@@ -104,6 +104,10 @@ extract_file_path() {
 # RND directory resolution
 # ---------------------------------------------------------------------------
 
+# Regex for valid session IDs (YYYYMMDD-HHMMSS-xxxx) as written by rnd-dir.sh.
+# Guard prevents a re-declaration error when lib.sh is sourced more than once.
+[[ -v SESSION_ID_RE ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$'
+
 # Calls rnd-dir.sh relative to the lib.sh location and prints the path.
 # Accepts optional flags (e.g. -c, --base) passed through to rnd-dir.sh.
 # Prints nothing and returns 1 on failure.
@@ -156,6 +160,7 @@ active_session_dir() {
     if [[ -n "$base_dir" && -f "${base_dir}/.current-session" ]]; then
       local session_id
       session_id="$(< "${base_dir}/.current-session")"
+      [[ "$session_id" =~ $SESSION_ID_RE ]] || return 1
       local dir="${base_dir}/sessions/${session_id}"
       if [[ -d "$dir" ]]; then
         _ACTIVE_SESSION_CACHE="$dir"

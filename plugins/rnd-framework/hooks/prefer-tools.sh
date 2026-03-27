@@ -31,6 +31,7 @@ readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 
 # Magic constants extracted as readonly module-level variables
 readonly _PROTECTED_BRANCHES="main master production"
+readonly _INTERPRETER_BLOCKED_MSG='blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
 
 # ---------------------------------------------------------------------------
 # check_echo_redirect: prints "block" or "allow"
@@ -158,7 +159,7 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare interpreter: e.g. "python3" alone — pipe target like echo | python3
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "-m" ]]; then
         printf 'allowed'
@@ -167,7 +168,7 @@ check_segment() {
         printf 'allowed'
         return 0
       elif [[ "$second_word" == "-c" ]] || [[ "$seg" == *" -c "* ]] || [[ "$seg" == *" -c'"* ]]; then
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       else
         printf 'allowed'
@@ -180,10 +181,10 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare node — pipe target
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       else
         printf 'allowed'
@@ -196,13 +197,13 @@ check_segment() {
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         # Bare bun — pipe target
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "eval" ]]; then
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       else
         printf 'allowed'
@@ -211,7 +212,7 @@ check_segment() {
       ;;
     perl|ruby)
       if [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]] || [[ "${seg#"$first_word" }" == "-e"* ]]; then
-        printf 'blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
+        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       else
         printf 'allowed'

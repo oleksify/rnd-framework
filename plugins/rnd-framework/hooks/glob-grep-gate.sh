@@ -9,5 +9,6 @@ path="$(printf '%s' "$raw" | jq -r '.tool_input.path // ""' 2>/dev/null || true)
 
 if [[ -n "$path" ]] && is_plugin_artifact_path "$path"; then
   allow_json
+  exit 0
 fi
 exit 0

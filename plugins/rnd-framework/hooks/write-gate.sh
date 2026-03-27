@@ -13,5 +13,6 @@ fi
 
 if is_plugin_artifact_path "$file_path"; then
   allow_json
+  exit 0
 fi
 exit 0

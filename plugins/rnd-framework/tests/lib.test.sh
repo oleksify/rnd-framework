@@ -210,4 +210,97 @@ else
   assert_eq "advisory_json: special characters produce valid JSON" "0" "1"
 fi
 
+printf '\n%s\n' '--- SESSION_ID_RE constant ---'
+
+assert_eq "SESSION_ID_RE is defined" "0" "$([ -n "${SESSION_ID_RE:-}" ] && echo 0 || echo 1)"
+assert_eq "SESSION_ID_RE value matches expected pattern" '^[0-9]{8}-[0-9]{6}-[0-9a-f]{4}$' "${SESSION_ID_RE:-}"
+
+# Verify the constant is readonly
+if ( SESSION_ID_RE="mutated" ) 2>/dev/null; then
+  assert_eq "SESSION_ID_RE is readonly" "readonly" "mutable"
+else
+  assert_eq "SESSION_ID_RE is readonly" "readonly" "readonly"
+fi
+
+printf '\n%s\n' '--- active_session_dir: session ID validation ---'
+
+# Set up a temporary directory tree mimicking the config/rnd layout
+_SESSION_TMPDIR="$(mktemp -d)"
+_session_cleanup() { rm -rf "$_SESSION_TMPDIR"; }
+trap _session_cleanup EXIT
+
+_BASE="${_SESSION_TMPDIR}/myproject-ab123456"
+mkdir -p "${_BASE}/sessions"
+mkdir -p "${_SESSION_TMPDIR}/.rnd"
+printf '%s' "$_BASE" > "${_SESSION_TMPDIR}/.rnd/.active-base-dir"
+
+# Use the temp dir as config dir, clear other platform vars
+CLAUDE_CONFIG_DIR="$_SESSION_TMPDIR"
+unset CLAUDE_PLUGIN_ROOT 2>/dev/null || true
+unset DROID_CONFIG_DIR 2>/dev/null || true
+unset DROID_PLUGIN_ROOT 2>/dev/null || true
+
+# Helper: reset process-level cache between tests
+_reset_session_cache() {
+  _ACTIVE_SESSION_RESOLVED=0
+  _ACTIVE_SESSION_CACHE=""
+}
+
+# Invalid: path traversal in session ID
+printf '%s' '../../../etc/passwd' > "${_BASE}/.current-session"
+_reset_session_cache
+_rc=0; active_session_dir > /dev/null 2>&1 || _rc=$?
+assert_eq "active_session_dir: path traversal session ID returns 1" "1" "$_rc"
+
+# Invalid: session ID with spaces
+printf '%s' '20260101-120000-ab cd' > "${_BASE}/.current-session"
+_reset_session_cache
+_rc=0; active_session_dir > /dev/null 2>&1 || _rc=$?
+assert_eq "active_session_dir: session ID with spaces returns 1" "1" "$_rc"
+
+# Invalid: uppercase hex
+printf '%s' '20260101-120000-ABCD' > "${_BASE}/.current-session"
+_reset_session_cache
+_rc=0; active_session_dir > /dev/null 2>&1 || _rc=$?
+assert_eq "active_session_dir: uppercase hex session ID returns 1" "1" "$_rc"
+
+# Invalid: empty session ID
+printf '' > "${_BASE}/.current-session"
+_reset_session_cache
+_rc=0; active_session_dir > /dev/null 2>&1 || _rc=$?
+assert_eq "active_session_dir: empty session ID returns 1" "1" "$_rc"
+
+# Invalid: wrong separator
+printf '%s' '2026/0101-120000-abcd' > "${_BASE}/.current-session"
+_reset_session_cache
+_rc=0; active_session_dir > /dev/null 2>&1 || _rc=$?
+assert_eq "active_session_dir: wrong separator in session ID returns 1" "1" "$_rc"
+
+# Valid: standard session ID
+_VALID_ID="20260327-101827-50f7"
+mkdir -p "${_BASE}/sessions/${_VALID_ID}"
+printf '%s' "$_VALID_ID" > "${_BASE}/.current-session"
+_reset_session_cache
+_got_dir=""
+_got_dir="$(active_session_dir 2>/dev/null)" || true
+assert_eq "active_session_dir: valid session ID returns correct path" "${_BASE}/sessions/${_VALID_ID}" "$_got_dir"
+
+# Valid: all-zero hex part
+_VALID_ID2="20260101-000000-0000"
+mkdir -p "${_BASE}/sessions/${_VALID_ID2}"
+printf '%s' "$_VALID_ID2" > "${_BASE}/.current-session"
+_reset_session_cache
+_got_dir2=""
+_got_dir2="$(active_session_dir 2>/dev/null)" || true
+assert_eq "active_session_dir: valid ID with all-zero hex returns correct path" "${_BASE}/sessions/${_VALID_ID2}" "$_got_dir2"
+
+# Valid: all-f hex part
+_VALID_ID3="20991231-235959-ffff"
+mkdir -p "${_BASE}/sessions/${_VALID_ID3}"
+printf '%s' "$_VALID_ID3" > "${_BASE}/.current-session"
+_reset_session_cache
+_got_dir3=""
+_got_dir3="$(active_session_dir 2>/dev/null)" || true
+assert_eq "active_session_dir: valid ID with all-f hex returns correct path" "${_BASE}/sessions/${_VALID_ID3}" "$_got_dir3"
+
 report

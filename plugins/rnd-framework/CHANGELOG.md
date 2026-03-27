@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.12 — 2026-03-27
+
+### Fix audit findings: verifier rules, session validation, hook consistency
+
+Remove contradictory "proposed fix" mandate from rnd-verifier.md that conflicted with the diagnosis-only rule. Add SESSION_ID_RE validation to active_session_dir fast path in lib.sh for defense-in-depth. Standardize explicit exit 0 after allow_json in write-gate.sh and glob-grep-gate.sh. Extract repeated interpreter-blocked message into readonly constant in prefer-tools.sh.
+
 ## 0.14.11 — 2026-03-27
 
 ### Add rnd- prefix to all command filenames for Droid namespace disambiguation

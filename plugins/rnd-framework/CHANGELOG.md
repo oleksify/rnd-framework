@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.14 — 2026-03-27
+
+### Fix critical and major audit findings, add test suite
+
 ## 0.14.13 — 2026-03-27
 
 ### Fix all audit findings: entropy, stdin parsing, unused code, style consistency

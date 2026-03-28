@@ -4,8 +4,8 @@
 // Shell scripts remain the single source of truth for all hook logic.
 //
 // Hook mapping:
-//   tool.execute.before  → prefer-tools.sh, read-gate.sh, write-gate.sh, glob-grep-gate.sh
-//   tool.execute.after   → post-tool-use.sh, observation-mask.sh
+//   tool.execute.before  → bash-gate.sh, read-gate.sh, write-gate.sh, glob-grep-gate.sh
+//   tool.execute.after   → post-dispatch.sh
 //   event (file.edited)  → file-changed.sh
 //   session.compacting   → pre-compact.sh + post-compact.sh
 //   chat.system.transform → injects session-start.sh context

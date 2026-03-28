@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 — 2026-03-28
+
+### Purge stale multi-agent references from docs, commands, and skills
+
+After the v1.0.0 single-flow migration, CLAUDE.md, README.md, rnd-resume, rnd-brainstorm, rnd-narrative commands, and rnd-calibration, rnd-orchestration, code-review, rnd-roadmapping, using-rnd-framework skills still referenced the removed multi-agent architecture (8 named agents, agent spawning, worktree isolation). Replaced with single-flow terminology. Updated hook filenames: prefer-tools.sh → bash-gate.sh, post-tool-use.sh + observation-mask.sh → post-dispatch.sh. Also updated opencode-bridge.ts comments.
+
 ## 1.0.2 — 2026-03-28
 
 ### Add 5 codebase-dedicated skills

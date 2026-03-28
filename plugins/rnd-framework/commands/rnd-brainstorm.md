@@ -134,7 +134,7 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 
 ## Guidelines
 
-- **No agents.** This is a conversation between you and the user. Do not spawn Builder, Verifier, Planner, or any other agent.
+- **No pipeline phases.** This is a conversation between you and the user. Do not run Build, Verify, Plan, or any other pipeline phase.
 - **No code.** Do not write or modify any project files during brainstorming. The output is a plan, not code.
 - **Use AskUserQuestion for every question.** Never ask questions as plain text. Every question must be structured with options.
 - **Be opinionated.** Offer concrete suggestions and push back constructively. A brainstorming partner who agrees with everything is useless.

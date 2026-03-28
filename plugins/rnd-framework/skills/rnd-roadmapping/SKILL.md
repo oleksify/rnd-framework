@@ -80,7 +80,7 @@ When executing a milestone:
 - A SHIP verdict from the Integrator marks the milestone as DONE
 - If already inside a `/rnd-framework:rnd-start` session (e.g., Phase 0 created the roadmap), the milestone description flows to Phase 1 (Plan) — do not recursively re-invoke start
 
-**Anti-pattern:** Completing milestone work inline without spawning the pipeline phases. Even small milestones (documentation, config changes) need at least single-judge verification per the scaling skill's criticality tiers.
+**Anti-pattern:** Completing milestone work inline without running the pipeline phases. Even small milestones (documentation, config changes) need at least single-judge verification per the scaling skill's criticality tiers.
 
 ## Updating Progress After SHIP
 

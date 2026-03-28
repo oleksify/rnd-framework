@@ -1,6 +1,6 @@
 # R&D Framework Plugin for Claude Code
 
-A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured multi-agent orchestration built on principles drawn directly from scientific methodology.
+A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. All phases run sequentially in a single session.
 
 | Scientific Method | Framework Principle | Role |
 |---|---|---|
@@ -289,18 +289,16 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 7 specialized agents
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
-│   ├── prefer-tools.sh          # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/
+│   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
 │   ├── session-start.sh         # SessionStart hook: injects skill context
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-tool-use.sh         # PostToolUse hook: audit logging for Write/Edit
-│   ├── observation-mask.sh      # PostToolUse/Bash hook: advises when output exceeds 50 lines
+│   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit + output size advisory
 │   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to read project standards
 │   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
@@ -354,23 +352,16 @@ In each agent's YAML frontmatter, change the `model:` field:
 
 Edit the iteration limit in the `/rnd-framework:rnd-start` command (default: 3).
 
-### Add domain-specific verification
-
-Create additional Verifier variants in your project's `.claude/agents/`:
-
-- `rnd-verifier-security.md` — Security-focused verification
-- `rnd-verifier-perf.md` — Performance-focused verification
-
 ### Create new skills
 
 Use the `writing-skills` skill for guidance on creating new skills that plug into the framework.
 
 ## Limitations
 
-- **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access. Agent instructions are the primary enforcement.
-- **No persistent state across sessions.** The `.rnd/` directory provides continuity, but agent context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** The full pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use `/rnd-framework:rnd-quick` for small tasks.
-- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook additionally checks `agent_type` to allow non-verifier agents (e.g., builders, planners) to read their own self-assessments, but the primary enforcement is path-based.
+- **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
+- **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
+- **Token cost.** The full pipeline is expensive. Use `/rnd-framework:rnd-quick` for small tasks.
+- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
 
 ## Acknowledgements
 

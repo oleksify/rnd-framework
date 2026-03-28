@@ -97,7 +97,7 @@ Skills provide phase-specific discipline:
 
 **Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria.
 **Gate 2 (post-build):** Code + tests + artifacts submitted. Tests pass locally.
-**Gate 3 (post-verify):** Verifier PASS on all criteria with evidence.
+**Gate 3 (post-verify):** Verification PASS on all criteria with evidence.
 **Gate 4 (post-integrate):** Integration tests pass. No regressions. System validation passes.
 
 ## User Decision Points
@@ -119,8 +119,8 @@ Common decision points:
 
 ## Scaling Rules
 
-- **Small tasks (<1hr) / quick mode:** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration.
-- **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task.
-- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification.
+- **Small tasks (<1hr) / quick mode:** Collapse — single build + inline verification. Lightweight pre-registration.
+- **Medium tasks:** Full framework with sequential waves. Standard verification per task.
+- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
-- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants.
+- **High-stakes:** Extra-thorough verification with formal invariants where applicable.

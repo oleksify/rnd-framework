@@ -129,24 +129,24 @@ Wave | Task ID | Name                    | Status        | Iterations
 Then use `AskUserQuestion`/`AskUser` to present the appropriate next-action options based on the reconstructed state:
 
 **If plan exists but no builds yet (resume at Phase 2):**
-- "Start building Wave 1 (Recommended)" — spawn builders for the first wave
+- "Start building Wave 1 (Recommended)" — run the build phase for the first wave
 - "Review plan before building" — display plan.md contents
 
 **If some tasks built but not verified (resume at Phase 3):**
-- "Verify built tasks (Recommended)" — spawn verifiers for built tasks
+- "Verify built tasks (Recommended)" — run the verification phase for built tasks
 - "Review build artifacts first" — let the user inspect code before verification
 
 **If some tasks verified but not integrated (resume at Phase 5):**
-- "Integrate verified tasks (Recommended)" — spawn the integrator for the current wave
+- "Integrate verified tasks (Recommended)" — run the integration phase for the current wave
 - "Review verification reports first" — let the user inspect reports before integration
 
 **If some tasks need iteration (resume at Phase 4):**
-- "Continue iterating on failing tasks (Recommended)" — re-dispatch builders with verifier feedback
-- "Re-plan failing tasks" — send failing tasks back to the Planner
+- "Continue iterating on failing tasks (Recommended)" — re-run the build phase with verification feedback
+- "Re-plan failing tasks" — re-run the planning phase for failing tasks
 - "Skip failing tasks and proceed" — proceed without the failing tasks
 
 **If some waves integrated, more remain (resume at Phase 2 for next wave):**
-- "Build next wave (Recommended)" — spawn builders for the next wave
+- "Build next wave (Recommended)" — run the build phase for the next wave
 - "Review integration report" — let the user inspect the previous wave's integration report
 
 **If pipeline is complete:**

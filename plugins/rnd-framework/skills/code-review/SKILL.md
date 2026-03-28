@@ -8,7 +8,7 @@ effort: low
 
 ## Overview
 
-A structured code review framework with six categories, four severity levels, and three verdicts. Use this as the shared specification when spawning reviewer agents or interpreting review output.
+A structured code review framework with six categories, four severity levels, and three verdicts. Use this as the shared specification when performing code reviews or interpreting review output.
 
 ## Review Categories
 

@@ -118,7 +118,7 @@ Correction records have a `correction` field instead of `verdict`, making them d
 
 ## Stats Injection Into Verifier Prompts
 
-Before spawning a verifier agent, the orchestrator reads `calibration.jsonl` and computes basic stats, then prepends a summary to the verifier prompt:
+Before running the verification phase, the orchestrator reads `calibration.jsonl` and computes basic stats, then prepends a summary to the verification context:
 
 ```
 Calibration summary for this project (last 30 verdicts):
@@ -127,7 +127,7 @@ Calibration summary for this project (last 30 verdicts):
 - Most-failed criterion: "YAML frontmatter valid" (3 failures)
 ```
 
-**What the verifier does with this:** No special action required. The summary is contextual — it raises alertness for known problem areas without overriding the information barrier or the verifier's independent judgment.
+**What the verification phase does with this:** No special action required. The summary is contextual — it raises alertness for known problem areas without overriding the information barrier or the verification phase's independent judgment.
 
 **Keep it simple:** Aggregate counts only. No per-verifier breakdown, no dashboards, no trend charts. A plain read over the JSONL file is sufficient.
 

@@ -37,7 +37,7 @@ If `plan.md` doesn't exist, the session may have been a brainstorming-only or re
 
 ## Step 3: Generate Narrative
 
-From the artifacts, produce a prose narrative. Do NOT spawn agents — write this yourself. Cover:
+From the artifacts, produce a prose narrative. Write this yourself. Cover:
 
 1. **What was built and why** — the original task from the plan, how many tasks/waves, what the final deliverables are
 2. **Key decisions** — architectural choices from the design spec (if present), scope decisions from planning, trade-offs chosen

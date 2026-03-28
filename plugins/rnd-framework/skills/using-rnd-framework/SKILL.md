@@ -21,7 +21,7 @@ This is a scientific process. Results are true or false — never "almost true".
 1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)`
 2. **Write plan:** Save a brief pre-registration to `$RND_DIR/plan.md` — task, approach, success criteria
 3. **Build:** Implement the task with tests; follow `rnd-framework:rnd-building` discipline
-4. **Verify inline:** Check each success criterion yourself with evidence (run tests, read output, grep for expected patterns). Do NOT spawn a verifier agent — quick mode verifies in the main conversation to avoid rate limits. Save a brief verification note to `$RND_DIR/verifications/T1-verification.md`.
+4. **Verify inline:** Check each success criterion yourself with evidence (run tests, read output, grep for expected patterns). Quick mode verifies in the main conversation — no separate verification phase needed. Save a brief verification note to `$RND_DIR/verifications/T1-verification.md`.
 5. **Iterate or ship:** Budget 2 cycles; if exhausted, escalate to `/rnd-framework:rnd-start`
 
 ## Data Science Tasks

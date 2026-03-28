@@ -16,29 +16,37 @@ Read the plan from `$RND_DIR/plan.md`.
 
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-integrate` with no arguments):
 - Use `TaskList` to find the most recent wave where all tasks are `completed` (verified) and no integration report yet exists in `$RND_DIR/integration/`.
-- If found, proceed to integrate that wave (treating it as the $ARGUMENTS value).
-- If no such wave exists (either nothing is verified yet, or all verified waves are already integrated), report the current state and use `AskUserQuestion` to ask the user what to do next.
+- If found, proceed to integrate that wave.
+- If no such wave exists, report the current state and use `AskUserQuestion`/`AskUser`.
 
 Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
 
-If any task in the wave is not yet verified, STOP and tell the user which tasks still need verification (reference their task IDs from `TaskList`).
+If any task in the wave is not yet verified, STOP and tell the user which tasks still need verification.
 
-Create a `TaskCreate` entry for the integration itself (e.g., "Integrate wave-1") with `activeForm: "Integrating wave-1"`. Mark it `in_progress` via `TaskUpdate`.
+Create a `TaskCreate` entry for the integration itself (e.g., "Integrate wave-1"). Mark it `in_progress`.
 
-Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-integrator"` for the wave.
+## Integration Process
 
-If $ARGUMENTS is "final", also run full system validation against the original task requirements.
+Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform integration yourself:
 
-Summarize integration results to the user. Then use `AskUserQuestion`:
+1. Confirm all tasks in the wave are verified (check `$RND_DIR/verifications/`).
+2. Ensure all code integrates cleanly — no merge conflicts, interfaces match, imports correct.
+3. Run integration tests — do modules communicate correctly? Are API contracts honored?
+4. If $ARGUMENTS is "final", run full system validation against the original task requirements.
+5. Run the existing project test suite to check for regressions.
+6. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
+7. Issue SHIP or NO-SHIP verdict.
+
+Summarize integration results. Then use `AskUserQuestion`/`AskUser`:
 
 If **SHIP:**
-- Use `TaskUpdate` to mark the integration task `completed`.
-- "Commit changes (Recommended)" — stage and commit all changes from this wave
-- "Review integration report" — inspect the full report before proceeding
-- "Proceed to next wave" — if more waves remain, start building the next one
+- Mark the integration task `completed`.
+- "Commit changes (Recommended)"
+- "Review integration report"
+- "Proceed to next wave" (if more waves remain)
 
 If **NO-SHIP:**
 - Keep the integration task `in_progress`.
-- "Fix failing integration points (Recommended)" — identify failures and route back to relevant builders
-- "Re-plan affected tasks" — send failing tasks back to the Planner for re-decomposition
-- "Stop pipeline" — halt for manual intervention
+- "Fix failing integration points (Recommended)"
+- "Re-plan affected tasks"
+- "Stop pipeline"

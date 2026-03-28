@@ -17,7 +17,7 @@ If `$SESSIONS_DIR` does not exist or contains no subdirectories, display:
 
 > No sessions found. Start one with `/rnd-framework:rnd-start <task>`.
 
-Then use `AskUserQuestion` with options:
+Then use `AskUserQuestion`/`AskUser` with options:
 - "Start new pipeline" — run `/rnd-framework:rnd-start`
 
 Otherwise, list all directories under `$SESSIONS_DIR`. Each subdirectory is a session. For each session directory found:
@@ -47,7 +47,7 @@ Session ID               | Date       | Task                     | Verdict
 
 (`*` marks the currently active session.)
 
-After displaying the table, use `AskUserQuestion` with options:
+After displaying the table, use `AskUserQuestion`/`AskUser` with options:
 - "Start new pipeline" — run `/rnd-framework:rnd-start`
 - "View session details" — ask the user to type a session ID, then display: `plan.md` contents, a list of build manifests from `builds/`, verification reports from `verifications/`, and integration reports from `integration/`
 - "Continue current session" — run `/rnd-framework:rnd-status` (only show this option if there is an active session marked with `*`)

@@ -1,6 +1,6 @@
 ---
 name: rnd-scheduling
-description: "Use when planning parallel execution waves from a dependency matrix — dependency-based scheduling, parallel agent dispatch, and wave coordination"
+description: "Use when planning execution waves from a dependency matrix — dependency-based scheduling and wave coordination"
 user-invocable: false
 effort: medium
 ---
@@ -11,13 +11,13 @@ effort: medium
 
 Use dependency analysis to schedule tasks into parallel execution waves. Tasks within a wave have no cross-dependencies and can run concurrently.
 
-**Core principle:** Dispatch one agent per independent task. Let them work concurrently within waves.
+**Core principle:** Organize independent tasks into waves for sequential execution within each wave.
 
 ## When to Use
 
 - After decomposition produces a dependency matrix
-- When coordinating multiple Builder agents
-- When coordinating multiple Verifier agents
+- When coordinating multiple build tasks
+- When coordinating multiple verification tasks
 - Phase 2 (Schedule) of the R&D pipeline
 
 ## Wave Construction
@@ -29,21 +29,19 @@ Use dependency analysis to schedule tasks into parallel execution waves. Tasks w
 3. **Wave N:** Tasks depending only on tasks in Waves 1 through N-1
 4. **Circular dependencies:** Flag for re-decomposition — these are planning errors
 
-### Parallel Dispatch Within Waves
+### Sequential Execution Within Waves
 
 Within each wave:
-- Spawn one `rnd-framework:rnd-builder` agent per task
-- All builders run concurrently (no cross-dependencies)
-- Wait for ALL builders in the wave to complete
-- Then spawn `rnd-framework:rnd-verifier` agents (also parallel within wave)
+- Build each task sequentially (invoke `rnd-framework:rnd-building` skill)
+- After ALL tasks in the wave are built, verify each sequentially (invoke `rnd-framework:rnd-verification` skill)
 
-### Agent Prompt Structure
+### Task Scope
 
-Each agent gets:
+Each task gets:
 - **Specific scope:** One task with its pre-registration
 - **Clear goal:** Implement/verify against success criteria
 - **Constraints:** Don't modify code outside your task scope
-- **Expected output:** Manifest + self-assessment (Builder) or verification report (Verifier)
+- **Expected output:** Manifest + self-assessment (build) or verification report (verify)
 
 ## Wave Execution Order
 

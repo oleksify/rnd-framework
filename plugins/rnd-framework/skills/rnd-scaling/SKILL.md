@@ -9,7 +9,7 @@ effort: medium
 
 ## Overview
 
-The R&D pipeline scales to task complexity. A typo fix doesn't need four agents and three gates. A security-critical feature does.
+The R&D pipeline scales to task complexity. A typo fix doesn't need the full pipeline ceremony. A security-critical feature does.
 
 **Core principle:** Always use the pipeline. Scale it, don't skip it.
 
@@ -21,7 +21,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Process:**
 1. Write a one-line pre-registration (inline, no subagent)
 2. Make the change yourself
-3. Spawn one `rnd-framework:rnd-verifier` to confirm
+3. Run inline verification to confirm
 4. Done
 
 **Skip:** Planner, dependency scheduling, Integrator
@@ -33,23 +33,23 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Process:**
 1. Write a brief pre-registration (inline)
 2. Implement with TDD (use `rnd-framework:rnd-building`)
-3. Spawn `rnd-framework:rnd-verifier` for independent verification
+3. Run independent verification (invoke `rnd-framework:rnd-verification`)
 4. Max 2 iterations
 
-**Skip:** Planner subagent, dependency scheduling, Integrator
+**Skip:** Decomposition phase, dependency scheduling, integration phase
 **Keep:** Pre-registration, TDD, independent verification
 
 ### Medium (multiple components, 1-4 hours)
 
 **Entry:** `/rnd-framework:rnd-start`
 **Process:**
-1. Spawn `rnd-framework:rnd-planner` for hierarchical decomposition
+1. Invoke `rnd-framework:rnd-decomposition` for hierarchical decomposition
 2. Schedule waves with dependency analysis
-3. Spawn Builder(s) per wave
+3. Build tasks per wave sequentially (invoke `rnd-framework:rnd-building`)
 4. Independent verification per task
 5. Integration testing per wave
 
-**Full pipeline.** All agents, all gates.
+**Full pipeline.** All phases, all gates.
 
 ### Large (multi-day, many components)
 
@@ -73,8 +73,8 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Full pipeline
-2. Dual independent verification (two separate Verifiers)
-3. Adversarial verification: one Verifier specifically tries to break it
+2. Dual independent verification (two separate verification passes)
+3. Adversarial verification: one pass specifically tries to break it
 4. Extended iteration budget (5 cycles instead of 3)
 
 ## Decision Flow

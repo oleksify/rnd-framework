@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.1 — 2026-03-28
+
+### Fix post-1.0.0 breakage: stale agent references, AskUser cross-platform parity
+
+Fix 28 content parity validation failures caused by the 1.0.0 agent removal. Redirect PARITY_TABLE entries in `lib/validate.sh` from deleted agent files to their new locations in commands and skills. Remove entries that were self-contained within a single artifact (data-science skill, multi-judge file naming).
+
+Fix `rnd-brainstorm` and all other conversation-driven commands hanging in Factory Droid. The commands referenced `AskUserQuestion` (Claude Code tool name) but Factory Droid only has `AskUser`. Update all 18 commands and 4 skills to use dual naming (`AskUserQuestion`/`AskUser`). Add `AskUser` to VALID_TOOLS in validate.sh.
+
+Clean up stale agent terminology across 7 skills: replace "spawn agent", "Builder agents", "Verifiers", "dispatch one agent per task" with phase-based language matching the single-flow architecture.
+
+## 1.0.0 — 2026-03-28
+
+### BREAKING: Single-flow execution, remove all agents, merge hooks
+
+Remove all 8 agents (rnd-planner, rnd-builder, rnd-verifier, rnd-integrator, rnd-debugger, rnd-data-scientist, rnd-proof-gate, rnd-reality-auditor). All pipeline phases now run sequentially in one session — no agent spawning, no worktree isolation, no per-agent context overhead. Phase-specific instructions were already covered by corresponding skills (rnd-decomposition, rnd-building, rnd-verification, rnd-integration, etc.); commands now invoke skills directly instead of spawning agents.
+
+Refactor all 10 orchestration commands (rnd-start, rnd-plan, rnd-build, rnd-verify, rnd-integrate, rnd-debug, rnd-review, rnd-audit, rnd-roadmap, rnd-quick) to replace "Spawn agent with subagent_type" instructions with "Invoke skill" + inline execution.
+
+Merge PreToolUse hooks: db-guard.sh + prefer-tools.sh → bash-gate.sh (1 process spawn instead of 2 for every Bash tool call). Merge PostToolUse hooks: post-tool-use.sh + observation-mask.sh → post-dispatch.sh with tool_name-based routing. Add session-based early exit to post-dispatch.sh (skip all work when no active pipeline session).
+
+Update hooks.json: PreToolUse Bash entries reduced from 2 to 1; PostToolUse entries reduced from 3 to 1 (single matcher covers Write|Create|write|Edit|edit|Bash|Execute|bash). Update OpenCode bridge routing tables to use new script names.
+
+Update skills: rnd-orchestration, rnd-scheduling, rnd-multi-judge, rnd-scaling, rnd-local-experts — remove agent-spawning language, replace with skill invocation and sequential execution references.
+
+Information barrier preserved: read-gate.sh still blocks self-assessment reads mechanically. The model writes the self-assessment during build but cannot re-read it during verification.
+
 ## 0.14.14 — 2026-03-28
 
 ### Add database guard hook, OpenCode platform support

@@ -95,7 +95,7 @@ frontmatter_val() {
 # VALID_TOOLS set
 # ---------------------------------------------------------------------------
 
-VALID_TOOLS=" Read Write Edit Bash Glob Grep Agent AskUserQuestion TaskCreate TaskUpdate TaskList TaskGet SendMessage WebFetch WebSearch NotebookEdit NotebookRead EnterPlanMode ExitPlanMode EnterWorktree ExitWorktree LSP TeamCreate TeamDelete ToolSearch KillShell BashOutput TaskOutput TaskStop CronCreate CronDelete CronList TodoWrite Skill "
+VALID_TOOLS=" Read Write Edit Bash Glob Grep Agent AskUserQuestion AskUser TaskCreate TaskUpdate TaskList TaskGet SendMessage WebFetch WebSearch NotebookEdit NotebookRead EnterPlanMode ExitPlanMode EnterWorktree ExitWorktree LSP TeamCreate TeamDelete ToolSearch KillShell BashOutput TaskOutput TaskStop CronCreate CronDelete CronList TodoWrite Skill "
 
 is_valid_tool() {
   [[ " $VALID_TOOLS " == *" $1 "* ]]
@@ -706,39 +706,31 @@ validate_cross_refs() {
 # ---------------------------------------------------------------------------
 
 PARITY_TABLE=(
-  "skills/rnd-decomposition/SKILL.md:agents/rnd-planner.md:External dependencies:pre-registration field"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:erify external dependencies:step 2.5"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:Verified external assumptions:self-assessment sub-section"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:Unverified external assumptions:self-assessment sub-section"
-  "skills/rnd-verification/SKILL.md:agents/rnd-verifier.md:External contract conformance:failure mode analysis"
-  "skills/rnd-verification/SKILL.md:agents/rnd-verifier.md:assumptions about external systems:code inspection"
-  "skills/rnd-verification/SKILL.md:agents/rnd-verifier.md:ulti-Judge:multi-judge consensus protocol"
-  "skills/rnd-decomposition/SKILL.md:agents/rnd-planner.md:ocal expert:local expert field parity"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:mcp__julia__julia_eval:Julia MCP tool reference"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:Validate input data:data validation requirement"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:independent cross-check:numerical verification approach"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:never hardcode:no intermediate value hardcoding rule"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:read_csv:DuckDB CSV function reference"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:duckdb -c:DuckDB CLI invocation pattern"
-  "skills/rnd-data-science/SKILL.md:agents/rnd-data-scientist.md:Tool Selection:DuckDB vs Julia decision table"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:judge-a.md:multi-judge judge-a file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:judge-b.md:multi-judge judge-b file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:tiebreaker.md:multi-judge tiebreaker file naming"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:judge-a.md:multi-judge judge-a file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:judge-b.md:multi-judge judge-b file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-start.md:tiebreaker.md:multi-judge tiebreaker file naming in start"
-  "skills/rnd-multi-judge/SKILL.md:commands/rnd-verify.md:Consensus method:multi-judge consensus method field"
+  # Decomposition ↔ Orchestration: pre-registration format
+  "skills/rnd-decomposition/SKILL.md:skills/rnd-orchestration/SKILL.md:External dependencies:pre-registration field"
+  # Building ↔ Build command: verify external dependencies
+  "skills/rnd-building/SKILL.md:commands/rnd-build.md:erify external dependencies:build step parity"
+  # Verification ↔ Verify command: external contract conformance
+  "skills/rnd-verification/SKILL.md:commands/rnd-verify.md:External contract conformance:failure mode analysis"
+  # Verification ↔ Multi-judge: multi-judge protocol reference
+  "skills/rnd-verification/SKILL.md:skills/rnd-multi-judge/SKILL.md:ulti-Judge:multi-judge consensus protocol"
+  # Decomposition ↔ Start command: local expert field
+  "skills/rnd-decomposition/SKILL.md:commands/rnd-start.md:ocal expert:local expert field parity"
+  # Building ↔ Build command: status codes
+  "skills/rnd-building/SKILL.md:commands/rnd-build.md:DONE_WITH_CONCERNS:builder status code DONE_WITH_CONCERNS parity"
+  "skills/rnd-building/SKILL.md:commands/rnd-build.md:NEEDS_CONTEXT:builder status code NEEDS_CONTEXT parity"
+  # Building ↔ Verification: evidence gathered cross-reference
+  "skills/rnd-building/SKILL.md:skills/rnd-verification/SKILL.md:Evidence Gathered:evidence gathering parity"
+  # Decomposition ↔ Plan command: tiered criteria
+  "skills/rnd-decomposition/SKILL.md:commands/rnd-plan.md:Correctness:tiered criteria Correctness marker"
+  # Local experts ↔ Start command
   "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:.claude/agents/:local expert agents discovery path"
   "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:.claude/skills/:local expert skills discovery path"
   "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:Local Experts Discovered:local expert discovery summary field"
-  "skills/rnd-local-experts/SKILL.md:agents/rnd-planner.md:Local Experts Discovered:local expert discovery field in planner"
+  # Local experts ↔ Decomposition
   "skills/rnd-local-experts/SKILL.md:skills/rnd-decomposition/SKILL.md:ocal expert:local expert field in decomposition skill"
+  # Failure modes ↔ Verification
   "skills/rnd-failure-modes/SKILL.md:skills/rnd-verification/SKILL.md:failure modes:failure modes catalog reference in verification skill"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:DONE_WITH_CONCERNS:builder status code DONE_WITH_CONCERNS parity"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:NEEDS_CONTEXT:builder status code NEEDS_CONTEXT parity"
-  "skills/rnd-decomposition/SKILL.md:agents/rnd-planner.md:Correctness::tiered criteria Correctness marker in planner"
-  "skills/rnd-building/SKILL.md:agents/rnd-builder.md:Evidence Gathered:evidence gathering manifest section parity"
-  "skills/rnd-verification/SKILL.md:agents/rnd-verifier.md:Evidence Gathered:evidence grounding verification parity"
 )
 
 validate_content_parity() {

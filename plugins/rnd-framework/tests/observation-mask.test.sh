@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="${SCRIPT_DIR}/../hooks/observation-mask.sh"
+HOOK="${SCRIPT_DIR}/../hooks/post-dispatch.sh"
 RND_DIR_SH="${SCRIPT_DIR}/../lib/rnd-dir.sh"
 
 PASS=0
@@ -53,11 +53,11 @@ assert_stdout_contains() {
 # ---------------------------------------------------------------------------
 
 # Without an active session, the hook short-circuits at `active_session_dir || exit 0`
-run_hook '{"stdout":"line1\nline2"}'
+run_hook '{"tool_name":"Bash","stdout":"line1\nline2"}'
 assert_exit "no active session → exits 0" 0
 assert_stdout_empty "no active session → empty stdout (short-circuit)"
 
-run_hook '{}'
+run_hook '{"tool_name":"Bash"}'
 assert_exit "no active session, empty JSON → exits 0" 0
 
 # ---------------------------------------------------------------------------
@@ -75,13 +75,13 @@ if [[ -n "$base_dir" ]]; then
 
   # Build a small stdout payload (under 50 lines)
   small_stdout="$(printf 'line %d\n' {1..10} | tr '\n' '\\n')"
-  run_hook "{\"stdout\":\"$(printf 'line %d\n' {1..10})\"}" "CLAUDE_CONFIG_DIR=${tmp_config}"
+  run_hook "{\"tool_name\":\"Bash\",\"stdout\":\"$(printf 'line %d\n' {1..10})\"}" "CLAUDE_CONFIG_DIR=${tmp_config}"
   assert_exit "stdout under threshold with session → exits 0" 0
   assert_stdout_empty "stdout under threshold → no advisory emitted"
 
   # Build a large stdout payload (over 50 lines)
   large_stdout="$(seq 1 55 | sed 's/^/line /')"
-  large_json="$(jq -cn --arg s "$large_stdout" '{"stdout":$s}')"
+  large_json="$(jq -cn --arg s "$large_stdout" '{"tool_name":"Bash","stdout":$s}')"
   run_hook "$large_json" "CLAUDE_CONFIG_DIR=${tmp_config}"
   assert_exit "stdout over threshold with session → exits 0" 0
   assert_stdout_contains "stdout over threshold → advisory emitted" '"additionalContext"'
@@ -95,7 +95,7 @@ if [[ -n "$base_dir" ]]; then
   fi
 
   # Empty stdout field → no advisory (short-circuit before line count)
-  run_hook '{"stdout":""}' "CLAUDE_CONFIG_DIR=${tmp_config}"
+  run_hook '{"tool_name":"Bash","stdout":""}' "CLAUDE_CONFIG_DIR=${tmp_config}"
   assert_exit "empty stdout field → exits 0" 0
   assert_stdout_empty "empty stdout field → no advisory"
 

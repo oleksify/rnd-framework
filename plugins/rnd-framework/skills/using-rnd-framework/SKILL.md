@@ -26,7 +26,7 @@ This is a scientific process. Results are true or false — never "almost true".
 
 ## Data Science Tasks
 
-When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB — spawn `rnd-data-scientist` instead of `rnd-builder`. The Planner pre-registers as usual; the Verifier checks output as normal.
+When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB — invoke `rnd-framework:rnd-data-science` during the build phase. The pre-registration and verification phases work as normal.
 
 ## Skill Priority
 
@@ -41,12 +41,12 @@ Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-quick`; "I'
 
 ## User Interaction
 
-**MANDATORY: When presenting next steps or options to the user, ALWAYS use `AskUserQuestion` with structured choices.** Never write open-ended text like "Would you like me to...?". This is not optional.
+**MANDATORY: When presenting next steps or options to the user, ALWAYS use `AskUserQuestion`/`AskUser` with structured choices.** Never write open-ended text like "Would you like me to...?". This is not optional. The tool is called `AskUserQuestion` in Claude Code and `AskUser` in Factory Droid — use whichever is available.
 
 - 2-4 concrete options, short action-oriented labels; recommended option listed first
 - Context goes in the `description` field, not the label
 
-After finishing any task, always use `AskUserQuestion` to present next steps. Never end with plain text like "Done."
+After finishing any task, always use `AskUserQuestion`/`AskUser` to present next steps. Never end with plain text like "Done."
 
 ## User Instructions
 

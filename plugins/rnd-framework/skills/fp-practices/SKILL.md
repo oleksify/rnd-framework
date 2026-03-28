@@ -15,7 +15,7 @@ Concrete rules for writing code in a functional style. These complement KISS pra
 ## When to Use
 
 - Load during Phase 0 alongside KISS practices
-- Preloaded in the Builder agent for all builds
+- Loaded during the build phase for all builds
 - Apply to any language — these are structural principles, not syntax rules
 
 ## The Rules

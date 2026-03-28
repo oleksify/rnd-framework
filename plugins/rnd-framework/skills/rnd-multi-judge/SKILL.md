@@ -1,6 +1,6 @@
 ---
 name: rnd-multi-judge
-description: "Use when running independent multi-judge verification with consensus logic — spawns 2 verifier agents, aggregates verdicts, and triggers a tiebreaker on disagreement"
+description: "Use when running multi-judge verification with consensus logic — performs 2 independent verification passes, aggregates verdicts, and triggers a tiebreaker on disagreement"
 user-invocable: false
 effort: medium
 ---
@@ -23,22 +23,22 @@ This skill defines the protocol shared by `/rnd-framework:rnd-verify` and the Ve
 
 ### Step 1 — Pre-flight
 
-Before spawning any judges:
+Before running any judge passes:
 
 1. Run the self-assessment scan: confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. The information barrier hook blocks reads of self-assessment files regardless — this step confirms the build is complete.
 2. Note that experiment artifacts from each judge will be saved under `$RND_DIR/verifications/T<id>-experiments/judge-a/`, `judge-b/`, and `tiebreaker/` (if a tiebreaker is triggered). These directories are created by the judges themselves during verification.
 3. Assemble the shared judge prompt from: the pre-registration document (from `$RND_DIR/plan.md`) and the Builder's code, tests, and artifacts. Do NOT include self-assessment content in any judge prompt.
 
-### Step 2 — Spawn 2 Independent Judges
+### Step 2 — Run 2 Independent Verification Passes
 
-Spawn exactly 2 independent verifier agents in parallel:
+Perform exactly 2 independent verification passes sequentially. Between passes, do NOT carry over findings — each pass starts fresh from the pre-registration and builder artifacts.
 
-- Both agents use `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`.
-- Each judge receives the same inputs: pre-registration document and Builder code/tests.
-- Neither judge's prompt includes the other judge's report. The two judges operate with no knowledge of each other.
-- Both judges are blocked from reading self-assessment files (enforced by the `read-gate` hook).
+- Both passes use the `rnd-framework:rnd-verification` skill protocol.
+- Each pass receives the same inputs: pre-registration document and Builder code/tests.
+- The second pass does NOT reference the first pass's findings. Treat each pass as if the other does not exist.
+- Self-assessment files must NOT be read (enforced by the `read-gate` hook).
 
-The orchestrator saves each judge's returned report to:
+Save each pass's report to:
 - Judge A: `$RND_DIR/verifications/T<id>-judge-a.md`
 - Judge B: `$RND_DIR/verifications/T<id>-judge-b.md`
 
@@ -60,16 +60,16 @@ When both judges agree, their shared verdict is the final verdict. Proceed to St
 
 Any combination where the two verdicts differ — PASS/FAIL, PASS/NEEDS ITERATION, FAIL/NEEDS ITERATION — triggers a tiebreaker. Proceed to Step 4.
 
-### Step 4 — Tiebreaker Judge (on disagreement only)
+### Step 4 — Tiebreaker Pass (on disagreement only)
 
-Spawn a third verifier agent as tiebreaker:
+Perform a third verification pass as tiebreaker:
 
-- Uses `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "bypassPermissions"`.
+- Uses the `rnd-framework:rnd-verification` skill protocol.
 - Receives: the pre-registration document, the Builder's code and tests, AND both prior judge reports (Judge A and Judge B).
-- Does NOT receive self-assessment files. The information barrier applies to the tiebreaker identically to the initial judges.
+- Does NOT read self-assessment files. The information barrier applies identically.
 - The tiebreaker must issue a final verdict (PASS, FAIL, or NEEDS ITERATION) and justify it by citing specific evidence from the two prior reports — not just picking a side.
 
-The orchestrator saves the tiebreaker's returned report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
+Save the tiebreaker's report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
 
 The tiebreaker's verdict is the final verdict.
 
@@ -135,4 +135,4 @@ Independent judges who agree are much less likely to share the same blind spot t
 
 - `rnd-framework:rnd-verification` — The verification process each individual judge follows
 - `rnd-framework:rnd-iteration` — How feedback flows from a FAIL or NEEDS ITERATION verdict back to the Builder
-- `rnd-framework:rnd-orchestration` — Pipeline structure and agent coordination
+- `rnd-framework:rnd-orchestration` — Pipeline structure and phase coordination

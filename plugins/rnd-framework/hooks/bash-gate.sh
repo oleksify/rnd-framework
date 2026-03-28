@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# hooks/prefer-tools.sh — PreToolUse hook for Bash: enforces tool discipline.
+# hooks/bash-gate.sh — Unified PreToolUse hook for Bash/Execute.
 #
-# Blocks sed/awk (→ Edit tool), cat/head/tail (→ Read tool),
-# grep/rg (→ Grep tool), find (→ Glob tool), and echo/printf
-# with file redirects (→ Write tool). Also guards git add .rnd/ and
-# git push to protected branches.
+# Merged from db-guard.sh + prefer-tools.sh into a single dispatcher.
+# Fast-path: exits immediately when no active RND session.
 #
-# This is best-effort advisory enforcement, not a security sandbox.
-# Shell parsing is simplified: it does not handle quoted strings,
-# heredocs, or deeply nested substitutions.
+# Responsibilities:
+#   1. Database guard — blocks destructive DB operations (Ecto, Postgres, MySQL, SQLite)
+#   2. Tool discipline — blocks sed/awk/cat/grep/find/echo-redirects/inline interpreters
+#   3. Git guards — blocks git add .rnd/.rnd/ and git push to protected branches
+#   4. /tmp redirect guard — steers writes to $RND_DIR
+#   5. Auto-allow — .rnd/.rnd/ paths, echo/printf without redirect, plugin lib scripts
 #
 # Exit codes:
 #   0 + hookSpecificOutput JSON  — auto-allow
+#   0 + advisory JSON           — warning (does not block)
 #   0 + no stdout               — no opinion
 #   2 + stderr message          — blocked
 #
@@ -19,8 +21,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # ---------------------------------------------------------------------------
-# Regex patterns stored in variables to avoid bash special-char issues in
-# [[ =~ ]] when the pattern itself contains && or special sequences.
+# Regex patterns
 # ---------------------------------------------------------------------------
 readonly _CD_AND_PATTERN='^cd[[:space:]]+[^&;]+&&'
 readonly _CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
@@ -28,24 +29,19 @@ readonly _CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
 readonly _DOLLAR_PAREN_PATTERN='\$\(([^)]*)\)'
 readonly _BACKTICK_PATTERN='`([^`]*)`'
 readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
-
-# Magic constants extracted as readonly module-level variables
 readonly _PROTECTED_BRANCHES="main master production"
 readonly _INTERPRETER_BLOCKED_MSG='blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
 
 # ---------------------------------------------------------------------------
-# check_echo_redirect: prints "block" or "allow"
-# Strips safe redirects (> /dev/... and > .../.rnd/...) then checks for
-# remaining > characters.
+# Helper functions (from prefer-tools.sh)
 # ---------------------------------------------------------------------------
+
 check_echo_redirect() {
   local seg="$1"
   local stripped="$seg"
-  # Remove > /dev/<token> sequences (handles multiple)
   while [[ "$stripped" =~ \>\ */dev/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
-  # Remove > <path>/.(claude*|factory)/.rnd/ or .rnd/ token sequences (handles multiple)
   while [[ "$stripped" =~ \>\ *[^[:space:]]*(\.(claude[^/]*|factory)|\.config/opencode)/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
@@ -56,24 +52,17 @@ check_echo_redirect() {
   fi
 }
 
-# ---------------------------------------------------------------------------
-# strip_cd_prefix: strips leading "cd <path> &&", "cd <path>;", "cd <path>;;"
-# Applied repeatedly until stable (handles chained cds). Prints result.
-# ---------------------------------------------------------------------------
 strip_cd_prefix() {
   local seg="$1"
   local prev
   while true; do
     prev="$seg"
-    # Strip "cd <path> && " prefix (double-ampersand AND)
     if [[ "$seg" =~ $_CD_AND_PATTERN ]]; then
       seg="${seg#*&&}"
-      seg="${seg#"${seg%%[! ]*}"}"  # ltrim spaces
-    # Strip "cd <path> ;; " prefix (double semicolon — must come before single)
+      seg="${seg#"${seg%%[! ]*}"}"
     elif [[ "$seg" =~ $_CD_DSEMI_PATTERN ]]; then
       seg="${seg#*;;}"
       seg="${seg#"${seg%%[! ]*}"}"
-    # Strip "cd <path> ; " prefix (single semicolon)
     elif [[ "$seg" =~ $_CD_SEMI_PATTERN ]]; then
       seg="${seg#*;}"
       seg="${seg#"${seg%%[! ]*}"}"
@@ -85,23 +74,9 @@ strip_cd_prefix() {
   printf '%s' "$seg"
 }
 
-# ---------------------------------------------------------------------------
-# check_segment: checks one command segment.
-# Prints one of:
-#   "blocked:<reason>"  — command should be blocked
-#   "echo_safe"         — echo/printf without unsafe redirect
-#   "allowed"           — command is safe (no opinion emitted to caller)
-#
-# NOTE: All conditional branches MUST end with an explicit `printf` or a
-# command that always exits 0, because this function is called from inside
-# a while loop and with set -e active. If the LAST command executed before
-# return exits non-zero, set -e fires on the caller.
-# ---------------------------------------------------------------------------
 check_segment() {
   local seg
   seg="$(strip_cd_prefix "$1")"
-
-  # Strip leading path prefix from command name (e.g. /usr/bin/grep → grep)
   local first_word="${seg%% *}"
   local cmd="${first_word##*/}"
 
@@ -115,11 +90,8 @@ check_segment() {
       return 0
       ;;
     head|tail)
-      # Allow when used as a pipe filter (no file argument).
-      # A file argument is any word that is not a flag (-*) and not a pure
-      # number (option-values like the 10 in -n 10 are numbers, not paths).
       local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"  # ltrim spaces
+      rest="${rest#"${rest%%[! ]*}"}"
       local has_file_arg=0
       for word in $rest; do
         if [[ "$word" != -* ]] && ! [[ "$word" =~ ^[0-9]+$ ]]; then
@@ -147,18 +119,15 @@ check_segment() {
         printf 'blocked:Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs.'
         return 0
       else
-        # Safe echo/printf (no redirect, or redirect to .rnd/ or /dev/)
         printf 'echo_safe'
         return 0
       fi
       ;;
     python|python3)
-      # Extract the second word (first argument to the interpreter)
       local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"  # ltrim spaces
+      rest="${rest#"${rest%%[! ]*}"}"
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
-        # Bare interpreter: e.g. "python3" alone — pipe target like echo | python3
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "-m" ]]; then
@@ -180,7 +149,6 @@ check_segment() {
       rest="${rest#"${rest%%[! ]*}"}"
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
-        # Bare node — pipe target
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
@@ -196,7 +164,6 @@ check_segment() {
       rest="${rest#"${rest%%[! ]*}"}"
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
-        # Bare bun — pipe target
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
       elif [[ "$second_word" == "eval" ]]; then
@@ -220,23 +187,14 @@ check_segment() {
       fi
       ;;
   esac
-  # Default: no opinion on this command
   printf 'allowed'
 }
 
-# ---------------------------------------------------------------------------
-# split_and_check: splits command into segments and checks each.
-# Prints structured result on stdout:
-#   "blocked:<reason>"  — first violation found
-#   "echo_safe"         — at least one safe echo/printf, no violations
-#   "allowed"           — no violations
-# ---------------------------------------------------------------------------
 split_and_check() {
   local command="$1"
   local _has_echo=0
   local _result
 
-  # Step 1: extract $(...) contents and check them as additional segments
   local temp="$command"
   while [[ "$temp" =~ $_DOLLAR_PAREN_PATTERN ]]; do
     local inner="${BASH_REMATCH[1]}"
@@ -248,7 +206,6 @@ split_and_check() {
     temp="${temp/${BASH_REMATCH[0]}/}"
   done
 
-  # Step 2: extract backtick contents
   temp="$command"
   while [[ "$temp" =~ $_BACKTICK_PATTERN ]]; do
     local inner="${BASH_REMATCH[1]}"
@@ -260,27 +217,17 @@ split_and_check() {
     temp="${temp/${BASH_REMATCH[0]}/}"
   done
 
-  # Step 3: split on shell operators: &&, ||, ;, |
-  # Replace operators with newlines, then read line by line.
-  # Order: replace && before |, replace || before |, so | is replaced last
-  # for any remaining lone pipe characters.
   local split_cmd
   split_cmd="${command//&&/$'\n'}"
   split_cmd="${split_cmd//||/$'\n'}"
   split_cmd="${split_cmd//;/$'\n'}"
   split_cmd="${split_cmd//|/$'\n'}"
 
-  # Use herestring so the while loop runs in the current shell (not a subshell),
-  # allowing _has_echo to be visible after the loop. <<< adds a trailing newline
-  # so read never sees a no-newline EOF that would silently drop the last segment.
   while IFS= read -r seg; do
-    # Strip leading/trailing whitespace
     seg="${seg#"${seg%%[! ]*}"}"
     seg="${seg%"${seg##*[! ]}"}"
-    # Strip leading ( for subshells
     seg="${seg#\(}"
     seg="${seg#"${seg%%[! ]*}"}"
-    # Strip trailing )
     seg="${seg%\)}"
     if [[ -z "$seg" ]]; then continue; fi
     _result="$(check_segment "$seg")" || true
@@ -307,19 +254,74 @@ split_and_check() {
 raw="$(cat)"
 command="$(printf '%s' "$raw" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
 
-# Empty or malformed input — no opinion
 if [[ -z "$command" ]]; then exit 0; fi
 
+cmd_lower="${command,,}"
+
 # ---------------------------------------------------------------------------
-# Git guards — checked on the full command string (before splitting)
+# 1. Database guard (from db-guard.sh)
 # ---------------------------------------------------------------------------
 
-# Block: git add .rnd/ or .rnd/ (must be followed by / or space or end)
+# Ecto destructive commands without MIX_ENV=test
+if [[ "$cmd_lower" == *"mix ecto.reset"* ]] || [[ "$cmd_lower" == *"mix ecto.drop"* ]]; then
+  if [[ "$cmd_lower" != *"mix_env=test"* ]]; then
+    block_msg "BLOCKED: \`mix ecto.reset\` destroys the dev database. Only MIX_ENV=test is allowed for destructive Ecto commands."
+  fi
+fi
+
+# Direct database file deletion
+if [[ "$cmd_lower" =~ rm[[:space:]] ]]; then
+  if [[ "$cmd_lower" =~ \.(db|sqlite|sqlite3)([[:space:]]|$) ]]; then
+    block_msg "BLOCKED: Refusing to delete database file. Database files (.db, .sqlite, .sqlite3) are protected."
+  fi
+fi
+
+# PostgreSQL destructive commands
+if [[ "$cmd_lower" =~ (^|[[:space:];&|])dropdb([[:space:]]|$) ]]; then
+  block_msg "BLOCKED: Destructive PostgreSQL operation. Use MIX_ENV=test for test databases only."
+fi
+if [[ "$cmd_lower" =~ psql.*-c.*drop[[:space:]]+database ]]; then
+  block_msg "BLOCKED: Destructive PostgreSQL operation. Use MIX_ENV=test for test databases only."
+fi
+if [[ "$cmd_lower" =~ pg_restore.*--clean ]]; then
+  block_msg "BLOCKED: Destructive PostgreSQL operation. Use MIX_ENV=test for test databases only."
+fi
+
+# MySQL destructive commands
+if [[ "$cmd_lower" =~ mysqladmin.*drop ]]; then
+  block_msg "BLOCKED: Destructive MySQL operation. Use test databases only."
+fi
+if [[ "$cmd_lower" =~ mysql[[:space:]].*-e.*drop[[:space:]]+database ]]; then
+  block_msg "BLOCKED: Destructive MySQL operation. Use test databases only."
+fi
+
+# SQLite destructive SQL via CLI
+if [[ "$cmd_lower" =~ sqlite3[[:space:]] ]]; then
+  if [[ "$cmd_lower" =~ (delete[[:space:]]+from|drop[[:space:]]+table|drop[[:space:]]+index) ]]; then
+    block_msg "BLOCKED: Destructive SQLite SQL. Use application code for data modifications."
+  fi
+fi
+
+# Advisory warnings for dev database operations
+if [[ "$cmd_lower" == *"mix_env=dev"* ]]; then
+  if [[ "$cmd_lower" == *"mix ecto.create"* ]]; then
+    advisory_json "Advisory: Running ecto.create on dev database. Prefer MIX_ENV=test for automated environments."
+    exit 0
+  fi
+  if [[ "$cmd_lower" == *"mix ecto.migrate"* ]]; then
+    advisory_json "Advisory: Running ecto.migrate on dev database. Migrations can alter schema unexpectedly in automated environments."
+    exit 0
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Git guards (from prefer-tools.sh)
+# ---------------------------------------------------------------------------
+
 if [[ "$command" =~ git[[:space:]]+add.*\.rnd(/|[[:space:]]|$) ]]; then
   block_msg "BLOCKED: Plugin artifact directories (.rnd/, .rnd/) must never be committed."
 fi
 
-# Block: git push to protected branches (listed in _PROTECTED_BRANCHES)
 _branch_pattern="${_PROTECTED_BRANCHES// /|}"
 if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]]($_branch_pattern)([[:space:]]|$) ]]; then
   block_msg "BLOCKED: Direct push to main/master/production. Use a feature branch and PR instead."
@@ -327,14 +329,9 @@ fi
 unset _branch_pattern
 
 # ---------------------------------------------------------------------------
-# /tmp redirect guard — checked on the full command string (before splitting)
-# Catches patterns like: npm test > /tmp/log.txt  or  cmd >> /tmp/append.txt
-# For simple echo/printf commands (no shell operators), check_echo_redirect
-# already catches the redirect with a "Write tool" message, so we skip the
-# /tmp guard for those. For compound commands (containing &&, ||, ;, |) we
-# always check, even if the first segment is echo/printf, because the /tmp
-# redirect may be in a later segment that check_echo_redirect never sees.
+# 3. /tmp redirect guard
 # ---------------------------------------------------------------------------
+
 _is_compound=0
 if [[ "$command" == *"&&"* || "$command" == *"||"* || "$command" == *";"* || "$command" == *"|"* ]]; then
   _is_compound=1
@@ -350,8 +347,7 @@ if [[ "$_skip_tmp_guard" -eq 0 ]] && [[ "$command" =~ $_TMP_REDIRECT_PATTERN ]];
 fi
 
 # ---------------------------------------------------------------------------
-# Tool discipline — split into segments, check each
-# (runs before .rnd/ auto-allow so cat/sed on .rnd/ paths is still blocked)
+# 4. Tool discipline
 # ---------------------------------------------------------------------------
 
 _discipline_result="$(split_and_check "$command")" || true
@@ -360,18 +356,14 @@ if [[ "$_discipline_result" == blocked:* ]]; then
   block_msg "${_discipline_result#blocked:}"
 fi
 
-# ---------------------------------------------------------------------------
 # echo/printf without unsafe redirect — auto-allow
-# ---------------------------------------------------------------------------
-
 if [[ "$_discipline_result" == "echo_safe" ]]; then
   allow_json
   exit 0
 fi
 
 # ---------------------------------------------------------------------------
-# Auto-allow plugin artifact paths (.rnd/, .rnd/) and dir helper commands
-# (placed after tool discipline so sed/cat on these paths is still blocked)
+# 5. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
 
 if [[ "$command" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
@@ -379,12 +371,10 @@ if [[ "$command" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/ ]] || [
   exit 0
 fi
 
-# Auto-allow plugin lib/ scripts (bump.sh, validate.sh, etc.)
 plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
 if [[ -n "$plugin_root" ]] && [[ "$command" == *"${plugin_root}/lib/"* ]]; then
   allow_json
   exit 0
 fi
 
-# No opinion — let Claude Code default permission system handle it
 exit 0

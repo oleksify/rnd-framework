@@ -32,15 +32,15 @@ This framework applies the scientific method to multi-agent coding:
 | Reproducible evidence | Evidence-based gates | No work proceeds without reproducible evidence |
 | Dependency analysis | Parallel scheduling | Identify parallel vs sequential work |
 
-## Agent Roles & Information Barriers
+## Pipeline Phases & Information Barriers
 
-**Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria.
-**Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets.
-**Builder** — Writes code + tests + honest self-assessment. Does NOT verify own work.
-**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
-**Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
-**Verifier** — Checks output against pre-registered criteria. Does NOT see Builder's reasoning. In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
-**Integrator** — Merges verified outputs, runs integration/system tests.
+**Planning** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
+**Scheduling** — Analyzes dependencies, schedules execution waves, enforces iteration budgets.
+**Building** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
+**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform verification but do not block the pipeline. Skips when Lean is unavailable.
+**Reality Audit** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to building before verification.
+**Verification** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent verification passes run sequentially; if they disagree, a third tiebreaker pass receives both reports.
+**Integration** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
 
 ### Critical Information Flow Rules
 
@@ -70,30 +70,17 @@ External dependencies:
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
-## Subagent Coordination
+## Single-Flow Execution
 
-### Agent Permission Mode
+All pipeline phases run sequentially in one session. No agents are spawned. The session model handles all phases — planning, building, verification, and integration.
 
-All pipeline agents are spawned with `mode: "bypassPermissions"`:
+> **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 
-- **Planner** — decomposes tasks and writes pre-registrations
-- **Builder** — implements tasks with TDD discipline
-- **Verifier** — independently checks outputs against pre-registered criteria
-- **Integrator** — merges verified outputs and runs integration tests
-
-**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts are redundant and disruptive to autonomous pipeline operation.
-
-### Blocking Behavior
-
-**The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
-
-> **Note on RND_DIR:** Each agent should compute the artifact directory at startup via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
-
-- **Never** use `sleep` to wait for subagents
-- **Never** write bash loops to check if build artifacts exist yet
-- **Never** scan `$RND_DIR/builds/` to see if a builder is done — the Agent tool tells you
-- **Do** spawn multiple agents in parallel (multiple Agent tool calls in one message) for independent tasks within a wave
-- **Do** use `run_in_background: true` on Agent calls if you want to continue working while agents run, then process results when notified
+Skills provide phase-specific discipline:
+- Planning: `rnd-framework:rnd-decomposition`
+- Building: `rnd-framework:rnd-building`
+- Verification: `rnd-framework:rnd-verification`
+- Integration: `rnd-framework:rnd-integration`
 
 ## Execution Phases
 

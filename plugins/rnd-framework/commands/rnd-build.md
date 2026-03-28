@@ -15,35 +15,45 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task states.
 
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-build` with no arguments):
-- Read `$RND_DIR/plan.md` and inspect `TaskList` to find the next wave where all tasks are `pending` and unblocked (i.e., all their dependencies are `completed`).
-- If a clear next wave is found, use `AskUserQuestion` to confirm: "Build wave-N next? (N tasks: T1, T2, …)" with options "Yes, build wave-N (Recommended)" and "Choose a different task or wave".
-- If no pending wave is found (all tasks complete, or all remaining are blocked), report the current state and use `AskUserQuestion` to ask the user what to do next.
+- Read `$RND_DIR/plan.md` and inspect `TaskList` to find the next wave where all tasks are `pending` and unblocked.
+- If a clear next wave is found, use `AskUserQuestion` to confirm: "Build wave-N next? (N tasks: T1, T2, ...)" with options "Yes, build wave-N (Recommended)" and "Choose a different task or wave".
+- If no pending wave is found, report the current state and use `AskUserQuestion`.
 - If the plan does not exist, prompt the user to run `/rnd-framework:rnd-start` first.
 
 If $ARGUMENTS specifies a task ID (e.g., "T3"):
-- Use `TaskUpdate` to mark the task `in_progress`.
-- Spawn one agent using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`.
+- Build that one task.
 
 If $ARGUMENTS specifies a wave (e.g., "wave-2"):
-- Use `TaskUpdate` to mark ALL tasks in the wave as `in_progress`.
-- Spawn agents in parallel for ALL tasks in that wave, each using the Agent tool with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`. Use `run_in_background: true` for all but the last builder to maximize parallelism.
+- Build ALL tasks in that wave sequentially.
 
 If $ARGUMENTS is "next":
-- Use `TaskList` to find the next wave where all tasks are `pending` and unblocked.
-- Mark those tasks `in_progress` and build them using the same wave pattern above (parallel Agent spawns with name and mode).
+- Use `TaskList` to find the next unblocked wave and build it.
 
-After each builder agent returns, check its status code from the completion message before proceeding:
+## Build Process
+
+Invoke `rnd-framework:rnd-building` to load build discipline. For each task:
+
+1. Use `TaskUpdate` to mark the task `in_progress`.
+2. Read the pre-registration from `$RND_DIR/plan.md`.
+3. Read exploration cache from `$RND_DIR/exploration/` if it exists.
+4. Verify external dependencies against actual systems.
+5. Implement using TDD (Red-Green-Refactor per criterion).
+6. Save build manifest to `$RND_DIR/builds/T<id>-manifest.md`.
+7. Save honest self-assessment to `$RND_DIR/builds/T<id>-self-assessment.md`.
+8. Assess status: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
+
+Route each result:
 
 | Status | Action |
 |--------|--------|
 | `DONE` | Proceed to Gate 2 normally. |
-| `DONE_WITH_CONCERNS` | Proceed to Gate 2, but record the concerns summary. Pass it to the Verifier prompt when spawning verification — this tells the Verifier which areas need extra scrutiny. Do NOT read the self-assessment. |
-| `NEEDS_CONTEXT` | Pause immediately. Use `AskUserQuestion` to present the builder's question to the user and collect the missing context. Resume the builder (spawn a new agent) with the original task plus the clarifying context. |
-| `BLOCKED` | Pause immediately. Use `AskUserQuestion` with options: "Provide missing dependency manually", "Re-plan this task", "Skip this task". |
+| `DONE_WITH_CONCERNS` | Proceed to Gate 2, note concerns for verification. |
+| `NEEDS_CONTEXT` | Pause. Use `AskUserQuestion` to collect missing context. Resume with user's answer. |
+| `BLOCKED` | Pause. `AskUserQuestion`: "Provide missing dependency manually", "Re-plan this task", "Skip this task". |
 
-Gate 2: Confirm all `DONE` and `DONE_WITH_CONCERNS` tasks have code, tests, artifacts, and self-assessment. Use `TaskUpdate` to mark each successfully built task as `completed`.
+Gate 2: Confirm all tasks have code, tests, artifacts, and self-assessment. Use `TaskUpdate` to mark each successfully built task as `completed`.
 
-Summarize build results to the user: which tasks completed, any deviations from plan, any escalations. Then use `AskUserQuestion` with options:
+Summarize build results. Then use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — run `/rnd-framework:rnd-verify` for this wave
 - "Review build artifacts first" — inspect code and tests before verification
 - "Build next wave" — skip verification for now and build the next wave

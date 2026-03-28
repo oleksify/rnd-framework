@@ -37,18 +37,13 @@ Options:
 - "Describe the goal" — user types a free-form description
 - "I'll start from scratch with guidance" — proceed with an open-ended decomposition
 
-### 2. Spawn the Planner in roadmap mode
+### 2. Plan the roadmap
 
-Spawn an agent with `subagent_type: "rnd-framework:rnd-planner"`. Pass this prompt:
+Invoke `rnd-framework:rnd-roadmapping` to load roadmap format and guidelines. Then invoke `rnd-framework:rnd-decomposition` for decomposition discipline.
 
-> **Roadmap mode.** Decompose the following broad goal into 3–7 milestones following
-> the `rnd-framework:rnd-roadmapping` skill format. Each milestone must be
-> independently valuable, scoped to roughly one pipeline session, and described in
-> enough detail that its Description can be pasted into `/rnd-framework:rnd-start`.
-> Write the completed roadmap.md to: `$ROADMAP`
-> Goal: `$ARGUMENTS` (or the user's stated goal if $ARGUMENTS was empty)
+Decompose the broad goal into 3-7 milestones following the roadmapping skill format. Each milestone must be independently valuable, scoped to roughly one pipeline session, and described in enough detail that its Description can be pasted into `/rnd-framework:rnd-start`.
 
-After the Planner finishes, read `$ROADMAP` and display its full contents.
+Write the completed roadmap to `$ROADMAP`. Then display its full contents.
 
 ### 3. Post-creation options
 

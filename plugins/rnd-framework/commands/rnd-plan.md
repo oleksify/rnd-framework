@@ -10,13 +10,17 @@ effort: high
 
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-plan` with no task description):
 
-1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
+1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes.
 
-2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option. Each option should have a short label and a description explaining what the task would involve.
+2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option.
 
 3. **If the user picks a suggestion**, use it as the task description and continue below. **If they type a custom task**, use that instead.
 
 **Never fall back to plain text** to ask what to work on. `AskUserQuestion` is mandatory at every decision point, including this one.
+
+If `$ARGUMENTS` is provided, skip this section and proceed directly.
+
+## Plan
 
 Run ONLY the planning phase for: $ARGUMENTS
 
@@ -24,18 +28,30 @@ Run ONLY the planning phase for: $ARGUMENTS
    ```bash
    RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
    ```
-2. Spawn an agent using the Agent tool with `subagent_type: "rnd-framework:rnd-planner"`, passing the task description and `RND_DIR`.
-3. Review the output in `$RND_DIR/plan.md`.
-4. Validate that every task has:
+
+2. Invoke `rnd-framework:rnd-decomposition` to load decomposition discipline.
+
+3. Explore the codebase using Glob/Grep. Write exploration findings to `$RND_DIR/exploration/`.
+
+4. Decompose the task into a hierarchical task tree with pre-registration documents following the decomposition skill's protocol.
+
+5. Build the dependency matrix and execution schedule.
+
+6. Save to `$RND_DIR/plan.md`.
+
+7. Validate that every task has:
    - Testable success criteria (not vague)
    - Clear dependencies
    - Appropriate verification level
-5. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
+   - Every success criterion tagged as Correctness or Quality
+
+8. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
    - `subject`: Task name (e.g., "T1: Design API contracts")
    - `description`: The full pre-registration content for that task
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
-6. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
+
+9. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
    - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:rnd-build`
    - "Request plan revisions" — describe what to change and re-run `/rnd-framework:rnd-plan`
    - "Add more tasks" — extend the plan before building

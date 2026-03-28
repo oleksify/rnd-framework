@@ -1,16 +1,12 @@
 ---
-description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Schedule → Build → Verify → Integrate."
+description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Build → Verify → Integrate — all in a single flow, no agent spawning."
 argument-hint: "<description of the feature, refactor, or bug fix>"
 effort: high
 ---
 
-# R&D Framework: Full Pipeline
+# R&D Framework: Full Pipeline (Single-Flow)
 
-You are orchestrating a complex coding task using the R&D framework — a scientific-method pipeline. Follow the phases below in strict order. Use subagents for parallelizable work.
-
-## CRITICAL: No Polling
-
-**Never use `sleep`, polling loops, or manual file checks to wait for subagents.** The Agent tool is blocking — it returns only when the subagent finishes. Trust the tool. Spawn agents and process their results when they return. Do not write bash commands to poll `$RND_DIR` for progress.
+You are orchestrating a complex coding task using the R&D framework — a scientific-method pipeline. All phases run sequentially in this session. No agents are spawned.
 
 ## Setup
 
@@ -20,7 +16,7 @@ Determine the RND artifacts directory and create its structure:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
 
-Use `$RND_DIR` for all artifact paths below. Pass `RND_DIR` to all spawned agents.
+Use `$RND_DIR` for all artifact paths below.
 
 ## Task Input
 
@@ -36,13 +32,13 @@ If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
 ## Phase 0: Discovery
 
-Before planning, explore the codebase and gather requirements. This phase prevents the Planner from decomposing a task based on incomplete understanding.
+Before planning, explore the codebase and gather requirements.
 
-1. **Explore the codebase.** Spawn an `Explore` agent (or Glob/Grep for small codebases). Identify: existing patterns, relevant files/modules, architectural conventions, and constraints.
+1. **Explore the codebase.** Use Glob/Grep to identify: existing patterns, relevant files/modules, architectural conventions, and constraints.
 
-2. **Discover local experts.** Invoke `rnd-framework:rnd-local-experts` to scan `.claude/agents/` and `.claude/skills/` for project-local agents and skills. Pass the structured summary to the Planner so it can reference them in pre-registration documents. If none exist, record `Local Experts Discovered: none` and continue.
+2. **Discover local experts.** Invoke `rnd-framework:rnd-local-experts` to scan `.claude/agents/` and `.claude/skills/` for project-local agents and skills. If none exist, record `Local Experts Discovered: none` and continue.
 
-3. **Load coding practices.** Detect which languages/frameworks are present (by file extensions, config files, or dependency manifests). Invoke `rnd-framework:kiss-practices` and `rnd-framework:fp-practices` in a single message (parallel). Include both KISS and FP rules in the discovery context passed to the Planner and all downstream agents.
+3. **Load coding practices.** Detect which languages/frameworks are present. Invoke `rnd-framework:kiss-practices` and `rnd-framework:fp-practices` in a single message (parallel).
 
 4. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
@@ -56,7 +52,7 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 6. **Ask 3-5 clarifying questions** using `AskUserQuestion`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
 
-7. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts (name + description, or "none"), (c) KISS/FP rules, (d) user answers, (e) constraints. Pass this to the Planner.
+7. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts, (c) KISS/FP rules, (d) user answers, (e) constraints.
 
 **Skip condition:** If the task description is already highly specific (file paths, approach details, clear scope), skip Phase 0 and proceed to Phase 0.5.
 
@@ -64,24 +60,29 @@ Before planning, explore the codebase and gather requirements. This phase preven
 
 Before committing to a plan, explore architectural alternatives. Invoke `rnd-framework:rnd-design` for the full protocol.
 
-**Skip condition:** Skip if the task is highly specific (file paths, concrete approach, clear scope) or a small refactor with no meaningful architectural ambiguity.
+**Skip condition:** Skip if the task is highly specific or a small refactor with no meaningful architectural ambiguity.
 
 If **auto-continue mode is ON**, automatically select the recommended approach and proceed to Phase 1 without pausing.
 
 Otherwise:
 
-1. **Generate 2-3 architectural alternatives** from Phase 0 context: how it works, strengths, weaknesses, effort, risk.
-2. **Recommend one approach** with reasons tied to Phase 0 constraints, key assumptions, and what would change the recommendation.
-3. **Save design spec** to `$RND_DIR/design-spec.md` (format from `rnd-framework:rnd-design`). Status: `STATUS: DRAFT`.
-4. **Present for approval** — output full design summary as text, then `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
-5. **Iterate on feedback** (max 3 rounds). Update spec and re-present. After 3 rounds without approval, report blocked.
-6. **Finalize** — set `STATUS: APPROVED`, pass spec to Planner.
+1. **Generate 2-3 architectural alternatives** from Phase 0 context.
+2. **Recommend one approach** with reasons tied to Phase 0 constraints.
+3. **Save design spec** to `$RND_DIR/design-spec.md`. Status: `STATUS: DRAFT`.
+4. **Present for approval** — `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
+5. **Iterate on feedback** (max 3 rounds). After 3 rounds without approval, report blocked.
+6. **Finalize** — set `STATUS: APPROVED`.
 
 ## Phase 1: Plan
 
-Spawn `rnd-framework:rnd-planner` with: task description, Phase 0 discovery context, and Phase 0.5 design spec (if `STATUS: APPROVED`). Wait for `$RND_DIR/plan.md`: task tree, pre-registration documents, dependency matrix, execution schedule.
+Invoke `rnd-framework:rnd-decomposition` to guide decomposition. Using that skill's protocol, decompose the task yourself:
 
-**Gate 1:** Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. Send back until every criterion specifies an observable outcome.
+1. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored).
+2. Decompose the task into a hierarchical task tree with pre-registration documents.
+3. Build the dependency matrix and execution schedule.
+4. Save to `$RND_DIR/plan.md`.
+
+**Gate 1:** Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. Revise until every criterion specifies an observable outcome.
 
 **After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion` with options:
 - "Approve plan and auto-continue (Recommended)" — run the full pipeline automatically, pausing only for escalations
@@ -89,28 +90,34 @@ Spawn `rnd-framework:rnd-planner` with: task description, Phase 0 discovery cont
 - "Request plan revisions"
 - "Add more tasks"
 
-If the user selects "Approve plan and auto-continue", set **auto-continue mode = ON**. This skips happy-path gates in Phases 2, 3, and 5. Escalation gates (budget exhaustion, NO-SHIP, final completion) are always preserved.
+If the user selects "Approve plan and auto-continue", set **auto-continue mode = ON**. This skips happy-path gates in Phases 2, 3, and 5. Escalation gates are always preserved.
 
-Once approved, create a `TaskCreate` entry for each task: `subject` = task name, `description` = pre-registration content, `activeForm` = present-continuous form. Use `addBlockedBy` to mirror the dependency matrix.
+Once approved, create a `TaskCreate` entry for each task.
 
 ## Phase 2: Build (per wave)
 
-For each wave in the execution schedule:
+Invoke `rnd-framework:rnd-building` to load build discipline. For each wave in the execution schedule, build each task sequentially:
 
 1. **Mark tasks as started:** `TaskUpdate` each task to `in_progress`.
 
-2. **Inject learnings.** For each task, detect languages from file extensions in "Expected outputs". Read `$CLAUDE_CONFIG_DIR/learnings/{language}.md` and append a `### Known gotchas for {language}` section to the builder prompt. Skip silently if no file exists.
+2. **Inject learnings.** For each task, detect languages from file extensions in "Expected outputs". Read `$CLAUDE_CONFIG_DIR/learnings/{language}.md` and use as context. Skip silently if no file exists.
 
-3. **Spawn builders in parallel:** One agent per task with `subagent_type: "rnd-framework:rnd-builder"`, `name: "builder-T{id}"`, `mode: "bypassPermissions"`. Use `run_in_background: true` for all but the last builder to maximize parallelism. Do NOT use `TeamCreate` — teams conflict with the global task list.
+3. **Build each task sequentially.** For each task in the wave:
+   - Read the pre-registration and exploration cache
+   - Verify external dependencies against actual systems
+   - Implement using TDD (Red-Green-Refactor per criterion)
+   - Save build manifest to `$RND_DIR/builds/T<id>-manifest.md`
+   - Save honest self-assessment to `$RND_DIR/builds/T<id>-self-assessment.md`
+   - Assess your own status: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED
 
 4. **Route each result by status code:**
 
    | Status code | Action |
    |-------------|--------|
    | `DONE` | Proceed to Gate 2. |
-   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Pass concerns summary to Verifier prompt (from status message, NOT self-assessment). |
-   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info, restate requirement, or skip. Re-dispatch with user's answer. |
-   | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround and re-dispatch", "Skip this task". |
+   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Note concerns for verification phase. |
+   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info. Resume with user's answer. |
+   | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
 
 5. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
 
@@ -120,28 +127,33 @@ For each wave in the execution schedule:
 
 ## Phase 2.5: Proof Gate (advisory)
 
-Check Lean: `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If unavailable, log and skip to Phase 2.5b. Otherwise spawn one `rnd-proof-gate` agent per task (parallel) with pre-registration criteria and `$RND_DIR/builds/T<id>-manifest.md`. Log statuses; include proof reports in Phase 3 judge prompts. Auto-continues regardless of results.
+Check Lean: `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If unavailable, log and skip to Phase 2.5b. Otherwise, for each task, invoke `rnd-framework:lean-proving` to attempt Lean 4 proofs of pre-registration criteria. Save reports to `$RND_DIR/proofs/`. Auto-continues regardless of results.
 
 ## Phase 2.5b: Reality Audit (blocking)
 
-Spawn one `rnd-reality-auditor` agent per task (parallel) with pre-registration criteria and `$RND_DIR/builds/T<id>-manifest.md`. Statuses: `VALIDATED_ALL` (all contracts verified), `VALIDATED_PARTIAL` (some unreachable), `INVALID_FOUND` (mismatch found), `SKIPPED` (no external interactions). `VALIDATED_ALL/PARTIAL/SKIPPED` → proceed to Phase 3. `INVALID_FOUND` → **BLOCK**: route to Phase 4 with `$RND_DIR/reality/T<id>-reality-report.md` as builder feedback. Include reality reports in Phase 3 judge prompts. No AskUserQuestion.
+For each task with external dependencies, invoke `rnd-framework:rnd-reality-auditing` to adversarially test external service contracts. Save reports to `$RND_DIR/reality/`. Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
 
 ## Phase 3: Verify (per task)
 
-For each completed task in the wave:
+**CRITICAL: Information Barrier.** Do NOT read `$RND_DIR/builds/T<id>-self-assessment.md` during verification. The `read-gate.sh` hook enforces this mechanically. You wrote the self-assessment during build, but during verification you must assess work purely against the pre-registered spec.
 
-1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. Assemble the judge prompt from pre-registration and builder artifacts. Include proof and reality report paths as additional evidence if they exist. Read **Criticality** from the pre-registration (default: NORMAL if absent).
+Invoke `rnd-framework:rnd-verification` to load verification discipline. For each completed task:
 
-2. **Route by criticality** (budget: LOW=2, NORMAL=3, HIGH=5):
+1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. Assemble verification context from pre-registration and builder artifacts only. Read **Criticality** from the pre-registration (default: NORMAL if absent).
 
-   | Criticality | Protocol |
-   |-------------|----------|
-   | LOW or NORMAL (or omitted) | Spawn one `rnd-verifier` agent. Save returned report to `$RND_DIR/verifications/T<id>-verification.md`. |
-   | HIGH | Invoke `rnd-framework:rnd-multi-judge`. Spawn 2 verifiers in parallel; save to `T<id>-judge-a.md` and `T<id>-judge-b.md`. Spawn tiebreaker if they disagree; save to `T<id>-tiebreaker.md`. Save aggregated report. |
+2. **Write independent experiment tests** — before reviewing your own build code, write one experiment test per criterion. Derive from spec text only. Save to `$RND_DIR/verifications/T<id>-experiments/`.
 
-3. **Gate 3:** Check the verdict:
+3. **Run experiments against the built code.** Record raw output verbatim.
+
+4. **Run the built tests and compare.** Check test adequacy per criterion.
+
+5. **Code inspection and failure mode analysis.** Scan for boundary cases, error handling, race conditions, external contract conformance. Cross-reference build manifest evidence.
+
+6. **Produce verification report** at `$RND_DIR/verifications/T<id>-verification.md`.
+
+7. **Gate 3:** Check the verdict:
    - **PASS** → `TaskUpdate` to `completed`. Move to next.
-   - **PASS (quality: NEEDS ITERATION)** → `TaskUpdate` to `completed`. Save quality feedback to `$RND_DIR/verifications/T<id>-quality-feedback.md`. Does NOT block integration.
+   - **PASS (quality: NEEDS ITERATION)** → `TaskUpdate` to `completed`. Save quality feedback. Does NOT block integration.
    - **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
    - **FAIL** → Do NOT iterate — route to re-planning.
 
@@ -151,16 +163,14 @@ For each completed task in the wave:
 - Any NEEDS ITERATION: auto-continue to Phase 4, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
 - Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
 
-**Quality iteration round (after integration SHIP):** If any task has deferred quality feedback: auto-continue defers, or `AskUserQuestion`: "Iterate on quality now", "Defer quality iteration (Recommended)".
-
 ## Phase 4: Iterate (if needed)
 
-1. Extract Verifier feedback (not internal reasoning).
-2. Spawn a new Builder with `subagent_type: "rnd-framework:rnd-builder"`, `name: "iter-builder-T{id}"`, `mode: "bypassPermissions"`. Include original pre-registration plus Verifier feedback.
-3. Builder implements fix and produces updated artifacts.
-4. Verifier re-checks (same information barrier rules).
-7. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`: gotcha (from Verifier feedback), fix (from Builder diff), language (from changed file extensions). Append to `$CLAUDE_CONFIG_DIR/learnings/{language}.md`.
-8. If iteration budget exhausted, `AskUserQuestion`:
+1. Extract feedback from the verification report (WHAT is wrong, not HOW to fix).
+2. Re-invoke `rnd-framework:rnd-building`. Fix all failed criteria in a single pass.
+3. Save updated manifest and self-assessment.
+4. Re-invoke `rnd-framework:rnd-verification` to re-verify (same information barrier rules).
+5. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`.
+6. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`:
    - "Re-plan this task"
    - "Skip and continue (Recommended)"
    - "Stop pipeline"
@@ -171,13 +181,17 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 
 1. `TaskUpdate`: `status: "completed"`, `metadata: {"skipped": true, "reason": "..."}`.
 2. Check downstream dependents via `TaskList`. Warn the user and `AskUserQuestion` for each: skip dependent, proceed anyway, or re-plan.
-3. Inform the Integrator which tasks were skipped so it can exclude them and note them in the integration report.
 
 ## Phase 5: Integrate
 
-1. Spawn `rnd-framework:rnd-integrator`.
-2. It merges outputs, runs integration tests, checks for regressions.
-3. **Gate 4:** SHIP or NO-SHIP.
+Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform integration yourself:
+
+1. Confirm all tasks in the wave are verified (check `$RND_DIR/verifications/`).
+2. Ensure all code integrates cleanly — no conflicts, interfaces match, imports correct.
+3. Run integration tests and the project's existing test suite.
+4. For the final wave, run full system validation.
+5. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
+6. **Gate 4:** SHIP or NO-SHIP.
 
 **After Gate 4:** Summarize results.
 
@@ -212,6 +226,6 @@ Use `AskUserQuestion` for next steps:
 
 ### Development Narrative
 
-When the user selects "Show development narrative," generate a prose story of the pipeline run (do NOT spawn agents). If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
+When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
 After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option.

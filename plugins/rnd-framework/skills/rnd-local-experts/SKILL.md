@@ -112,7 +112,7 @@ When a pre-registration document contains a `Local expert` field, the Verifier o
 
 1. Read the `Local expert` field from the pre-registration.
 2. Check whether `.claude/agents/<name>.md` or `.claude/skills/<name>/SKILL.md` exists in the target project.
-3. If it exists: spawn the local agent (using `subagent_type: <name>`) or invoke the skill as context for an additional review pass.
+3. If it exists: invoke the local skill as context for an additional review pass.
 4. Incorporate the local expert's findings into the verification report as supplemental evidence.
 5. If the local expert is absent: note its absence in the verification report and continue without it — the absence does not constitute a verification failure.
 

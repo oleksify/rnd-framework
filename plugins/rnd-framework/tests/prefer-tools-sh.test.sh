@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOOK="${SCRIPT_DIR}/../hooks/prefer-tools.sh"
+HOOK="${SCRIPT_DIR}/../hooks/bash-gate.sh"
 
 PASS=0
 FAIL=0

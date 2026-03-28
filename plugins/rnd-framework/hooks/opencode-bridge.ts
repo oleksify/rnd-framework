@@ -40,7 +40,7 @@ const TOOL_NAME_MAP: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const PRE_TOOL_ROUTES: Record<string, string> = {
-  bash: "prefer-tools.sh",
+  bash: "bash-gate.sh",
   read: "read-gate.sh",
   write: "write-gate.sh",
   edit: "write-gate.sh",
@@ -49,9 +49,9 @@ const PRE_TOOL_ROUTES: Record<string, string> = {
 }
 
 const POST_TOOL_ROUTES: Record<string, string> = {
-  write: "post-tool-use.sh",
-  edit: "post-tool-use.sh",
-  bash: "observation-mask.sh",
+  write: "post-dispatch.sh",
+  edit: "post-dispatch.sh",
+  bash: "post-dispatch.sh",
 }
 
 // ---------------------------------------------------------------------------

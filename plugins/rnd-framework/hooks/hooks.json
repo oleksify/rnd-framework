@@ -78,16 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/db-guard.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Execute|bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prefer-tools.sh'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/bash-gate.sh'"
           }
         ]
       },
@@ -169,29 +160,11 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Create|write",
+        "matcher": "Write|Create|write|Edit|edit|Bash|Execute|bash",
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Execute|bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/observation-mask.sh'"
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-dispatch.sh'"
           }
         ]
       }

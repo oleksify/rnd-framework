@@ -1,6 +1,6 @@
 ---
 name: rnd-scheduling
-description: "Use when planning parallel execution waves from a dependency matrix — dependency-based scheduling, parallel agent dispatch, and wave coordination"
+description: "Use when planning execution waves from a dependency matrix — dependency-based scheduling and wave coordination"
 user-invocable: false
 effort: medium
 ---
@@ -29,13 +29,11 @@ Use dependency analysis to schedule tasks into parallel execution waves. Tasks w
 3. **Wave N:** Tasks depending only on tasks in Waves 1 through N-1
 4. **Circular dependencies:** Flag for re-decomposition — these are planning errors
 
-### Parallel Dispatch Within Waves
+### Sequential Execution Within Waves
 
 Within each wave:
-- Spawn one `rnd-framework:rnd-builder` agent per task
-- All builders run concurrently (no cross-dependencies)
-- Wait for ALL builders in the wave to complete
-- Then spawn `rnd-framework:rnd-verifier` agents (also parallel within wave)
+- Build each task sequentially (invoke `rnd-framework:rnd-building` skill)
+- After ALL tasks in the wave are built, verify each sequentially (invoke `rnd-framework:rnd-verification` skill)
 
 ### Agent Prompt Structure
 

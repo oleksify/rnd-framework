@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for the pure-function refactor of prefer-tools.sh.
+# Tests for the pure-function refactor of bash-gate.sh.
 # Verifies check_segment stdout protocol and split_and_check structured output.
 # Usage: bash tests/prefer-tools-sh-refactor.test.sh
 # Exits 0 if all tests pass, 1 if any fail.
@@ -31,7 +31,7 @@ _shim() {
   # Source lib.sh first
   source "${HOOK_DIR}/lib.sh"
 
-  # Source just the function definitions from prefer-tools.sh by processing
+  # Source just the function definitions from bash-gate.sh by processing
   # the file with awk to strip the main body (everything after "# Main" section
   # and the top-level raw/command lines).
   # Simpler approach: source the whole file with a dummy stdin and capture
@@ -43,18 +43,18 @@ _shim() {
   true
 }
 
-# Extract only function definitions from prefer-tools.sh.
+# Extract only function definitions from bash-gate.sh.
 # Skip lines 1-19 (shebang + comment header + source lib.sh line) and
 # stop before the main body (which starts after the "# Main" section header).
 # The result is a temporary file we source with lib.sh already pre-loaded,
 # giving us check_segment and split_and_check without triggering the main body.
 _FUNCS_FILE="$(mktemp)"
 awk '
-  NR <= 19 { next }
+  NR <= 21 { next }
   /^# Main$/ { in_main=1 }
   /^# -+$/ && in_main { exit }
   !in_main { print }
-' "${HOOK_DIR}/prefer-tools.sh" > "$_FUNCS_FILE"
+' "${HOOK_DIR}/bash-gate.sh" > "$_FUNCS_FILE"
 
 # Run check_segment via a sourced subshell.
 # Usage: run_check_segment "command_string"
@@ -239,7 +239,7 @@ fi
 
 has_globals=0
 for varname in SEGMENT_BLOCKED BLOCK_REASON HAS_ECHO; do
-  if grep -q "^${varname}=" "${HOOK_DIR}/prefer-tools.sh" 2>/dev/null; then
+  if grep -q "^${varname}=" "${HOOK_DIR}/bash-gate.sh" 2>/dev/null; then
     fail "no global mutable: ${varname} is declared at module level" "found in file"
     has_globals=1
   fi
@@ -254,7 +254,7 @@ fi
 
 check_readonly() {
   local varname="$1"
-  if grep -q "^readonly ${varname}=" "${HOOK_DIR}/prefer-tools.sh" 2>/dev/null; then
+  if grep -q "^readonly ${varname}=" "${HOOK_DIR}/bash-gate.sh" 2>/dev/null; then
     pass "readonly constant: ${varname} declared at module level"
   else
     fail "readonly constant: ${varname} declared at module level" "not found in file"

@@ -46,7 +46,7 @@ check_echo_redirect() {
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
   # Remove > <path>/.(claude*|factory)/.rnd/ or .rnd/ token sequences (handles multiple)
-  while [[ "$stripped" =~ \>\ *[^[:space:]]*\.(claude[^/]*|factory)/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
+  while [[ "$stripped" =~ \>\ *[^[:space:]]*(\.(claude[^/]*|factory)|\.config/opencode)/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
   if [[ "$stripped" == *">"* ]]; then
@@ -374,7 +374,7 @@ fi
 # (placed after tool discipline so sed/cat on these paths is still blocked)
 # ---------------------------------------------------------------------------
 
-if [[ "$command" =~ \.(claude[^/]*|factory)/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
+if [[ "$command" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   allow_json
   exit 0
 fi

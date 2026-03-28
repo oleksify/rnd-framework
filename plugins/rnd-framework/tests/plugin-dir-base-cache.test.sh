@@ -209,4 +209,100 @@ else
   assert_eq "rnd-dir.sh -c path uses \$HOME/.factory fallback" "yes" "no: '$RND_DROID2_RESULT'"
 fi
 
+# ---------------------------------------------------------------------------
+# OpenCode platform detection: OPENCODE_CONFIG_DIR (no Claude/Droid vars)
+# must use OPENCODE_CONFIG_DIR as the config directory.
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- OpenCode: OPENCODE_CONFIG_DIR ---'
+
+TMPOPENCODE="${TMPBASE}/opencode-config"
+mkdir -p "$TMPOPENCODE"
+
+RND_OPENCODE_RESULT=""
+RND_OPENCODE_EXIT=0
+# Unset Claude and Droid vars to isolate OpenCode env
+RND_OPENCODE_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT -u DROID_CONFIG_DIR -u DROID_PLUGIN_ROOT OPENCODE_CONFIG_DIR="$TMPOPENCODE" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_OPENCODE_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with OPENCODE_CONFIG_DIR exits 0" "0" "$RND_OPENCODE_EXIT"
+
+if [[ "$RND_OPENCODE_RESULT" == "${TMPOPENCODE}"/* ]]; then
+  assert_eq "rnd-dir.sh -c path is under OPENCODE_CONFIG_DIR" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path is under OPENCODE_CONFIG_DIR" "yes" "no: '$RND_OPENCODE_RESULT'"
+fi
+
+ARTIST_OPENCODE_RESULT=""
+ARTIST_OPENCODE_EXIT=0
+ARTIST_OPENCODE_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT -u DROID_CONFIG_DIR -u DROID_PLUGIN_ROOT OPENCODE_CONFIG_DIR="$TMPOPENCODE" bash "${CACHE_ARTIST}/rnd-dir.sh" -c 2>&1)" || ARTIST_OPENCODE_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with OPENCODE_CONFIG_DIR exits 0" "0" "$ARTIST_OPENCODE_EXIT"
+
+if [[ "$ARTIST_OPENCODE_RESULT" == "${TMPOPENCODE}"/* ]]; then
+  assert_eq "rnd-dir.sh -c path is under OPENCODE_CONFIG_DIR" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path is under OPENCODE_CONFIG_DIR" "yes" "no: '$ARTIST_OPENCODE_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
+# OpenCode platform detection: OPENCODE_CONFIG (no OPENCODE_CONFIG_DIR set)
+# must fall back to $HOME/.config/opencode as the config directory.
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- OpenCode: OPENCODE_CONFIG fallback ---'
+
+FAKEHOME2="${TMPBASE}/fakehome2"
+mkdir -p "$FAKEHOME2"
+
+RND_OPENCODE2_RESULT=""
+RND_OPENCODE2_EXIT=0
+# Unset Claude/Droid/OPENCODE_CONFIG_DIR vars; set a controlled HOME
+RND_OPENCODE2_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT -u DROID_CONFIG_DIR -u DROID_PLUGIN_ROOT -u OPENCODE_CONFIG_DIR HOME="$FAKEHOME2" OPENCODE_CONFIG="somevalue" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_OPENCODE2_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with OPENCODE_CONFIG exits 0" "0" "$RND_OPENCODE2_EXIT"
+
+if [[ "$RND_OPENCODE2_RESULT" == "${FAKEHOME2}/.config/opencode/"* ]]; then
+  assert_eq "rnd-dir.sh -c path uses \$HOME/.config/opencode fallback" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c path uses \$HOME/.config/opencode fallback" "yes" "no: '$RND_OPENCODE2_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
+# Precedence: CLAUDE_CONFIG_DIR takes priority over OPENCODE_CONFIG_DIR.
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- OpenCode: CLAUDE_CONFIG_DIR precedence ---'
+
+TMPCLAUDECONFIG="${TMPBASE}/claude-wins"
+mkdir -p "$TMPCLAUDECONFIG"
+
+RND_PREC_RESULT=""
+RND_PREC_EXIT=0
+RND_PREC_RESULT="$(env -u CLAUDE_PLUGIN_ROOT CLAUDE_CONFIG_DIR="$TMPCLAUDECONFIG" OPENCODE_CONFIG_DIR="$TMPOPENCODE" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_PREC_EXIT=$?
+
+assert_eq "rnd-dir.sh -c CLAUDE_CONFIG_DIR+OPENCODE_CONFIG_DIR exits 0" "0" "$RND_PREC_EXIT"
+
+if [[ "$RND_PREC_RESULT" == "${TMPCLAUDECONFIG}"/* ]]; then
+  assert_eq "CLAUDE_CONFIG_DIR takes precedence over OPENCODE_CONFIG_DIR" "yes" "yes"
+else
+  assert_eq "CLAUDE_CONFIG_DIR takes precedence over OPENCODE_CONFIG_DIR" "yes" "no: '$RND_PREC_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
+# Regression: no platform env vars set — must default to $HOME/.claude
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- Default: no platform env vars ---'
+
+FAKEHOME3="${TMPBASE}/fakehome3"
+mkdir -p "$FAKEHOME3"
+
+RND_DEFAULT_RESULT=""
+RND_DEFAULT_EXIT=0
+RND_DEFAULT_RESULT="$(env -u CLAUDE_CONFIG_DIR -u CLAUDE_PLUGIN_ROOT -u DROID_CONFIG_DIR -u DROID_PLUGIN_ROOT -u OPENCODE_CONFIG_DIR -u OPENCODE_CONFIG HOME="$FAKEHOME3" bash "${CACHE_RND}/rnd-dir.sh" -c 2>&1)" || RND_DEFAULT_EXIT=$?
+
+assert_eq "rnd-dir.sh -c with no platform vars exits 0" "0" "$RND_DEFAULT_EXIT"
+
+if [[ "$RND_DEFAULT_RESULT" == "${FAKEHOME3}/.claude/"* ]]; then
+  assert_eq "rnd-dir.sh -c defaults to \$HOME/.claude" "yes" "yes"
+else
+  assert_eq "rnd-dir.sh -c defaults to \$HOME/.claude" "yes" "no: '$RND_DEFAULT_RESULT'"
+fi
+
 report

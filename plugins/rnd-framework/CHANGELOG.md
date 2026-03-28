@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.14 — 2026-03-28
+
+### Add database guard hook, OpenCode platform support
+
+Add `db-guard.sh` PreToolUse hook that blocks destructive database operations across all platforms. Blocks `mix ecto.reset`/`ecto.drop` without `MIX_ENV=test`, direct deletion of `.db`/`.sqlite`/`.sqlite3` files, PostgreSQL destructive commands (`dropdb`, `DROP DATABASE`, `pg_restore --clean`), MySQL destructive commands (`mysqladmin drop`, `DROP DATABASE`), and SQLite destructive SQL (`DELETE FROM`, `DROP TABLE`). Issues advisory warnings for `MIX_ENV=dev ecto.create`/`ecto.migrate`. Registered before `prefer-tools.sh` in hooks.json so database guards run first.
+
+Add OpenCode as third supported platform alongside Claude Code and Factory Droid. Add `opencode-bridge.ts` that translates OpenCode JS hook events to shell script calls via `Bun.spawn`. Widen path regexes in `lib.sh`, `prefer-tools.sh`, `plugin-dir-base.sh` to match `~/.config/opencode/` paths. Add `OPENCODE_CONFIG_DIR`/`OPENCODE_CONFIG` detection to config directory resolution. Widen hook matchers to include lowercase tool names (`bash`, `read`, `write`, `edit`, `glob`, `grep`). Update CLAUDE.md documentation for tri-platform support.
+
 ## 0.14.13 — 2026-03-27
 
 ### Fix all audit findings: entropy, stdin parsing, unused code, style consistency

@@ -645,5 +645,18 @@ run_hook "$(payload 'echo DONE > /Users/alice/.factory/.rnd/builds/out.md')"
 assert_exit   "echo > .factory/.rnd/ → exit 0" 0
 assert_stdout_contains "echo > .factory/.rnd/ → allow JSON" '"permissionDecision":"allow"'
 
+# ---------------------------------------------------------------------------
+# .config/opencode/ path auto-allow (OpenCode platform)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'ls /Users/alice/.config/opencode/.rnd/builds')"
+assert_exit   ".config/opencode/.rnd/ in command → exit 0" 0
+assert_stdout_contains ".config/opencode/.rnd/ in command → allow JSON" '"permissionDecision":"allow"'
+
+# echo redirect to .config/opencode/.rnd/ should be allowed
+run_hook "$(payload 'echo DONE > /Users/alice/.config/opencode/.rnd/builds/out.md')"
+assert_exit   "echo > .config/opencode/.rnd/ → exit 0" 0
+assert_stdout_contains "echo > .config/opencode/.rnd/ → allow JSON" '"permissionDecision":"allow"'
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]]

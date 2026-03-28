@@ -108,6 +108,22 @@ extract_file_path() {
 # Guard prevents a re-declaration error when lib.sh is sourced more than once.
 [[ -v SESSION_ID_RE ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$'
 
+# Resolves the Claude/Droid/OpenCode config directory from environment variables.
+# Mirrors the precedence in plugin-dir-base.sh — keep them in sync.
+_resolve_config_dir() {
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+    local dir="${CLAUDE_PLUGIN_ROOT%%/plugins/cache/*}"
+    [[ "$dir" != "$CLAUDE_PLUGIN_ROOT" ]] && { printf '%s' "$dir"; return 0; }
+    printf '%s' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; return 0
+  fi
+  [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]  && { printf '%s' "$CLAUDE_CONFIG_DIR";       return 0; }
+  [[ -n "${DROID_CONFIG_DIR:-}" ]]   && { printf '%s' "$DROID_CONFIG_DIR";        return 0; }
+  [[ -n "${OPENCODE_CONFIG_DIR:-}" ]] && { printf '%s' "$OPENCODE_CONFIG_DIR";    return 0; }
+  [[ -n "${OPENCODE_CONFIG:-}" ]]    && { printf '%s' "$HOME/.config/opencode";   return 0; }
+  [[ -n "${DROID_PLUGIN_ROOT:-}" ]]  && { printf '%s' "$HOME/.factory";           return 0; }
+  printf '%s' "$HOME/.claude"
+}
+
 # Calls rnd-dir.sh relative to the lib.sh location and prints the path.
 # Accepts optional flags (e.g. -c, --base) passed through to rnd-dir.sh.
 # Prints nothing and returns 1 on failure.
@@ -138,26 +154,8 @@ active_session_dir() {
   fi
   _ACTIVE_SESSION_RESOLVED=1
 
-  # Fast path: read cached base dir written by session-start.sh
   local config_dir
-  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
-    config_dir="${CLAUDE_PLUGIN_ROOT%%/plugins/cache/*}"
-    [[ "$config_dir" != "$CLAUDE_PLUGIN_ROOT" ]] || config_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-  elif [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
-    config_dir="$CLAUDE_CONFIG_DIR"
-  elif [[ -n "${DROID_CONFIG_DIR:-}" ]]; then
-    config_dir="$DROID_CONFIG_DIR"
-  elif [[ -n "${DROID_PLUGIN_ROOT:-}" ]]; then
-    config_dir="$HOME/.factory"
-  elif [[ -n "${OPENCODE_CONFIG_DIR:-}" ]]; then
-    # OpenCode: explicit config dir override
-    config_dir="$OPENCODE_CONFIG_DIR"
-  elif [[ -n "${OPENCODE_CONFIG:-}" ]]; then
-    # OpenCode: running under OpenCode with default XDG config location
-    config_dir="$HOME/.config/opencode"
-  else
-    config_dir="$HOME/.claude"
-  fi
+  config_dir="$(_resolve_config_dir)"
 
   local cache_file="${config_dir}/.rnd/.active-base-dir"
   if [[ -f "$cache_file" ]]; then

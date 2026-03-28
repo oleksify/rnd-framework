@@ -244,20 +244,20 @@ assert_exit   "git add .rnd.backup → exit 0 (not a .rnd/ path)" 0
 assert_stdout_empty "git add .rnd.backup → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# Blocks git push to main/master/production with stderr "BLOCKED", exit 2
+# Advisory warning on git push to main/master/production (exit 0, advisory JSON)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'git push origin main')"
-assert_exit   "git push origin main → exit 2" 2
-assert_stderr_contains "git push origin main → BLOCKED" "BLOCKED"
+assert_exit   "git push origin main → exit 0 (advisory)" 0
+assert_stdout_contains "git push origin main → advisory" "additionalContext"
 
 run_hook "$(payload 'git push origin master')"
-assert_exit   "git push origin master → exit 2" 2
-assert_stderr_contains "git push origin master → BLOCKED" "BLOCKED"
+assert_exit   "git push origin master → exit 0 (advisory)" 0
+assert_stdout_contains "git push origin master → advisory" "additionalContext"
 
 run_hook "$(payload 'git push origin production')"
-assert_exit   "git push origin production → exit 2" 2
-assert_stderr_contains "git push origin production → BLOCKED" "BLOCKED"
+assert_exit   "git push origin production → exit 0 (advisory)" 0
+assert_stdout_contains "git push origin production → advisory" "additionalContext"
 
 # Non-protected branches should pass through
 run_hook "$(payload 'git push origin feature-branch')"
@@ -465,10 +465,10 @@ run_hook "$(payload 'cd /some/path && git add .rnd/file')"
 assert_exit   "cd && git add .rnd/ → exit 2" 2
 assert_stderr_contains "cd && git add .rnd/ → BLOCKED" "BLOCKED"
 
-# git push main after && should be blocked via full-command git guard
+# git push main after && should emit advisory via full-command git guard
 run_hook "$(payload 'npm install && git push origin main')"
-assert_exit   "npm && git push main → exit 2" 2
-assert_stderr_contains "npm && git push main → BLOCKED" "BLOCKED"
+assert_exit   "npm && git push main → exit 0 (advisory)" 0
+assert_stdout_contains "npm && git push main → advisory" "additionalContext"
 
 # No-opinion cases
 run_hook "$(payload 'ls -la')"

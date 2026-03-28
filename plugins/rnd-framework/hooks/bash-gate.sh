@@ -324,7 +324,8 @@ fi
 
 _branch_pattern="${_PROTECTED_BRANCHES// /|}"
 if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]]($_branch_pattern)([[:space:]]|$) ]]; then
-  block_msg "BLOCKED: Direct push to main/master/production. Use a feature branch and PR instead."
+  advisory_json "WARNING: You are about to push directly to a protected branch (main/master/production). Ask the user for explicit confirmation before proceeding."
+  exit 0
 fi
 unset _branch_pattern
 

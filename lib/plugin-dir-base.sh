@@ -45,6 +45,13 @@ elif [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
 elif [[ -n "${DROID_CONFIG_DIR:-}" ]]; then
   # Factory Droid sets DROID_CONFIG_DIR; use it directly as the config root
   CONFIG_DIR="$DROID_CONFIG_DIR"
+elif [[ -n "${OPENCODE_CONFIG_DIR:-}" ]]; then
+  # OpenCode sets OPENCODE_CONFIG_DIR; use it directly as the config root
+  CONFIG_DIR="$OPENCODE_CONFIG_DIR"
+elif [[ -n "${OPENCODE_CONFIG:-}" ]]; then
+  # OpenCode sets OPENCODE_CONFIG when no explicit config dir is given;
+  # fall back to ~/.config/opencode/ on that platform
+  CONFIG_DIR="$HOME/.config/opencode"
 else
   # Factory Droid sets DROID_PLUGIN_ROOT when no explicit config dir is given;
   # fall back to ~/.factory/ on that platform, ~/.claude/ everywhere else

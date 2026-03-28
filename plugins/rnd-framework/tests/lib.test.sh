@@ -100,6 +100,20 @@ else
   assert_eq "is_plugin_artifact_path: .factory/something-else does not match returns 1" "1" "1"
 fi
 
+# Matches .config/opencode/.rnd/ pattern (OpenCode XDG path)
+if is_plugin_artifact_path "/Users/alice/.config/opencode/.rnd/sessions/123/plan.md"; then
+  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "0"
+else
+  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "1"
+fi
+
+# Matches .config/opencode/.rnd/ pattern (OpenCode XDG path)
+if is_plugin_artifact_path "/Users/alice/.config/opencode/.rnd/slug/sessions/123/plan.md"; then
+  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "0"
+else
+  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "1"
+fi
+
 # Does NOT match plain .rnd/ without config dir prefix
 if is_plugin_artifact_path "/Users/alice/.rnd/something"; then
   assert_eq "is_plugin_artifact_path: plain .rnd/ without config prefix returns 1" "1" "0"
@@ -137,6 +151,13 @@ else
   assert_eq "is_plugin_cache_path: .factory/plugins/cache/ returns 0" "0" "1"
 fi
 
+# Matches .config/opencode/plugins/cache/ (OpenCode XDG path)
+if is_plugin_cache_path "/Users/alice/.config/opencode/plugins/cache/rnd/SKILL.md"; then
+  assert_eq "is_plugin_cache_path: .config/opencode/plugins/cache/ returns 0" "0" "0"
+else
+  assert_eq "is_plugin_cache_path: .config/opencode/plugins/cache/ returns 0" "0" "1"
+fi
+
 printf '\n%s\n' '--- is_learnings_path ---'
 
 # Matches .claude-personal/learnings/
@@ -172,6 +193,13 @@ if is_learnings_path "/Users/alice/.factory/learnings/javascript.md"; then
   assert_eq "is_learnings_path: .factory/learnings/ returns 0" "0" "0"
 else
   assert_eq "is_learnings_path: .factory/learnings/ returns 0" "0" "1"
+fi
+
+# Matches .config/opencode/learnings/ (OpenCode XDG path)
+if is_learnings_path "/Users/alice/.config/opencode/learnings/javascript.md"; then
+  assert_eq "is_learnings_path: .config/opencode/learnings/ returns 0" "0" "0"
+else
+  assert_eq "is_learnings_path: .config/opencode/learnings/ returns 0" "0" "1"
 fi
 
 printf '\n%s\n' '--- allow_json ---'

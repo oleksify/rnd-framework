@@ -12,7 +12,7 @@ set -euo pipefail
 # within a .claude or .factory config directory.
 is_plugin_artifact_path() {
   local path="$1"
-  [[ "$path" =~ \.(claude[^/]*|factory)/.*\.rnd/ ]]
+  [[ "$path" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/ ]]
 }
 
 # Backward-compatible alias.
@@ -21,13 +21,13 @@ is_rnd_path() { is_plugin_artifact_path "$1"; }
 # Returns 0 if path contains plugins/cache/ under a .claude or .factory config directory.
 is_plugin_cache_path() {
   local path="$1"
-  [[ "$path" =~ \.(claude[^/]*|factory)/.*plugins/cache/ ]]
+  [[ "$path" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*plugins/cache/ ]]
 }
 
 # Returns 0 if path contains learnings/ under a .claude or .factory config directory.
 is_learnings_path() {
   local path="$1"
-  [[ "$path" =~ \.(claude[^/]*|factory)/.*learnings/ ]]
+  [[ "$path" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*learnings/ ]]
 }
 
 # Returns 0 if the file has a recognised source-code extension.
@@ -149,6 +149,12 @@ active_session_dir() {
     config_dir="$DROID_CONFIG_DIR"
   elif [[ -n "${DROID_PLUGIN_ROOT:-}" ]]; then
     config_dir="$HOME/.factory"
+  elif [[ -n "${OPENCODE_CONFIG_DIR:-}" ]]; then
+    # OpenCode: explicit config dir override
+    config_dir="$OPENCODE_CONFIG_DIR"
+  elif [[ -n "${OPENCODE_CONFIG:-}" ]]; then
+    # OpenCode: running under OpenCode with default XDG config location
+    config_dir="$HOME/.config/opencode"
   else
     config_dir="$HOME/.claude"
   fi

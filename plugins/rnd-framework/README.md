@@ -98,7 +98,7 @@ After configuring, start a Claude Code session in the project and check:
 | `/rnd-framework:rnd-history` | Browse past pipeline sessions for this project |
 | `/rnd-framework:rnd-resume` | Resume a partially-completed pipeline from where it left off |
 | `/rnd-framework:rnd-validate` | Validate plugin structure: frontmatter, hooks, cross-references |
-| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP, Lean toolchain |
+| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
 | `/rnd-framework:rnd-bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
 | `/rnd-framework:rnd-review` | Review code changes with multi-judge evidence-based rigor |
 | `/rnd-framework:rnd-audit` | Full codebase audit against project standards |
@@ -136,11 +136,10 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
-| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Lean 4 |
+| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Koka |
 | `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
-| `lean-proving` | Lean 4 formal verification — property bridge strategy, criteria-to-proposition translation, proof strategy ranking, companion tests, lake integration |
 | `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
@@ -157,8 +156,7 @@ All agents have persistent memory (`memory: user`), skills preloaded at startup,
 | `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces verification artifacts |
 | `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
-| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
-| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory) |
+| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
 | `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
 
 ## Pipeline Scaling
@@ -274,9 +272,6 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         ├── verifications/
         │   ├── T1-verification.md      # Verifier report with evidence
         │   └── T1-experiments/         # Verifier-written independent experiment tests
-        ├── proofs/
-        │   ├── T1-proof-report.md          # Proof Gate results for each task
-        │   └── T1-theorems/                # Lean theorem files
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
         └── iteration-log.md            # Build-verify cycle tracking
@@ -310,7 +305,6 @@ rnd-framework/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 │   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
-├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```
 

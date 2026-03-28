@@ -125,11 +125,7 @@ Invoke `rnd-framework:rnd-building` to load build discipline. For each wave in t
 - "Proceed to verification (Recommended)"
 - "Review build artifacts first"
 
-## Phase 2.5: Proof Gate (advisory)
-
-Check Lean: `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If unavailable, log and skip to Phase 2.5b. Otherwise, for each task, invoke `rnd-framework:lean-proving` to attempt Lean 4 proofs of pre-registration criteria. Save reports to `$RND_DIR/proofs/`. Auto-continues regardless of results.
-
-## Phase 2.5b: Reality Audit (blocking)
+## Phase 2.5: Reality Audit (blocking)
 
 For each task with external dependencies, invoke `rnd-framework:rnd-reality-auditing` to adversarially test external service contracts. Save reports to `$RND_DIR/reality/`. Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
 

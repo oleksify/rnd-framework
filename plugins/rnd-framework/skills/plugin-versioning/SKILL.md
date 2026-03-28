@@ -75,7 +75,6 @@ bash lib/validate.sh --quiet
 | **Skills** | SKILL.md exists in each skill dir, has frontmatter with `name` (matches dir) and `description` |
 | **Commands** | Frontmatter with `description`, `argument-hint` ↔ `$ARGUMENTS` consistency, valid `model` |
 | **Output Styles** | Frontmatter with `name` and `description` |
-| **Proofs** | `lake build` passes (skipped if Lean not available) |
 | **Lib Scripts** | `rnd-dir.sh` and `bump.sh` exist and are executable |
 | **Cross-References** | All `rnd-framework:<name>` refs in skills, agents, and commands resolve to actual skills/agents/commands |
 | **Content Parity** | Specific markers exist in paired files (see below) |

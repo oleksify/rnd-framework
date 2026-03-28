@@ -105,7 +105,7 @@ Orthogonal to task size, **criticality** determines how much verification effort
 
 ### LOW criticality
 **Examples:** Config changes, documentation updates, style fixes, renaming, adding log lines.
-**Verification:** Single-judge verification. No proof gate. Quality tier is advisory-only.
+**Verification:** Single-judge verification. Quality tier is advisory-only.
 **Rationale:** False negatives here are cheap to fix. Over-verifying wastes tokens.
 
 ### NORMAL criticality (default)
@@ -115,7 +115,7 @@ Orthogonal to task size, **criticality** determines how much verification effort
 
 ### HIGH criticality
 **Examples:** Security-sensitive code, data migrations, authentication changes, financial calculations, architectural decisions that constrain future work.
-**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5). If Lean is available, invoke proof gate.
+**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5).
 **Rationale:** False negatives here are expensive. The extra verification cost is justified.
 
 ### How the Planner annotates criticality
@@ -132,11 +132,11 @@ If the Planner omits the field, the orchestrator defaults to NORMAL.
 
 ### How the orchestrator applies it
 
-| Criticality | Judges | Iteration budget | Proof gate |
-|-------------|--------|-----------------|------------|
-| LOW | 1 | 2 | Skip |
-| NORMAL | 1 | 3 | If available |
-| HIGH | 2 | 5 | If available |
+| Criticality | Judges | Iteration budget |
+|-------------|--------|-----------------|
+| LOW | 1 | 2 |
+| NORMAL | 1 | 3 |
+| HIGH | 2 | 5 |
 
 This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
 

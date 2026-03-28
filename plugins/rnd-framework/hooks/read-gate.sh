@@ -17,7 +17,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly BARRIER_KEYWORD="self-assessment"
 readonly VERIFIER_KEYWORD="verifier"
-readonly PROOF_GATE_KEYWORD="proof-gate"
 
 parse_input
 file_path="$(extract_file_path "$TOOL_INPUT")"
@@ -29,7 +28,7 @@ if [[ "$lower" == *"${BARRIER_KEYWORD}"* ]]; then
   # Known non-verifier agents are allowed through.
   # Empty agent_type or any agent containing "verifier" is blocked.
   agent_lower="${agent_type,,}"
-  if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]] || [[ "$agent_lower" == *"${PROOF_GATE_KEYWORD}"* ]]; then
+  if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
     block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
   fi
   # Non-verifier agent: fall through (no-opinion, exit 0)

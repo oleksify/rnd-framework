@@ -493,28 +493,6 @@ validate_output_styles() {
 }
 
 # ---------------------------------------------------------------------------
-# Proofs validation
-# ---------------------------------------------------------------------------
-
-validate_proofs() {
-  begin_category "Proofs"
-  local proofs_dir="${PLUGIN_ROOT}/proofs"
-  if [[ ! -d "$proofs_dir" ]]; then
-    record_pass "no proofs/ directory (skipped)"
-    return 0
-  fi
-  if ! command -v lean > /dev/null 2>&1 || ! command -v lake > /dev/null 2>&1; then
-    record_pass "proofs/ exists (skipped — lean not available)"
-    return 0
-  fi
-  if (cd "$proofs_dir" && lake build 2>/dev/null); then
-    record_pass "lake build exits 0 (all proofs compile)"
-  else
-    record_fail "lake build failed in proofs/"
-  fi
-}
-
-# ---------------------------------------------------------------------------
 # Lib Scripts validation
 # ---------------------------------------------------------------------------
 
@@ -585,7 +563,6 @@ validate_skills
 validate_agents
 validate_commands
 validate_output_styles
-validate_proofs
 validate_lib_scripts
 validate_cross_refs
 validate_content_parity

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5 — 2026-03-28
+
+### Remove Lean 4 formal verification
+
+Remove proofs/ directory (InformationBarrier.lean, ArtifactFlow.lean, lakefile.lean, lean-toolchain, lake-manifest.json). Remove lean-proving skill and lean.md KISS practices. Remove Proof Gate phase from rnd-start pipeline, rnd-orchestration execution phases, rnd-scaling criticality table, rnd-data-science Phase 0, rnd-doctor Lean toolchain check, and README skill/agent/artifact listings. Remove proof-gate keyword from read-gate.sh information barrier and corresponding test cases. Remove validate_proofs from validate.sh. All 222 validation checks pass.
+
 ## 1.0.4 — 2026-03-28
 
 ### Audit fixes: deduplicate config-dir resolution, extract validate.sh cross-refs

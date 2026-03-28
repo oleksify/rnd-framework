@@ -37,7 +37,6 @@ This framework applies the scientific method to structured coding:
 **Planning** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
 **Scheduling** — Analyzes dependencies, schedules execution waves, enforces iteration budgets.
 **Building** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
-**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform verification but do not block the pipeline. Skips when Lean is unavailable.
 **Reality Audit** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to building before verification.
 **Verification** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent verification passes run sequentially; if they disagree, a third tiebreaker pass receives both reports.
 **Integration** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
@@ -87,8 +86,7 @@ Skills provide phase-specific discipline:
 1. **Plan** — Decompose the task, write pre-registrations, build dependency matrix. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream phases can read cached context instead of re-exploring the codebase.
 2. **Schedule** — Create execution waves from dependency matrix.
 3. **Build** — Work tasks sequentially within waves. Produce code + tests + self-assessment.
-3.5. **Proof Gate** (advisory) — Attempt Lean 4 proofs for each task's criteria. Results (PROVEN/UNPROVEN) are passed to the verification phase as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable.
-3.5b. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification.
+3.5. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE.
 5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation.

@@ -23,7 +23,7 @@ This skill defines the protocol shared by `/rnd-framework:rnd-verify` and the Ve
 
 ### Step 1 — Pre-flight
 
-Before spawning any judges:
+Before running any judge passes:
 
 1. Run the self-assessment scan: confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. The information barrier hook blocks reads of self-assessment files regardless — this step confirms the build is complete.
 2. Note that experiment artifacts from each judge will be saved under `$RND_DIR/verifications/T<id>-experiments/judge-a/`, `judge-b/`, and `tiebreaker/` (if a tiebreaker is triggered). These directories are created by the judges themselves during verification.
@@ -135,4 +135,4 @@ Independent judges who agree are much less likely to share the same blind spot t
 
 - `rnd-framework:rnd-verification` — The verification process each individual judge follows
 - `rnd-framework:rnd-iteration` — How feedback flows from a FAIL or NEEDS ITERATION verdict back to the Builder
-- `rnd-framework:rnd-orchestration` — Pipeline structure and agent coordination
+- `rnd-framework:rnd-orchestration` — Pipeline structure and phase coordination

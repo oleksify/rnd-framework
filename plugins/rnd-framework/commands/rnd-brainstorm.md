@@ -20,7 +20,7 @@ Get the initial idea on the table.
 
 If `$ARGUMENTS` is non-empty, use it as the seed idea and proceed to Phase 2.
 
-If `$ARGUMENTS` is empty, use `AskUserQuestion` to ask:
+If `$ARGUMENTS` is empty, use `AskUserQuestion`/`AskUser` to ask:
 > "What's on your mind? Describe an idea, problem, or area you want to explore — it can be vague."
 
 Options:
@@ -33,7 +33,7 @@ The user will either pick an option and elaborate, or type their idea directly. 
 
 ## Phase 2: Expand
 
-Understand the space around the seed. Ask 4-6 broad questions using `AskUserQuestion` (can be batched into 2-3 multi-question rounds). Cover:
+Understand the space around the seed. Ask 4-6 broad questions using `AskUserQuestion`/`AskUser` (can be batched into 2-3 multi-question rounds). Cover:
 
 - **Who benefits?** Who is the user/audience/stakeholder? What do they care about?
 - **What exists today?** What's the current state? What works, what doesn't?
@@ -55,7 +55,7 @@ For each direction, provide:
 - **One sentence:** What this direction means
 - **What it prioritizes:** What trade-off does it make?
 
-Present all directions and use `AskUserQuestion`:
+Present all directions and use `AskUserQuestion`/`AskUser`:
 > "Which direction resonates most?"
 
 Options: one per direction, plus "Combine elements from multiple" and "None of these — let me describe what I want."
@@ -64,7 +64,7 @@ If the user wants to combine or reframe, adapt and re-present. Max 2 rounds of e
 
 ## Phase 4: Narrow
 
-Deep-dive on the chosen direction. Ask 4-6 targeted questions using `AskUserQuestion`:
+Deep-dive on the chosen direction. Ask 4-6 targeted questions using `AskUserQuestion`/`AskUser`:
 
 - **Scope:** What's the minimum viable version? What can be deferred?
 - **Priorities:** If you had to pick 2-3 things that matter most, what are they?
@@ -122,7 +122,7 @@ Present the plan as regular text output (not abbreviated). Then proceed to Phase
 
 ## Phase 6: Output
 
-Use `AskUserQuestion` to present options:
+Use `AskUserQuestion`/`AskUser` to present options:
 
 - "Implement now with /rnd-framework:rnd-start (Recommended)" — save the plan to `$RND_DIR/brainstorm.md` and suggest the user run `/rnd-framework:rnd-start` with the plan as the task description
 - "Save for later" — save the plan to `$RND_DIR/brainstorm.md` and tell the user the file path so they can reference it in a future session

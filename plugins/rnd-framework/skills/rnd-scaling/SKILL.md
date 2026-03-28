@@ -9,7 +9,7 @@ effort: medium
 
 ## Overview
 
-The R&D pipeline scales to task complexity. A typo fix doesn't need four agents and three gates. A security-critical feature does.
+The R&D pipeline scales to task complexity. A typo fix doesn't need the full pipeline ceremony. A security-critical feature does.
 
 **Core principle:** Always use the pipeline. Scale it, don't skip it.
 
@@ -36,7 +36,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 3. Run independent verification (invoke `rnd-framework:rnd-verification`)
 4. Max 2 iterations
 
-**Skip:** Planner subagent, dependency scheduling, Integrator
+**Skip:** Decomposition phase, dependency scheduling, integration phase
 **Keep:** Pre-registration, TDD, independent verification
 
 ### Medium (multiple components, 1-4 hours)
@@ -49,7 +49,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 4. Independent verification per task
 5. Integration testing per wave
 
-**Full pipeline.** All agents, all gates.
+**Full pipeline.** All phases, all gates.
 
 ### Large (multi-day, many components)
 
@@ -73,8 +73,8 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need four agents 
 **Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Full pipeline
-2. Dual independent verification (two separate Verifiers)
-3. Adversarial verification: one Verifier specifically tries to break it
+2. Dual independent verification (two separate verification passes)
+3. Adversarial verification: one pass specifically tries to break it
 4. Extended iteration budget (5 cycles instead of 3)
 
 ## Decision Flow

@@ -10,7 +10,7 @@ effort: low
 
 ## Overview
 
-Some projects ship their own Claude Code agents and skills in `.claude/agents/` and `.claude/skills/`. These "local experts" are specialists tailored to the project's domain — a security reviewer, a domain-specific formatter, a testing harness builder. Surfacing them to the Planner allows pre-registration documents to route appropriate tasks to the right expert instead of a generic builder.
+Some projects ship their own Claude Code agents and skills in `.claude/agents/` and `.claude/skills/`. These "local experts" are specialists tailored to the project's domain — a security reviewer, a domain-specific formatter, a testing harness builder. Surfacing them during planning allows pre-registration documents to route appropriate tasks to the right expert instead of a generic build phase.
 
 **Core principle:** Local experts are optional project-level assets. Their presence enriches the pipeline; their absence never blocks it.
 
@@ -92,7 +92,7 @@ Dependencies: [Task IDs this depends on]
 Local expert: security-reviewer  # optional — name of local agent/skill to invoke
 ```
 
-The Planner does NOT invoke local experts itself. It only records the reference so downstream agents (Verifier, Integrator) know to invoke the expert when they process that task.
+The planning phase does NOT invoke local experts itself. It only records the reference so downstream phases (verification, integration) know to invoke the expert when they process that task.
 
 **When to add a Local expert field:**
 - A security-review agent is available and the task touches authentication or input handling
@@ -129,7 +129,7 @@ Local experts are always optional. The pipeline must not stall or fail because:
 - `.claude/skills/` does not exist in the target project
 - A specific agent or skill named in a pre-registration is no longer present
 
-In all absence cases, the responsible agent (Planner, Verifier, Integrator) silently continues without the local expert and records the absence in its output artifact.
+In all absence cases, the responsible phase (planning, verification, integration) silently continues without the local expert and records the absence in its output artifact.
 
 ## Related Skills
 

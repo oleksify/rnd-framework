@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 — 2026-03-28
+
+### Fix post-1.0.0 breakage: stale agent references, AskUser cross-platform parity
+
+Fix 28 content parity validation failures caused by the 1.0.0 agent removal. Redirect PARITY_TABLE entries in `lib/validate.sh` from deleted agent files to their new locations in commands and skills. Remove entries that were self-contained within a single artifact (data-science skill, multi-judge file naming).
+
+Fix `rnd-brainstorm` and all other conversation-driven commands hanging in Factory Droid. The commands referenced `AskUserQuestion` (Claude Code tool name) but Factory Droid only has `AskUser`. Update all 18 commands and 4 skills to use dual naming (`AskUserQuestion`/`AskUser`). Add `AskUser` to VALID_TOOLS in validate.sh.
+
+Clean up stale agent terminology across 7 skills: replace "spawn agent", "Builder agents", "Verifiers", "dispatch one agent per task" with phase-based language matching the single-flow architecture.
+
 ## 1.0.0 — 2026-03-28
 
 ### BREAKING: Single-flow execution, remove all agents, merge hooks

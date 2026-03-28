@@ -85,7 +85,7 @@ Format the spec as shown in the "Design-Spec.md Artifact Format" section below. 
 
 **Output the full design summary as regular text first** — include the alternatives comparison table, the recommendation with all reasoning, key assumptions, and conditions that would change it. Do NOT abbreviate or truncate the recommendation. The user needs to read the full rationale before choosing.
 
-**Then** use `AskUserQuestion` with short option labels for the decision. Do NOT put the recommendation text inside option descriptions — keep descriptions to one short sentence each.
+**Then** use `AskUserQuestion`/`AskUser` with short option labels for the decision. Do NOT put the recommendation text inside option descriptions — keep descriptions to one short sentence each.
 
 ```
 Options:
@@ -98,7 +98,7 @@ Options:
 
 ### 6. Iterate on Feedback
 
-If the user requests changes, update the spec, save it, and re-present using `AskUserQuestion`. Track the iteration count.
+If the user requests changes, update the spec, save it, and re-present using `AskUserQuestion`/`AskUser`. Track the iteration count.
 
 **Maximum 3 review iterations.** If the user has not approved after 3 rounds, stop and report to the orchestrator:
 
@@ -201,9 +201,9 @@ Each review round must:
 2. Increment the iteration counter in the spec header
 3. Update the revision history table
 4. Re-save `$RND_DIR/design-spec.md`
-5. Re-present via `AskUserQuestion` with the same structured options
+5. Re-present via `AskUserQuestion`/`AskUser` with the same structured options
 
-**Do not** present revisions as inline text. Always use `AskUserQuestion` so the pipeline tracks approval state, not just text acknowledgment.
+**Do not** present revisions as inline text. Always use `AskUserQuestion`/`AskUser` so the pipeline tracks approval state, not just text acknowledgment.
 
 **Iteration cap is 3.** After 3 rounds without approval, the orchestrator must decide whether to escalate, restart design with different framing, or bypass design phase with explicit user sign-off.
 
@@ -228,7 +228,7 @@ Before declaring design phase complete:
 - [ ] Spec contains 2-3 meaningfully different alternatives (not surface variations)
 - [ ] Each alternative has strengths, weaknesses, effort estimate, and risk level
 - [ ] Recommendation includes key assumptions and conditions that would change it
-- [ ] User approved via `AskUserQuestion` (not plain text acknowledgment)
+- [ ] User approved via `AskUserQuestion`/`AskUser` (not plain text acknowledgment)
 - [ ] `$RND_DIR/design-spec.md` exists and contains `STATUS: APPROVED`
 - [ ] Iteration count did not exceed 3
 - [ ] Planner has received the spec as context before beginning pre-registration

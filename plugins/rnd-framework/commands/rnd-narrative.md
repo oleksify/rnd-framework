@@ -51,7 +51,7 @@ From the artifacts, produce a prose narrative. Do NOT spawn agents — write thi
 
 ## Step 4: Present
 
-Output the full narrative as regular text. Then use `AskUserQuestion`:
+Output the full narrative as regular text. Then use `AskUserQuestion`/`AskUser`:
 
 - "Done" — end the command
 - "Save to file" — save the narrative to `$RND_DIR/narrative.md` for future reference

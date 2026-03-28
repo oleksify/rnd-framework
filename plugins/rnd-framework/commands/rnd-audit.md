@@ -39,7 +39,7 @@ Save the audit report to `$RND_DIR/audit-report.md` with Scope set to "Full code
 
 ## Phase 3: Report
 
-Present findings using `AskUserQuestion`:
+Present findings using `AskUserQuestion`/`AskUser`:
 
 - If **CLEAN**: "Audit complete — no issues found." Options:
   - "Finish audit"

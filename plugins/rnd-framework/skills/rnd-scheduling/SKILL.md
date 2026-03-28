@@ -11,13 +11,13 @@ effort: medium
 
 Use dependency analysis to schedule tasks into parallel execution waves. Tasks within a wave have no cross-dependencies and can run concurrently.
 
-**Core principle:** Dispatch one agent per independent task. Let them work concurrently within waves.
+**Core principle:** Organize independent tasks into waves for sequential execution within each wave.
 
 ## When to Use
 
 - After decomposition produces a dependency matrix
-- When coordinating multiple Builder agents
-- When coordinating multiple Verifier agents
+- When coordinating multiple build tasks
+- When coordinating multiple verification tasks
 - Phase 2 (Schedule) of the R&D pipeline
 
 ## Wave Construction
@@ -35,13 +35,13 @@ Within each wave:
 - Build each task sequentially (invoke `rnd-framework:rnd-building` skill)
 - After ALL tasks in the wave are built, verify each sequentially (invoke `rnd-framework:rnd-verification` skill)
 
-### Agent Prompt Structure
+### Task Scope
 
-Each agent gets:
+Each task gets:
 - **Specific scope:** One task with its pre-registration
 - **Clear goal:** Implement/verify against success criteria
 - **Constraints:** Don't modify code outside your task scope
-- **Expected output:** Manifest + self-assessment (Builder) or verification report (Verifier)
+- **Expected output:** Manifest + self-assessment (build) or verification report (verify)
 
 ## Wave Execution Order
 

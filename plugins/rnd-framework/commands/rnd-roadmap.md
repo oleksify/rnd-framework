@@ -29,7 +29,7 @@ test -f "$ROADMAP" && echo "exists" || echo "missing"
 
 ### 1. Get the broad task description
 
-If `$ARGUMENTS` is non-empty, use it as the goal. If empty, use `AskUserQuestion`:
+If `$ARGUMENTS` is non-empty, use it as the goal. If empty, use `AskUserQuestion`/`AskUser`:
 
 > "What multi-session goal do you want to map out?"
 
@@ -47,7 +47,7 @@ Write the completed roadmap to `$ROADMAP`. Then display its full contents.
 
 ### 3. Post-creation options
 
-Use `AskUserQuestion`:
+Use `AskUserQuestion`/`AskUser`:
 
 Options:
 - "Start first milestone (Recommended)" — find the first `NOT_STARTED` milestone, update
@@ -74,7 +74,7 @@ Print the table and an overall summary, e.g. "2 of 5 milestones complete."
 
 ### 2. Management options
 
-Use `AskUserQuestion`. Recommend "Continue next milestone" if a `NOT_STARTED`
+Use `AskUserQuestion`/`AskUser`. Recommend "Continue next milestone" if a `NOT_STARTED`
 milestone exists; recommend "View milestone details" if all are `DONE`.
 
 Options:
@@ -87,7 +87,7 @@ Options:
 
 1. Find the first milestone with status `NOT_STARTED`.
 2. Display its title and description.
-3. Confirm with `AskUserQuestion`: "Start this milestone now?" — "Yes, start now" / "Cancel".
+3. Confirm with `AskUserQuestion`/`AskUser`: "Start this milestone now?" — "Yes, start now" / "Cancel".
 4. On confirm: update `$ROADMAP` — set status to `IN_PROGRESS`, write current session ID
    (from `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`) to its Session field. Then invoke
    `/rnd-framework:rnd-start` with the milestone's Description as the task.
@@ -97,7 +97,7 @@ Options:
 ### Park current work
 
 1. Find the first `IN_PROGRESS` milestone. If none, inform the user and re-present options.
-2. Use `AskUserQuestion` to collect progress details:
+2. Use `AskUserQuestion`/`AskUser` to collect progress details:
    - "What has been completed so far?"
    - "What remains to reach SHIP?"
 3. Write `**Progress:**` and `**Remaining:**` fields to the milestone in `$ROADMAP`.
@@ -106,7 +106,7 @@ Options:
 
 ### Add milestones
 
-Ask the user to describe the new milestone(s) via `AskUserQuestion`. Append them to
+Ask the user to describe the new milestone(s) via `AskUserQuestion`/`AskUser`. Append them to
 `$ROADMAP` following the `rnd-framework:rnd-roadmapping` skill format, with status
 `NOT_STARTED`. Update `Last updated`. Re-display the status table and re-present options.
 
@@ -114,4 +114,4 @@ Ask the user to describe the new milestone(s) via `AskUserQuestion`. Append them
 
 Display each milestone's full section from `$ROADMAP` (title, status, description,
 session, and delivered/progress/remaining fields if present). Then re-present the
-management options via `AskUserQuestion`.
+management options via `AskUserQuestion`/`AskUser`.

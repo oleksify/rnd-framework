@@ -12,11 +12,11 @@ If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-plan` with no task descri
 
 1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes.
 
-2. **Ask with `AskUserQuestion`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option.
+2. **Ask with `AskUserQuestion`/`AskUser`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option.
 
 3. **If the user picks a suggestion**, use it as the task description and continue below. **If they type a custom task**, use that instead.
 
-**Never fall back to plain text** to ask what to work on. `AskUserQuestion` is mandatory at every decision point, including this one.
+**Never fall back to plain text** to ask what to work on. `AskUserQuestion`/`AskUser` is mandatory at every decision point, including this one.
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
@@ -51,7 +51,7 @@ Run ONLY the planning phase for: $ARGUMENTS
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
 
-9. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:
+9. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion`/`AskUser` with options:
    - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:rnd-build`
    - "Request plan revisions" — describe what to change and re-run `/rnd-framework:rnd-plan`
    - "Add more tasks" — extend the plan before building

@@ -1,6 +1,6 @@
 ---
 name: rnd-orchestration
-description: "Use when coordinating multi-agent R&D pipeline execution — provides pipeline overview, agent roles, information barriers, and gate criteria"
+description: "Use when coordinating R&D pipeline execution — provides pipeline overview, phase roles, information barriers, and gate criteria"
 user-invocable: false
 effort: medium
 ---
@@ -22,7 +22,7 @@ This is a scientific process. Treat every claim — including your own — with 
 
 ## Framework Overview
 
-This framework applies the scientific method to multi-agent coding:
+This framework applies the scientific method to structured coding:
 
 | Scientific Method | Principle | Role |
 |---|---|---|
@@ -84,13 +84,13 @@ Skills provide phase-specific discipline:
 
 ## Execution Phases
 
-1. **Plan** — Planner decomposes, writes pre-registrations, builds dependency matrix. Planner also writes structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream agents can read cached context instead of re-exploring the codebase.
-2. **Schedule** — Orchestrator creates execution waves from dependency matrix.
-3. **Build** — Builder agents work tasks (parallel within waves). Produce code + tests + self-assessment.
-3.5. **Proof Gate** (advisory) — Proof-gate agents attempt Lean 4 proofs for each task's criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable.
-3.5b. **Reality Audit** (blocking) — Reality-auditor agents adversarially test each task's external service contracts. INVALID_FOUND routes the task back to the Builder with "expected X, found Y" feedback before Verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to Verification.
-4. **Verify** — Independent Verifier checks each task against pre-registered criteria. PASS/FAIL/ITERATE.
-5. **Iterate** — On FAIL, Builder gets feedback only (not fixes). Max 3 cycles, then escalate.
+1. **Plan** — Decompose the task, write pre-registrations, build dependency matrix. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream phases can read cached context instead of re-exploring the codebase.
+2. **Schedule** — Create execution waves from dependency matrix.
+3. **Build** — Work tasks sequentially within waves. Produce code + tests + self-assessment.
+3.5. **Proof Gate** (advisory) — Attempt Lean 4 proofs for each task's criteria. Results (PROVEN/UNPROVEN) are passed to the verification phase as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable.
+3.5b. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification.
+4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE.
+5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation.
 
 ## Gate Criteria
@@ -102,7 +102,7 @@ Skills provide phase-specific discipline:
 
 ## User Decision Points
 
-When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.
+When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion`/`AskUser` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.
 
 Rules:
 - Always include 2-4 concrete options

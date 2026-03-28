@@ -23,10 +23,10 @@ Use `$RND_DIR` for all artifact paths below.
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-start` with no task description):
 
 1. **Quick codebase scan:** `git log --oneline -10`, TODO/FIXME comments, recent changes.
-2. **Ask with `AskUserQuestion`:** 2-4 concrete suggestions based on what you found, plus "Describe a different task".
+2. **Ask with `AskUserQuestion`/`AskUser`:** 2-4 concrete suggestions based on what you found, plus "Describe a different task".
 3. Use the selected or typed task as the task description and proceed to Phase 0.
 
-**Never fall back to plain text** — `AskUserQuestion` is mandatory at every decision point.
+**Never fall back to plain text** — `AskUserQuestion`/`AskUser` is mandatory at every decision point.
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
@@ -42,15 +42,15 @@ Before planning, explore the codebase and gather requirements.
 
 4. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
-   - **If `roadmap.md` exists:** Read it and display milestone progress. Use `AskUserQuestion` with options:
+   - **If `roadmap.md` exists:** Read it and display milestone progress. Use `AskUserQuestion`/`AskUser` with options:
      - "Start next milestone: [milestone title] (Recommended)" — use the milestone description as the task
      - "Start a different task" — continue with `$ARGUMENTS`, ignoring the roadmap
      - "Manage roadmap" — route to `/rnd-framework:rnd-roadmap`
-   - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
+   - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`/`AskUser`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
 
 5. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
 
-6. **Ask 3-5 clarifying questions** using `AskUserQuestion`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
+6. **Ask 3-5 clarifying questions** using `AskUserQuestion`/`AskUser`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
 
 7. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts, (c) KISS/FP rules, (d) user answers, (e) constraints.
 
@@ -69,7 +69,7 @@ Otherwise:
 1. **Generate 2-3 architectural alternatives** from Phase 0 context.
 2. **Recommend one approach** with reasons tied to Phase 0 constraints.
 3. **Save design spec** to `$RND_DIR/design-spec.md`. Status: `STATUS: DRAFT`.
-4. **Present for approval** — `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
+4. **Present for approval** — `AskUserQuestion`/`AskUser`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
 5. **Iterate on feedback** (max 3 rounds). After 3 rounds without approval, report blocked.
 6. **Finalize** — set `STATUS: APPROVED`.
 
@@ -84,7 +84,7 @@ Invoke `rnd-framework:rnd-decomposition` to guide decomposition. Using that skil
 
 **Gate 1:** Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. Revise until every criterion specifies an observable outcome.
 
-**After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion` with options:
+**After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion`/`AskUser` with options:
 - "Approve plan and auto-continue (Recommended)" — run the full pipeline automatically, pausing only for escalations
 - "Approve plan and start building" — proceed with manual gates at each phase boundary
 - "Request plan revisions"
@@ -116,12 +116,12 @@ Invoke `rnd-framework:rnd-building` to load build discipline. For each wave in t
    |-------------|--------|
    | `DONE` | Proceed to Gate 2. |
    | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Note concerns for verification phase. |
-   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info. Resume with user's answer. |
-   | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
+   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion`/`AskUser` to get missing info. Resume with user's answer. |
+   | `BLOCKED` | Pause. `AskUserQuestion`/`AskUser`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
 
 5. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
 
-**After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
+**After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`/`AskUser`:
 - "Proceed to verification (Recommended)"
 - "Review build artifacts first"
 
@@ -159,9 +159,9 @@ Invoke `rnd-framework:rnd-verification` to load verification discipline. For eac
 
 **After Gate 3:** Summarize verdicts. Then route:
 
-- All PASS/PASS(quality): auto-continue to Phase 5, or `AskUserQuestion`: "Proceed to integration (Recommended)", "Iterate on quality first", "Review verification reports".
-- Any NEEDS ITERATION: auto-continue to Phase 4, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
-- Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
+- All PASS/PASS(quality): auto-continue to Phase 5, or `AskUserQuestion`/`AskUser`: "Proceed to integration (Recommended)", "Iterate on quality first", "Review verification reports".
+- Any NEEDS ITERATION: auto-continue to Phase 4, or `AskUserQuestion`/`AskUser`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
+- Any FAIL (always pauses): `AskUserQuestion`/`AskUser`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
 
 ## Phase 4: Iterate (if needed)
 
@@ -170,7 +170,7 @@ Invoke `rnd-framework:rnd-verification` to load verification discipline. For eac
 3. Save updated manifest and self-assessment.
 4. Re-invoke `rnd-framework:rnd-verification` to re-verify (same information barrier rules).
 5. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`.
-6. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`:
+6. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`/`AskUser`:
    - "Re-plan this task"
    - "Skip and continue (Recommended)"
    - "Stop pipeline"
@@ -180,7 +180,7 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 ### Skip Procedure
 
 1. `TaskUpdate`: `status: "completed"`, `metadata: {"skipped": true, "reason": "..."}`.
-2. Check downstream dependents via `TaskList`. Warn the user and `AskUserQuestion` for each: skip dependent, proceed anyway, or re-plan.
+2. Check downstream dependents via `TaskList`. Warn the user and `AskUserQuestion`/`AskUser` for each: skip dependent, proceed anyway, or re-plan.
 
 ## Phase 5: Integrate
 
@@ -195,15 +195,15 @@ Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform i
 
 **After Gate 4:** Summarize results.
 
-If SHIP and more waves remain: auto-continue to Phase 2 next wave, or `AskUserQuestion`:
+If SHIP and more waves remain: auto-continue to Phase 2 next wave, or `AskUserQuestion`/`AskUser`:
 - "Proceed to next wave (Recommended)"
 - "Review integration report"
 
-If SHIP and last wave: `AskUserQuestion`:
+If SHIP and last wave: `AskUserQuestion`/`AskUser`:
 - "Review all artifacts"
 - "Proceed to cleanup (Recommended)"
 
-If NO-SHIP: `AskUserQuestion`:
+If NO-SHIP: `AskUserQuestion`/`AskUser`:
 - "Fix failing integration points (Recommended)"
 - "Re-plan affected tasks"
 
@@ -215,7 +215,7 @@ Summarize: what was built, verification results, iterations, integration status,
 
 **MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-doc-polish` AFTER formatting but BEFORE presenting next steps.
 
-Use `AskUserQuestion` for next steps:
+Use `AskUserQuestion`/`AskUser` for next steps:
 - "Commit changes (Recommended)"
 - "Bump version, tag and push"
 - "Run code review first"
@@ -228,4 +228,4 @@ Use `AskUserQuestion` for next steps:
 
 When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
-After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option.
+After showing the narrative, re-present the same `AskUserQuestion`/`AskUser` menu without the narrative option.

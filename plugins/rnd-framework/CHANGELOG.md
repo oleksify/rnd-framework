@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 — 2026-03-28
+
+### Add 5 codebase-dedicated skills
+
+New skills: hook-authoring, plugin-architecture, bash-hook-testing, plugin-versioning, lib-sh-patterns — covering hook conventions, multi-platform plugin structure, test framework patterns, release workflow, and lib.sh shared utilities.
+
 ## 1.0.1 — 2026-03-28
 
 ### Fix post-1.0.0 breakage: stale agent references, AskUser cross-platform parity

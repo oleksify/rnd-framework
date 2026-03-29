@@ -69,6 +69,14 @@ The "Clean up" option removes `$RND_DIR` (the current session directory). Only d
 
 No `.gitignore` changes needed — pipeline artifacts are stored outside the project directory and are never at risk of being committed.
 
+### 4.5. Agent Cleanup
+
+If the pipeline spawned agents (multi-agent mode via `/rnd-framework:rnd-start`), ensure all spawned agent processes have terminated. Agents should self-terminate after completing their work, but verify no orphaned agent sessions remain:
+
+- Check that all Builder, Verifier, and Integrator agents have returned their final reports
+- Confirm no background agent processes are still running
+- Agent artifacts (build manifests, verification reports, experiment results) are already stored in `$RND_DIR` and will be cleaned up with the session directory if the user chooses cleanup
+
 ### 5. Create Final Commit
 
 Stage all verified changes. Write a clear commit message summarizing the feature/fix.

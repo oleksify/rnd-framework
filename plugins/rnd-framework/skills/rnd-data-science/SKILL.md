@@ -158,6 +158,42 @@ using Statistics, DataFrames, CSV
 
 Use the same session name throughout the task so state accumulates correctly. If the session becomes stale or outputs are unexpected, call `mcp__julia__julia_restart` and re-run setup.
 
+## Phase 0: Lean Specifications
+
+Write Lean 4 theorems for numerical invariants BEFORE writing any computation code. Read the pre-registration criteria, identify invariants, and formalize them first — spec before code.
+
+**When Lean is unavailable:** Run `lake --version 2>/dev/null || elan which lean 2>/dev/null`. If Lean is not installed, skip this phase and note it in the build manifest. Do not block on it.
+
+### Common invariants to formalize
+
+- **Bounds** — all values fall within `[lo, hi]`
+- **NaN propagation** — no NaN in output when none are in input
+- **Totality** — aggregation produces a result for every valid input
+- **Associativity** — grouping order does not affect the result
+
+### Lean 4 examples
+
+```lean
+-- Bounds checking: all values in [lo, hi]
+theorem all_bounded (xs : List Float) (lo hi : Float)
+    (h : ∀ x ∈ xs, lo ≤ x ∧ x ≤ hi) :
+    ∀ x ∈ xs, lo ≤ x := by intro x hx; exact (h x hx).1
+
+-- NaN propagation: no NaN in output if none in input
+theorem no_nan_propagation (xs : List Float)
+    (h : ∀ x ∈ xs, ¬ x.isNaN) (f : Float → Float)
+    (hf : ∀ x, ¬ x.isNaN → ¬ (f x).isNaN) :
+    ∀ y ∈ xs.map f, ¬ y.isNaN := by simp [List.mem_map]; aesop
+
+-- Totality: aggregation is defined for every input (no partial functions)
+theorem total_aggregation (xs : List Nat) :
+    ∃ n : Nat, xs.foldl (· + ·) 0 = n := ⟨_, rfl⟩
+
+-- Associativity: grouping doesn't affect result
+theorem sum_associative (a b c : Nat) :
+    a + (b + c) = (a + b) + c := by omega
+```
+
 ## Phase 1: Data Validation
 
 Before any computation, validate inputs:
@@ -315,6 +351,7 @@ Distinguish **findings** (what the data says) from **interpretations** (what it 
 
 Before marking the task complete:
 
+- [ ] Lean specs written for numerical invariants (when Lean available)
 - [ ] Computation tool selected appropriately (DuckDB for SQL queries, Julia for formulas/charts)
 - [ ] Input data validated before processing
 - [ ] Every financial figure has an independent cross-check assertion

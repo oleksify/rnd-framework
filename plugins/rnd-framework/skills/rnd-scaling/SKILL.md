@@ -21,7 +21,7 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 **Process:**
 1. Write a one-line pre-registration (inline, no subagent)
 2. Make the change yourself
-3. Run inline verification to confirm
+3. Spawn one `rnd-framework:rnd-verifier` to confirm
 4. Done
 
 **Skip:** Planner, dependency scheduling, Integrator
@@ -33,23 +33,23 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 **Process:**
 1. Write a brief pre-registration (inline)
 2. Implement with TDD (use `rnd-framework:rnd-building`)
-3. Run independent verification (invoke `rnd-framework:rnd-verification`)
+3. Spawn `rnd-framework:rnd-verifier` for independent verification
 4. Max 2 iterations
 
-**Skip:** Decomposition phase, dependency scheduling, integration phase
+**Skip:** Planner subagent, dependency scheduling, Integrator
 **Keep:** Pre-registration, TDD, independent verification
 
 ### Medium (multiple components, 1-4 hours)
 
 **Entry:** `/rnd-framework:rnd-start`
 **Process:**
-1. Invoke `rnd-framework:rnd-decomposition` for hierarchical decomposition
+1. Spawn `rnd-framework:rnd-planner` for hierarchical decomposition
 2. Schedule waves with dependency analysis
-3. Build tasks per wave sequentially (invoke `rnd-framework:rnd-building`)
+3. Spawn Builder(s) per wave
 4. Independent verification per task
 5. Integration testing per wave
 
-**Full pipeline.** All phases, all gates.
+**Full pipeline.** All agents, all gates.
 
 ### Large (multi-day, many components)
 
@@ -73,8 +73,8 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 **Entry:** `/rnd-framework:rnd-start`
 **Process:**
 1. Full pipeline
-2. Dual independent verification (two separate verification passes)
-3. Adversarial verification: one pass specifically tries to break it
+2. Dual independent verification (two separate Verifiers)
+3. Adversarial verification: one Verifier specifically tries to break it
 4. Extended iteration budget (5 cycles instead of 3)
 
 ## Decision Flow
@@ -105,7 +105,7 @@ Orthogonal to task size, **criticality** determines how much verification effort
 
 ### LOW criticality
 **Examples:** Config changes, documentation updates, style fixes, renaming, adding log lines.
-**Verification:** Single-judge verification. Quality tier is advisory-only.
+**Verification:** Single-judge verification. No Proof Gate. Quality tier is advisory-only.
 **Rationale:** False negatives here are cheap to fix. Over-verifying wastes tokens.
 
 ### NORMAL criticality (default)
@@ -115,7 +115,7 @@ Orthogonal to task size, **criticality** determines how much verification effort
 
 ### HIGH criticality
 **Examples:** Security-sensitive code, data migrations, authentication changes, financial calculations, architectural decisions that constrain future work.
-**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5).
+**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5). If Lean is available, invoke Proof Gate.
 **Rationale:** False negatives here are expensive. The extra verification cost is justified.
 
 ### How the Planner annotates criticality
@@ -132,11 +132,11 @@ If the Planner omits the field, the orchestrator defaults to NORMAL.
 
 ### How the orchestrator applies it
 
-| Criticality | Judges | Iteration budget |
-|-------------|--------|-----------------|
-| LOW | 1 | 2 |
-| NORMAL | 1 | 3 |
-| HIGH | 2 | 5 |
+| Criticality | Judges | Iteration budget | Proof Gate |
+|-------------|--------|-----------------|------------|
+| LOW | 1 | 2 | Skip |
+| NORMAL | 1 | 3 | If available |
+| HIGH | 2 | 5 | If available |
 
 This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
 

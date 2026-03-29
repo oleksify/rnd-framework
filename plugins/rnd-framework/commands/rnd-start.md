@@ -1,12 +1,25 @@
 ---
-description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Build → Verify → Integrate — all in a single flow, no agent spawning."
+description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Build → Verify → Integrate. Supports single-flow and multi-agent execution modes."
 argument-hint: "<description of the feature, refactor, or bug fix>"
 effort: high
 ---
 
-# R&D Framework: Full Pipeline (Single-Flow)
+# R&D Framework: Full Pipeline
 
-You are orchestrating a complex coding task using the R&D framework — a scientific-method pipeline. All phases run sequentially in this session. No agents are spawned.
+You are orchestrating a complex coding task using the R&D framework — a scientific-method pipeline.
+
+## Mode Selection
+
+Before proceeding, determine the execution mode. Use `AskUserQuestion`/`AskUser` to present the choice:
+
+- **"Single-flow mode (Recommended)"** — All phases run sequentially in this session. No agents are spawned. Best for most tasks; avoids rate-limit overhead.
+- **"Multi-agent mode"** — Pipeline phases are executed by specialized agents spawned as subagents (`rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-integrator`). Each agent has a dedicated model, skill preloading, and role. Best for complex multi-task pipelines requiring deep specialization and mechanically-enforced information barriers.
+
+If the user has already specified a mode (e.g., "use multi-agent"), skip the prompt and proceed with their choice. If `$ARGUMENTS` includes "quick" or the task is clearly small, redirect to `/rnd-framework:rnd-quick` instead.
+
+**Single-flow mode:** All phases below are executed directly by this session. Skills provide phase-specific discipline.
+
+**Multi-agent mode:** The orchestrator (this session) spawns specialized agents for each phase. Use `subagent_type` to spawn agents (e.g., `subagent_type: "rnd-builder"`). Agents communicate results back via `SendMessage`. The orchestrator manages phase gates, collects artifacts, and coordinates the pipeline. See `rnd-framework:rnd-orchestration` for agent roles and coordination protocol.
 
 ## Setup
 

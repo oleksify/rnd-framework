@@ -1,13 +1,15 @@
 ---
-description: "Lightweight R&D mode for small tasks (<1hr). Same principles, collapsed workflow: quick plan → build → inline verify."
+description: "Lightweight R&D mode for small tasks (<1hr). Single-flow only — no agent spawning. Same principles, collapsed workflow: quick plan → build → inline verify."
 argument-hint: "<description of the small task>"
 model: sonnet
 effort: medium
 ---
 
-# R&D Framework: Quick Mode
+# R&D Framework: Quick Mode (Single-Flow)
 
-For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. Design exploration is skipped in quick mode — use `/rnd-framework:rnd-start` if the task requires architectural trade-off analysis.
+For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. **Quick mode always runs in single-flow mode** — all phases execute in the current session with no agent spawning. Design exploration is skipped.
+
+For multi-agent rigor or architectural trade-off analysis, use `/rnd-framework:rnd-start` instead — it supports both single-flow and multi-agent execution modes.
 
 > **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:rnd-start` for proper decomposition.
 
@@ -106,4 +108,4 @@ Save the verification report to `$RND_DIR/verifications/T1-verification.md` with
   - "Iterate one more time" — extend budget by 1
   - "Abandon task" — stop work on this task
 
-Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees, use `/rnd-framework:rnd-start`.
+Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees or multi-agent execution, use `/rnd-framework:rnd-start`.

@@ -72,7 +72,25 @@ Extract the `version` field. If running inside the plugin's own source repositor
 
 Use `ToolSearch` with query `"julia eval"` to check whether Julia MCP tools are available at runtime. Report if `mcp__julia__julia_eval` or similar tools appear in the results.
 
-## 7. Claude Code Version
+## 7. Agent Health Check
+
+List all agent files in the `agents/` directory:
+
+```bash
+ls "${CLAUDE_PLUGIN_ROOT}/agents/"
+```
+
+For each `.md` file found, verify:
+1. The file has valid YAML frontmatter (starts with `---`, contains `name:`, `model:`, `tools:`, `skills:`, `memory:`, `maxTurns:`)
+2. The `name:` field matches the filename stem (e.g., `rnd-builder.md` → `name: rnd-builder`)
+3. No `permissionMode` field is present (not supported for plugin agents)
+4. Each skill in the `skills:` list corresponds to an existing directory under `skills/`
+
+Report the total number of agents found and how many pass all checks. If any agent has issues, list them.
+
+Expected agents (8): `rnd-builder`, `rnd-verifier`, `rnd-planner`, `rnd-integrator`, `rnd-debugger`, `rnd-proof-gate`, `rnd-reality-auditor`, `rnd-data-scientist`.
+
+## 8. Claude Code Version
 
 Run the following to detect the installed Claude Code version:
 
@@ -109,6 +127,7 @@ Hook scripts             | ✅ ok   | 4/4 executable
 RND artifact directory   | ✅ ok   | writable, active session exists
 Plugin registration      | ✅ ok   | registered in marketplace.json
 Version sync             | ✅ ok   | cached v0.8.3 = source v0.8.3
+Agents                   | ✅ ok   | 8/8 agents valid (rnd-builder, rnd-verifier, ...)
 Julia MCP tools          | ✅ ok   | mcp__julia__julia_eval available
 Claude Code version      | ✅ ok   | v2.1.81 (bare/channels/re-cloning available)
 ```

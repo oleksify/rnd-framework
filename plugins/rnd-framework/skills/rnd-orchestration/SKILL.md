@@ -1,6 +1,6 @@
 ---
 name: rnd-orchestration
-description: "Use when coordinating R&D pipeline execution — provides pipeline overview, phase roles, information barriers, and gate criteria"
+description: "Use when coordinating multi-agent R&D pipeline execution — provides pipeline overview, agent roles, information barriers, and gate criteria"
 user-invocable: false
 effort: medium
 ---
@@ -32,14 +32,18 @@ This framework applies the scientific method to structured coding:
 | Reproducible evidence | Evidence-based gates | No work proceeds without reproducible evidence |
 | Dependency analysis | Parallel scheduling | Identify parallel vs sequential work |
 
-## Pipeline Phases & Information Barriers
+## Agent Roles & Information Barriers
 
-**Planning** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
-**Scheduling** — Analyzes dependencies, schedules execution waves, enforces iteration budgets.
-**Building** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
-**Reality Audit** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to building before verification.
-**Verification** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent verification passes run sequentially; if they disagree, a third tiebreaker pass receives both reports.
-**Integration** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
+The framework defines 8 specialized agent roles. In single-flow mode, the session plays all roles sequentially. In multi-agent mode, dedicated agents are spawned for each role.
+
+**Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
+**Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets. Uses `rnd-framework:rnd-orchestration` skill.
+**Builder** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
+**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
+**Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
+**Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
+**Integrator** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
+**Data Scientist** — Handles numerical analysis, financial calculations, data wiring, chart generation. Uses `rnd-framework:rnd-data-science` skill. Spawned on-demand when the task requires Julia, DuckDB, or statistical analysis.
 
 ### Critical Information Flow Rules
 
@@ -69,11 +73,13 @@ External dependencies:
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
 ```
 
-## Single-Flow Execution
+## Execution Modes
 
-All pipeline phases run sequentially in one session. No agents are spawned. The session model handles all phases — planning, building, verification, and integration.
+The framework supports two execution modes. Use `/rnd-framework:rnd-start` to select.
 
-> **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
+### Single-Flow Mode
+
+All pipeline phases run sequentially in one session. No agents are spawned. The session model handles all phases — planning, building, verification, and integration. Best for small-to-medium tasks or when agent spawning is unavailable.
 
 Skills provide phase-specific discipline:
 - Planning: `rnd-framework:rnd-decomposition`
@@ -81,15 +87,55 @@ Skills provide phase-specific discipline:
 - Verification: `rnd-framework:rnd-verification`
 - Integration: `rnd-framework:rnd-integration`
 
+### Multi-Agent Mode
+
+Dedicated agents are spawned for each pipeline role. The orchestrator session coordinates them, enforcing information barriers and gate criteria. Best for medium-to-large tasks requiring rigorous separation of concerns.
+
+Agent assignments:
+- **rnd-planner** — Planning phase (Opus model)
+- **rnd-builder** — Build phase (Sonnet model)
+- **rnd-proof-gate** — Proof Gate phase (Sonnet model, advisory)
+- **rnd-reality-auditor** — Reality Audit phase (Sonnet model, blocking)
+- **rnd-verifier** — Verification phase (Opus model, Edit disallowed)
+- **rnd-integrator** — Integration phase (Sonnet model)
+- **rnd-data-scientist** — On-demand for analytical tasks (Opus model)
+- **rnd-debugger** — On-demand for root cause analysis (Opus model)
+
+> **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
+
+## Subagent Coordination
+
+### Agent Permission Mode
+
+All pipeline agents are spawned with `mode: "bypassPermissions"`:
+
+- **Planner** — decomposes tasks and writes pre-registrations
+- **Builder** — implements tasks with TDD discipline
+- **Verifier** — independently checks outputs against pre-registered criteria
+- **Integrator** — merges verified outputs and runs integration tests
+
+**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts are redundant and disruptive to autonomous pipeline operation.
+
+### Blocking Behavior
+
+**The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
+
+- **Never** use `sleep` to wait for subagents
+- **Never** write bash loops to check if build artifacts exist yet
+- **Never** scan `$RND_DIR/builds/` to see if a builder is done — the Agent tool tells you
+- **Do** spawn multiple agents in parallel (multiple Agent tool calls in one message) for independent tasks within a wave
+- **Do** use `run_in_background: true` on Agent calls if you want to continue working while agents run, then process results when notified
+
 ## Execution Phases
 
-1. **Plan** — Decompose the task, write pre-registrations, build dependency matrix. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream phases can read cached context instead of re-exploring the codebase.
-2. **Schedule** — Create execution waves from dependency matrix.
-3. **Build** — Work tasks sequentially within waves. Produce code + tests + self-assessment.
-3.5. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification.
-4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE.
+1. **Plan** — Decompose the task, write pre-registrations, build dependency matrix. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream phases can read cached context instead of re-exploring the codebase. In multi-agent mode, the Planner agent handles this phase.
+2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
+3. **Build** — Work tasks (parallel within waves in multi-agent mode, sequential in single-flow). Produce code + tests + self-assessment. In multi-agent mode, Builder agents are spawned per task.
+3.5. **Proof Gate** (advisory) — Attempt Lean 4 formal proofs for each task's pre-registered criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable. In multi-agent mode, Proof-Gate agents handle this phase.
+3.75. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification. In multi-agent mode, Reality-Auditor agents handle this phase.
+4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
 5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
-6. **Integrate** — Merge verified outputs, run integration tests, system validation.
+6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
 
 ## Gate Criteria
 
@@ -117,8 +163,25 @@ Common decision points:
 
 ## Scaling Rules
 
-- **Small tasks (<1hr) / quick mode:** Collapse — single build + inline verification. Lightweight pre-registration.
-- **Medium tasks:** Full framework with sequential waves. Standard verification per task.
-- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves.
+- **Small tasks (<1hr) / quick mode:** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration. Use single-flow mode.
+- **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task. Single-flow or multi-agent mode.
+- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification. Multi-agent mode recommended.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
-- **High-stakes:** Extra-thorough verification with formal invariants where applicable.
+- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate. Multi-agent mode required.
+
+## Mission Mode
+
+The framework integrates with **Factory Droid Missions** as an optional orchestration layer. When running inside a Factory Droid Mission:
+
+- The Mission orchestrator handles high-level feature decomposition and worker assignment
+- Each worker session can use rnd-framework skills for discipline (pre-registration, TDD, verification checklists)
+- The information barrier is maintained within each worker's session via `read-gate.sh`
+- Mission validation contracts serve a similar role to pre-registration success criteria — define testable conditions before implementation
+
+**How rnd-framework discipline enhances Mission workflows:**
+- **Pre-registration** — Workers write success criteria before coding, reducing scope creep
+- **TDD via `rnd-building`** — Red-green-refactor discipline within each worker session
+- **Verification checklists** — Workers self-verify against criteria before calling `EndFeatureRun`
+- **Convergent iteration** — When validation fails, workers address all failures in a single pass
+
+Mission mode does not replace the multi-agent pipeline — it operates at a higher level. A Mission worker can invoke `/rnd-framework:rnd-quick` for lightweight tasks or use the full pipeline via `/rnd-framework:rnd-start` for complex features within their assigned scope.

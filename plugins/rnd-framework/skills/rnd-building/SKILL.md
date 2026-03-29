@@ -162,16 +162,37 @@ Summarize verbose output rather than processing raw. Test/build output >50 lines
 - [ ] Build manifest `### Evidence Gathered` contains file:line citations for each external contract
 - [ ] No pipeline task IDs in project code (comments, test names, variable names)
 
+## Convergent Iteration
+
+When receiving a verification report with NEEDS ITERATION, address **every** failed criterion in a single pass — not just the primary failure. Fixing one criterion while leaving others broken causes "whack-a-mole" cycles that waste iteration budget.
+
+**Process:**
+1. **Inventory all failures.** List every criterion marked FAIL or NEEDS ITERATION in the verification report. This is your checklist — nothing ships until every item is addressed.
+2. **Diagnose root causes.** Multiple failures often share a root cause. Fix the root cause and you fix several criteria at once.
+3. **Check shared code paths.** After making fixes, identify code paths that are shared between fixed (previously failing) and passing criteria. Re-verify that your changes do not regress passing criteria.
+4. **Re-run ALL tests.** Run the complete test suite — not just tests related to the flagged criteria. Fixes in one area frequently break assumptions in another.
+5. **Update the build manifest and self-assessment** to reflect all changes made in this pass.
+
+**Anti-pattern:** Fixing only the "loudest" failure and hoping the others resolve themselves or will be caught next round. They won't — and you'll burn iteration budget discovering that.
+
 ## Status Codes
+
+After completing the Verification Checklist, choose one status code and include it in your completion message:
 
 | Code | When to Use |
 |------|-------------|
-| `DONE` | All criteria met, all tests pass, no significant concerns. |
-| `DONE_WITH_CONCERNS` | Criteria met, tests pass, but uncertainty exists (unverified dep, tricky edge case). Describe in message. |
-| `NEEDS_CONTEXT` | Cannot proceed — ambiguous requirement, missing dependency, conflicting specs. |
-| `BLOCKED` | Hard blocker prevents implementation. Requires orchestrator intervention. |
+| `DONE` | All criteria met, all tests pass, no significant concerns. Proceed to verification. |
+| `DONE_WITH_CONCERNS` | Criteria met, tests pass, but uncertainty exists about specific areas (e.g., unverified external dependency, tricky edge case). Verifier should pay extra attention to flagged areas. |
+| `NEEDS_CONTEXT` | Cannot proceed without additional information — ambiguous requirement, missing dependency, conflicting specs. State exactly what you need. |
+| `BLOCKED` | Cannot proceed at all. Hard blocker prevents implementation (e.g., missing file, broken toolchain, contradictory criteria). Requires orchestrator intervention. |
 
-**Completion message:** `T<id> build complete — status: DONE — manifest at $RND_DIR/builds/T<id>-manifest.md`
+When the status is `DONE_WITH_CONCERNS`, include a brief `concerns:` line in the completion message summarizing what the Verifier should scrutinize.
+
+**Completion message format:**
+```
+T<id> build complete — status: DONE — manifest at $RND_DIR/builds/T<id>-manifest.md
+T<id> build complete — status: DONE_WITH_CONCERNS: [brief summary] — manifest at $RND_DIR/builds/T<id>-manifest.md
+```
 
 ## Related Skills
 

@@ -5,7 +5,7 @@ tools: Read, Bash, Glob, Grep, Write
 model: opus
 memory: user
 color: "#FF8C00"
-skills: rnd-debugging, rnd-debug-pipeline, kiss-practices, fp-practices
+skills: rnd-debugging, rnd-debug-pipeline, rnd-framework:kiss-practices, rnd-framework:fp-practices
 maxTurns: 150
 ---
 

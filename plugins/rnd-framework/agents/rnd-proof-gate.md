@@ -5,7 +5,7 @@ tools: Read, Write, Bash, Glob, Grep
 model: sonnet
 memory: user
 color: "#EC4899"
-skills: lean-proving
+skills: rnd-framework:lean-proving
 maxTurns: 100
 ---
 

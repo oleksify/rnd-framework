@@ -1,6 +1,6 @@
 # R&D Framework Plugin for Claude Code
 
-A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. All phases run sequentially in a single session.
+A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. Supports two execution modes: **single-flow** (all phases sequential in one session) and **multi-agent** (specialized agents per pipeline phase with structural information barriers).
 
 | Scientific Method | Framework Principle | Role |
 |---|---|---|
@@ -84,11 +84,37 @@ After configuring, start a Claude Code session in the project and check:
 - The session should show `rnd-framework` in the startup context
 - `/rnd-framework:rnd-status` should work
 
+## Execution Modes
+
+The framework supports two execution modes, selectable via `/rnd-framework:rnd-start`:
+
+### Single-Flow Mode
+
+All pipeline phases run sequentially in a single session. No agents are spawned — the session invokes skills directly for each phase. Best for quick iterations, smaller tasks, or environments where multi-agent overhead is undesirable.
+
+```
+Plan → Schedule → Build → Verify → Iterate? → Integrate
+```
+
+### Multi-Agent Mode
+
+Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning. Best for complex tasks requiring maximum verification rigor.
+
+```
+Plan → Schedule → Build → [Reality Audit] → [Proof Gate] → Verify → Iterate? → Integrate
+```
+
+Additional phases in multi-agent mode:
+- **Reality Audit** — `rnd-reality-auditor` adversarially verifies external contracts (SQL schemas, API responses, env vars). Blocking — routes back to build on INVALID findings.
+- **Proof Gate** — `rnd-proof-gate` attempts formal Lean 4 proofs of pre-registration criteria. Advisory — findings inform but don't block.
+
+Use `/rnd-framework:rnd-quick` for a lightweight single-flow pipeline for small tasks. Use `/rnd-framework:rnd-start` for the full pipeline with mode selection.
+
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
+| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate (supports mode selection) |
 | `/rnd-framework:rnd-plan <task>` | Planning only — decompose and produce task specifications |
 | `/rnd-framework:rnd-build <T3\|wave-2\|next>` | Build a specific task or wave |
 | `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification with information barriers |
@@ -148,16 +174,20 @@ The plugin provides skills that embed structured practices into every phase of c
 
 ## Agents
 
-All agents have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+Eight specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 | Agent | Model | Color | Role |
 |---|---|---|---|
-| `rnd-framework:rnd-planner` | opus | blue | Decomposes tasks, writes pre-registration documents |
-| `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces verification artifacts |
-| `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria |
-| `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration tests |
-| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work |
+| `rnd-framework:rnd-planner` | opus | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
+| `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces build manifest + self-assessment |
+| `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria with information barrier |
+| `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
 | `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
+| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking) |
+| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Adversarially verifies external service contracts (SQL, APIs, env vars) |
+| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
+
+In single-flow mode, agents are not spawned — the session invokes skills directly. In multi-agent mode, the orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 
 ## Pipeline Scaling
 
@@ -231,10 +261,16 @@ See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 
 ## How Information Barriers Work
 
-The Verifier never sees the Builder's self-assessment or reasoning. This is enforced two ways:
+The Verifier never sees the Builder's self-assessment or reasoning. Enforcement varies by execution mode:
 
-1. **Agent instructions** — each agent's system prompt clearly states what it can and cannot access
-2. **PreToolUse hook** — `hooks.json` blocks any Read tool call targeting files with `self-assessment` in the path
+**Single-flow mode:**
+1. **PreToolUse hook** — `read-gate.sh` blocks any Read call targeting files with `self-assessment` in the path
+2. **Skill instructions** — the `rnd-verification` skill explicitly prohibits reading self-assessment files
+
+**Multi-agent mode:**
+1. **Structural isolation** — agents run in separate context windows, so the Verifier literally cannot see the Builder's internal reasoning
+2. **PreToolUse hook** — same hook enforcement as single-flow (defense-in-depth)
+3. **Agent instructions** — each agent's system prompt clearly states what it can and cannot access
 
 Without this barrier:
 - The Verifier gets anchored by the Builder's framing
@@ -272,6 +308,9 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         ├── verifications/
         │   ├── T1-verification.md      # Verifier report with evidence
         │   └── T1-experiments/         # Verifier-written independent experiment tests
+        ├── proofs/
+        │   ├── T1-proof-report.md      # Proof Gate results for each task
+        │   └── T1-theorems/            # Lean theorem files
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
         └── iteration-log.md            # Build-verify cycle tracking
@@ -284,25 +323,34 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
+├── agents/                      # 8 specialized agents for multi-agent mode
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
+│   ├── opencode-bridge.ts       # OpenCode bridge: translates JS hook events to shell script calls
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
+│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ and .rnd/ path operations
 │   ├── session-start.sh         # SessionStart hook: injects skill context
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit + output size advisory
+│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl
 │   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
 │   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to read project standards
 │   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
 │   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
+│   ├── cwd-changed.sh           # CwdChanged hook: warns on cross-repo directory change
+│   ├── file-changed.sh          # FileChanged hook: advises on external .rnd/ artifact edits
+│   ├── task-created.sh          # TaskCreated hook: logs task creation to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
+├── proofs/                      # Lean 4 formal verification of pipeline invariants
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
+│   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 │   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 └── README.md
@@ -354,7 +402,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** The full pipeline is expensive. Use `/rnd-framework:rnd-quick` for small tasks.
+- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use single-flow mode or `/rnd-framework:rnd-quick` for smaller tasks.
 - **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
 
 ## Acknowledgements

@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.0.0 — 2026-03-29
+
+### Restore multi-agent architecture, Lean 4 proofs, and dual-mode orchestration
+
+Major release restoring the rigorous multi-agent architecture from v0.13.8 while preserving all post-1.0.0 improvements (cross-platform support, hook consolidation, codebase-dedicated skills, token reductions).
+
+**Agent Restoration:**
+- Restore all 8 specialized agents in `agents/` directory: rnd-planner (opus), rnd-builder (sonnet), rnd-verifier (opus), rnd-integrator (sonnet), rnd-debugger (opus), rnd-proof-gate (sonnet), rnd-reality-auditor (sonnet), rnd-data-scientist (opus)
+- Remove `permissionMode` from all agents (not supported for plugin agents)
+- Update command references to rnd-prefixed format, add AskUser/AskUserQuestion dual naming
+- All agents retain v0.13.8 features: model selection, skills preloading, persistent memory, maxTurns, disallowedTools, SendMessage communication, tool discipline, convergent iteration
+
+**Skill Rigor Restoration:**
+- `rnd-orchestration`: Dual-mode support (single-flow + multi-agent), Agent Roles section listing all 8 agents, Subagent Coordination, Proof Gate phase documentation, Mission Mode section for Factory Droid Missions integration
+- `rnd-verification`: Exhaustive Reporting Discipline, 6 Known Failure Modes, Epistemic Posture, Multi-Judge Mode with agent-spawning protocol, Evidence Standards, Common Rationalizations table
+- `rnd-building`: Convergent Iteration, Status Codes table (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED), exploration cache reading, external dependency verification
+- `rnd-multi-judge`: Agent-spawning language restored (spawn 2 independent verifier agents)
+- `rnd-scaling`: Proof Gate column in criticality table, dual verification and agent spawning references
+- `rnd-decomposition`: Exploration cache writing section, External Dependencies field in pre-registration format
+- `rnd-data-science`: Phase 0 Lean Specifications section restored
+- `rnd-completion`: Agent cleanup references
+- `using-rnd-framework`: Documents both single-flow and multi-agent execution modes
+
+**Lean 4 Formal Proofs:**
+- Restore `proofs/InformationBarrier.lean` (3 theorems using native_decide)
+- Restore `proofs/ArtifactFlow.lean` (2 theorems using native_decide)
+- Restore `proofs/lakefile.lean`, `lean-toolchain` (v4.28.0), `.gitignore`
+- Restore `lean-proving` skill and `kiss-practices/lean.md`
+
+**Dual-Mode Execution:**
+- `/rnd-framework:rnd-start` supports mode selection between single-flow and multi-agent
+- `/rnd-framework:rnd-quick` explicitly scoped as single-flow only with escalation to rnd-start
+- `/rnd-framework:rnd-doctor` includes agent health check section
+
+**Cross-Platform Compatibility:**
+- Agent tool lists use PascalCase names (Read, Write, Edit, Bash, Glob, Grep, WebFetch)
+- Agent skills use `rnd-framework:` prefix to avoid personal skill shadowing
+- All 3 plugin manifests preserved (.claude-plugin, .factory-plugin, .opencode-plugin)
+- OpenCode bridge preserved unchanged
+
+**Documentation:**
+- README.md updated with dual-mode execution docs, 8-agent architecture, updated plugin structure
+- CHANGELOG.md 2.0.0 entry
+- Root CLAUDE.md updated with agent architecture references
+
 ## 1.0.5 — 2026-03-28
 
 ### Remove Lean 4 formal verification

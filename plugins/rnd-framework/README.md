@@ -298,7 +298,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 ├── calibration.jsonl                   # Verdict accuracy tracking (cross-session); stored in CLAUDE_PLUGIN_DATA when set
 └── sessions/
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
-        ├── plan.md                     # Task tree, pre-registrations, schedule
+        ├── plan.md                     # Enriched plan: environment, testing strategy, worker guidelines, validation contract, pre-registrations, schedule
         ├── design-spec.md              # Approved architectural design spec (Design phase output)
         ├── diagnosis/
         │   └── T1-diagnosis.md         # Debugger's root cause analysis (debug pipeline only)

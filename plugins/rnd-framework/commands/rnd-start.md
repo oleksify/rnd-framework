@@ -61,11 +61,21 @@ Before planning, explore the codebase and gather requirements.
      - "Manage roadmap" — route to `/rnd-framework:rnd-roadmap`
    - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`/`AskUser`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
 
-5. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+5. **Discover environment and infrastructure.** Run a structured checklist scan to catalog the project's build environment:
+   - **Package manager:** Glob for package.json, Cargo.toml, mix.exs, go.mod, pyproject.toml
+   - **Test framework:** Grep for test runner configs (vitest, jest, pytest, etc.), count existing tests, identify exact run commands
+   - **CI config:** Read .github/workflows/ or equivalent — extract build/test/deploy commands
+   - **External services:** Grep for https:// URLs in source to catalog APIs, databases, third-party services (note auth requirements)
+   - **Environment variables:** Read .env.example or .env.template, Grep for process.env/ENV references
+   - **Secrets and off-limits:** Infer from .gitignore, CI secrets config, and sensitive file paths
 
-6. **Ask 3-5 clarifying questions** using `AskUserQuestion`/`AskUser`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
+   Present findings to the user via `AskUserQuestion`/`AskUser` for confirmation and gap-filling. This feeds into the Environment Setup, Infrastructure, and Testing Strategy sections of plan.md.
 
-7. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts, (c) KISS/FP rules, (d) user answers, (e) constraints.
+6. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
+
+7. **Ask 3-5 clarifying questions** using `AskUserQuestion`/`AskUser`. Focus on scope, patterns, constraints, and preferences. Provide 2-4 options per question based on what you found in the codebase.
+
+8. **Compile discovery context.** Summarize: (a) codebase findings, (b) local experts, (c) KISS/FP rules, (d) environment/infrastructure findings, (e) user answers, (f) constraints.
 
 **Skip condition:** If the task description is already highly specific (file paths, approach details, clear scope), skip Phase 0 and proceed to Phase 0.5.
 

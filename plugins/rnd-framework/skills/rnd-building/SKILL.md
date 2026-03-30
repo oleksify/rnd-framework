@@ -34,7 +34,13 @@ RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"
 
 ### 1. Read Your Assignment
 
-Find your task in `$RND_DIR/plan.md`. Read its pre-registration — especially success criteria and approach. Read upstream artifacts (API contracts, type definitions).
+Find your task in `$RND_DIR/plan.md`. Read its pre-registration — especially success criteria, approach, and the `fulfills` field (which links to specific VAL-AREA-NNN assertions in the Validation Contract). Also read these enriched plan sections:
+
+- **Environment Setup** — runtime, package manager, dependencies, install commands
+- **Testing Strategy** — test framework, baseline count, exact run commands for unit/integration/live tests
+- **Worker Guidelines** — project boundaries (USE/OFF-LIMITS), coding conventions, architecture notes
+
+These sections tell you HOW to build and test without rediscovering the environment.
 
 ### 2.5. Read Exploration Cache
 

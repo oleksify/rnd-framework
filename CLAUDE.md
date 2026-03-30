@@ -157,7 +157,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 ├── roadmap.md                             # Multi-session roadmap (optional, created by /roadmap)
 ├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA)
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
-    ├── plan.md                            # Task tree, pre-registrations, schedule
+    ├── plan.md                            # Task tree, environment, testing strategy, worker guidelines, validation contract, pre-registrations, schedule
     ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
     ├── builds/T*-manifest.md              # Builder output records
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)

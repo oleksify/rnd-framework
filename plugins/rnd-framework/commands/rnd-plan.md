@@ -31,27 +31,39 @@ Run ONLY the planning phase for: $ARGUMENTS
 
 2. Invoke `rnd-framework:rnd-decomposition` to load decomposition discipline.
 
-3. Explore the codebase using Glob/Grep. Write exploration findings to `$RND_DIR/exploration/`.
+3. **Discover environment and infrastructure.** Run a structured checklist scan:
+   - Package manager (Glob for package.json, Cargo.toml, etc.)
+   - Test framework (Grep for test runner configs, count existing tests, identify run commands)
+   - CI config (Read .github/workflows/ or equivalent)
+   - External services (Grep for https:// URLs in source)
+   - Environment variables (Read .env.example, Grep for process.env/ENV references)
+   - Secrets and off-limits (infer from .gitignore, CI config)
 
-4. Decompose the task into a hierarchical task tree with pre-registration documents following the decomposition skill's protocol.
+   Present findings to the user via `AskUserQuestion`/`AskUser` for confirmation and gap-filling.
 
-5. Build the dependency matrix and execution schedule.
+4. Explore the codebase using Glob/Grep. Write exploration findings to `$RND_DIR/exploration/`.
 
-6. Save to `$RND_DIR/plan.md`.
+5. Decompose the task into a hierarchical task tree with pre-registration documents following the decomposition skill's protocol.
 
-7. Validate that every task has:
+6. Build the dependency matrix and execution schedule.
+
+7. Save to `$RND_DIR/plan.md` with enriched sections: Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets.
+
+8. Validate that every task has:
    - Testable success criteria (not vague)
    - Clear dependencies
    - Appropriate verification level
    - Every success criterion tagged as Correctness or Quality
+   - `fulfills` field linking to VAL assertions
+   - All VAL assertions covered by at least one task
 
-8. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
+9. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
    - `subject`: Task name (e.g., "T1: Design API contracts")
    - `description`: The full pre-registration content for that task
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
 
-9. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion`/`AskUser` with options:
+10. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion`/`AskUser` with options:
    - "Approve plan and proceed to build (Recommended)" — user can then run `/rnd-framework:rnd-build`
    - "Request plan revisions" — describe what to change and re-run `/rnd-framework:rnd-plan`
    - "Add more tasks" — extend the plan before building

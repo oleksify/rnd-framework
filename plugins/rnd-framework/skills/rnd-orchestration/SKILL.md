@@ -63,7 +63,9 @@ Intent: One sentence — what and why.
 Approach: Brief planned implementation.
 Expected outputs: Files/functions to produce.
 Success criteria:
+  Correctness:
   - [ ] Specific, testable condition 1
+  Quality:
   - [ ] Specific, testable condition 2
 Verification level: unit | integration | system
 Dependencies: [list of task IDs]
@@ -71,6 +73,7 @@ External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
+fulfills: [VAL-AREA-NNN, ...]
 ```
 
 ## Execution Modes
@@ -128,7 +131,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 ## Execution Phases
 
-1. **Plan** — Decompose the task, write pre-registrations, build dependency matrix. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored) so downstream phases can read cached context instead of re-exploring the codebase. In multi-agent mode, the Planner agent handles this phase.
+1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce enriched plan.md with sections: Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets. Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
 3. **Build** — Work tasks (parallel within waves in multi-agent mode, sequential in single-flow). Produce code + tests + self-assessment. In multi-agent mode, Builder agents are spawned per task.
 3.5. **Proof Gate** (advisory) — Attempt Lean 4 formal proofs for each task's pre-registered criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable. In multi-agent mode, Proof-Gate agents handle this phase.
@@ -139,7 +142,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 ## Gate Criteria
 
-**Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria.
+**Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria, `fulfills` field linking to VAL assertions, and all Validation Contract assertions are covered.
 **Gate 2 (post-build):** Code + tests + artifacts submitted. Tests pass locally.
 **Gate 3 (post-verify):** Verification PASS on all criteria with evidence.
 **Gate 4 (post-integrate):** Integration tests pass. No regressions. System validation passes.

@@ -82,6 +82,7 @@ External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
+fulfills: [VAL-AREA-NNN, ...]
 ```
 
 ### Criticality Tiers
@@ -129,18 +130,60 @@ Every success criterion belongs to exactly one tier:
    - Continue until all tasks are scheduled
    - Flag parallel opportunities within each wave
 
+## Environment Discovery
+
+Before decomposition, run a structured checklist scan to catalog the project's build environment. This feeds into the Environment Setup, Infrastructure, and Testing Strategy sections of plan.md.
+
+| Area | What to scan | How |
+|------|-------------|-----|
+| Package manager | package.json, Cargo.toml, mix.exs, go.mod, pyproject.toml | Glob for config files |
+| Test framework | vitest, jest, pytest, ExUnit, go test configs | Grep for test runner in configs/scripts |
+| CI config | .github/workflows/, .gitlab-ci.yml, Jenkinsfile | Glob for CI files, Read to extract commands |
+| External service URLs | https:// references in source code | Grep for URLs in src/ |
+| Environment variables | .env.example, .env.template, CI secrets config | Read env templates, Grep for process.env/ENV/os.environ |
+| Secrets and off-limits | .gitignore patterns, CI secret names, sensitive file paths | Read .gitignore, infer from CI config |
+
+Present findings to the orchestrator (or user in single-flow mode) for confirmation and gap-filling.
+
 ## Output Format
 
 Save your plan to `$RND_DIR/plan.md`. Structure:
 
 ```markdown
-# RND Plan: [Feature Name]
+# Plan: [Feature Name]
 
 ## Task Tree
 [Hierarchical list of tasks with IDs]
 
+## Environment Setup
+[Runtime/language, package manager, dependencies, install commands]
+
+## Infrastructure
+**External services:**
+- [Service] — [URL] ([auth requirements])
+**Off-limits:**
+- [Items that must not be modified/exposed]
+
+## Testing Strategy
+**Test framework:** [name] ([baseline count] tests)
+**Unit tests:** [exact run command]
+**Integration/live tests:** [exact run command + env vars]
+**User testing:** [how to verify manually]
+
+## Worker Guidelines
+### Boundaries
+- USE: [services with URLs and auth]
+- OFF-LIMITS: [secrets/files/services]
+### Coding Conventions
+[From CLAUDE.md, linters, configs]
+### Architecture
+[Module relationships, key patterns]
+
+## Validation Contract
+[Numbered VAL-AREA-NNN assertions with Tool + Evidence — see rnd-decomposition skill]
+
 ## Pre-Registration Documents
-[One per task]
+[One per task, including fulfills field]
 
 ## Dependency Matrix
 [Table showing task dependencies]

@@ -121,7 +121,10 @@ External Dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
+fulfills: [VAL-AREA-NNN, ...]
 ```
+
+The `fulfills` field links each task to specific Validation Contract assertions (see Output section). This creates bidirectional traceability: from task to assertions and from assertion to responsible tasks.
 
 ### Tiered Criteria: Correctness vs Quality
 
@@ -140,13 +143,105 @@ Unmet Correctness criteria cause FAIL (blocks progress). Unmet Quality criteria 
 
 **Good criteria are concrete and observable** — "Returns 401 for expired tokens", "Processes 1000 records in under 2 seconds". **Bad criteria are vague** — "works correctly", "handles errors gracefully", "is performant" — rewrite with specific observable outcomes before using.
 
+## Environment Discovery
+
+Before decomposition, run a structured checklist scan to catalog the project's build environment. Present findings to the user via `AskUserQuestion` for confirmation and gap-filling.
+
+### Checklist
+
+| Area | What to scan | How |
+|------|-------------|-----|
+| Package manager | package.json, Cargo.toml, mix.exs, go.mod, pyproject.toml | Glob for config files |
+| Test framework | vitest, jest, pytest, ExUnit, go test configs | Grep for test runner in configs/scripts |
+| CI config | .github/workflows/, .gitlab-ci.yml, Jenkinsfile | Glob for CI files, Read to extract commands |
+| External service URLs | https:// references in source code | Grep for URLs in src/ |
+| Environment variables | .env.example, .env.template, CI secrets config | Read env templates, Grep for process.env/ENV/os.environ |
+| Secrets and off-limits | .gitignore patterns, CI secret names, sensitive file paths | Read .gitignore, infer from CI config |
+
+### Output
+
+Findings feed into three plan.md sections: **Environment Setup**, **Infrastructure**, and **Testing Strategy** (see Output section below).
+
 ## Dependency Analysis
 
 After decomposition, build a dependency matrix: list what each task depends on, then assign tasks with zero dependencies to Wave 1, tasks depending only on Wave 1 to Wave 2, and so on. Flag parallel opportunities within each wave.
 
 ## Output
 
-Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to create). Save the complete plan to `$RND_DIR/plan.md` with sections: Task Tree, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets (default 3 per task).
+Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to create). Save the complete plan to `$RND_DIR/plan.md` with the following sections:
+
+### plan.md Structure
+
+```markdown
+# Plan: [Task Title]
+
+## Task Tree
+[Hierarchical list with task IDs]
+
+## Environment Setup
+[Runtime/language, package manager, dependencies, install commands]
+[Detected via Environment Discovery checklist]
+
+## Infrastructure
+**External services:**
+- [Service name] — [URL] ([auth requirements])
+**Off-limits:**
+- [Items that must not be modified/exposed]
+
+## Testing Strategy
+**Test framework:** [name] ([baseline count] tests)
+**Unit tests:** [exact run command]
+**Integration tests:** [exact run command, if applicable]
+**Live tests:** [exact run command + required env vars, if applicable]
+**User testing:** [how an end user would verify the work]
+
+## Worker Guidelines
+### Boundaries
+- USE: [external service] — [URL] ([auth])
+- OFF-LIMITS: [secret/file/service] in [context]
+### Coding Conventions
+[Project-specific rules extracted from CLAUDE.md, linters, configs]
+### Architecture
+[Key architectural patterns, module relationships]
+### Design Decisions
+[Non-obvious choices and their rationale]
+
+## Validation Contract
+[Numbered assertions grouped by area — see format below]
+
+## Pre-Registration Documents
+[One per task — existing format plus fulfills field]
+
+## Dependency Matrix
+[Task dependency table]
+
+## Execution Schedule
+[Wave assignments with parallel opportunities]
+
+## Iteration Budgets
+[Per-task budgets based on criticality]
+```
+
+### Validation Contract Format
+
+The Validation Contract contains numbered, testable assertions grouped by functional area. Each assertion specifies the exact tool and evidence command a Verifier uses to check it.
+
+```markdown
+### Area: [Functional Domain]
+
+#### VAL-AREA-NNN: [Assertion title]
+[One-sentence description of what must be true]
+Tool: [shell | grep | glob | read | code review]
+Evidence: [Exact command + expected output pattern]
+```
+
+**Assertion ID format:** `VAL-` + area abbreviation (2-6 uppercase chars) + `-` + 3-digit number. Area abbreviations are derived from functional domains (e.g., CI, AUTH, DATA, API, UI, CROSS).
+
+**Evidence must be concrete:** not "tests pass" but `npx vitest run exits 0, reports >= 50 passed`. Not "file exists" but `Glob for src/auth/middleware.ts returns exactly 1 match`.
+
+**Grouping:** Assertions are grouped under `### Area:` headings. Cross-cutting assertions that span multiple tasks go under `### Area: Cross-Area`.
+
+**Traceability:** Every assertion must be fulfilled by at least one task (via the `fulfills` field in pre-registrations). Every task should fulfill at least one assertion. Orphan assertions or unfulfilled tasks indicate a planning gap.
 
 ## Verification Checklist
 
@@ -161,6 +256,11 @@ Before declaring planning complete:
 - [ ] Tasks too large (>5 criteria) have been split
 - [ ] Uncertain approaches have Phase 0 spike tasks
 - [ ] Every task that interacts with an external system (DB, API, file format, env var, service) has an "External dependencies" field listing each dependency with: system type, assumed contract, and explicit verification method
+- [ ] Environment Setup, Infrastructure, and Testing Strategy sections are populated from Environment Discovery
+- [ ] Worker Guidelines section contains boundaries, coding conventions, and architecture notes
+- [ ] Validation Contract contains numbered VAL-AREA-NNN assertions with Tool and Evidence for every Correctness criterion
+- [ ] Every task has a `fulfills` field linking to at least one VAL assertion
+- [ ] Every VAL assertion is fulfilled by at least one task
 
 ## Related Skills
 

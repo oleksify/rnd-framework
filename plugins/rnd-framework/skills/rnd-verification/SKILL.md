@@ -35,14 +35,16 @@ You receive ONLY the pre-registration, Builder's code/tests/artifacts, and codeb
 
 ## Process
 
-### 1. Read the Pre-Registration
-Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding.
+### 1. Read the Pre-Registration and Validation Contract
+Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding VAL-AREA-NNN assertions in the Validation Contract section of plan.md. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
 
 ### 2. Write Independent Experiment Tests
 Before reading Builder code or tests, write one experiment test per criterion using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<criterion-slug>.test.<ext>`.
 
-### 3. Run Experiments Against Builder's Code
+### 3. Run Experiments and Validation Contract Evidence Commands
 Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original.
+
+**Validation Contract assertions:** For each VAL-AREA-NNN assertion linked via `fulfills`, run the exact evidence command specified in the assertion. Record the output and compare against the expected result. A VAL assertion failure is a Correctness-tier finding.
 
 ### 4. Run Builder's Tests and Compare
 Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.
@@ -98,9 +100,9 @@ A criterion is binary: met or not met. Evidence must be concrete (test output yo
 
 What counts as evidence for a criterion:
 
-- **Necessary:** Test output you ran yourself (not claimed by Builder). Code inspection with specific line references.
-- **Strong:** Failure mode analysis that actively probed the criterion and revealed no issues.
-- **Insufficient:** "Tests pass" without inspecting what the tests actually assert. "Code looks correct" without tracing execution paths. "Should work" based on pattern recognition.
+- **Necessary:** Test output you ran yourself (not claimed by Builder). Code inspection with specific line references. Validation Contract evidence command output matching the expected result.
+- **Strong:** Failure mode analysis that actively probed the criterion and revealed no issues. All VAL assertions for the task pass with exact expected output.
+- **Insufficient:** "Tests pass" without inspecting what the tests actually assert. "Code looks correct" without tracing execution paths. "Should work" based on pattern recognition. Skipping VAL assertion commands because "the criterion is obviously met".
 
 If your evidence for PASS is "it looks right" — that is not evidence. Run it. Break it. Trace it.
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0 — 2026-03-30
+
+### Missions-grade planning: enriched plan.md with environment discovery, validation contract, and worker guidelines
+
+Upgrade the planning phase to produce richer, more intelligent plans inspired by Factory Droid's Missions mode. The plan.md format gains 6 new sections while preserving all existing structure.
+
+- **Environment Discovery:** New structured checklist scan in Phase 0 — detects package manager, test framework, CI config, external services, env vars, secrets. Findings presented to user for confirmation.
+- **Validation Contract:** Numbered VAL-AREA-NNN assertions with exact Tool + Evidence commands for every Correctness criterion. Verifiers run these commands directly.
+- **Testing Strategy:** First-class section documenting test framework, baseline count, exact run commands for unit/integration/live tests, and user testing approach.
+- **Worker Guidelines:** Project-specific boundaries (USE/OFF-LIMITS), coding conventions, architecture notes, and design decisions extracted from CLAUDE.md and linter configs.
+- **fulfills traceability:** Each task's pre-registration links to specific VAL assertions via a `fulfills` field, creating bidirectional task↔assertion traceability.
+- **Infrastructure section:** External services with URLs and auth requirements, off-limits items.
+
+Updated files: rnd-decomposition skill, rnd-planner agent, rnd-start command, rnd-plan command, rnd-verification skill, rnd-building skill, rnd-orchestration skill.
+
 ## 2.0.1 — 2026-03-30
 
 ### Fix rnd-quick API rate limit by removing model override and condensing command

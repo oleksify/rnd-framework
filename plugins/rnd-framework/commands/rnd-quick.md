@@ -1,111 +1,58 @@
 ---
-description: "Lightweight R&D mode for small tasks (<1hr). Single-flow only — no agent spawning. Same principles, collapsed workflow: quick plan → build → inline verify."
+description: "Quick R&D for small tasks (<1hr). Plan → build → inline verify. No agents."
 argument-hint: "<description of the small task>"
-model: sonnet
 effort: medium
 ---
 
-# R&D Framework: Quick Mode (Single-Flow)
+# Quick Mode
 
-For small, well-scoped tasks. Same scientific-method principles, minimal ceremony. **Quick mode always runs in single-flow mode** — all phases execute in the current session with no agent spawning. Design exploration is skipped.
-
-For multi-agent rigor or architectural trade-off analysis, use `/rnd-framework:rnd-start` instead — it supports both single-flow and multi-agent execution modes.
-
-> **Iteration budget: 2** (vs. 3 in the full pipeline). Quick mode is designed for tasks small enough to get right in one or two attempts. If a task needs more than 2 iteration cycles, it is likely too large for quick mode — escalate to `/rnd-framework:rnd-start` for proper decomposition.
+Single-flow R&D for small tasks. Same principles, minimal ceremony. Iteration budget: **2** — escalate to `/rnd-framework:rnd-start` if exceeded. Apply KISS + FP principles from context; do NOT invoke skills during quick mode startup.
 
 ## Task Input
 
-If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-quick` with no task description):
+If `$ARGUMENTS` is empty:
+1. Quick scan: `git log --oneline -10`, TODO/FIXME, recent changes.
+2. Present 2-4 suggestions via `AskUserQuestion`/`AskUser` plus "Describe a different task".
+3. Use the selected or typed task and continue to Step 1.
 
-1. **Quick codebase scan.** Run a few fast commands to gather context: `git log --oneline -10`, check for TODO/FIXME comments, look at recent changes. This takes seconds and informs your suggestions.
-
-2. **Ask with `AskUserQuestion`/`AskUser`.** Present 2-4 concrete task suggestions based on what you found, plus always include a generic "Describe a different task" option. Each option should have a short label and a description explaining what the task would involve.
-
-3. **If the user picks a suggestion**, use it as the task description and continue to Step 1. **If they type a custom task**, use that instead.
-
-**Never fall back to plain text** to ask what to work on. `AskUserQuestion`/`AskUser` is mandatory at every decision point, including this one.
-
-If `$ARGUMENTS` is provided, skip this section and proceed directly.
-
-## Step 0: Coding Practices (inline — no Skill tool calls)
-
-Quick mode does NOT invoke skills via the Skill tool during startup. Instead, apply these principles directly:
-
-- **KISS:** Don't add features nobody asked for. Don't create abstractions for one-time operations. Validate at system boundaries only. Prefer native APIs over packages.
-- **FP:** Prefer pure functions, immutable data, and composition. Separate commands from queries.
-- **Project standards:** Follow the conventions in the project's CLAUDE.md files (already loaded in your context).
-
-The full pipeline (`/rnd-framework:rnd-start`) loads language-specific KISS files and extracts project patterns — quick mode applies these principles from context instead.
+If `$ARGUMENTS` is provided, skip to Step 1.
 
 ## Step 1: Quick Plan
-
-Determine the RND artifacts directory and create its structure:
 
 ```bash
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
 
-Write a brief pre-registration directly:
+Write a brief pre-registration to `$RND_DIR/plan.md`: intent (1 sentence), approach (1 sentence), 2-4 success criteria as checkboxes. Tell the user: "Starting build for: [task] — [N] criteria."
 
-```markdown
-# Quick Plan: [task name]
-Intent: [one sentence]
-Approach: [one sentence]
-Success criteria:
-  - [ ] [criterion 1]
-  - [ ] [criterion 2]
-```
-
-Save to `$RND_DIR/plan.md`.
-
-Tell the user: "Starting build for: [task name] — [number] success criteria to meet."
-
-Use `TaskCreate` to create a single task with `subject` set to the task name, `description` set to the pre-registration content, and `activeForm` set to the present-continuous form (e.g., "Implementing quick fix").
+Use `TaskCreate` with `subject` = task name, `description` = pre-registration, `activeForm` = present-continuous form.
 
 ## Step 2: Build
 
-Use `TaskUpdate` to mark the task `in_progress` (with `activeForm: "Building [task name]"`).
+`TaskUpdate` → `in_progress` with `activeForm: "Building [task]"`.
 
-Implement the task yourself. Write code + tests. Save a one-line self-assessment to `$RND_DIR/builds/` noting any uncertainties.
+Implement code + tests. Save a one-line self-assessment to `$RND_DIR/builds/` noting uncertainties.
 
-After building, assess your own work and set a status code based on your confidence:
-
-- `DONE` — all criteria met, tests pass, no significant concerns. Proceed to Step 3.
-- `DONE_WITH_CONCERNS` — criteria met but you have uncertainty (e.g., an unverified external dependency, a tricky edge case). Record the concerns in your self-assessment and pass a brief concerns summary to the Verifier in Step 3.
-
-Quick mode does not use `NEEDS_CONTEXT` or `BLOCKED` — as the orchestrator, you can resolve context gaps and dependency issues directly without pausing.
+- **DONE** — all criteria met, tests pass → proceed to Step 3.
+- **DONE_WITH_CONCERNS** — criteria met, uncertainty exists → record concerns, proceed to Step 3.
 
 ## Step 3: Inline Verify
 
-Update `activeForm` via `TaskUpdate` to reflect verification (e.g., "Verifying [task name]").
+`TaskUpdate` → `activeForm: "Verifying [task]"`.
 
-Verify your own work inline.
+For each criterion: run an evidence-producing command, record PASS/FAIL with raw output. Save report to `$RND_DIR/verifications/T1-verification.md`. Quick mode trades the information barrier for speed — use `/rnd-framework:rnd-start` for independent verification.
 
-For each success criterion in the pre-registration:
-1. Run the relevant test or command that produces evidence (e.g., `bun test`, grep for expected output)
-2. Record PASS or FAIL with the evidence (command output, line numbers, observed behavior)
-3. If any criterion fails, enter the iteration loop in Step 4
+## Step 4: Ship or Iterate
 
-Save the verification report to `$RND_DIR/verifications/T1-verification.md` with the per-criterion results and an overall verdict (PASS, FAIL, or PASS with quality feedback).
+**PASS** → `TaskUpdate` → `completed`. Invoke `rnd-framework:rnd-formatting` then `rnd-framework:rnd-doc-polish`. Use `AskUserQuestion`/`AskUser`:
+- "Commit changes (Recommended)"
+- "Bump version, tag and push"
+- "Show development narrative" — prose (3-5 paragraphs, "we"); after showing, re-present menu without this option
+- "Review artifacts"
+- "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish`
 
-**Note:** Quick mode trades the information barrier for speed. For tasks requiring stronger verification guarantees, use `/rnd-framework:rnd-start`.
+**PASS (quality: NEEDS ITERATION)** → Treat as PASS. Mark `completed`. Show quality feedback. Present same options above.
 
-## Step 4: Iterate or Ship
+**FAIL** → Keep `in_progress`. `TaskUpdate` with `metadata: {"iteration": N}`, `activeForm: "Iterating [task] (N/2)"`. Fix, re-verify. If budget (2) exhausted, `AskUserQuestion`/`AskUser`: "Escalate to full pipeline", "Iterate one more time", "Abandon task".
 
-- **PASS** → Use `TaskUpdate` to mark the task `completed`. Summarize what was built and verified. **MANDATORY — DO NOT SKIP:** You MUST invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. This detects the project's formatter and runs it on files changed by the pipeline. Then invoke `rnd-framework:rnd-doc-polish` to check and update docs. Report what was formatted and what docs were updated. Use `AskUserQuestion`/`AskUser` with options:
-  - "Commit changes (Recommended)" — stage and commit the changes
-  - "Bump version, tag and push" — run `/rnd-framework:rnd-bump` to add a CHANGELOG entry, increment the patch version, commit, tag, and push. Use this when the task produced a releasable change to a versioned project.
-  - "Show development narrative" — generate a narrative explanation of the session: what was built and why, key decisions and trade-offs, obstacles encountered, insights gained, and what's left. Write as prose (3-5 paragraphs, first person plural), not a bullet list. Generate from your own context (re-read `$RND_DIR` artifacts if context was compressed). After showing, re-present the same menu without this option.
-  - "Review artifacts" — show the user the verification report and code changes
-  - "Finish session" — run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --finish` to clear the current session ID; artifacts are preserved on disk, but the next pipeline run will start a fresh session
-
-- **PASS (quality: NEEDS ITERATION)** → Treat as PASS for pipeline purposes. Use `TaskUpdate` to mark the task `completed`. Show the quality feedback from the verification report to the user. Do NOT trigger an iteration cycle. Note: "Quality feedback noted. For small tasks, quality iteration is optional — review and address manually if needed." Then present the same `AskUserQuestion`/`AskUser` options as a full PASS.
-
-- **FAIL** → Keep task `in_progress`. Use `TaskUpdate` with `metadata: {"iteration": N}` and `activeForm: "Iterating [task name] (N/2)"` to track the cycle. Summarize the verification failure to the user. Get feedback, fix, re-verify.
-
-  If iteration budget (2) is exhausted, use `AskUserQuestion`/`AskUser` with options:
-  - "Escalate to full pipeline" — switch to `/rnd-framework:rnd-start` for deeper decomposition
-  - "Iterate one more time" — extend budget by 1
-  - "Abandon task" — stop work on this task
-
-Quick mode is faster, not less rigorous. Verify each criterion with real evidence (test output, grep results, observed behavior) — do not accept "it looks correct" as evidence. For stronger verification guarantees or multi-agent execution, use `/rnd-framework:rnd-start`.
+Verify each criterion with real evidence — not "it looks correct".

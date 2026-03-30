@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1 — 2026-03-30
+
+### Fix rnd-quick API rate limit by removing model override and condensing command
+
+Removed model: sonnet from rnd-quick frontmatter (only command forcing a model switch) and condensed from 111 lines / 7,630 bytes to 58 lines / 2,750 bytes. All ceremony preserved.
+
 ## 2.0.0 — 2026-03-29
 
 ### Restore multi-agent architecture, Lean 4 proofs, and dual-mode orchestration

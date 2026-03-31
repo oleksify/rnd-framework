@@ -8,7 +8,7 @@ effort: low
 
 ## Overview
 
-rnd-framework uses strict semver (`X.Y.Z`) across three plugin manifest files. Version bumping, changelog management, and structural validation are automated via `lib/bump.sh` and `lib/validate.sh`. Always run validation after changes to skills, commands, hooks, or agents.
+rnd-framework uses strict semver (`X.Y.Z`) in its plugin manifest. Version bumping, changelog management, and structural validation are automated via `lib/bump.sh` and `lib/validate.sh`. Always run validation after changes to skills, commands, hooks, or agents.
 
 ## Version Bumping
 
@@ -35,15 +35,6 @@ rnd-framework uses strict semver (`X.Y.Z`) across three plugin manifest files. V
 
 Optional longer description
 ```
-
-### Keeping Manifests in Sync
-
-`bump.sh` only updates `.claude-plugin/plugin.json`. The other two manifests must be updated manually to match:
-
-- `.factory-plugin/plugin.json`
-- `.opencode-plugin/plugin.json`
-
-All three must have the same `version` value.
 
 ### When NOT to Bump
 
@@ -100,11 +91,10 @@ When adding new cross-cutting concepts, add a parity entry to the `PARITY_TABLE`
 2. Run tests: `bash tests/run-tests.sh`
 3. Run validation: `bash lib/validate.sh`
 4. Bump version: `bash lib/bump.sh "What changed"`
-5. Sync version to `.factory-plugin/plugin.json` and `.opencode-plugin/plugin.json`
-6. Commit with a descriptive message (see `rnd-framework:committing`)
+5. Commit with a descriptive message (see `rnd-framework:committing`)
 
 ## Related Skills
 
-- `rnd-framework:plugin-architecture` — manifest formats and platform differences
+- `rnd-framework:plugin-architecture` — manifest format and plugin structure
 - `rnd-framework:writing-skills` — skill file format and frontmatter conventions
 - `rnd-framework:committing` — commit message style

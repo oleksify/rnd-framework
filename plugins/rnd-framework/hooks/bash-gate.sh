@@ -42,7 +42,7 @@ check_echo_redirect() {
   while [[ "$stripped" =~ \>\ */dev/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
-  while [[ "$stripped" =~ \>\ *[^[:space:]]*(\.(claude[^/]*|factory)|\.config/opencode)/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
+  while [[ "$stripped" =~ \>\ *[^[:space:]]*\.claude[^/]*/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
   if [[ "$stripped" == *">"* ]]; then
@@ -367,7 +367,7 @@ fi
 # 5. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
 
-if [[ "$command" =~ (\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
+if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   allow_json
   exit 0
 fi

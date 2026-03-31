@@ -8,7 +8,7 @@ effort: high
 
 For reported bugs that need root cause analysis before fixing. All phases run sequentially in this session. Use `/rnd-framework:rnd-start` if the bug turns out to be architectural.
 
-> **Iteration budget: 2** (same as quick mode). If the fix fails verification twice, escalate to `/rnd-framework:rnd-start` for proper decomposition.
+> **Iteration budget: 2.** If the fix fails verification twice, escalate to `/rnd-framework:rnd-start` for proper decomposition.
 
 ## Task Input
 

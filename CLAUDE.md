@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A multi-platform plugin repository compatible with **Claude Code**, **Factory Droid**, and **OpenCode**. Contains two plugins:
+A Claude Code plugin repository. Contains two plugins:
 
 - **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Supports dual execution modes: single-flow (all phases sequential in one session) and multi-agent (8 specialized agents with structural isolation).
 - **** — a creative studio for designing in Framer. Follows a real design process (brief → moodboard → tokens → build → review) to produce design systems and page skeletons.
 
-Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them (includes `owner` and `category` fields for Claude Code discovery). The `.factory-plugin/marketplace.json` omits those fields per Factory Droid's validator requirements. The `.opencode-plugin/marketplace.json` follows the same no-owner format. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
+Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
 ## Repository Layout
 
@@ -19,14 +19,12 @@ lib/
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── .opencode-plugin/plugin.json # OpenCode plugin manifest
 ├── agents/                      # 8 specialized agents for multi-agent execution mode
 ├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, PermissionDenied
-│   ├── opencode-bridge.ts       # OpenCode bridge: translates JS hook events to shell script calls via Bun.spawn
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
@@ -111,17 +109,6 @@ This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.sh` an
 { "allowRead": ["~/.claude/.rnd/**"], "allowWrite": ["~/.claude/.rnd/**"] }
 ```
 
-### Multi-Platform Support (Claude Code + Factory Droid + OpenCode)
-
-All plugins run on Claude Code, Factory Droid, and OpenCode from a single codebase. Factory Droid claims full Claude Code plugin compatibility and aliases `CLAUDE_PLUGIN_ROOT` to `DROID_PLUGIN_ROOT`. OpenCode uses a fundamentally different hook system (JS/TS plugins instead of shell scripts), bridged via `opencode-bridge.ts`.
-
-- **Config directory detection** (`plugin-dir-base.sh`): Detects platform env vars and resolves to the correct config directory. Precedence: `CLAUDE_PLUGIN_ROOT` (strip cache) > `CLAUDE_CONFIG_DIR` > `DROID_CONFIG_DIR` > `OPENCODE_CONFIG_DIR` > `OPENCODE_CONFIG` (→ `~/.config/opencode/`) > `DROID_PLUGIN_ROOT` (→ `~/.factory/`) > `~/.claude/` (default).
-- **Path matching** (`lib.sh`, `bash-gate.sh`, `artifact-gate.sh`): Regexes match `~/.claude*/`, `~/.factory/`, and `~/.config/opencode/` paths using `(\.(claude[^/]*|factory)|\.config/opencode)/`.
-- **Hook matchers** (`hooks.json`): Tool name matchers cover all three platforms — `Bash|Execute|bash`, `Write|Create|write`, `Read|read`, `Edit|edit`, `Glob|glob`, `Grep|grep`. OpenCode uses lowercase tool names; Claude Code uses PascalCase; Factory Droid uses both PascalCase and `Execute`/`Create` variants.
-- **OpenCode bridge** (`opencode-bridge.ts`): TypeScript plugin that translates OpenCode hook events (`tool.execute.before`, `tool.execute.after`, `event`, `experimental.session.compacting`) into calls to the existing shell scripts via `Bun.spawn`. Shell scripts remain the single source of truth for all hook logic. The bridge sets `CLAUDE_PLUGIN_ROOT` when spawning scripts so they can locate plugin resources. Context from `session-start.sh` is injected via `experimental.chat.system.transform`.
-- **Missing hook events on Factory Droid**: `PostCompact`, `CwdChanged`, `FileChanged`, `TaskCreated`, `PermissionDenied`, `InstructionsLoaded`, `Setup`, `StopFailure`. These hooks simply don't fire — no code change needed.
-- **OpenCode limitations**: No `TaskCreated`, `CwdChanged`, `PermissionDenied`, `InstructionsLoaded`, `Setup`, `StopFailure` equivalents. The `event` bus provides `file.edited` (mapped to `file-changed.sh`) and `session.created`. Advisory context from hooks (e.g., `post-dispatch.sh`) cannot be injected mid-conversation — only block/allow decisions are supported via `tool.execute.before`.
-
 ### --bare Mode (v2.1.81+)
 
 When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate.sh, bash-gate.sh, post-dispatch.sh, and all others. Practical consequences:
@@ -185,7 +172,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-plan`, `/rnd-framework:rnd-build`, `/rnd-framework:rnd-verify`, `/rnd-framework:rnd-integrate`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-quick`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-validate`, `/rnd-framework:rnd-doctor`, `/rnd-framework:rnd-bump`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-narrative`, `/rnd-framework:rnd-calibrate`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`.
+Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-plan`, `/rnd-framework:rnd-build`, `/rnd-framework:rnd-verify`, `/rnd-framework:rnd-integrate`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-validate`, `/rnd-framework:rnd-doctor`, `/rnd-framework:rnd-bump`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-narrative`, `/rnd-framework:rnd-calibrate`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`.
 
 ## Key Conventions
 

@@ -46,13 +46,11 @@ Present findings using `AskUserQuestion`/`AskUser`:
   - "Review audit report details"
 
 - If **ISSUES_FOUND**: "Audit complete — issues found." Options:
-  - "Fix with /rnd-framework:rnd-quick (Recommended)"
-  - "Fix with /rnd-framework:rnd-start"
+  - "Fix with /rnd-framework:rnd-start (Recommended)"
   - "Review audit report details"
   - "Dismiss"
 
 - If **CRITICAL_ISSUES**: "Audit complete — critical issues found." Options:
   - "Fix with /rnd-framework:rnd-start (Recommended)"
-  - "Fix with /rnd-framework:rnd-quick"
   - "Review audit report details"
   - "Dismiss"

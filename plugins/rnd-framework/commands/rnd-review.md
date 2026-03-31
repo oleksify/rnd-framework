@@ -59,13 +59,11 @@ Present findings using `AskUserQuestion`/`AskUser`:
   - "Review report details"
 
 - If **ISSUES_FOUND**: "Review complete — issues found. See `$RND_DIR/review-report.md`." Options:
-  - "Fix with /rnd-framework:rnd-quick (Recommended)"
-  - "Fix with /rnd-framework:rnd-start"
+  - "Fix with /rnd-framework:rnd-start (Recommended)"
   - "Review report details"
   - "Dismiss"
 
 - If **CRITICAL_ISSUES**: "Review complete — critical issues found." Options:
   - "Fix with /rnd-framework:rnd-start (Recommended)"
-  - "Fix with /rnd-framework:rnd-quick"
   - "Review report details"
   - "Dismiss"

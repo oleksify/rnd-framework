@@ -18,11 +18,10 @@ Returns 0 if path is under `.rnd/` or `.rnd/` within a recognized config directo
 
 ```bash
 is_plugin_artifact_path "/home/user/.claude/.rnd/proj-abc123/sessions/20260101-120000-abcd/plan.md"  # true
-is_plugin_artifact_path "/home/user/.factory/.rnd/proj/file.md"  # true
 is_plugin_artifact_path "/home/user/project/src/main.ts"  # false
 ```
 
-Regex: `(\.(claude[^/]*|factory)|\.config/opencode)/.*\.rnd/`
+Regex: `\.claude[^/]*/.*\.rnd/`
 
 ### is_plugin_cache_path
 
@@ -195,7 +194,7 @@ ts="$(iso_timestamp)"  # "2026-03-28T14:30:00Z"
 ## Common Anti-Patterns
 
 - **Raw `jq` instead of `jq_extract`** — `jq_extract` handles malformed JSON and missing fields; raw `jq` will fail on bad input and break hooks under `set -e`
-- **Reimplementing path checks** — use `is_plugin_artifact_path`, `is_plugin_cache_path`, etc. The regex patterns cover all three platforms
+- **Reimplementing path checks** — use `is_plugin_artifact_path`, `is_plugin_cache_path`, etc. The regex patterns handle all Claude Code path variants
 - **Not using `guard_nonempty`** — manual `if [[ -z ... ]]` blocks are verbose; `guard_nonempty` enables clean early-exit with `||`
 - **Constructing hook JSON manually** — use `allow_json`, `advisory_json`, `block_msg`. They handle JSON escaping correctly
 - **Ignoring the `active_session_dir` cache** — calling `resolve_rnd_dir` repeatedly is ~15ms per call. Use `active_session_dir` which caches at process level

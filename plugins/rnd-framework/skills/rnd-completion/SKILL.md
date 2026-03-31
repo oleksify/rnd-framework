@@ -40,7 +40,7 @@ ROADMAP="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap)"
 - If `$ROADMAP` points to an existing `roadmap.md` with an `IN_PROGRESS` milestone:
   - Change its status to `DONE`, record the session ID and a brief summary of deliverables, and update the "Last updated" date
   - Show the updated roadmap progress to the user
-  - Use `AskUserQuestion`/`AskUser` to offer: "Start next milestone (Recommended)", "Finish session", "Review roadmap"
+  - Use `AskUserQuestion` to offer: "Start next milestone (Recommended)", "Finish session", "Review roadmap"
 - If no roadmap exists or no `IN_PROGRESS` milestone: skip silently
 
 ### 3. Handle Session Completion
@@ -61,7 +61,7 @@ rm -rf "$RND_DIR"
 
 **Neither** — Leave everything as-is (session ID remains active; pipeline commands will continue operating in this session).
 
-> Finishing a session and cleaning up are independent. Most users will want to finish the session (to start fresh next time) but keep artifacts for audit trails. Use `AskUserQuestion`/`AskUser` to present these as explicit choices.
+> Finishing a session and cleaning up are independent. Most users will want to finish the session (to start fresh next time) but keep artifacts for audit trails. Use `AskUserQuestion` to present these as explicit choices.
 
 ### 4. Clean Up R&D Artifacts
 
@@ -85,7 +85,7 @@ Pipeline artifacts in `$RND_DIR` are outside the project tree and cannot be acci
 
 ### 5.5. Version Bump (if applicable)
 
-After committing, use `AskUserQuestion`/`AskUser` to offer a version bump for versioned projects (plugins, libraries, packages):
+After committing, use `AskUserQuestion` to offer a version bump for versioned projects (plugins, libraries, packages):
 
 > "Bump version and tag this release?"
 
@@ -113,7 +113,7 @@ Summarize:
 - Final integration status
 - Branch/PR status
 
-**Use `AskUserQuestion`/`AskUser` to present next steps as structured options** with a recommended choice. For example: "Create PR (Recommended)", "Commit without PR", "Review changes first". Never leave the user with open-ended text asking what to do.
+**Use `AskUserQuestion` to present next steps as structured options** with a recommended choice. For example: "Create PR (Recommended)", "Commit without PR", "Review changes first". Never leave the user with open-ended text asking what to do.
 
 ## Related Skills
 

@@ -20,7 +20,7 @@ effort: low
 
 ## Before Committing
 
-**Always use `AskUserQuestion`/`AskUser`** to confirm the commit message before running `git commit`. Present 2-3 message options with the best one marked "(Recommended)".
+**Always use `AskUserQuestion`** to confirm the commit message before running `git commit`. Present 2-3 message options with the best one marked "(Recommended)".
 
 Example:
 

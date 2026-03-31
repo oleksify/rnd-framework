@@ -149,7 +149,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 ## User Decision Points
 
-When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion`/`AskUser` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.
+When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.
 
 Rules:
 - Always include 2-4 concrete options
@@ -166,25 +166,9 @@ Common decision points:
 
 ## Scaling Rules
 
-- **Small tasks (<1hr) / quick mode:** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration. Use single-flow mode.
+- **Small tasks (<1hr):** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration. Use single-flow mode.
 - **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task. Single-flow or multi-agent mode.
 - **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification. Multi-agent mode recommended.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
 - **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate. Multi-agent mode required.
 
-## Mission Mode
-
-The framework integrates with **Factory Droid Missions** as an optional orchestration layer. When running inside a Factory Droid Mission:
-
-- The Mission orchestrator handles high-level feature decomposition and worker assignment
-- Each worker session can use rnd-framework skills for discipline (pre-registration, TDD, verification checklists)
-- The information barrier is maintained within each worker's session via `read-gate.sh`
-- Mission validation contracts serve a similar role to pre-registration success criteria — define testable conditions before implementation
-
-**How rnd-framework discipline enhances Mission workflows:**
-- **Pre-registration** — Workers write success criteria before coding, reducing scope creep
-- **TDD via `rnd-building`** — Red-green-refactor discipline within each worker session
-- **Verification checklists** — Workers self-verify against criteria before calling `EndFeatureRun`
-- **Convergent iteration** — When validation fails, workers address all failures in a single pass
-
-Mission mode does not replace the multi-agent pipeline — it operates at a higher level. A Mission worker can invoke `/rnd-framework:rnd-quick` for lightweight tasks or use the full pipeline via `/rnd-framework:rnd-start` for complex features within their assigned scope.

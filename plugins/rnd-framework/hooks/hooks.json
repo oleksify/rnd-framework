@@ -74,7 +74,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Execute|bash",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
@@ -83,7 +83,7 @@
         ]
       },
       {
-        "matcher": "Read|read",
+        "matcher": "Read",
         "hooks": [
           {
             "type": "command",
@@ -92,7 +92,7 @@
         ]
       },
       {
-        "matcher": "Write|Create|write",
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
@@ -101,7 +101,7 @@
         ]
       },
       {
-        "matcher": "Edit|edit",
+        "matcher": "Edit",
         "hooks": [
           {
             "type": "command",
@@ -110,7 +110,7 @@
         ]
       },
       {
-        "matcher": "Glob|glob",
+        "matcher": "Glob",
         "hooks": [
           {
             "type": "command",
@@ -119,7 +119,7 @@
         ]
       },
       {
-        "matcher": "Grep|grep",
+        "matcher": "Grep",
         "hooks": [
           {
             "type": "command",
@@ -170,7 +170,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Create|write|Edit|edit|Bash|Execute|bash",
+        "matcher": "Write|Edit|Bash",
         "hooks": [
           {
             "type": "command",

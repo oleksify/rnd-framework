@@ -15,7 +15,7 @@ Before proceeding, determine the execution mode. Use `AskUserQuestion`/`AskUser`
 - **"Single-flow mode (Recommended)"** — All phases run sequentially in this session. No agents are spawned. Best for most tasks; avoids rate-limit overhead.
 - **"Multi-agent mode"** — Pipeline phases are executed by specialized agents spawned as subagents (`rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-integrator`). Each agent has a dedicated model, skill preloading, and role. Best for complex multi-task pipelines requiring deep specialization and mechanically-enforced information barriers.
 
-If the user has already specified a mode (e.g., "use multi-agent"), skip the prompt and proceed with their choice. If `$ARGUMENTS` includes "quick" or the task is clearly small, redirect to `/rnd-framework:rnd-quick` instead.
+If the user has already specified a mode (e.g., "use multi-agent"), skip the prompt and proceed with their choice.
 
 **Single-flow mode:** All phases below are executed directly by this session. Skills provide phase-specific discipline.
 

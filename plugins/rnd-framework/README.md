@@ -108,7 +108,7 @@ Additional phases in multi-agent mode:
 - **Reality Audit** — `rnd-reality-auditor` adversarially verifies external contracts (SQL schemas, API responses, env vars). Blocking — routes back to build on INVALID findings.
 - **Proof Gate** — `rnd-proof-gate` attempts formal Lean 4 proofs of pre-registration criteria. Advisory — findings inform but don't block.
 
-Use `/rnd-framework:rnd-quick` for a lightweight single-flow pipeline for small tasks. Use `/rnd-framework:rnd-start` for the full pipeline with mode selection.
+Use `/rnd-framework:rnd-start` for the full pipeline with mode selection.
 
 ## Commands
 
@@ -120,7 +120,6 @@ Use `/rnd-framework:rnd-quick` for a lightweight single-flow pipeline for small 
 | `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification with information barriers |
 | `/rnd-framework:rnd-integrate <wave-2\|final>` | Merge verified outputs, run integration tests |
 | `/rnd-framework:rnd-status` | Show pipeline status dashboard |
-| `/rnd-framework:rnd-quick <task>` | Lightweight mode for small tasks |
 | `/rnd-framework:rnd-history` | Browse past pipeline sessions for this project |
 | `/rnd-framework:rnd-resume` | Resume a partially-completed pipeline from where it left off |
 | `/rnd-framework:rnd-validate` | Validate plugin structure: frontmatter, hooks, cross-references |
@@ -196,8 +195,7 @@ Every task goes through the pipeline, scaled to complexity:
 | Complexity | Entry Point | What Happens |
 |---|---|---|
 | Bug (reported symptom) | `/rnd-framework:rnd-debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
-| Trivial (fix typo) | `/rnd-framework:rnd-quick` | Inline plan → build → verify |
-| Small (<1hr) | `/rnd-framework:rnd-quick` | 1 Builder + 1 Verifier |
+| Trivial to small | `/rnd-framework:rnd-start` | Single-flow: plan → build → verify inline |
 | Medium (1-4hr) | `/rnd-framework:rnd-start` | Planner + N Builders + N Verifiers + Integrator |
 | Large (multi-day) | `/rnd-framework:rnd-start` | Full pipeline + design review gate |
 | High-stakes | `/rnd-framework:rnd-start` | Full pipeline + dual independent verification |
@@ -249,8 +247,8 @@ See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 ### Small task
 
 ```
-> /rnd-framework:rnd-quick Fix the race condition in token refresh
-  [Quick plan → build → independent verify → done]
+> /rnd-framework:rnd-start Fix the race condition in token refresh
+  [Plan → build → independent verify → done]
 ```
 
 ### Check progress
@@ -327,7 +325,6 @@ rnd-framework/
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
-│   ├── opencode-bridge.ts       # OpenCode bridge: translates JS hook events to shell script calls
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
@@ -402,7 +399,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use single-flow mode or `/rnd-framework:rnd-quick` for smaller tasks.
+- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use single-flow mode for smaller tasks.
 - **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
 
 ## Acknowledgements

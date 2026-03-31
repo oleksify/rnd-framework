@@ -79,41 +79,6 @@ else
   assert_eq "is_plugin_artifact_path: regular path returns 1" "1" "1"
 fi
 
-# Matches .factory/.rnd/ pattern
-if is_plugin_artifact_path "/Users/alice/.factory/.rnd/sessions/123/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .factory/.rnd/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_artifact_path: .factory/.rnd/ returns 0" "0" "1"
-fi
-
-# Matches .factory/.rnd/ pattern
-if is_plugin_artifact_path "/Users/alice/.factory/.rnd/slug/sessions/123/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .factory/.rnd/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_artifact_path: .factory/.rnd/ returns 0" "0" "1"
-fi
-
-# Does NOT match .factory/ path without .rnd/ or .rnd/
-if is_plugin_artifact_path "/Users/alice/.factory/something-else/file.md"; then
-  assert_eq "is_plugin_artifact_path: .factory/something-else does not match returns 1" "1" "0"
-else
-  assert_eq "is_plugin_artifact_path: .factory/something-else does not match returns 1" "1" "1"
-fi
-
-# Matches .config/opencode/.rnd/ pattern (OpenCode XDG path)
-if is_plugin_artifact_path "/Users/alice/.config/opencode/.rnd/sessions/123/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "1"
-fi
-
-# Matches .config/opencode/.rnd/ pattern (OpenCode XDG path)
-if is_plugin_artifact_path "/Users/alice/.config/opencode/.rnd/slug/sessions/123/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_artifact_path: .config/opencode/.rnd/ returns 0" "0" "1"
-fi
-
 # Does NOT match plain .rnd/ without config dir prefix
 if is_plugin_artifact_path "/Users/alice/.rnd/something"; then
   assert_eq "is_plugin_artifact_path: plain .rnd/ without config prefix returns 1" "1" "0"
@@ -144,20 +109,6 @@ else
   assert_eq "is_plugin_cache_path: project plugins/cache/ without .claude returns 1" "1" "1"
 fi
 
-# Matches .factory/plugins/cache/
-if is_plugin_cache_path "/Users/alice/.factory/plugins/cache/rnd/SKILL.md"; then
-  assert_eq "is_plugin_cache_path: .factory/plugins/cache/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_cache_path: .factory/plugins/cache/ returns 0" "0" "1"
-fi
-
-# Matches .config/opencode/plugins/cache/ (OpenCode XDG path)
-if is_plugin_cache_path "/Users/alice/.config/opencode/plugins/cache/rnd/SKILL.md"; then
-  assert_eq "is_plugin_cache_path: .config/opencode/plugins/cache/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_cache_path: .config/opencode/plugins/cache/ returns 0" "0" "1"
-fi
-
 printf '\n%s\n' '--- is_learnings_path ---'
 
 # Matches .claude-personal/learnings/
@@ -186,20 +137,6 @@ if is_learnings_path "/Users/alice/Developer/project/src/main.ts"; then
   assert_eq "is_learnings_path: regular path returns 1" "1" "0"
 else
   assert_eq "is_learnings_path: regular path returns 1" "1" "1"
-fi
-
-# Matches .factory/learnings/
-if is_learnings_path "/Users/alice/.factory/learnings/javascript.md"; then
-  assert_eq "is_learnings_path: .factory/learnings/ returns 0" "0" "0"
-else
-  assert_eq "is_learnings_path: .factory/learnings/ returns 0" "0" "1"
-fi
-
-# Matches .config/opencode/learnings/ (OpenCode XDG path)
-if is_learnings_path "/Users/alice/.config/opencode/learnings/javascript.md"; then
-  assert_eq "is_learnings_path: .config/opencode/learnings/ returns 0" "0" "0"
-else
-  assert_eq "is_learnings_path: .config/opencode/learnings/ returns 0" "0" "1"
 fi
 
 printf '\n%s\n' '--- allow_json ---'
@@ -262,11 +199,9 @@ mkdir -p "${_BASE}/sessions"
 mkdir -p "${_SESSION_TMPDIR}/.rnd"
 printf '%s' "$_BASE" > "${_SESSION_TMPDIR}/.rnd/.active-base-dir"
 
-# Use the temp dir as config dir, clear other platform vars
+# Use the temp dir as config dir
 CLAUDE_CONFIG_DIR="$_SESSION_TMPDIR"
 unset CLAUDE_PLUGIN_ROOT 2>/dev/null || true
-unset DROID_CONFIG_DIR 2>/dev/null || true
-unset DROID_PLUGIN_ROOT 2>/dev/null || true
 
 # Helper: reset process-level cache between tests
 _reset_session_cache() {

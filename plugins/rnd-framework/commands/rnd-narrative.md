@@ -19,11 +19,11 @@ Parse `$ARGUMENTS` to find the target session:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-If no session directory is found, tell the user: "No pipeline sessions found for this project. Run `/rnd-framework:rnd-start` or `/rnd-framework:rnd-quick` first." and stop.
+If no session directory is found, tell the user: "No pipeline sessions found for this project. Run `/rnd-framework:rnd-start` first." and stop.
 
 ## Step 2: Read Artifacts
 
-Read all available artifacts from the session directory. Not all may exist (quick mode sessions have fewer artifacts than full pipeline runs). Read what's there:
+Read all available artifacts from the session directory. Not all may exist — some sessions produce fewer artifacts than full pipeline runs. Read what's there:
 
 - `$RND_DIR/plan.md` — task tree, pre-registrations, dependencies, schedule
 - `$RND_DIR/builds/T*-manifest.md` — what each builder produced (use Glob: `$RND_DIR/builds/*-manifest.md`)
@@ -47,7 +47,7 @@ From the artifacts, produce a prose narrative. Write this yourself. Cover:
 
 **Format:** Write as prose paragraphs, not a bullet list. Use first person plural ("we"). Keep it concise — 3-5 paragraphs. The goal is a story that gives the developer a sense of connection to the process.
 
-**Adapt to what's available.** A quick-mode session might only have a plan and one verification report. A full pipeline run will have everything. A brainstorm session will only have brainstorm.md. Write the narrative from whatever artifacts exist — don't complain about missing files.
+**Adapt to what's available.** Some sessions might only have a plan and one verification report. A full pipeline run will have everything. A brainstorm session will only have brainstorm.md. Write the narrative from whatever artifacts exist — don't complain about missing files.
 
 ## Step 4: Present
 

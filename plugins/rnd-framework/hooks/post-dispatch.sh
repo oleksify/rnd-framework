@@ -22,13 +22,13 @@ raw="$(cat)"
 tool_name="$(printf '%s' "$raw" | jq -r '.tool_name // ""' 2>/dev/null || true)"
 
 case "$tool_name" in
-  Write|Create|write|Edit|edit)
+  Write|Edit)
     # Audit logging
     printf '%s' "$raw" | jq -c --arg ts "$(iso_timestamp)" '
       {ts: $ts, tool: (.tool_name // ""), file: (.tool_input.file_path // "")}
       | select(.file != "")' >> "${session_dir}/audit.jsonl" 2>/dev/null || true
     ;;
-  Bash|Execute|bash)
+  Bash)
     # Observation mask
     line_count="$(printf '%s' "$raw" | jq -r '.stdout // empty' 2>/dev/null | wc -l | tr -d ' ')" || line_count=0
     if [[ "$line_count" -gt "$LINE_THRESHOLD" ]]; then

@@ -50,7 +50,7 @@ When receiving verification feedback:
 
 | Tier | Max Iterations | Escalation |
 |------|---------------|------------|
-| Quick mode | 2 | Report to user |
+| Small (single-flow) | 2 | Report to user |
 | Standard | 3 | Escalate to re-planning |
 | High-stakes | 5 | Escalate to re-planning |
 

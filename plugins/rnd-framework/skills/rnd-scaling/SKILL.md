@@ -1,6 +1,6 @@
 ---
 name: rnd-scaling
-description: "Use when deciding how much R&D pipeline ceremony a task needs — scales from trivial (quick mode) to high-stakes (dual verification)"
+description: "Use when deciding how much R&D pipeline ceremony a task needs — scales from trivial to high-stakes (dual verification)"
 user-invocable: false
 effort: medium
 ---
@@ -17,23 +17,23 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 
 ### Trivial (fix typo, add log line)
 
-**Entry:** `/rnd-framework:rnd-quick`
+**Entry:** `/rnd-framework:rnd-start` (single-flow mode)
 **Process:**
 1. Write a one-line pre-registration (inline, no subagent)
 2. Make the change yourself
-3. Spawn one `rnd-framework:rnd-verifier` to confirm
+3. Verify inline against criteria
 4. Done
 
 **Skip:** Planner, dependency scheduling, Integrator
-**Keep:** Pre-registration, independent verification
+**Keep:** Pre-registration, verification
 
 ### Small (<1 hour of work)
 
-**Entry:** `/rnd-framework:rnd-quick`
+**Entry:** `/rnd-framework:rnd-start` (single-flow mode)
 **Process:**
 1. Write a brief pre-registration (inline)
 2. Implement with TDD (use `rnd-framework:rnd-building`)
-3. Spawn `rnd-framework:rnd-verifier` for independent verification
+3. Independent verification per task
 4. Max 2 iterations
 
 **Skip:** Planner subagent, dependency scheduling, Integrator

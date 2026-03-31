@@ -42,24 +42,8 @@ if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
   fi
 elif [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
   CONFIG_DIR="$CLAUDE_CONFIG_DIR"
-elif [[ -n "${DROID_CONFIG_DIR:-}" ]]; then
-  # Factory Droid sets DROID_CONFIG_DIR; use it directly as the config root
-  CONFIG_DIR="$DROID_CONFIG_DIR"
-elif [[ -n "${OPENCODE_CONFIG_DIR:-}" ]]; then
-  # OpenCode sets OPENCODE_CONFIG_DIR; use it directly as the config root
-  CONFIG_DIR="$OPENCODE_CONFIG_DIR"
-elif [[ -n "${OPENCODE_CONFIG:-}" ]]; then
-  # OpenCode sets OPENCODE_CONFIG when no explicit config dir is given;
-  # fall back to ~/.config/opencode/ on that platform
-  CONFIG_DIR="$HOME/.config/opencode"
 else
-  # Factory Droid sets DROID_PLUGIN_ROOT when no explicit config dir is given;
-  # fall back to ~/.factory/ on that platform, ~/.claude/ everywhere else
-  if [[ -n "${DROID_PLUGIN_ROOT:-}" ]]; then
-    CONFIG_DIR="$HOME/.factory"
-  else
-    CONFIG_DIR="$HOME/.claude"
-  fi
+  CONFIG_DIR="$HOME/.claude"
 fi
 
 # --- Compute project slug ---

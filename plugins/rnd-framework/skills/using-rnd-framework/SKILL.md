@@ -24,7 +24,6 @@ All pipeline phases (Plan → Build → Verify → Integrate) run sequentially i
 
 - Small to medium tasks where rate-limit overhead of agent spawning is not justified
 - Quick iterations where the main session has sufficient context
-- Tasks routed via `/rnd-framework:rnd-quick` (always single-flow)
 
 ### Multi-Agent Mode
 
@@ -49,18 +48,6 @@ Pipeline phases are executed by specialized agents spawned as subagents. Each ag
 
 In multi-agent mode, agents are spawned using `subagent_type` (e.g., `subagent_type: "rnd-builder"`). Each agent communicates completion and status back to the orchestrator via `SendMessage`.
 
-## Quick Mode (Inline — Single-Flow Only)
-
-**When routing a task to quick mode, execute these steps directly. Do NOT invoke the Skill tool for `/rnd-framework:rnd-quick`.**
-
-1. **Compute RND_DIR:** `RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)`
-2. **Write plan:** Save a brief pre-registration to `$RND_DIR/plan.md` — task, approach, success criteria
-3. **Build:** Implement the task with tests; follow `rnd-framework:rnd-building` discipline
-4. **Verify inline:** Check each success criterion yourself with evidence (run tests, read output, grep for expected patterns). Quick mode verifies in the main conversation — no separate verification phase needed. Save a brief verification note to `$RND_DIR/verifications/T1-verification.md`.
-5. **Iterate or ship:** Budget 2 cycles; if exhausted, escalate to `/rnd-framework:rnd-start`
-
-Quick mode is always single-flow. For multi-agent rigor, use `/rnd-framework:rnd-start` and select multi-agent mode.
-
 ## Data Science Tasks
 
 When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB:
@@ -77,16 +64,16 @@ When a task involves analytical or numerical work — financial calculations, da
 
 ## Red Flags
 
-Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-quick`; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
+Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-start` with single-flow mode; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
 
 ## User Interaction
 
-**MANDATORY: When presenting next steps or options to the user, ALWAYS use `AskUserQuestion`/`AskUser` with structured choices.** Never write open-ended text like "Would you like me to...?". This is not optional. The tool is called `AskUserQuestion` in Claude Code and `AskUser` in Factory Droid — use whichever is available.
+**MANDATORY: When presenting next steps or options to the user, ALWAYS use `AskUserQuestion` with structured choices.** Never write open-ended text like "Would you like me to...?". This is not optional.
 
 - 2-4 concrete options, short action-oriented labels; recommended option listed first
 - Context goes in the `description` field, not the label
 
-After finishing any task, always use `AskUserQuestion`/`AskUser` to present next steps. Never end with plain text like "Done."
+After finishing any task, always use `AskUserQuestion` to present next steps. Never end with plain text like "Done."
 
 ## User Instructions
 

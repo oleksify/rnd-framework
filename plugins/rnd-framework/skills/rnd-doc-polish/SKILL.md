@@ -16,7 +16,6 @@ After a pipeline run ships verified code, documentation often lags behind. This 
 ## When to Use
 
 - After SHIP verdict in `/rnd-framework:rnd-start` (Phase 6, before commit options)
-- After PASS verdict in `/rnd-framework:rnd-quick` (Step 4, before commit options)
 - Manually via `/rnd-framework:rnd-review` or `/rnd-framework:rnd-audit` when doc staleness is suspected
 
 ## Process

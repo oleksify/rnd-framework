@@ -1,6 +1,6 @@
 ---
 name: hook-authoring
-description: "Use when writing or modifying rnd-framework hook scripts — covers hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration, and multi-platform tool matchers"
+description: "Use when writing or modifying rnd-framework hook scripts — covers hook anatomy, exit code protocol, stdin parsing, fast-path patterns, and hooks.json registration"
 effort: low
 ---
 
@@ -8,7 +8,7 @@ effort: low
 
 ## Overview
 
-rnd-framework hooks are bash scripts invoked by Claude Code, Factory Droid, and OpenCode at specific lifecycle points. Every hook follows a strict contract: it reads JSON from stdin, makes a decision, and communicates it via exit code + stdout/stderr. Breaking this contract silently breaks the pipeline.
+rnd-framework hooks are bash scripts invoked by Claude Code at specific lifecycle points. Every hook follows a strict contract: it reads JSON from stdin, makes a decision, and communicates it via exit code + stdout/stderr. Breaking this contract silently breaks the pipeline.
 
 ## Hook Anatomy
 
@@ -95,17 +95,9 @@ session_dir="$(active_session_dir 2>/dev/null || true)"
 
 This avoids expensive logic when no RND session is active. The `active_session_dir` function uses a process-level cache and fast-path file reads to minimize overhead (~1ms vs ~15ms for full git+shasum resolution).
 
-## Multi-Platform Tool Name Matchers
+## Tool Name Matchers
 
-hooks.json matchers must cover all three platforms:
-
-| Platform | Bash | Read | Write | Edit | Glob | Grep |
-|---|---|---|---|---|---|---|
-| Claude Code | `Bash` | `Read` | `Write` | `Edit` | `Glob` | `Grep` |
-| Factory Droid | `Bash`, `Execute` | `Read` | `Write`, `Create` | `Edit` | `Glob` | `Grep` |
-| OpenCode | `bash` | `read` | `write` | `edit` | `glob` | `grep` |
-
-Matcher patterns in hooks.json: `"Bash|Execute|bash"`, `"Read|read"`, `"Write|Create|write"`, `"Edit|edit"`, etc.
+hooks.json matchers use PascalCase tool names: `"Bash"`, `"Read"`, `"Write"`, `"Edit"`, `"Glob"`, `"Grep"`.
 
 ## Registering a New Hook
 
@@ -113,7 +105,7 @@ Add an entry to `hooks.json` under the appropriate event:
 
 ```json
 {
-  "matcher": "ToolName|tool_name",
+  "matcher": "ToolName",
   "hooks": [
     {
       "type": "command",
@@ -131,10 +123,10 @@ For PostToolUse hooks, prefer extending `post-dispatch.sh` with a new `case` bra
 
 ```bash
 case "$tool_name" in
-  Write|Create|write|Edit|edit)
+  Write|Edit)
     # Audit logging
     ;;
-  Bash|Execute|bash)
+  Bash)
     # Observation mask
     ;;
 esac
@@ -157,7 +149,7 @@ Add new PostToolUse behaviors as additional `case` branches here.
 2. Sources `lib.sh` via `BASH_SOURCE[0]`
 3. Uses `parse_input` (PreToolUse) or raw stdin reading (other events)
 4. Returns decisions via `allow_json` / `advisory_json` / `block_msg` / silent exit 0
-5. Registered in `hooks.json` with multi-platform matchers
+5. Registered in `hooks.json` with correct tool name matchers
 6. Has a corresponding test file in `tests/<hook-name>.test.sh`
 7. Passes `validate.sh`
 
@@ -165,4 +157,4 @@ Add new PostToolUse behaviors as additional `case` branches here.
 
 - `rnd-framework:lib-sh-patterns` — shared utility functions used in hooks
 - `rnd-framework:bash-hook-testing` — how to test hook scripts
-- `rnd-framework:plugin-architecture` — platform differences affecting hooks
+- `rnd-framework:plugin-architecture` — plugin structure and hook system

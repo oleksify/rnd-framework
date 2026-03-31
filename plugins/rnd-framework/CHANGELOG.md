@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.0.0 — 2026-03-31
+
+### BREAKING: Drop Factory Droid, OpenCode, and quick mode
+
+Focus exclusively on Claude Code. Remove all multi-platform infrastructure.
+
+- **Drop Factory Droid:** Remove `.factory-plugin/` manifests, `DROID_*` env var detection, `.factory` path matching, Factory Droid tool name variants (`Execute`, `Create`)
+- **Drop OpenCode:** Remove `.opencode-plugin/` manifests, `opencode-bridge.ts`, `OPENCODE_*` env var detection, `.config/opencode` path matching, lowercase tool name variants
+- **Drop quick mode:** Remove `/rnd-framework:rnd-quick` command and all references. Use `/rnd-framework:rnd-start` with single-flow mode for all task sizes
+- **Simplify hooks.json matchers:** `Bash|Execute|bash` → `Bash`, `Write|Create|write` → `Write`, etc.
+- **Simplify lib.sh regexes:** `(\.(claude[^/]*|factory)|\.config/opencode)/` → `\.claude[^/]*/`
+- **Simplify plugin-dir-base.sh:** 7-branch config detection → 3-branch (CLAUDE_PLUGIN_ROOT, CLAUDE_CONFIG_DIR, default)
+- **Clean AskUser dual naming:** Replace `AskUserQuestion`/`AskUser` with `AskUserQuestion` everywhere
+- **Add PermissionDenied hook:** Advisory-only hook for auto mode denials (v2.1.88+)
+- **Add pipeline settings defaults:** `showThinkingSummaries: true`, `showTurnDuration: true`, `spinnerTipsEnabled: false`
+- **Refactor bash-gate.sh:** Extract `_args_after_cmd` and `_check_interpreter` helpers, unify interpreter detection
+- **Audit fixes:** Remove 25 tracked `.factory/` files, fix validate.sh VALID_TOOLS, tighten manifest regex, document race conditions
+
 ## 2.1.0 — 2026-03-30
 
 ### Missions-grade planning: enriched plan.md with environment discovery, validation contract, and worker guidelines

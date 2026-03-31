@@ -15,7 +15,7 @@ A scientific-method orchestration plugin for [Claude Code](https://docs.anthropi
 ### Add the marketplace
 
 ```
-/plugin marketplace add git@github.com:oleksify/claude-plugins.git
+/plugin marketplace add https://tangled.sh/oleksify.me/claude-plugins
 ```
 
 ### Install the plugin

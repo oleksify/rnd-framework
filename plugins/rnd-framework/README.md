@@ -16,13 +16,13 @@ Add the marketplace and install:
 
 ```
 /plugin marketplace add https://tangled.sh/oleksify.me/claude-plugins
-/plugin install rnd-framework@rnd-framework-plugins
+/plugin install rnd-framework@oleksify-plugins
 ```
 
 Update to the latest version:
 
 ```
-/plugin update rnd-framework@rnd-framework-plugins
+/plugin update rnd-framework@oleksify-plugins
 ```
 
 ### Inline declaration via settings.json (v2.1.80+)

@@ -1,4 +1,7 @@
 {
+  "allowWrite": [
+    "~/.claude*/.rnd/**"
+  ],
   "showThinkingSummaries": true,
   "showTurnDuration": true,
   "spinnerTipsEnabled": false,

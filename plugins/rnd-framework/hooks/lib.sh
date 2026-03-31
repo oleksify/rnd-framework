@@ -12,6 +12,7 @@ set -euo pipefail
 # within a .claude config directory.
 is_plugin_artifact_path() {
   local path="$1"
+  [[ "$path" == /* ]] || return 1
   [[ "$path" =~ \.claude[^/]*/.*\.rnd/ ]]
 }
 
@@ -21,12 +22,14 @@ is_rnd_path() { is_plugin_artifact_path "$1"; }
 # Returns 0 if path contains plugins/cache/ under a .claude config directory.
 is_plugin_cache_path() {
   local path="$1"
+  [[ "$path" == /* ]] || return 1
   [[ "$path" =~ \.claude[^/]*/.*plugins/cache/ ]]
 }
 
 # Returns 0 if path contains learnings/ under a .claude config directory.
 is_learnings_path() {
   local path="$1"
+  [[ "$path" == /* ]] || return 1
   [[ "$path" =~ \.claude[^/]*/.*learnings/ ]]
 }
 
@@ -62,6 +65,13 @@ allow_json() {
 advisory_json() {
   local msg="$1"
   printf '{"hookSpecificOutput":{"additionalContext":%s}}\n' "$(printf '%s' "$msg" | jq -Rs .)"
+}
+
+# Outputs a system message JSON to stdout. Creates a system-level message in the transcript.
+# More prominent than advisory_json — use for state restoration and critical context.
+system_message_json() {
+  local msg="$1"
+  printf '{"systemMessage":%s}\n' "$(printf '%s' "$msg" | jq -Rs .)"
 }
 
 # Writes message to stderr and exits 2. Blocks a hook operation.

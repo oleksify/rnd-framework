@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1 — 2026-03-31
+
+### Remove write-gate.sh, add path guards and systemMessage output
+
+Remove redundant write-gate.sh hook (sandbox handles /tmp blocking, settings.json allowWrite handles .rnd/ auto-allow). Add absolute-path guards to lib.sh path matchers. Upgrade post-compact.sh from advisory_json to system_message_json for higher-visibility state restoration. Add SubagentStart/SubagentStop lifecycle hooks for pipeline audit logging.
+
 ## 3.0.0 — 2026-03-31
 
 ### BREAKING: Drop Factory Droid, OpenCode, and quick mode

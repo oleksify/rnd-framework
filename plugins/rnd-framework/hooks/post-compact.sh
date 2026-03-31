@@ -35,5 +35,5 @@ if [[ -n "$needle" ]]; then
 VERIFICATION CHECK: Confirm your context survived compaction by stating: (1) current task ID: ${task}, (2) iteration count: ${iter}, (3) needle: ${needle}. If you cannot answer these, re-read \$RND_DIR/plan.md before continuing."
 fi
 
-advisory_json "$msg"
+system_message_json "$msg"
 exit 0

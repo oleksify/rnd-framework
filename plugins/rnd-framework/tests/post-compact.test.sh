@@ -88,16 +88,16 @@ else
   assert_eq "post-compact output is valid JSON" "0" "1"
 fi
 
-# Output must be an advisory (contains additionalContext)
-assert_contains "post-compact output contains additionalContext" '"additionalContext"' "$HOOK_OUT"
+# Output must be a system message (contains systemMessage)
+assert_contains "post-compact output contains systemMessage" '"systemMessage"' "$HOOK_OUT"
 
-# Advisory text must mention plan and task
-ctx="$(printf '%s' "$HOOK_OUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
-assert_contains "post-compact advisory mentions plan content" "Task Plan" "$ctx"
-assert_contains "post-compact advisory mentions current task" "T3" "$ctx"
+# System message text must mention plan and task
+ctx="$(printf '%s' "$HOOK_OUT" | jq -r '.systemMessage // ""' 2>/dev/null || true)"
+assert_contains "post-compact system message mentions plan content" "Task Plan" "$ctx"
+assert_contains "post-compact system message mentions current task" "T3" "$ctx"
 
-# Advisory text must mention the needle for verification challenge
-assert_contains "post-compact advisory contains verification needle" "deadbeef" "$ctx"
+# System message text must mention the needle for verification challenge
+assert_contains "post-compact system message contains verification needle" "deadbeef" "$ctx"
 
 rm -rf "$tmp_config"
 

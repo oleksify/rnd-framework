@@ -24,7 +24,6 @@ plugins/rnd-framework/
 │   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, PermissionDenied
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
 │   ├── session-start.sh         # SessionStart hook: injects skill context
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
@@ -39,6 +38,7 @@ plugins/rnd-framework/
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
 │   ├── permission-denied.sh     # PermissionDenied hook (v2.1.88+): emits advisory when auto mode denies a tool
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
+│   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -74,19 +74,19 @@ The framework supports two execution modes, selectable via `/rnd-framework:rnd-s
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the verification phase from anchoring on build-phase reasoning
-- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`): `Read` operations on `.rnd/` artifact paths are auto-allowed. `Write` and `Edit` operations on these paths are auto-allowed. `Glob` and `Grep` operations targeting these paths are auto-allowed. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
+- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`, `settings.json`): `Read` operations on `.rnd/` artifact paths are auto-allowed via hook. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed via `settings.json` `allowWrite` rule (no hook needed). `Glob` and `Grep` operations targeting these paths are auto-allowed via hook. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
 - **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches.
-- **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering to the plugin artifact directory
 - **Audit logging** (`post-dispatch.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` and advises when command output exceeds 50 lines
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 - **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
+- **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
 - **Permission denial advisory** (`permission-denied.sh`): PermissionDenied hook (v2.1.88+) emits advisory context when auto mode denies a tool permission, suggesting the user add a permission rule or re-run with auto mode. Advisory only — does not retry.
 
-#### file_path Guarantee (v2.1.88+)
+#### file_path Handling
 
-As of Claude Code v2.1.88, PreToolUse and PostToolUse hooks receive `file_path` as an absolute path in the `tool_input` JSON. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) already expect absolute paths, so no code change was needed. This resolves a prior assumption that paths might sometimes be relative.
+Tool schemas require absolute paths and the model typically complies. However, hooks receive raw `tool_input` without mechanical path normalization — relative paths could theoretically reach hooks. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) guard against this by rejecting paths that don't start with `/`. If a relative path reaches a hook, the conservative behavior is to not auto-allow (falls through to the default permission prompt).
 
 #### Plugin Settings Defaults
 

@@ -92,24 +92,6 @@
         ]
       },
       {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh'"
-          }
-        ]
-      },
-      {
         "matcher": "Glob",
         "hooks": [
           {
@@ -154,6 +136,26 @@
           {
             "type": "command",
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/task-created.sh'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/subagent-lifecycle.sh'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/subagent-lifecycle.sh'"
           }
         ]
       }

@@ -231,7 +231,7 @@ else
   assert_eq "post-compact outputs valid JSON" "pass" "fail"
 fi
 
-pc_ctx="$(printf '%s' "$pc_out" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+pc_ctx="$(printf '%s' "$pc_out" | jq -r '.systemMessage // ""' 2>/dev/null || true)"
 assert_contains "post-compact context contains task ID" "T5" "$pc_ctx"
 assert_contains "post-compact context contains iteration count" "3" "$pc_ctx"
 assert_contains "post-compact context contains verification needle" "deadbeef" "$pc_ctx"

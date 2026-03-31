@@ -15,7 +15,7 @@ A Claude Code plugin that applies the scientific method to software engineering.
 Add the marketplace and install:
 
 ```
-/plugin marketplace add https://tangled.org/oleksify.me/rnd-framework
+/plugin marketplace add git@tangled.org:oleksify.me/rnd-framework
 /plugin install rnd-framework@oleksify-plugins
 ```
 

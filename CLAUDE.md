@@ -4,12 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository. Contains two plugins:
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Supports dual execution modes: single-flow (all phases sequential in one session) and multi-agent (8 specialized agents with structural isolation).
 
-- **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Supports dual execution modes: single-flow (all phases sequential in one session) and multi-agent (8 specialized agents with structural isolation).
-- **** — a creative studio for designing in Framer. Follows a real design process (brief → moodboard → tokens → build → review) to produce design systems and page skeletons.
-
-Plugins live under `plugins/`. The root `.claude-plugin/marketplace.json` is a local plugin registry that references them. Alternatively, plugins can be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
+The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
 ## Repository Layout
 
@@ -41,7 +38,7 @@ plugins/rnd-framework/
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
 │   ├── permission-denied.sh     # PermissionDenied hook (v2.1.88+): emits advisory when auto mode denies a tool
-│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ and .rnd/ path operations
+│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -77,8 +74,8 @@ The framework supports two execution modes, selectable via `/rnd-framework:rnd-s
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the verification phase from anchoring on build-phase reasoning
-- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`): `Read` operations on plugin artifact paths (`.rnd/`, `.rnd/`) are auto-allowed. `Write` and `Edit` operations on these paths are auto-allowed. `Glob` and `Grep` operations targeting these paths are auto-allowed. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
-- **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of plugin artifact directories (`.rnd/`, `.rnd/`) and emits an advisory warning on `git push` to main/master/production branches.
+- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`): `Read` operations on `.rnd/` artifact paths are auto-allowed. `Write` and `Edit` operations on these paths are auto-allowed. `Glob` and `Grep` operations targeting these paths are auto-allowed. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
+- **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches.
 - **`/tmp` write block** (`write-gate.sh`): Blocks `Write` and `Edit` tool operations targeting `/tmp/` paths, steering to the plugin artifact directory
 - **Audit logging** (`post-dispatch.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` and advises when command output exceeds 50 lines
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context

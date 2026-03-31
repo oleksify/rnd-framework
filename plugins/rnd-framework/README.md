@@ -329,7 +329,7 @@ rnd-framework/
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
 │   ├── write-gate.sh            # Write/Edit hook: blocks /tmp/ writes, auto-allows .rnd/ path operations
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
-│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ and .rnd/ path operations
+│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── session-start.sh         # SessionStart hook: injects skill context
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit + output size advisory

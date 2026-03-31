@@ -7,9 +7,9 @@
 # Responsibilities:
 #   1. Database guard — blocks destructive DB operations (Ecto, Postgres, MySQL, SQLite)
 #   2. Tool discipline — blocks sed/awk/cat/grep/find/echo-redirects/inline interpreters
-#   3. Git guards — blocks git add .rnd/.rnd/ and git push to protected branches
+#   3. Git guards — blocks git add .rnd/ and git push to protected branches
 #   4. /tmp redirect guard — steers writes to $RND_DIR
-#   5. Auto-allow — .rnd/.rnd/ paths, echo/printf without redirect, plugin lib scripts
+#   5. Auto-allow — .rnd/ paths, echo/printf without redirect, plugin lib scripts
 #
 # Exit codes:
 #   0 + hookSpecificOutput JSON  — auto-allow
@@ -316,7 +316,7 @@ fi
 # ---------------------------------------------------------------------------
 
 if [[ "$command" =~ git[[:space:]]+add.*\.rnd(/|[[:space:]]|$) ]]; then
-  block_msg "BLOCKED: Plugin artifact directories (.rnd/, .rnd/) must never be committed."
+  block_msg "BLOCKED: Plugin artifact directories (.rnd/) must never be committed."
 fi
 
 _branch_pattern="${_PROTECTED_BRANCHES// /|}"
@@ -364,7 +364,7 @@ fi
 # 5. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
 
-if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
+if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   allow_json
   exit 0
 fi

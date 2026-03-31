@@ -56,7 +56,7 @@ This matches:
 - `~/.claude/.rnd/` (Claude Code)
 - `~/.claude-code/.rnd/` (Claude Code variants)
 
-The `is_plugin_artifact_path` function in `lib.sh` extends this to match `.rnd/` and `.rnd/` subdirs.
+The `is_plugin_artifact_path` function in `lib.sh` extends this to match `.rnd/` subdirs.
 
 ## Hook Event Availability
 

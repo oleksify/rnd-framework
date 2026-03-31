@@ -48,12 +48,6 @@ run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.claude-persona
 assert_exit "Glob .rnd/ path → exit 0" 0
 assert_stdout_contains "Glob .rnd/ path → allow JSON" '"permissionDecision":"allow"'
 
-# .rnd/ path → auto-allow
-
-run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.claude-personal/.rnd/slug/sessions/123","pattern":"*.md"}}'
-assert_exit "Glob .rnd/ path → exit 0" 0
-assert_stdout_contains "Glob .rnd/ path → allow JSON" '"permissionDecision":"allow"'
-
 # Grep: .rnd/ path → auto-allow
 
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/slug/sessions/123/builds","pattern":"PASS"}}'

@@ -1,13 +1,14 @@
-# Claude Code Plugins
+# rnd-framework — Claude Code Plugin
 
-A private collection of plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [Factory Droid](https://docs.factory.ai/welcome).
+A scientific-method orchestration plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Structures coding workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 
-## Available Plugins
+## Features
 
-| Plugin | Description |
-|---|---|
-| [rnd-framework](plugins/rnd-framework/) | Multi-agent coding orchestration with structured decomposition, independent verification, and quality gates |
-| [](plugins//) | Creative studio for designing in Framer: brief, moodboard, design tokens, component scaffolding, and code generation |
+- **Dual execution modes:** single-flow (sequential in one session) or multi-agent (8 specialized agents with structural isolation)
+- **Pre-registration:** testable success criteria declared before implementation
+- **Information barriers:** verification phase cannot read build-phase self-assessments
+- **Quality gates:** evidence-based PASS/FAIL verdicts at every phase boundary
+- **Structured decomposition:** hierarchical task trees with dependency-based scheduling
 
 ## Installation
 
@@ -17,14 +18,10 @@ A private collection of plugins for [Claude Code](https://docs.anthropic.com/en/
 /plugin marketplace add git@github.com:oleksify/claude-plugins.git
 ```
 
-### Install a plugin
+### Install the plugin
 
 ```
 /plugin install rnd-framework@oleksify-plugins
-```
-
-```
-/plugin install @oleksify-plugins
 ```
 
 Or use the interactive plugin manager:
@@ -39,37 +36,38 @@ Navigate to the **Discover** tab, select the plugin, and choose an installation 
 - **project** — shared via `.claude/settings.json` (committed to git)
 - **local** — per-machine via `.claude/settings.local.json` (not committed)
 
-### Update a plugin
+### Update the plugin
 
 ```
 /plugin update rnd-framework@oleksify-plugins
 ```
 
-To enable auto-updates for this marketplace:
+## Usage
+
+Start a pipeline:
 
 ```
-/plugin
+/rnd-framework:rnd-start <task description>
 ```
 
-Go to the **Marketplaces** tab, select the marketplace, and enable auto-update.
+The framework guides you through: Plan, Build, Verify, Integrate.
+
+See the [plugin README](plugins/rnd-framework/README.md) for full documentation.
 
 ## Per-Project Configuration
 
-Control which plugins are active per-project via the `enabledPlugins` setting.
+Control whether the plugin is active per-project via the `enabledPlugins` setting.
 
-Add to `.claude/settings.local.json` (per-machine, not committed) or `.claude/settings.json` (shared with team):
+Add to `.claude/settings.local.json` (per-machine) or `.claude/settings.json` (shared):
 
 ```json
 {
   "enabledPlugins": {
-    "rnd-framework@oleksify-plugins": false,
-    "@oleksify-plugins": false
+    "rnd-framework@oleksify-plugins": false
   }
 }
 ```
 
-Settings merge with more specific scopes winning: `.claude/settings.local.json` > `.claude/settings.json` > `~/.claude/settings.json`.
-
 ## License
 
-Proprietary. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

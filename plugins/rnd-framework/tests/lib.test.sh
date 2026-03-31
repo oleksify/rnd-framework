@@ -58,20 +58,6 @@ else
   assert_eq "is_plugin_artifact_path: .claude/.rnd/ returns 0" "0" "1"
 fi
 
-# Matches .claude-personal/.rnd/ pattern
-if is_plugin_artifact_path "/Users/alice/.claude-personal/.rnd/design-51e58f69/sessions/20260322-181321-1b4a/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .claude-personal/.rnd/ returns 0" "0" "0"
-else
-  assert_eq "is_plugin_artifact_path: .claude-personal/.rnd/ returns 0" "0" "1"
-fi
-
-# Does NOT match plain .rnd/ without .claude prefix
-if is_plugin_artifact_path "/Users/alice/.rnd/something"; then
-  assert_eq "is_plugin_artifact_path: plain .rnd/ without .claude prefix returns 1" "1" "0"
-else
-  assert_eq "is_plugin_artifact_path: plain .rnd/ without .claude prefix returns 1" "1" "1"
-fi
-
 # Does NOT match regular path
 if is_plugin_artifact_path "/Users/alice/Developer/project/src/main.ts"; then
   assert_eq "is_plugin_artifact_path: regular path returns 1" "1" "0"

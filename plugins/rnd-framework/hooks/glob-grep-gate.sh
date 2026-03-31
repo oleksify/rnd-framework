@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # hooks/glob-grep-gate.sh — PreToolUse hook for Glob and Grep.
-# Auto-allows .rnd/ and .rnd/ path operations. No opinion for other paths.
+# Auto-allows .rnd/ path operations. No opinion for other paths.
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 

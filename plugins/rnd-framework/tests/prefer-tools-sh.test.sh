@@ -202,10 +202,6 @@ run_hook "$(payload "printf 'DONE' > /home/user/.claude/.rnd/builds/T1-manifest.
 assert_exit   "printf > .rnd/ → exit 0" 0
 assert_stdout_contains "printf > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'echo DONE > /home/user/.claude/.rnd/design-abc/sessions/20260322/brief.md')"
-assert_exit   "echo > .rnd/ → exit 0" 0
-assert_stdout_contains "echo > .rnd/ → allow JSON" '"permissionDecision":"allow"'
-
 # ---------------------------------------------------------------------------
 # Allows echo/printf without redirect (outputs allow JSON)
 # ---------------------------------------------------------------------------
@@ -233,10 +229,6 @@ assert_stderr_contains "git add .rnd/ (trailing slash) → BLOCKED" "BLOCKED"
 run_hook "$(payload 'git add some/path/.rnd/file')"
 assert_exit   "git add nested .rnd/ → exit 2" 2
 assert_stderr_contains "git add nested .rnd/ → BLOCKED" "BLOCKED"
-
-run_hook "$(payload 'git add .rnd/something')"
-assert_exit   "git add .rnd/ → exit 2" 2
-assert_stderr_contains "git add .rnd/ → BLOCKED" "BLOCKED"
 
 # False positive guard: .rnd.backup should NOT be blocked
 run_hook "$(payload 'git add .rnd.backup')"
@@ -380,16 +372,6 @@ assert_stdout_contains "rnd-dir.sh → allow JSON" '"permissionDecision":"allow"
 run_hook "$(payload 'npm install && bun run /Users/alice/.claude/.rnd/check.ts')"
 assert_exit   ".rnd/ after && → exit 0 allow" 0
 assert_stdout_contains ".rnd/ after && → allow JSON" '"permissionDecision":"allow"'
-
-# .rnd/ paths auto-allowed
-run_hook "$(payload 'ls /Users/alice/.claude-personal/.rnd/design-51e58f69/sessions/20260322-181321-1b4a/')"
-assert_exit   ".rnd/ in command → exit 0" 0
-assert_stdout_contains ".rnd/ in command → allow JSON" '"permissionDecision":"allow"'
-
-# rnd-dir.sh auto-allowed
-run_hook "$(payload 'ARTIST_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)"')"
-assert_exit   "rnd-dir.sh in command → exit 0" 0
-assert_stdout_contains "rnd-dir.sh → allow JSON" '"permissionDecision":"allow"'
 
 # Tool discipline overrides .rnd/ auto-allow
 run_hook "$(payload 'cat /Users/alice/.claude/.rnd/builds/manifest.md')"

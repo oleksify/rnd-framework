@@ -20,7 +20,6 @@ printf '%s\n' '--- rnd-framework local copy ---'
 
 CANONICAL="${REPO_ROOT}/../../lib/plugin-dir-base.sh"
 RND_COPY="${REPO_ROOT}/lib/plugin-dir-base.sh"
-ARTIST_COPY="${REPO_ROOT}/..//lib/plugin-dir-base.sh"
 
 # Check rnd-framework copy exists
 if [[ -f "$RND_COPY" ]]; then
@@ -37,25 +36,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Criterion 2: plugins//lib/plugin-dir-base.sh exists and is
-#              identical to lib/plugin-dir-base.sh
-# ---------------------------------------------------------------------------
-printf '%s\n' '---  local copy ---'
-
-if [[ -f "$ARTIST_COPY" ]]; then
-  assert_eq "plugins//lib/plugin-dir-base.sh exists" "yes" "yes"
-else
-  assert_eq "plugins//lib/plugin-dir-base.sh exists" "yes" "no"
-fi
-
-if diff -q "$CANONICAL" "$ARTIST_COPY" >/dev/null 2>&1; then
-  assert_eq " copy is identical to canonical lib/plugin-dir-base.sh" "identical" "identical"
-else
-  assert_eq " copy is identical to canonical lib/plugin-dir-base.sh" "identical" "differs"
-fi
-
-# ---------------------------------------------------------------------------
-# Criterion 3: rnd-dir.sh sources via ${_SCRIPT_DIR}/plugin-dir-base.sh
+# Criterion 2: rnd-dir.sh sources via ${_SCRIPT_DIR}/plugin-dir-base.sh
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- rnd-dir.sh source line ---'
 
@@ -74,25 +55,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Criterion 4: rnd-dir.sh sources via ${_SCRIPT_DIR}/plugin-dir-base.sh
-# ---------------------------------------------------------------------------
-printf '%s\n' '--- rnd-dir.sh source line ---'
-
-ARTIST_DIR_SCRIPT="${REPO_ROOT}/..//lib/rnd-dir.sh"
-if grep -q '\${_SCRIPT_DIR}/plugin-dir-base\.sh' "$ARTIST_DIR_SCRIPT"; then
-  assert_eq "rnd-dir.sh uses local source path" "yes" "yes"
-else
-  assert_eq "rnd-dir.sh uses local source path" "yes" "no"
-fi
-
-if grep -q '\.\./\.\./\.\./lib/plugin-dir-base\.sh' "$ARTIST_DIR_SCRIPT"; then
-  assert_eq "rnd-dir.sh does not use old relative path" "no" "yes"
-else
-  assert_eq "rnd-dir.sh does not use old relative path" "no" "no"
-fi
-
-# ---------------------------------------------------------------------------
-# Criteria 5 & 6: Both dir scripts succeed when invoked from a simulated
+# Criterion 3: rnd-dir.sh succeeds when invoked from a simulated
 #                 plugin cache path (no root lib/ directory present).
 #
 # Simulation: create a temp dir that mimics the cache layout:
@@ -125,29 +88,6 @@ if [[ -n "$RND_RESULT" && -d "$RND_RESULT" ]]; then
   assert_eq "rnd-dir.sh -c outputs a directory path that exists" "yes" "yes"
 else
   assert_eq "rnd-dir.sh -c outputs a directory path that exists" "yes" "no: '$RND_RESULT'"
-fi
-
-printf '%s\n' '--- rnd-dir.sh -c from simulated cache path ---'
-
-# Build simulated cache for 
-CACHE_ARTIST="${TMPBASE}/plugins/cache//lib"
-mkdir -p "$CACHE_ARTIST"
-cp "${REPO_ROOT}/..//lib/rnd-dir.sh"  "$CACHE_ARTIST/rnd-dir.sh"
-cp "${REPO_ROOT}/..//lib/plugin-dir-base.sh" "$CACHE_ARTIST/plugin-dir-base.sh"
-
-TMPCONFIG_ARTIST="${TMPBASE}/config-"
-mkdir -p "$TMPCONFIG_ARTIST"
-
-ARTIST_RESULT=""
-ARTIST_EXIT=0
-ARTIST_RESULT="$(CLAUDE_CONFIG_DIR="$TMPCONFIG_ARTIST" bash "${CACHE_ARTIST}/rnd-dir.sh" -c 2>&1)" || ARTIST_EXIT=$?
-
-assert_eq "rnd-dir.sh -c exits 0 from cache path" "0" "$ARTIST_EXIT"
-
-if [[ -n "$ARTIST_RESULT" && -d "$ARTIST_RESULT" ]]; then
-  assert_eq "rnd-dir.sh -c outputs a directory path that exists" "yes" "yes"
-else
-  assert_eq "rnd-dir.sh -c outputs a directory path that exists" "yes" "no: '$ARTIST_RESULT'"
 fi
 
 # ---------------------------------------------------------------------------

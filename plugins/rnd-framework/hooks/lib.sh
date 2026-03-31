@@ -8,7 +8,7 @@ set -euo pipefail
 # Path utilities
 # ---------------------------------------------------------------------------
 
-# Returns 0 if path is under a plugin artifact directory (.rnd/, .rnd/, etc.)
+# Returns 0 if path is under the .rnd/ plugin artifact directory
 # within a .claude config directory.
 is_plugin_artifact_path() {
   local path="$1"

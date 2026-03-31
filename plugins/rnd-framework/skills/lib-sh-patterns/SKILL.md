@@ -14,7 +14,7 @@ effort: low
 
 ### is_plugin_artifact_path
 
-Returns 0 if path is under `.rnd/` or `.rnd/` within a recognized config directory.
+Returns 0 if path is under `.rnd/` within a recognized config directory.
 
 ```bash
 is_plugin_artifact_path "/home/user/.claude/.rnd/proj-abc123/sessions/20260101-120000-abcd/plan.md"  # true

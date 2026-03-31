@@ -164,7 +164,7 @@ Rename all 19 command files from `X.md` to `rnd-X.md` (e.g., `start.md` → `rnd
 
 ### Optimize hook performance: 44% reduction in per-cycle overhead
 
-Cache active session base-dir path in `.active-base-dir` file to avoid re-running `git rev-parse` + `shasum` (~15ms) on every hook invocation. Collapse multiple sequential `jq` subprocess spawns into single calls across 7 hooks (parse_input 3→1, post-tool-use 4→1, write-gate 2→1, glob-grep-gate 2→1, task-created, stop-failure, observation-mask). Short-circuit PostToolUse hooks (post-tool-use, task-created, observation-mask) before reading stdin when no active pipeline session exists. Per-cycle hook overhead drops from 183ms to 102ms. Also fix CLAUDE.md: reality-auditor color red→teal, document marketplace.json asymmetry; add TypeScript test note to run-tests.sh.
+Cache active session base-dir path in `.active-base-dir` file to avoid re-running `git rev-parse` + `shasum` (~15ms) on every hook invocation. Collapse multiple sequential `jq` subprocess spawns into single calls across 7 hooks (parse_input 3→1, post-tool-use 4→1, write-gate 2→1, glob-grep-gate 2→1, task-created, stop-failure, observation-mask). Short-circuit PostToolUse hooks (post-tool-use, task-created, observation-mask) before reading stdin when no active pipeline session exists. Per-cycle hook overhead drops from 183ms to 102ms. Also fix CLAUDE.md: reality-auditor color red→teal, document marketplace.json asymmetry.
 
 ## 0.14.9 — 2026-03-26
 
@@ -176,7 +176,7 @@ Platform shim: config dir detection (DROID_CONFIG_DIR, DROID_PLUGIN_ROOT), path 
 
 ### Add Glob/Grep PreToolUse hooks, align permission regex with is_plugin_artifact_path
 
-Add glob-grep-gate.sh to auto-allow Glob and Grep operations on .rnd/. artifact paths. Tighten prefer-tools.sh Bash auto-allow and check_echo_redirect regexes to require .claude prefix, consistent with is_plugin_artifact_path. Add 18 tests for the new hook.
+Add glob-grep-gate.sh to auto-allow Glob and Grep operations on .rnd/ artifact paths. Tighten prefer-tools.sh Bash auto-allow and check_echo_redirect regexes to require .claude prefix, consistent with is_plugin_artifact_path. Add 18 tests for the new hook.
 
 ## 0.14.7 — 2026-03-26
 
@@ -188,7 +188,7 @@ Remove unused `_BUN_SAFE_SUBCOMMANDS` from prefer-tools.sh. Replace `ls | grep` 
 
 ### Fix hook auto-allow for plugin artifact paths, MCP schema for object-valued attributes, and remove Team Mode from pipeline
 
-Generalize hook auto-allow from .rnd/-only to all plugin artifact paths (.rnd/, .rnd/). Widen Framer MCP attributeValueSchema to accept nested objects (border, gradient, link). Add border.color cs: resolution. Correct framer-styles skill (shadow/blur are UI-only). Add permissionMode to agents. Remove TeamCreate/TeamDelete from pipeline commands.
+Generalize hook auto-allow for plugin artifact paths. Remove TeamCreate/TeamDelete from pipeline commands.
 
 ## 0.14.5 — 2026-03-26
 
@@ -206,7 +206,7 @@ Generalize hook auto-allow from .rnd/-only to all plugin artifact paths (.rnd/, 
 
 ### Fix 6 major audit findings
 
-Fix inert cwd-changed.sh hook, remove nonexistent command reference in instructions-loaded.sh, mask API key in session-start.sh, fix settings.json statusline extension, extract shared plugin-dir-base.sh to eliminate duplication, add proof-gate to read-gate.sh information barrier
+Fix inert cwd-changed.sh hook, remove nonexistent command reference in instructions-loaded.sh, fix settings.json statusline extension, extract shared plugin-dir-base.sh to eliminate duplication, add proof-gate to read-gate.sh information barrier
 
 ## 0.14.1 — 2026-03-25
 
@@ -306,7 +306,7 @@ Each skill now includes Methodology (sequencing, decision points, best practices
 
 ## 0.12.0 — 2026-03-22
 
-### Move to private repo, add plugin to README, proprietary license
+### Move to private repo, proprietary license
 
 ## 0.11.33 — 2026-03-22
 
@@ -326,9 +326,7 @@ Each skill now includes Methodology (sequencing, decision points, best practices
 
 ## 0.11.29 — 2026-03-22
 
-### Add plugin with Framer MCP, 17 skills, 3 agents, 5 commands
-
-Rename marketplace to oleksify-plugins
+### Rename marketplace to oleksify-plugins
 
 ## 0.11.28 — 2026-03-22
 

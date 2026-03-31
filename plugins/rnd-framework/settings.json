@@ -1,4 +1,7 @@
 {
+  "showThinkingSummaries": true,
+  "showTurnDuration": true,
+  "spinnerTipsEnabled": false,
   "spinnerVerbs": [
     "Planning",
     "Building",

@@ -25,7 +25,7 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated
+│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, PermissionDenied
 │   ├── opencode-bridge.ts       # OpenCode bridge: translates JS hook events to shell script calls via Bun.spawn
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
@@ -42,6 +42,7 @@ plugins/rnd-framework/
 │   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
+│   ├── permission-denied.sh     # PermissionDenied hook (v2.1.88+): emits advisory when auto mode denies a tool
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ and .rnd/ path operations
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
@@ -86,6 +87,15 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
+- **Permission denial advisory** (`permission-denied.sh`): PermissionDenied hook (v2.1.88+) emits advisory context when auto mode denies a tool permission, suggesting the user add a permission rule or re-run with auto mode. Advisory only — does not retry.
+
+#### file_path Guarantee (v2.1.88+)
+
+As of Claude Code v2.1.88, PreToolUse and PostToolUse hooks receive `file_path` as an absolute path in the `tool_input` JSON. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) already expect absolute paths, so no code change was needed. This resolves a prior assumption that paths might sometimes be relative.
+
+#### Plugin Settings Defaults
+
+The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`. These are defaults — user settings take precedence.
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 
@@ -109,8 +119,8 @@ All plugins run on Claude Code, Factory Droid, and OpenCode from a single codeba
 - **Path matching** (`lib.sh`, `bash-gate.sh`, `artifact-gate.sh`): Regexes match `~/.claude*/`, `~/.factory/`, and `~/.config/opencode/` paths using `(\.(claude[^/]*|factory)|\.config/opencode)/`.
 - **Hook matchers** (`hooks.json`): Tool name matchers cover all three platforms — `Bash|Execute|bash`, `Write|Create|write`, `Read|read`, `Edit|edit`, `Glob|glob`, `Grep|grep`. OpenCode uses lowercase tool names; Claude Code uses PascalCase; Factory Droid uses both PascalCase and `Execute`/`Create` variants.
 - **OpenCode bridge** (`opencode-bridge.ts`): TypeScript plugin that translates OpenCode hook events (`tool.execute.before`, `tool.execute.after`, `event`, `experimental.session.compacting`) into calls to the existing shell scripts via `Bun.spawn`. Shell scripts remain the single source of truth for all hook logic. The bridge sets `CLAUDE_PLUGIN_ROOT` when spawning scripts so they can locate plugin resources. Context from `session-start.sh` is injected via `experimental.chat.system.transform`.
-- **Missing hook events on Factory Droid**: `PostCompact`, `CwdChanged`, `FileChanged`, `TaskCreated`, `InstructionsLoaded`, `Setup`, `StopFailure`. These hooks simply don't fire — no code change needed.
-- **OpenCode limitations**: No `TaskCreated`, `CwdChanged`, `InstructionsLoaded`, `Setup`, `StopFailure` equivalents. The `event` bus provides `file.edited` (mapped to `file-changed.sh`) and `session.created`. Advisory context from hooks (e.g., `post-dispatch.sh`) cannot be injected mid-conversation — only block/allow decisions are supported via `tool.execute.before`.
+- **Missing hook events on Factory Droid**: `PostCompact`, `CwdChanged`, `FileChanged`, `TaskCreated`, `PermissionDenied`, `InstructionsLoaded`, `Setup`, `StopFailure`. These hooks simply don't fire — no code change needed.
+- **OpenCode limitations**: No `TaskCreated`, `CwdChanged`, `PermissionDenied`, `InstructionsLoaded`, `Setup`, `StopFailure` equivalents. The `event` bus provides `file.edited` (mapped to `file-changed.sh`) and `session.created`. Advisory context from hooks (e.g., `post-dispatch.sh`) cannot be injected mid-conversation — only block/allow decisions are supported via `tool.execute.before`.
 
 ### --bare Mode (v2.1.81+)
 

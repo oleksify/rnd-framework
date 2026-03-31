@@ -17,7 +17,7 @@ Read the plan from `$RND_DIR/plan.md`.
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-integrate` with no arguments):
 - Use `TaskList` to find the most recent wave where all tasks are `completed` (verified) and no integration report yet exists in `$RND_DIR/integration/`.
 - If found, proceed to integrate that wave.
-- If no such wave exists, report the current state and use `AskUserQuestion`/`AskUser`.
+- If no such wave exists, report the current state and use `AskUserQuestion`.
 
 Use `TaskList` to confirm ALL tasks in the specified wave are `completed` (verified).
 
@@ -37,7 +37,7 @@ Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform i
 6. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
 7. Issue SHIP or NO-SHIP verdict.
 
-Summarize integration results. Then use `AskUserQuestion`/`AskUser`:
+Summarize integration results. Then use `AskUserQuestion`:
 
 If **SHIP:**
 - Mark the integration task `completed`.

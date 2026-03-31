@@ -14,7 +14,7 @@ session_dir="$(active_session_dir 2>/dev/null || true)"
 # Constants
 # ---------------------------------------------------------------------------
 
-readonly MANIFEST_REGEX='^T[^-]+-manifest\.md$'
+readonly MANIFEST_REGEX='^T[0-9]+-manifest\.md$'
 readonly PLAN_HEAD_LINES=5
 
 # ---------------------------------------------------------------------------

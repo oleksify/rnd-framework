@@ -43,6 +43,7 @@ _check_jq() {
   fi
 }
 
+# _run_validation outputs exactly 3 tokens: "<status> <pass_count> <fail_count>"
 val_result="$(_run_validation)"
 val_status="${val_result%% *}"
 rest="${val_result#* }"

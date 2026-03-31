@@ -78,7 +78,7 @@ Process each task's verdict:
 - **NEEDS ITERATION:** Keep `in_progress`. Track with `metadata: {"iteration": N}`. Extract ONLY the feedback section — do NOT include your internal reasoning. Save feedback for the build phase.
 - **FAIL:** Route to re-planning.
 
-Summarize verification results. Then use `AskUserQuestion`/`AskUser`:
+Summarize verification results. Then use `AskUserQuestion`:
 
 If all tasks PASS or PASS (quality: NEEDS ITERATION):
 - "Proceed to integration (Recommended)" — run `/rnd-framework:rnd-integrate`

@@ -134,7 +134,7 @@ Claude Code version      | ✅ ok   | v2.1.81 (bare/channels/re-cloning availabl
 
 Use `✅ ok` for passing checks, `⚠ warn` for optional/non-critical issues, and `❌ fail` for critical failures.
 
-After displaying the table, use `AskUserQuestion`/`AskUser` to suggest next steps based on results:
+After displaying the table, use `AskUserQuestion` to suggest next steps based on results:
 
 - If all checks pass (no `❌ fail`): "Run /rnd-framework:rnd-start (Recommended)", "Run /rnd-framework:rnd-validate"
 - If any check fails: "Fix reported issues (Recommended)", and for each failure provide a targeted suggestion:

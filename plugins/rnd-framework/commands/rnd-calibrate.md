@@ -17,7 +17,7 @@ Parse `$ARGUMENTS` by splitting on whitespace:
 - **`true-verdict`** — third token: `PASS` or `FAIL`
 - **`reason`** — remainder of the string (optional free-text)
 
-If any of `session-id`, `task-id`, or `true-verdict` are missing, use `AskUserQuestion`/`AskUser`:
+If any of `session-id`, `task-id`, or `true-verdict` are missing, use `AskUserQuestion`:
 
 > "Please provide: session-id, task-id, and true-verdict (PASS or FAIL)."
 

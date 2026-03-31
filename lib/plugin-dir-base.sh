@@ -100,6 +100,7 @@ _plugin_dir_create_session() {
     _hex="$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n' | cut -c1-8)"
     _session_id="${_ts}-${_hex}"
     mkdir -p "$BASE_DIR"
+    # Subshell: noclobber ensures atomic create-if-absent. Single command — no pipefail needed.
     if ! ( set -o noclobber; printf '%s' "$_session_id" > "$SESSION_FILE" ) 2>/dev/null; then
       _session_id="$(< "$SESSION_FILE")"
       _plugin_dir_validate_session_id "$_session_id" "$SESSION_FILE" || exit 1
@@ -112,7 +113,9 @@ _plugin_dir_create_session() {
     mkdir -p "${_session_dir}/${_sub}"
   done
 
-  # Cache base dir for fast-path lookups in active_session_dir
+  # Cache base dir for fast-path lookups in active_session_dir.
+  # Non-atomic write; concurrent sessions may race. Acceptable: readers
+  # tolerate stale values and fall back to the slow git+shasum path.
   local _rnd_parent="${BASE_DIR%/*}"
   printf '%s' "$BASE_DIR" > "${_rnd_parent}/.active-base-dir" 2>/dev/null || true
 

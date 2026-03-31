@@ -14,7 +14,7 @@ For reported bugs that need root cause analysis before fixing. All phases run se
 
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-debug` with no bug description):
 
-Use `AskUserQuestion`/`AskUser` to gather the bug report. Present options:
+Use `AskUserQuestion` to gather the bug report. Present options:
 - "Describe the bug" — ask the user to describe what fails, under what conditions, and any error messages
 - "Paste an error message or stack trace" — let the user provide raw error output
 - "I'll search for recent failures" — run `git log --oneline -10` and check recent test failures; present findings, then ask for the bug to fix
@@ -58,11 +58,11 @@ Check the escalation recommendation:
 
 **PROCEED** → Continue to Step 2.
 
-**ESCALATE** → Use `AskUserQuestion`/`AskUser`:
+**ESCALATE** → Use `AskUserQuestion`:
 - "Escalate to /rnd-framework:rnd-start" — the bug is architectural
 - "Continue anyway" — proceed with partial diagnosis
 
-**CANNOT_REPRODUCE** → Use `AskUserQuestion`/`AskUser`:
+**CANNOT_REPRODUCE** → Use `AskUserQuestion`:
 - "Provide more details"
 - "Try a different reproduction approach"
 - "Abandon"
@@ -93,7 +93,7 @@ Invoke `rnd-framework:rnd-verification` to load verification discipline.
 
 ## Step 4: Iterate or Ship
 
-- **PASS** → Mark task `completed`. **MANDATORY:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. Then invoke `rnd-framework:rnd-doc-polish`. Then use `AskUserQuestion`/`AskUser`:
+- **PASS** → Mark task `completed`. **MANDATORY:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. Then invoke `rnd-framework:rnd-doc-polish`. Then use `AskUserQuestion`:
   - "Commit changes (Recommended)"
   - "Bump version, tag and push"
   - "Show development narrative"

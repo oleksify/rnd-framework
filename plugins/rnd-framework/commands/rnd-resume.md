@@ -126,7 +126,7 @@ Wave | Task ID | Name                    | Status        | Iterations
   2  | T2      | [task name]             | [status]      | [count or —]
 ```
 
-Then use `AskUserQuestion`/`AskUser` to present the appropriate next-action options based on the reconstructed state:
+Then use `AskUserQuestion` to present the appropriate next-action options based on the reconstructed state:
 
 **If plan exists but no builds yet (resume at Phase 2):**
 - "Start building Wave 1 (Recommended)" — run the build phase for the first wave

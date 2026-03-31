@@ -52,7 +52,7 @@ Save the review report to `$RND_DIR/review-report.md` with an `## Overall Verdic
 
 ## Phase 3: Report
 
-Present findings using `AskUserQuestion`/`AskUser`:
+Present findings using `AskUserQuestion`:
 
 - If **CLEAN**: "Review complete — no issues found." Options:
   - "Finish review"

@@ -23,6 +23,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # ---------------------------------------------------------------------------
 # Regex patterns
 # ---------------------------------------------------------------------------
+# CD patterns: [^&;]+ assumes paths don't contain literal & or ; (they should be quoted).
 readonly _CD_AND_PATTERN='^cd[[:space:]]+[^&;]+&&'
 readonly _CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
 readonly _CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
@@ -33,8 +34,31 @@ readonly _PROTECTED_BRANCHES="main master production"
 readonly _INTERPRETER_BLOCKED_MSG='blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
 
 # ---------------------------------------------------------------------------
-# Helper functions (from prefer-tools.sh)
+# Helper functions
 # ---------------------------------------------------------------------------
+
+# Extracts args after the command name and left-trims whitespace.
+_args_after_cmd() {
+  local seg="$1" first_word="$2"
+  local rest="${seg#"$first_word"}"
+  printf '%s' "${rest#"${rest%%[! ]*}"}"
+}
+
+# Checks if a segment invokes an interpreter with an inline eval flag (-c or -e).
+# Returns: "blocked:..." if inline eval, "allowed" if file execution, "$_INTERPRETER_BLOCKED_MSG" if bare interpreter.
+_check_interpreter() {
+  local seg="$1" first_word="$2" flag="$3"
+  local rest
+  rest="$(_args_after_cmd "$seg" "$first_word")"
+  local second_word="${rest%% *}"
+  if [[ -z "$second_word" ]]; then
+    printf '%s' "$_INTERPRETER_BLOCKED_MSG"; return 0
+  fi
+  if [[ "$second_word" == "$flag" ]] || [[ "$seg" == *" ${flag} "* ]] || [[ "$seg" == *" ${flag}'"* ]]; then
+    printf '%s' "$_INTERPRETER_BLOCKED_MSG"; return 0
+  fi
+  printf 'allowed'
+}
 
 check_echo_redirect() {
   local seg="$1"
@@ -90,8 +114,8 @@ check_segment() {
       return 0
       ;;
     head|tail)
-      local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"
+      local rest
+      rest="$(_args_after_cmd "$seg" "$first_word")"
       local has_file_arg=0
       for word in $rest; do
         if [[ "$word" != -* ]] && ! [[ "$word" =~ ^[0-9]+$ ]]; then
@@ -124,44 +148,26 @@ check_segment() {
       fi
       ;;
     python|python3)
-      local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"
+      local rest
+      rest="$(_args_after_cmd "$seg" "$first_word")"
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
-      elif [[ "$second_word" == "-m" ]]; then
-        printf 'allowed'
-        return 0
-      elif [[ "$second_word" == *.py ]] || [[ "$second_word" == */* ]]; then
-        printf 'allowed'
-        return 0
-      elif [[ "$second_word" == "-c" ]] || [[ "$seg" == *" -c "* ]] || [[ "$seg" == *" -c'"* ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      else
+      elif [[ "$second_word" == "-m" ]] || [[ "$second_word" == *.py ]] || [[ "$second_word" == */* ]]; then
         printf 'allowed'
         return 0
       fi
+      _check_interpreter "$seg" "$first_word" "-c"
+      return 0
       ;;
     node)
-      local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"
-      local second_word="${rest%% *}"
-      if [[ -z "$second_word" ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      else
-        printf 'allowed'
-        return 0
-      fi
+      _check_interpreter "$seg" "$first_word" "-e"
+      return 0
       ;;
     bun)
-      local rest="${seg#"$first_word"}"
-      rest="${rest#"${rest%%[! ]*}"}"
+      local rest
+      rest="$(_args_after_cmd "$seg" "$first_word")"
       local second_word="${rest%% *}"
       if [[ -z "$second_word" ]]; then
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
@@ -169,22 +175,13 @@ check_segment() {
       elif [[ "$second_word" == "eval" ]]; then
         printf '%s' "$_INTERPRETER_BLOCKED_MSG"
         return 0
-      elif [[ "$second_word" == "-e" ]] || [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      else
-        printf 'allowed'
-        return 0
       fi
+      _check_interpreter "$seg" "$first_word" "-e"
+      return 0
       ;;
     perl|ruby)
-      if [[ "$seg" == *" -e "* ]] || [[ "$seg" == *" -e'"* ]] || [[ "${seg#"$first_word" }" == "-e"* ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      else
-        printf 'allowed'
-        return 0
-      fi
+      _check_interpreter "$seg" "$first_word" "-e"
+      return 0
       ;;
   esac
   printf 'allowed'

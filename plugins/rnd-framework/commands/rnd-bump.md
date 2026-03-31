@@ -15,7 +15,7 @@ Parse `$ARGUMENTS` to extract the headline and optional description:
 - **If `$ARGUMENTS` is non-empty**, split on ` --- ` (space-dash-dash-dash-space) or a bare newline:
   - Everything before the separator is the **headline**
   - Everything after (if present) is the **description**
-- **If `$ARGUMENTS` is empty**, use `AskUserQuestion`/`AskUser` to ask:
+- **If `$ARGUMENTS` is empty**, use `AskUserQuestion` to ask:
   > "What should the CHANGELOG headline be for this release?"
 
   Ask for a short imperative title (e.g., "Add bump command"). If the user wants to include a description body, they can provide it as a second line or after ` --- `.
@@ -46,7 +46,7 @@ After `bump.sh` succeeds:
 
 ## Step 4: Commit Confirmation
 
-Use `AskUserQuestion`/`AskUser` to ask:
+Use `AskUserQuestion` to ask:
 
 > "Version bumped to X.Y.Z. Ready to commit?"
 
@@ -63,13 +63,13 @@ git commit -m "Bump version to X.Y.Z"
 
 where `X.Y.Z` is the new version read from `plugin.json`.
 
-**If "Review changes first"** is chosen, run `git diff --staged` (scoped to the plugin directory) and display the output, then use `AskUserQuestion`/`AskUser` again with the same options.
+**If "Review changes first"** is chosen, run `git diff --staged` (scoped to the plugin directory) and display the output, then use `AskUserQuestion` again with the same options.
 
 **If "Skip commit"** is chosen, confirm to the user that files are staged and ready for manual commit.
 
 ## Step 5: Tag Offer
 
-After a successful commit, use `AskUserQuestion`/`AskUser` to ask:
+After a successful commit, use `AskUserQuestion` to ask:
 
 > "Create an annotated git tag `vX.Y.Z`?"
 

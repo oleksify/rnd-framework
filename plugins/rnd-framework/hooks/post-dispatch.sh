@@ -30,7 +30,8 @@ case "$tool_name" in
     ;;
   Bash)
     # Observation mask
-    line_count="$(printf '%s' "$raw" | jq -r '.stdout // empty' 2>/dev/null | wc -l | tr -d ' ')" || line_count=0
+    line_count="$(printf '%s' "$raw" | jq -r '.stdout // empty' 2>/dev/null | wc -l | tr -d ' ')"
+    line_count="${line_count:-0}"
     if [[ "$line_count" -gt "$LINE_THRESHOLD" ]]; then
       advisory_json "Observation mask: Bash output was ${line_count} lines (threshold: ${LINE_THRESHOLD}). Summarize the key signal (pass/fail, errors, counts) in 5-10 lines rather than processing raw output. Verbose observations fill context without proportional value."
     fi

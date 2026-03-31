@@ -51,7 +51,7 @@ From the artifacts, produce a prose narrative. Write this yourself. Cover:
 
 ## Step 4: Present
 
-Output the full narrative as regular text. Then use `AskUserQuestion`/`AskUser`:
+Output the full narrative as regular text. Then use `AskUserQuestion`:
 
 - "Done" — end the command
 - "Save to file" — save the narrative to `$RND_DIR/narrative.md` for future reference

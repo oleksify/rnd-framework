@@ -95,7 +95,7 @@ frontmatter_val() {
 # VALID_TOOLS set
 # ---------------------------------------------------------------------------
 
-VALID_TOOLS=" Read Write Edit Bash Glob Grep Agent AskUserQuestion AskUser TaskCreate TaskUpdate TaskList TaskGet SendMessage WebFetch WebSearch NotebookEdit NotebookRead EnterPlanMode ExitPlanMode EnterWorktree ExitWorktree LSP TeamCreate TeamDelete ToolSearch KillShell BashOutput TaskOutput TaskStop CronCreate CronDelete CronList TodoWrite Skill "
+VALID_TOOLS=" Read Write Edit Bash Glob Grep Agent AskUserQuestion TaskCreate TaskUpdate TaskList TaskGet SendMessage WebFetch WebSearch NotebookEdit NotebookRead EnterPlanMode ExitPlanMode EnterWorktree ExitWorktree LSP TeamCreate TeamDelete ToolSearch KillShell BashOutput TaskOutput TaskStop CronCreate CronDelete CronList TodoWrite Skill "
 
 is_valid_tool() {
   [[ " $VALID_TOOLS " == *" $1 "* ]]

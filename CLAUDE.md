@@ -21,7 +21,7 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, PermissionDenied
+│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
@@ -36,7 +36,7 @@ plugins/rnd-framework/
 │   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
-│   ├── permission-denied.sh     # PermissionDenied hook (v2.1.88+): emits advisory when auto mode denies a tool
+│   ├── permission-denied.sh     # PermissionDenied hook (DISABLED: event not in Claude Code schema — script kept for future use)
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
@@ -82,7 +82,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
 - **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
-- **Permission denial advisory** (`permission-denied.sh`): PermissionDenied hook (v2.1.88+) emits advisory context when auto mode denies a tool permission, suggesting the user add a permission rule or re-run with auto mode. Advisory only — does not retry.
+- **Permission denial advisory** (`permission-denied.sh`): DISABLED — the `PermissionDenied` event is not accepted by Claude Code's hooks.json schema despite being listed as a HOOK_EVENT constant in the source. The script is kept for future use but is not registered in hooks.json.
 
 #### file_path Handling
 

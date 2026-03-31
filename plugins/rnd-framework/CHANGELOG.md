@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.2 — 2026-03-31
+
+### Remove invalid PermissionDenied hook entry from hooks.json
+
+PermissionDenied is not in Claude Code's Zod schema for hook events despite being listed as a HOOK_EVENT constant in the source. Removing the entry fixes plugin load failure.
+
 ## 3.0.1 — 2026-03-31
 
 ### Remove write-gate.sh, add path guards and systemMessage output

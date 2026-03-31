@@ -160,16 +160,6 @@
         ]
       }
     ],
-    "PermissionDenied": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/permission-denied.sh'"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|Bash",

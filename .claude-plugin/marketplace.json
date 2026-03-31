@@ -3,7 +3,7 @@
   "description": "Claude Code plugin: rnd-framework for multi-agent orchestration.",
   "owner": {
     "name": "Oleksii Topolianskyi",
-    "url": "https://tangled.sh/oleksify.me/claude-plugins"
+    "url": "https://tangled.org/oleksify.me/rnd-framework"
   },
   "plugins": [
     {

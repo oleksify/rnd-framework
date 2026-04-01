@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.3 — 2026-04-01
+
+### Align with Claude Code v2.1.89: PermissionDenied hook, defer helper, version check, env-prefix fix
+
 ## 3.0.2 — 2026-03-31
 
 ### Remove invalid PermissionDenied hook entry from hooks.json

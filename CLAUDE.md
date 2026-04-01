@@ -21,11 +21,11 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output, FP primitives)
+│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, PermissionDenied, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
-│   ├── session-start.sh         # SessionStart hook: injects skill context
+│   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
+│   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit operations + advises when output exceeds 50 lines
 │   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
@@ -36,7 +36,7 @@ plugins/rnd-framework/
 │   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
-│   ├── permission-denied.sh     # PermissionDenied hook (DISABLED: event not in Claude Code schema — script kept for future use)
+│   ├── permission-denied.sh     # PermissionDenied hook (v2.1.89+): logs auto-mode denials to audit.jsonl, returns {retry: true}
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
@@ -75,14 +75,32 @@ The framework supports two execution modes, selectable via `/rnd-framework:rnd-s
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
 - **Information barrier** (`read-gate.sh`): Blocks any `Read` call where the file path contains `self-assessment`, preventing the verification phase from anchoring on build-phase reasoning
 - **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`, `settings.json`): `Read` operations on `.rnd/` artifact paths are auto-allowed via hook. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed via `settings.json` `allowWrite` rule (no hook needed). `Glob` and `Grep` operations targeting these paths are auto-allowed via hook. For `Bash`, these paths are auto-allowed only for commands that pass tool discipline checks first (sed/cat/grep/find are still blocked even on artifact paths). `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
-- **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches.
+- **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `cat`, `grep`, `find`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. Strips environment-variable prefixes (`FOO=bar command`) before checking each segment, ensuring tool discipline applies regardless of env-var assignments. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches. **Note on Edit-without-Read (v2.1.89+):** Claude Code v2.1.89 allows Edit on files viewed via `sed -n` or `cat` without a separate Read call. Since bash-gate blocks `sed` and `cat`, this upstream feature does not affect rnd-framework users — the model must still use Read → Edit.
 - **Audit logging** (`post-dispatch.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` and advises when command output exceeds 50 lines
 - **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
 - **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
 - **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
-- **Permission denial advisory** (`permission-denied.sh`): DISABLED — the `PermissionDenied` event is not accepted by Claude Code's hooks.json schema despite being listed as a HOOK_EVENT constant in the source. The script is kept for future use but is not registered in hooks.json.
+- **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
+
+#### Defer Permission Decision (v2.1.89+)
+
+Claude Code v2.1.89 adds a `defer` permission decision for PreToolUse hooks. When a hook returns `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"defer"}}`, headless sessions (`-p` mode) pause at the tool call. The operator can then resume with `-p --resume` to have the hook re-evaluate.
+
+The `defer_json` helper in `lib.sh` outputs this response. It is available as infrastructure for hooks that need "pause and let operator decide" semantics. It is **not** used for information-barrier violations — those remain hard blocks (exit 2) because `defer` would allow the operator to approve the read, breaking the barrier.
+
+#### Claude Code Version Check
+
+The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.89). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
+
+#### Symlink Resolution for Allow Rules (v2.1.89+)
+
+As of v2.1.89, Claude Code's `allowWrite` and `allowRead` rules check the resolved symlink target, not just the requested path. The plugin's `settings.json` rule `allowWrite: ["~/.claude*/.rnd/**"]` will correctly match even if the `.claude` or `.rnd` directories are symlinks, as long as the resolved target matches the pattern.
+
+#### Hook Output Size Limit (v2.1.89+)
+
+Hook output exceeding 50K characters is saved to disk with a file path + preview instead of being injected directly into context. The `session-start.sh` output (skill content + warnings) is well below this threshold (~5-10K chars). If a future change increases hook output significantly, the 50K behavior ensures context is not bloated.
 
 #### file_path Handling
 
@@ -132,7 +150,7 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.89) and emits a warning if below threshold.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 

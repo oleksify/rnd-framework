@@ -93,4 +93,72 @@ assert_contains "session-start context includes RND_DIR label" "RND_DIR" "$ctx_w
 
 rm -rf "$tmp_config"
 
+# ---------------------------------------------------------------------------
+# Claude Code version check
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: Claude Code version check ---'
+
+# Create a mock claude binary that returns a specific version
+mock_bin="$(mktemp -d)"
+
+# Helper: run session-start with a mock claude version
+run_with_mock_version() {
+  local version="$1"
+  printf '#!/bin/sh\necho "%s (Claude Code)"\n' "$version" > "${mock_bin}/claude"
+  chmod +x "${mock_bin}/claude"
+  HOOK_EXIT=0
+  local tmp_out tmp_err
+  tmp_out="$(mktemp)"
+  tmp_err="$(mktemp)"
+  PATH="${mock_bin}:${PATH}" "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+  HOOK_STDOUT="$(cat "$tmp_out")"
+  HOOK_STDERR="$(cat "$tmp_err")"
+  rm -f "$tmp_out" "$tmp_err"
+}
+
+# Below minimum version → warning
+run_with_mock_version "2.1.80"
+ctx_old="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+assert_contains "version 2.1.80 → warning in context" "below the minimum" "$ctx_old"
+
+# At minimum version → no warning
+run_with_mock_version "2.1.89"
+ctx_cur="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+if [[ "$ctx_cur" == *"below the minimum"* ]]; then
+  assert_eq "version 2.1.89 → no warning" "no warning" "warning present"
+else
+  assert_eq "version 2.1.89 → no warning" "no warning" "no warning"
+fi
+
+# Above minimum version → no warning
+run_with_mock_version "2.2.0"
+ctx_new="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+if [[ "$ctx_new" == *"below the minimum"* ]]; then
+  assert_eq "version 2.2.0 → no warning" "no warning" "warning present"
+else
+  assert_eq "version 2.2.0 → no warning" "no warning" "no warning"
+fi
+
+# claude returning error → no warning (graceful degradation)
+printf '#!/bin/sh\nexit 1\n' > "${mock_bin}/claude"
+chmod +x "${mock_bin}/claude"
+run_with_mock_version "error"
+# Re-create the error-exit mock (run_with_mock_version overwrites it)
+printf '#!/bin/sh\nexit 1\n' > "${mock_bin}/claude"
+chmod +x "${mock_bin}/claude"
+HOOK_EXIT=0
+tmp_out="$(mktemp)"; tmp_err="$(mktemp)"
+PATH="${mock_bin}:${PATH}" "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+HOOK_STDOUT="$(cat "$tmp_out")"; HOOK_STDERR="$(cat "$tmp_err")"
+rm -f "$tmp_out" "$tmp_err"
+assert_exit_code "claude error → exits 0" 0
+ctx_missing="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+if [[ "$ctx_missing" == *"below the minimum"* ]]; then
+  assert_eq "claude error → no version warning" "no warning" "warning present"
+else
+  assert_eq "claude error → no version warning" "no warning" "no warning"
+fi
+
+rm -rf "$mock_bin"
+
 report

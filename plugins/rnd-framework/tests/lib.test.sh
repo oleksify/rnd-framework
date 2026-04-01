@@ -161,6 +161,21 @@ else
   assert_eq "advisory_json: special characters produce valid JSON" "0" "1"
 fi
 
+printf '\n%s\n' '--- defer_json ---'
+
+def_out="$(defer_json)"
+assert_contains "defer_json: contains permissionDecision" '"permissionDecision"' "$def_out"
+assert_contains "defer_json: contains defer value" '"defer"' "$def_out"
+assert_contains "defer_json: contains hookEventName" '"hookEventName"' "$def_out"
+assert_contains "defer_json: contains PreToolUse" '"PreToolUse"' "$def_out"
+
+# Verify it's valid JSON
+if printf '%s' "$def_out" | jq . > /dev/null 2>&1; then
+  assert_eq "defer_json: is valid JSON" "0" "0"
+else
+  assert_eq "defer_json: is valid JSON" "0" "1"
+fi
+
 printf '\n%s\n' '--- SESSION_ID_RE constant ---'
 
 assert_eq "SESSION_ID_RE is defined" "0" "$([ -n "${SESSION_ID_RE:-}" ] && echo 0 || echo 1)"

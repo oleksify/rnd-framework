@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
-# hooks/permission-denied.sh — PermissionDenied hook.
-# Fires after auto mode denies a tool permission.
-# Emits an advisory suggesting the user add a permission rule or re-run in auto mode.
-# Always exits 0 (never blocks, never retries).
+# hooks/permission-denied.sh — PermissionDenied hook (v2.1.89+).
+# Fires after auto mode classifier denies a tool permission.
+# Logs the denial to audit.jsonl and returns {retry: true} so the model can retry.
+# Always exits 0.
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 raw="$(cat)"
 tool_name="$(printf '%s' "$raw" | jq -r '.tool_name // "unknown"' 2>/dev/null || echo "unknown")"
 
-advisory_json "Pipeline permission denied for ${tool_name}. This may interrupt the current pipeline phase. Consider adding a permission rule via /permissions or re-running with auto mode."
+# ---------------------------------------------------------------------------
+# Audit log — append to $RND_DIR/audit.jsonl if an active session exists
+# ---------------------------------------------------------------------------
+
+rnd_dir="$(active_session_dir)" || true
+if [[ -n "$rnd_dir" ]]; then
+  ts="$(iso_timestamp)"
+  jq -cn \
+    --arg ts "$ts" \
+    --arg tool "$tool_name" \
+    --arg event "permission_denied" \
+    '{timestamp:$ts, event:$event, tool:$tool}' \
+    >> "${rnd_dir}/audit.jsonl" 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------------------
+# Response — tell the model it can retry the tool call
+# ---------------------------------------------------------------------------
+
+printf '%s\n' '{"hookSpecificOutput":{"retry":true}}'
 exit 0

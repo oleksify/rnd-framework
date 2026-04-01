@@ -61,6 +61,13 @@ allow_json() {
   printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
 }
 
+# Outputs the PreToolUse defer JSON to stdout (v2.1.89+).
+# Causes headless sessions to pause at the tool call; resume with -p --resume
+# to have the hook re-evaluate.
+defer_json() {
+  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"defer"}}'
+}
+
 # Outputs an advisory JSON to stdout. Properly JSON-escapes the message via jq.
 advisory_json() {
   local msg="$1"

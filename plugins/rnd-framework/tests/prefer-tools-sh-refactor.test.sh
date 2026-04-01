@@ -234,6 +234,57 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# check_segment with env-var prefix (v2.1.89 alignment)
+# ---------------------------------------------------------------------------
+
+run_check_segment "FOO=bar sed s/a/b/ file"
+if [[ "$CS_RESULT" == blocked:* ]]; then
+  pass "check_segment: FOO=bar sed blocked after env prefix strip"
+else
+  fail "check_segment: FOO=bar sed blocked after env prefix strip" "got: '$CS_RESULT'"
+fi
+
+run_check_segment "FOO=bar BAZ=quux cat somefile"
+if [[ "$CS_RESULT" == blocked:* ]]; then
+  pass "check_segment: multiple env prefixes + cat blocked"
+else
+  fail "check_segment: multiple env prefixes + cat blocked" "got: '$CS_RESULT'"
+fi
+
+run_check_segment "FOO=bar ls -la"
+if [[ "$CS_RESULT" == "allowed" ]]; then
+  pass "check_segment: FOO=bar ls -la allowed"
+else
+  fail "check_segment: FOO=bar ls -la allowed" "got: '$CS_RESULT'"
+fi
+
+run_check_segment "FOO=bar echo hello"
+if [[ "$CS_RESULT" == "echo_safe" ]]; then
+  pass "check_segment: FOO=bar echo hello echo_safe"
+else
+  fail "check_segment: FOO=bar echo hello echo_safe" "got: '$CS_RESULT'"
+fi
+
+# Edge case: bare env assignment with no command
+run_check_segment "FOO=bar"
+if [[ "$CS_RESULT" == "allowed" ]]; then
+  pass "check_segment: bare FOO=bar (no command) allowed"
+else
+  fail "check_segment: bare FOO=bar (no command) allowed" "got: '$CS_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
+# split_and_check with env-var prefix in compound command
+# ---------------------------------------------------------------------------
+
+run_split_and_check "FOO=bar npm test && cat file"
+if [[ "$SAC_RESULT" == blocked:* ]]; then
+  pass "split_and_check: env prefix + compound with cat blocked"
+else
+  fail "split_and_check: env prefix + compound with cat blocked" "got: '$SAC_RESULT'"
+fi
+
+# ---------------------------------------------------------------------------
 # Quality: no global mutable variables in the file
 # ---------------------------------------------------------------------------
 

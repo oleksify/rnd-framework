@@ -106,6 +106,34 @@ if [[ -n "$cached_version" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Claude Code version check
+# ---------------------------------------------------------------------------
+
+readonly MIN_CLAUDE_VERSION="2.1.89"
+
+cc_version_warning=""
+cc_version="$(claude --version 2>/dev/null | awk '{print $1}' || true)"
+
+if [[ -n "$cc_version" ]]; then
+  # Compare semver: split on dots, compare numerically left-to-right.
+  _ver_gte() {
+    local IFS='.'
+    local -a a=($1) b=($2)
+    local i
+    for i in 0 1 2; do
+      local ai="${a[$i]:-0}" bi="${b[$i]:-0}"
+      if (( ai > bi )); then return 0; fi
+      if (( ai < bi )); then return 1; fi
+    done
+    return 0
+  }
+
+  if ! _ver_gte "$cc_version" "$MIN_CLAUDE_VERSION"; then
+    cc_version_warning=$'\n\n'"⚠ **Claude Code version ${cc_version} is below the minimum recommended v${MIN_CLAUDE_VERSION}.** Some rnd-framework features (PermissionDenied hook, defer permission, improved compound command filtering) may not work correctly. Run \`claude update\` to upgrade."
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Build context and output JSON
 # ---------------------------------------------------------------------------
 
@@ -114,7 +142,7 @@ You have rnd-framework.
 
 **Below is the summary of your 'rnd-framework:using-rnd-framework' skill. For all other skills, use the 'Skill' tool:**
 
-${skill_content}${rnd_line}${version_warning}
+${skill_content}${rnd_line}${version_warning}${cc_version_warning}
 
 </EXTREMELY_IMPORTANT>")"
 

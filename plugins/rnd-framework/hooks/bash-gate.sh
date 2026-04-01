@@ -98,9 +98,29 @@ strip_cd_prefix() {
   printf '%s' "$seg"
 }
 
+# Strips leading environment variable assignments (e.g., FOO=bar BAZ=quux)
+# from a command segment. Env-var prefixes match [A-Za-z_][A-Za-z_0-9]*=<value>.
+# The value may be quoted or unquoted.
+strip_env_prefix() {
+  local seg="$1"
+  local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='
+  while [[ "$seg" =~ $_ENV_VAR_PATTERN ]]; do
+    local first_word="${seg%% *}"
+    # If the entire segment is a single env assignment, no command follows
+    if [[ "$first_word" == "$seg" ]]; then
+      printf '%s' "$seg"
+      return 0
+    fi
+    seg="${seg#"$first_word"}"
+    seg="${seg#"${seg%%[! ]*}"}"
+  done
+  printf '%s' "$seg"
+}
+
 check_segment() {
   local seg
   seg="$(strip_cd_prefix "$1")"
+  seg="$(strip_env_prefix "$seg")"
   local first_word="${seg%% *}"
   local cmd="${first_word##*/}"
 

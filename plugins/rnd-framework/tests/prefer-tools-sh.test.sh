@@ -603,6 +603,48 @@ assert_exit   "echo > /tmp/ (simple) → exit 2" 2
 assert_stderr_contains "echo > /tmp/ (simple) → Write tool" "Write tool"
 
 # ---------------------------------------------------------------------------
+# Env-var prefix: tool discipline detects commands after FOO=bar
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'FOO=bar sed s/a/b/ file')"
+assert_exit   "FOO=bar sed → exit 2" 2
+assert_stderr_contains "FOO=bar sed → Edit tool" "Edit tool"
+
+run_hook "$(payload 'FOO=bar cat somefile')"
+assert_exit   "FOO=bar cat → exit 2" 2
+assert_stderr_contains "FOO=bar cat → Read tool" "Read tool"
+
+run_hook "$(payload 'FOO=bar grep pattern file')"
+assert_exit   "FOO=bar grep → exit 2" 2
+assert_stderr_contains "FOO=bar grep → Grep tool" "Grep tool"
+
+run_hook "$(payload "FOO=bar find . -name '*.ts'")"
+assert_exit   "FOO=bar find → exit 2" 2
+assert_stderr_contains "FOO=bar find → Glob tool" "Glob tool"
+
+run_hook "$(payload 'FOO=bar BAZ=quux sed s/a/b/ file')"
+assert_exit   "FOO=bar BAZ=quux sed → exit 2 (multiple env vars)" 2
+assert_stderr_contains "FOO=bar BAZ=quux sed → Edit tool" "Edit tool"
+
+# Env-var prefix: non-blocked commands still pass
+run_hook "$(payload 'FOO=bar npm test')"
+assert_exit   "FOO=bar npm test → exit 0" 0
+assert_stdout_empty "FOO=bar npm test → empty stdout"
+
+run_hook "$(payload 'MIX_ENV=test mix ecto.reset')"
+assert_exit   "MIX_ENV=test mix ecto.reset → exit 0 (allowed)" 0
+
+# Env-var prefix in compound command
+run_hook "$(payload 'ENV_VAR=value npm test && grep pattern file')"
+assert_exit   "ENV_VAR=value npm test && grep → exit 2" 2
+assert_stderr_contains "ENV_VAR=value && grep → Grep tool" "Grep tool"
+
+# Env-var prefix with git push advisory
+run_hook "$(payload 'FOO=bar git push origin main')"
+assert_exit   "FOO=bar git push main → exit 0 (advisory)" 0
+assert_stdout_contains "FOO=bar git push main → advisory" "additionalContext"
+
+# ---------------------------------------------------------------------------
 # /tmp redirect: no-space before > (cmd>/tmp/out)
 # ---------------------------------------------------------------------------
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.6 — 2026-04-01
+
+### Add commit workflow to committing skill
+
+Explicit tool discipline for commit preparation: use Read/Grep tools, never cat/grep; never chain commands with &&.
+
 ## 3.0.5 — 2026-04-01
 
 ### Add PR creation safety rules to rnd-completion

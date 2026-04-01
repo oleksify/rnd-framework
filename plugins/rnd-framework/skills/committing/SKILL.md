@@ -18,6 +18,19 @@ effort: low
 8. **Don't explain framework internals.** Never reference skills, hooks, pipeline phases, or orchestration mechanics. Describe the user-visible change.
 9. **Don't assume GitHub.** The remote could be GitLab, Gitea, Codeberg, Forgejo, Tangled, or any other host. Check `git remote get-url origin` before using platform-specific CLI tools (e.g., `gh` is GitHub-only). For PRs/MRs, ask the user or infer from the remote URL.
 
+## Commit Workflow
+
+Use only git commands and dedicated Claude Code tools — never `cat`, `grep`, `sed`, or `find` (the bash-gate blocks them).
+
+1. Run `git status` and `git diff` (separate Bash calls, never chained with `&&`).
+2. If you need to read a file to understand changes, use the **Read** tool, not `cat`.
+3. If you need to search for something, use the **Grep** tool, not `grep`.
+4. Run `git log --oneline -5` to match the repo's commit style.
+5. Draft the commit message following the rules below.
+6. Confirm with `AskUserQuestion` before committing.
+7. Stage files with `git add <specific files>` — never `git add -A` or `git add .`.
+8. Run `git commit -m "..."` in a separate Bash call.
+
 ## Before Committing
 
 **Always use `AskUserQuestion`** to confirm the commit message before running `git commit`. Present 2-3 message options with the best one marked "(Recommended)".

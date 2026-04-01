@@ -105,6 +105,11 @@ Options:
 - **Create PR/MR** — Push branch, create pull/merge request with summary from integration report
 - **Keep branch** — If more work is planned on this branch
 
+**PR creation rules:**
+- **Never chain commands.** Each git/gh command must be a separate Bash tool call. Never `git push && gh pr create` — combined commands hang on hidden permission prompts.
+- **Separate steps:** (1) `git push -u origin <branch>` in one call, (2) `gh pr create ...` in a separate call.
+- **Long PR bodies:** Write the body to a temp file in `$RND_DIR` first, then pass `--body-file <path>`. Long `--body` inline arguments can cause the permission dialog to hang.
+
 ### 7. Report to User
 
 Summarize:

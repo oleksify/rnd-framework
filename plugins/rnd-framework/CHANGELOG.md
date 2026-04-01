@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.5 — 2026-04-01
+
+### Add PR creation safety rules to rnd-completion
+
+Never chain git/gh commands when creating PRs. Each command must be a separate Bash call. Use --body-file for long PR bodies.
+
 ## 3.0.4 — 2026-04-01
 
 ### Add uv and ruff as preferred Python tools

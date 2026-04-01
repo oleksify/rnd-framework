@@ -146,7 +146,7 @@ await Bun.sleep(1000); // ms
 Fall back to Python when the task specifically requires:
 
 - Libraries with no Bun built-in equivalent (e.g., image processing with Pillow, scientific computing with NumPy/pandas, ML inference)
-- Interacting with a Python-specific ecosystem (e.g., pip packages the user explicitly requested)
+- Interacting with a Python-specific ecosystem — use `uv` (not `pip`/`pip3`/`pipx`) to install packages and manage environments
 - The user explicitly asks for Python
 
 ## Example

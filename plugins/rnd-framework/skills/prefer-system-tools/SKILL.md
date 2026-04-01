@@ -14,6 +14,65 @@ Before writing a Python or Bun script for a common task, check if a native CLI t
 2. **Never install tools via npm, npx, bunx, or any JavaScript package manager.** All tools referenced here are standalone system binaries — install them via the OS package manager (`apt`, `brew`, `pacman`, etc.) or not at all.
 3. If a preferred tool is not available, fall back to the POSIX alternative listed, or write a short Bun/Python script instead.
 
+## Python Package Management
+
+**Instead of** `pip install`, `pip3 install`, or `pipx install`, use `uv`:
+
+```bash
+# Install a package
+uv pip install requests
+
+# Install from requirements.txt
+uv pip install -r requirements.txt
+
+# Install from pyproject.toml
+uv pip install -e .
+
+# Create a virtual environment
+uv venv
+
+# Run a script with automatic dependency resolution
+uv run script.py
+
+# Add a dependency to pyproject.toml
+uv add requests
+
+# Remove a dependency
+uv remove requests
+
+# Sync environment to lockfile
+uv sync
+
+# Run a tool without installing globally (replaces pipx)
+uvx ruff check .
+uvx black --check .
+```
+
+`uv` is a drop-in replacement for `pip`, `pip3`, and `pipx` — it resolves and installs packages 10-100x faster, manages virtual environments, and handles lockfiles. Use `uvx` instead of `pipx run` for one-off tool execution.
+
+## Python Linting and Formatting
+
+**Instead of** separate linters (`flake8`, `pylint`, `pyflakes`) and formatters (`black`, `autopep8`, `yapf`), use `ruff`:
+
+```bash
+# Lint (replaces flake8, pylint, pyflakes, isort --check, etc.)
+ruff check .
+ruff check --fix .              # auto-fix what it can
+
+# Format (replaces black, autopep8, yapf)
+ruff format .
+ruff format --check .           # dry-run, exit non-zero if changes needed
+
+# Lint + format in one pass
+ruff check --fix . && ruff format .
+
+# Check a specific file
+ruff check src/main.py
+ruff format src/main.py
+```
+
+`ruff` is a single Rust binary that replaces flake8, isort, pylint, pyflakes, black, and autopep8. It runs 10-100x faster and uses `pyproject.toml` or `ruff.toml` for configuration.
+
 ## JSON Processing
 
 **Instead of** writing a script with `json.loads()` / `JSON.parse()`, use `jq`:
@@ -375,6 +434,10 @@ ffmpeg -i video.mp4 -ss 00:01:00 -frames:v 1 thumbnail.jpg
 | Search + complex replacement with context | -- | Script |
 | Simple CSV column extraction | `cut` / `awk` | -- |
 | CSV joins, pivots, multi-step transforms | -- | Script |
+| Install Python packages | `uv pip install` / `uv add` | -- |
+| Run a Python tool once | `uvx <tool>` | -- |
+| Lint Python code | `ruff check` | -- |
+| Format Python code | `ruff format` | -- |
 | Compute a hash | `sha256sum` | -- |
 | String encode/decode | `base64` / `xxd` | -- |
 | Multi-step workflow with conditionals | -- | Script |

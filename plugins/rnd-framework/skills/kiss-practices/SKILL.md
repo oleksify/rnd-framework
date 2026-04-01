@@ -31,6 +31,7 @@ effort: low
 | `*.ex`, `*.exs`, `mix.exs` | `${CLAUDE_SKILL_DIR}/elixir.md` |
 | `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.css`, `*.html` | `${CLAUDE_SKILL_DIR}/javascript.md` |
 | `*.svelte`, `svelte.config.*` | `${CLAUDE_SKILL_DIR}/svelte.md` |
+| `*.py`, `pyproject.toml`, `requirements.txt` | `${CLAUDE_SKILL_DIR}/python.md` |
 | `*.sh`, `*.bash`, `Makefile` | `${CLAUDE_SKILL_DIR}/bash.md` |
 | `*.md`, `CLAUDE.md`, `README.md` | `${CLAUDE_SKILL_DIR}/markdown.md` |
 | `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `${CLAUDE_SKILL_DIR}/postgresql.md` |

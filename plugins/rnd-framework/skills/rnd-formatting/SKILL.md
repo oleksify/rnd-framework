@@ -34,7 +34,8 @@ Check the project root for formatter config files. Stop at the **first match**:
 | `deno.json` (with `fmt` key) | Deno | `deno fmt <files>` |
 | `mix.exs` | Mix | `mix format <files>` |
 | `Cargo.toml` | Rustfmt | `cargo fmt` |
-| `pyproject.toml` (`[tool.black]` or `[tool.ruff]`) | Black/Ruff | `ruff format <files>` or `black <files>` |
+| `pyproject.toml` with `[tool.ruff]`, or `ruff.toml` | Ruff | `ruff check --fix <files> && ruff format <files>` |
+| `pyproject.toml` with `[tool.black]` (no ruff config) | Black | `black <files>` |
 | `go.mod` | Gofmt | `gofmt -w <files>` |
 | `.clang-format` | ClangFormat | `clang-format -i <files>` |
 

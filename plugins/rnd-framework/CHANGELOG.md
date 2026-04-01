@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.4 — 2026-04-01
+
+### Add uv and ruff as preferred Python tools
+
+Add Python package management (uv over pip/pip3/pipx) and linting/formatting (ruff) to prefer-system-tools skill, builder agent tool discipline, KISS practices, bun-scripting fallback, and rnd-formatting detection.
+
 ## 3.0.3 — 2026-04-01
 
 ### Align with Claude Code v2.1.89: PermissionDenied hook, defer helper, version check, env-prefix fix

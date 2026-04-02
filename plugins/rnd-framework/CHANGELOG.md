@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.8 — 2026-04-02
+
+### Add format-on-save hook, align with Claude Code v2.1.90
+
 ## 3.0.6 — 2026-04-01
 
 ### Add commit workflow to committing skill

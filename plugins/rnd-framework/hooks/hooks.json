@@ -169,6 +169,15 @@
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/post-dispatch.sh'"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/format-on-save.sh'"
+          }
+        ]
       }
     ],
     "PermissionDenied": [

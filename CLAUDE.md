@@ -38,6 +38,7 @@ plugins/rnd-framework/
 │   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
 │   ├── permission-denied.sh     # PermissionDenied hook (v2.1.89+): logs auto-mode denials to audit.jsonl, returns {retry: true}
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
+│   ├── format-on-save.sh        # PostToolUse hook (v2.1.90+): auto-formats code files after Write/Edit using detected project formatter
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
 ├── lib/
@@ -83,6 +84,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
 - **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
 - **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
+- **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
 
 #### Defer Permission Decision (v2.1.89+)
 
@@ -92,7 +94,7 @@ The `defer_json` helper in `lib.sh` outputs this response. It is available as in
 
 #### Claude Code Version Check
 
-The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.89). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
+The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.90). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
 
 #### Symlink Resolution for Allow Rules (v2.1.89+)
 
@@ -101,6 +103,22 @@ As of v2.1.89, Claude Code's `allowWrite` and `allowRead` rules check the resolv
 #### Hook Output Size Limit (v2.1.89+)
 
 Hook output exceeding 50K characters is saved to disk with a file path + preview instead of being injected directly into context. The `session-start.sh` output (skill content + warnings) is well below this threshold (~5-10K chars). If a future change increases hook output significantly, the 50K behavior ensures context is not bloated.
+
+#### Format-on-Save Hook (v2.1.90+)
+
+The `format-on-save.sh` hook fires as a PostToolUse handler for Write and Edit events. It auto-detects the project's code formatter by scanning for config files (biome, prettier, deno, mix, cargo, ruff, black, gofmt, clang-format, or a `format`/`fmt` script in package.json) and runs the detected formatter on the changed file. Formatter detection is cached at session level in `$RND_DIR/.formatter-cache` to avoid re-scanning on every write. The hook skips non-code files and `.rnd/` artifact paths, and is non-blocking — formatting errors do not affect the pipeline. This hook requires v2.1.90+ because earlier versions had a bug where `Edit`/`Write` would fail with "File content has changed" when a PostToolUse hook rewrote the file.
+
+#### Auto-Mode Boundary Respect (v2.1.90+)
+
+As of v2.1.90, Claude Code's auto mode respects explicit user boundaries (e.g., "don't push", "wait for X before Y") even when the action would otherwise be allowed by the auto-mode classifier. This improves safety for pipeline agents spawned with `mode: "auto"` — agents will not push to remote or take other explicitly forbidden actions regardless of auto-mode permissions.
+
+#### Offline Plugin Resilience (v2.1.90+)
+
+The `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` environment variable (v2.1.90+) preserves the existing marketplace plugin cache when a `git pull` fails during plugin refresh. This is useful for offline environments, CI pipelines, or unreliable networks — the plugin continues to work from its last cached version rather than failing entirely.
+
+#### Exit-Code-2 Hook Fix (v2.1.90+)
+
+v2.1.90 fixed a bug where PreToolUse hooks that emitted JSON to stdout and exited with code 2 did not correctly block the tool call. **This bug did not affect rnd-framework hooks** because `block_msg` in `lib.sh` writes plain text to stderr (not JSON to stdout) when blocking. The information barrier (`read-gate.sh`) and tool discipline (`bash-gate.sh`) were working correctly on versions below v2.1.90. The minimum version bump to v2.1.90 is justified by other fixes (format-on-save, auto-mode boundaries, rate-limit dialog stability).
 
 #### file_path Handling
 
@@ -150,7 +168,7 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.89) and emits a warning if below threshold.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.90) and emits a warning if below threshold.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 

@@ -13,7 +13,16 @@ After a pipeline run produces code, run the project's formatter before doc-polis
 
 **Core principle:** Detect, don't assume. Every project has its own formatter (or none). Check config files first, then run the detected formatter on changed files only.
 
-## When to Use
+## Automatic Formatting (v2.1.90+)
+
+The `format-on-save.sh` PostToolUse hook automatically formats code files after every Write/Edit operation during an active RND session. It uses the same formatter detection logic described below, cached at session level. This means **manual formatting via this skill is typically unnecessary** — it happens automatically.
+
+Use this skill's manual process only when:
+- You need to format files that were changed outside the pipeline (e.g., git merge)
+- You want to format the entire project, not just individual files
+- The auto-format hook is not available (Claude Code < v2.1.90)
+
+## When to Use (Manual)
 
 - In `/rnd-framework:rnd-start` Phase 6, before `rnd-doc-polish`
 

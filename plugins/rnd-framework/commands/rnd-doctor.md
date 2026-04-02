@@ -104,19 +104,23 @@ Compare the detected version against these thresholds (in ascending order):
 
 - **v2.1.77** — Hook allow/deny precedence changed: a hook returning `allow` no longer bypasses explicit deny rules. If the installed version is below this, warn that rnd-framework's auto-allow hooks (`read-gate.sh`, `bash-gate.sh`) may not work correctly and permission prompts will appear unexpectedly.
 - **v2.1.81** — Plugin re-cloning and worktree resumption added. If the installed version is below this, warn that plugins are not re-cloned on each load (cache staleness is possible) and that `--resume` does not work across git worktrees.
-- **v2.1.89** — PermissionDenied hook, defer permission decision, improved compound command `if` condition filtering, Edit-without-Read, symlink resolution for allow rules. **This is the minimum recommended version for full rnd-framework functionality.** If below this, warn that `PermissionDenied` hook will not fire (auto-mode denials are not retried), `defer` permission decision is unavailable (headless pipelines cannot pause), and `hooks.json` `if` conditions may not match compound commands or env-var prefixes correctly.
+- **v2.1.89** — PermissionDenied hook, defer permission decision, improved compound command `if` condition filtering, Edit-without-Read, symlink resolution for allow rules. If below this, warn that `PermissionDenied` hook will not fire (auto-mode denials are not retried), `defer` permission decision is unavailable (headless pipelines cannot pause), and `hooks.json` `if` conditions may not match compound commands or env-var prefixes correctly.
+- **v2.1.90** — Format-on-save PostToolUse fix, auto-mode boundary respect, rate-limit dialog stability. **This is the minimum recommended version for full rnd-framework functionality.** If below this, warn that `format-on-save.sh` hook may fail (Edit/Write "File content has changed" bug), auto mode may ignore explicit user boundaries ("don't push"), and rate-limit dialog may loop. Also note: `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` env var is available for offline plugin resilience.
 
-If the version is >= v2.1.89, report these features as available:
+If the version is >= v2.1.90, report these features as available:
+- `format-on-save` hook — auto-formats code files after Write/Edit
+- Auto-mode boundary respect — explicit user boundaries honored in auto mode
+- Rate-limit dialog stability — no infinite loop on usage limit
+- `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` — offline plugin resilience
 - `PermissionDenied` hook — auto-mode denials are logged and retried
 - `defer` permission decision — headless sessions can pause at tool calls
-- Improved hook `if` condition filtering for compound commands and env-var prefixes
 - `--bare` mode awareness (hooks are skipped in bare mode — rnd-framework does not work in `--bare` sessions)
 - `--channels` support for forwarding permission prompts to phone during remote pipeline runs
 - Plugin re-cloning on every load (ref-tracked plugins are always fresh)
 
-If the version is >= v2.1.81 but below v2.1.89, report the v2.1.81 features as available but warn about missing v2.1.89 features.
+If the version is >= v2.1.89 but below v2.1.90, report the v2.1.89 features as available but warn about missing v2.1.90 features.
 
-Use `⚠ warn` for any version below v2.1.89, `✅ ok` for v2.1.89+.
+Use `⚠ warn` for any version below v2.1.90, `✅ ok` for v2.1.90+.
 
 ## Output Format
 

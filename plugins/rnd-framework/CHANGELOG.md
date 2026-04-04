@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.12 — 2026-04-04
+
+### Add per-assertion evidence files to verification pipeline
+
 ## 3.0.11 — 2026-04-04
 
 ### Add structured preconditions to pre-registration and build verification

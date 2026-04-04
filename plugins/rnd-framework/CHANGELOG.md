@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.9 — 2026-04-04
+
+### Add pipeline-state.json and align with v2.1.92
+
 ## 3.0.8 — 2026-04-02
 
 ### Add format-on-save hook, align with Claude Code v2.1.90

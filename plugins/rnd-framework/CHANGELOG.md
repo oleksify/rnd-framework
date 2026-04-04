@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.10 — 2026-04-04
+
+### Add project facts layer with /rnd-scan and Phase 0 staleness detection
+
 ## 3.0.9 — 2026-04-04
 
 ### Add pipeline-state.json and align with v2.1.92

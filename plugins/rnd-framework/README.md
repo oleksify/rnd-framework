@@ -306,7 +306,8 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
         ├── verifications/
         │   ├── T1-verification.md      # Verifier report with evidence
-        │   └── T1-experiments/         # Verifier-written independent experiment tests
+        │   ├── T1-experiments/         # Verifier-written independent experiment tests
+        │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
         ├── proofs/
         │   ├── T1-proof-report.md      # Proof Gate results for each task
         │   └── T1-theorems/            # Lean theorem files

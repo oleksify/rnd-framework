@@ -210,6 +210,7 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
+    ├── verifications/T*-evidence/         # Per-VAL-assertion evidence files (raw command output)
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP

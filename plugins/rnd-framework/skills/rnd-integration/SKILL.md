@@ -27,6 +27,8 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), m
 
 Check `$RND_DIR/verifications/` for PASS verdicts on every task in the current wave. If any task is not verified, STOP.
 
+If evidence files exist at `$RND_DIR/verifications/T<id>-evidence/`, reference them in the integration report as supporting evidence for system validation claims.
+
 ### 2. Merge Outputs
 
 Ensure all code from the wave integrates cleanly:

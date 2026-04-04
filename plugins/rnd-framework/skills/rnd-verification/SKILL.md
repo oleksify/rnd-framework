@@ -88,6 +88,23 @@ Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-fail
 Do NOT suggest a fix. The Builder must reason about solutions independently.]
 ```
 
+### 6.5. Save Evidence Files
+
+For each VAL-AREA-NNN assertion fulfilled by this task (from the `fulfills` field):
+
+1. Create `$RND_DIR/verifications/T<id>-evidence/`
+2. Write one file per assertion: `VAL-AREA-NNN.txt`
+3. Each file contains:
+   ```
+   Assertion: VAL-AREA-NNN — [assertion title]
+   Command: [exact command or tool call run]
+   Output:
+   [raw output verbatim — do not paraphrase or truncate]
+   ```
+4. Note the evidence file paths in the verification report next to each criterion
+
+If the task has no `fulfills` field, skip this step.
+
 A criterion is binary: met or not met. Evidence must be concrete (test output you ran, line references), not impressionistic ("looks right").
 - **PASS:** ALL criteria met with reproducible evidence, no failure modes, no deviations.
 - **PASS (quality: NEEDS ITERATION):** All Correctness met; one or more Quality unmet. Integration proceeds; quality feedback flagged.

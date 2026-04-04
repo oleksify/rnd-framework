@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.14 — 2026-04-04
+
+### Block shell loops, allow grep pipe filters, fix stale docs
+
+- **Shell loop guard:** bash-gate.sh now blocks `for`/`while`/`until` loops (exit 2) — they hang in the Bash tool. Suggests Glob/Grep alternatives.
+- **Grep pipe filter:** `grep`/`rg` without file arguments (stdin filters like `git diff | grep pattern`) are now allowed. Only file-targeting grep (`grep pattern file`, `grep -r`) is blocked.
+- **Agent instructions:** All 8 agents now have shell loop avoidance in Tool Discipline.
+- **Documentation:** Fix stale references in CLAUDE.md and plugin README (missing hooks, skills, commands). Expand root README with features, commands, architecture. Replace SSH URLs with HTTPS. Delete legacy `.factory/` scaffolding.
+- **Test fix:** prefer-tools-sh-refactor.test.sh header-skip uses dynamic `source` line detection instead of hardcoded line count.
+
 ## 3.0.13 — 2026-04-04
 
 ### Fix bash 3.2 compatibility for macOS stock bash

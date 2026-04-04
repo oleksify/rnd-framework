@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.11 — 2026-04-04
+
+### Add structured preconditions to pre-registration and build verification
+
 ## 3.0.10 — 2026-04-04
 
 ### Add project facts layer with /rnd-scan and Phase 0 staleness detection

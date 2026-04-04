@@ -147,6 +147,71 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 **Gate 3 (post-verify):** Verification PASS on all criteria with evidence.
 **Gate 4 (post-integrate):** Integration tests pass. No regressions. System validation passes.
 
+## Pipeline State File
+
+The orchestrator maintains `$RND_DIR/pipeline-state.json` as the persistent record of task statuses. This file survives context compaction and prevents the orchestrator from losing track of which tasks are built, verified, or integrated during long multi-agent runs.
+
+### Schema
+
+```json
+{
+  "tasks": {
+    "T1": {
+      "status": "verified",
+      "wave": 1,
+      "lastPhase": "verify",
+      "artifacts": ["builds/T1-manifest.md", "verifications/T1-verification.md"]
+    },
+    "T2": {
+      "status": "built",
+      "wave": 2,
+      "lastPhase": "build",
+      "artifacts": ["builds/T2-manifest.md"]
+    }
+  },
+  "updatedAt": "2026-04-04T10:30:00Z"
+}
+```
+
+### Status Values
+
+| Status | Meaning | Set after |
+|--------|---------|-----------|
+| `planned` | Pre-registration exists, no code yet | Phase 1 (plan approval) |
+| `built` | Build manifest exists, not yet verified | Gate 2 (post-build) |
+| `verified` | Verification PASS | Gate 3 (PASS verdict) |
+| `iterating` | Verification NEEDS ITERATION | Gate 3 (NEEDS ITERATION) |
+| `integrated` | Part of a SHIP wave | Gate 4 (SHIP) |
+| `failed` | Missing artifacts or FAIL verdict | Any gate (on failure) |
+
+### State Transitions
+
+```
+planned → built        (Gate 2: manifest exists and non-empty)
+built → verified       (Gate 3: PASS or PASS with quality notes)
+built → iterating      (Gate 3: NEEDS ITERATION)
+iterating → built      (Re-build after iteration feedback)
+verified → integrated  (Gate 4: SHIP)
+any → failed           (Missing artifacts, FAIL verdict, or BLOCKED)
+```
+
+### Artifact Validation
+
+At each gate, before updating the state file, validate that expected artifacts exist:
+
+- **Gate 2:** `$RND_DIR/builds/T<id>-manifest.md` exists and has >0 bytes
+- **Gate 3:** `$RND_DIR/verifications/T<id>-verification.md` exists and has >0 bytes
+- **Gate 4:** `$RND_DIR/integration/wave-<N>-report.md` exists and has >0 bytes
+
+If validation fails: set the task status to `failed`, report the missing artifact to the user via `AskUserQuestion`, and do not proceed with that task.
+
+### Read/Write Protocol
+
+- **Initialize** after Phase 1 gate: create `pipeline-state.json` with all tasks set to `planned`
+- **Read** before scheduling each wave: determine which tasks are complete
+- **Update** at each gate: set new status, append artifact path, set `updatedAt`
+- **Write** using the Write tool (not bash) to `$RND_DIR/pipeline-state.json`
+
 ## User Decision Points
 
 When a phase completes and the user needs to decide what happens next, **use `AskUserQuestion` with structured options** instead of open-ended text like "Would you like me to...?". This eliminates decision fatigue.

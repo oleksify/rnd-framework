@@ -105,9 +105,10 @@ Compare the detected version against these thresholds (in ascending order):
 - **v2.1.77** — Hook allow/deny precedence changed: a hook returning `allow` no longer bypasses explicit deny rules. If the installed version is below this, warn that rnd-framework's auto-allow hooks (`read-gate.sh`, `bash-gate.sh`) may not work correctly and permission prompts will appear unexpectedly.
 - **v2.1.81** — Plugin re-cloning and worktree resumption added. If the installed version is below this, warn that plugins are not re-cloned on each load (cache staleness is possible) and that `--resume` does not work across git worktrees.
 - **v2.1.89** — PermissionDenied hook, defer permission decision, improved compound command `if` condition filtering, Edit-without-Read, symlink resolution for allow rules. If below this, warn that `PermissionDenied` hook will not fire (auto-mode denials are not retried), `defer` permission decision is unavailable (headless pipelines cannot pause), and `hooks.json` `if` conditions may not match compound commands or env-var prefixes correctly.
-- **v2.1.90** — Format-on-save PostToolUse fix, auto-mode boundary respect, rate-limit dialog stability. **This is the minimum recommended version for full rnd-framework functionality.** If below this, warn that `format-on-save.sh` hook may fail (Edit/Write "File content has changed" bug), auto mode may ignore explicit user boundaries ("don't push"), and rate-limit dialog may loop. Also note: `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` env var is available for offline plugin resilience.
+- **v2.1.90** — Format-on-save PostToolUse fix, auto-mode boundary respect, rate-limit dialog stability. If below this, warn that `format-on-save.sh` hook may fail (Edit/Write "File content has changed" bug), auto mode may ignore explicit user boundaries ("don't push"), and rate-limit dialog may loop. Also note: `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` env var is available for offline plugin resilience.
+- **v2.1.92** — Subagent spawning fix (pane-count recovery after tmux window kill/renumber), Stop hook preventContinuation:true semantics restored for prompt-type hooks, tool input validation fix for streaming array/object fields, plugin MCP server connection fix for duplicate unauthenticated connectors, Write tool diff computation 60% faster for files with tabs/&/$, per-model and cache-hit `/cost` breakdown. **This is the minimum recommended version for full rnd-framework functionality.**
 
-If the version is >= v2.1.90, report these features as available:
+If the version is >= v2.1.92, report these features as available:
 - `format-on-save` hook — auto-formats code files after Write/Edit
 - Auto-mode boundary respect — explicit user boundaries honored in auto mode
 - Rate-limit dialog stability — no infinite loop on usage limit
@@ -117,10 +118,15 @@ If the version is >= v2.1.90, report these features as available:
 - `--bare` mode awareness (hooks are skipped in bare mode — rnd-framework does not work in `--bare` sessions)
 - `--channels` support for forwarding permission prompts to phone during remote pipeline runs
 - Plugin re-cloning on every load (ref-tracked plugins are always fresh)
+- Subagent spawning resilience — recovers from tmux pane-count errors in long sessions
+- Stop hook semantics — preventContinuation:true works correctly for prompt-type hooks
+- Per-model `/cost` breakdown — shows cost by model and cache-hit rate
 
-If the version is >= v2.1.89 but below v2.1.90, report the v2.1.89 features as available but warn about missing v2.1.90 features.
+If the version is >= v2.1.90 but below v2.1.92, report the v2.1.90 features as available but warn about missing v2.1.92 features (subagent resilience, Stop hook fix, per-model cost).
 
-Use `⚠ warn` for any version below v2.1.90, `✅ ok` for v2.1.90+.
+If the version is >= v2.1.89 but below v2.1.90, report the v2.1.89 features as available but warn about missing v2.1.90 and v2.1.92 features.
+
+Use `⚠ warn` for any version below v2.1.92, `✅ ok` for v2.1.92+.
 
 ## Output Format
 

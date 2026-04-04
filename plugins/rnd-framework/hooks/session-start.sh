@@ -109,7 +109,7 @@ fi
 # Claude Code version check
 # ---------------------------------------------------------------------------
 
-readonly MIN_CLAUDE_VERSION="2.1.90"
+readonly MIN_CLAUDE_VERSION="2.1.92"
 
 cc_version_warning=""
 cc_version="$(claude --version 2>/dev/null | awk '{print $1}' || true)"
@@ -129,7 +129,7 @@ if [[ -n "$cc_version" ]]; then
   }
 
   if ! _ver_gte "$cc_version" "$MIN_CLAUDE_VERSION"; then
-    cc_version_warning=$'\n\n'"⚠ **Claude Code version ${cc_version} is below the minimum recommended v${MIN_CLAUDE_VERSION}.** Some rnd-framework features (format-on-save hook, auto-mode boundary respect, rate-limit dialog stability) may not work correctly. Run \`claude update\` to upgrade."
+    cc_version_warning=$'\n\n'"⚠ **Claude Code version ${cc_version} is below the minimum recommended v${MIN_CLAUDE_VERSION}.** Some rnd-framework features (subagent spawning reliability, Stop hook semantics, format-on-save, auto-mode boundaries) may not work correctly. Run \`claude update\` to upgrade."
   fi
 fi
 

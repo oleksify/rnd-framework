@@ -117,9 +117,15 @@ If the user selects "Approve plan and auto-continue", set **auto-continue mode =
 
 Once approved, create a `TaskCreate` entry for each task.
 
+**Initialize pipeline state:** Write `$RND_DIR/pipeline-state.json` with all tasks set to `"planned"`, their wave assignments, and `lastPhase: "plan"`. Use the schema defined in `rnd-framework:rnd-orchestration` (Pipeline State File section). This file persists task status across context compaction and long runs.
+
 ## Phase 2: Build (per wave)
 
-Invoke `rnd-framework:rnd-building` to load build discipline. For each wave in the execution schedule, build each task sequentially:
+Invoke `rnd-framework:rnd-building` to load build discipline.
+
+**Before each wave:** Read `$RND_DIR/pipeline-state.json` to confirm which tasks are complete. Skip tasks already marked `"built"`, `"verified"`, or `"integrated"`. This prevents re-building after context compaction or long runs where the orchestrator's context memory may be stale.
+
+For each wave in the execution schedule, build each task sequentially:
 
 1. **Mark tasks as started:** `TaskUpdate` each task to `in_progress`.
 
@@ -143,6 +149,8 @@ Invoke `rnd-framework:rnd-building` to load build discipline. For each wave in t
    | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
 
 5. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
+
+6. **Artifact validation and state update:** For each task in the wave, verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty (use Bash `test -s` or Read). If missing or empty, set the task's status to `"failed"` in `$RND_DIR/pipeline-state.json` and report the missing artifact via `AskUserQuestion`. If present, update the task's status to `"built"`, set `lastPhase: "build"`, append the manifest path to `artifacts`, and set `updatedAt`.
 
 **After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
 - "Proceed to verification (Recommended)"
@@ -170,11 +178,11 @@ Invoke `rnd-framework:rnd-verification` to load verification discipline. For eac
 
 6. **Produce verification report** at `$RND_DIR/verifications/T<id>-verification.md`.
 
-7. **Gate 3:** Check the verdict:
-   - **PASS** → `TaskUpdate` to `completed`. Move to next.
-   - **PASS (quality: NEEDS ITERATION)** → `TaskUpdate` to `completed`. Save quality feedback. Does NOT block integration.
-   - **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
-   - **FAIL** → Do NOT iterate — route to re-planning.
+7. **Gate 3:** Verify `$RND_DIR/verifications/T<id>-verification.md` exists and is non-empty. If missing, set status to `"failed"` in `pipeline-state.json` and report. Then check the verdict:
+   - **PASS** → `TaskUpdate` to `completed`. Update `pipeline-state.json`: status `"verified"`, `lastPhase: "verify"`, append verification path to `artifacts`.
+   - **PASS (quality: NEEDS ITERATION)** → Same as PASS for state. Save quality feedback. Does NOT block integration.
+   - **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Update `pipeline-state.json`: status `"iterating"`. Enter Phase 4.
+   - **FAIL** → Update `pipeline-state.json`: status `"failed"`. Do NOT iterate — route to re-planning.
 
 **After Gate 3:** Summarize verdicts. Then route:
 
@@ -210,7 +218,7 @@ Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform i
 3. Run integration tests and the project's existing test suite.
 4. For the final wave, run full system validation.
 5. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
-6. **Gate 4:** SHIP or NO-SHIP.
+6. **Gate 4:** Verify `$RND_DIR/integration/wave-<N>-report.md` exists and is non-empty. If SHIP, update `pipeline-state.json`: set all wave tasks to status `"integrated"`, `lastPhase: "integrate"`, append integration report path to `artifacts`. If NO-SHIP, leave task statuses unchanged.
 
 **After Gate 4:** Summarize results.
 

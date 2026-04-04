@@ -29,6 +29,14 @@ Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdi
 >
 > **Session-scoped:** `$RND_DIR` points to a session subdirectory (`<base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`), not the project base. Previous sessions remain on disk and can be browsed with `/rnd-framework:rnd-history`.
 
+### 1.5. Pipeline Cost Summary
+
+After confirming SHIP, note the pipeline duration (time from `plan.md` creation to SHIP verdict) and inform the user:
+
+> "Pipeline complete. Run `/cost` to see per-model and cache-hit cost breakdown for this session."
+
+This leverages the per-model `/cost` breakdown available in Claude Code v2.1.92+. No programmatic cost extraction is needed — `/cost` handles the display.
+
 ### 2. Update Roadmap (if linked)
 
 If a roadmap milestone is linked to this session, mark it complete:

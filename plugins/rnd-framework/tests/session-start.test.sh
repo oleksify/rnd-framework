@@ -122,12 +122,12 @@ ctx_old="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalCon
 assert_contains "version 2.1.89 → warning in context" "below the minimum" "$ctx_old"
 
 # At minimum version → no warning
-run_with_mock_version "2.1.90"
+run_with_mock_version "2.1.92"
 ctx_cur="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
 if [[ "$ctx_cur" == *"below the minimum"* ]]; then
-  assert_eq "version 2.1.90 → no warning" "no warning" "warning present"
+  assert_eq "version 2.1.92 → no warning" "no warning" "warning present"
 else
-  assert_eq "version 2.1.90 → no warning" "no warning" "no warning"
+  assert_eq "version 2.1.92 → no warning" "no warning" "no warning"
 fi
 
 # Above minimum version → no warning

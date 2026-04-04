@@ -94,7 +94,7 @@ The `defer_json` helper in `lib.sh` outputs this response. It is available as in
 
 #### Claude Code Version Check
 
-The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.90). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
+The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.92). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
 
 #### Symlink Resolution for Allow Rules (v2.1.89+)
 
@@ -118,7 +118,23 @@ The `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` environment variable (v2.1.
 
 #### Exit-Code-2 Hook Fix (v2.1.90+)
 
-v2.1.90 fixed a bug where PreToolUse hooks that emitted JSON to stdout and exited with code 2 did not correctly block the tool call. **This bug did not affect rnd-framework hooks** because `block_msg` in `lib.sh` writes plain text to stderr (not JSON to stdout) when blocking. The information barrier (`read-gate.sh`) and tool discipline (`bash-gate.sh`) were working correctly on versions below v2.1.90. The minimum version bump to v2.1.90 is justified by other fixes (format-on-save, auto-mode boundaries, rate-limit dialog stability).
+v2.1.90 fixed a bug where PreToolUse hooks that emitted JSON to stdout and exited with code 2 did not correctly block the tool call. **This bug did not affect rnd-framework hooks** because `block_msg` in `lib.sh` writes plain text to stderr (not JSON to stdout) when blocking. The information barrier (`read-gate.sh`) and tool discipline (`bash-gate.sh`) were working correctly on versions below v2.1.90.
+
+#### Subagent Spawning Fix (v2.1.92+)
+
+v2.1.92 fixed subagent spawning permanently failing with "Could not determine pane count" after tmux windows are killed or renumbered during a long-running session. This directly improves multi-agent mode reliability — prior to this fix, killing or rearranging tmux panes mid-pipeline could permanently break agent spawning for the rest of the session.
+
+#### Stop Hook Semantics Fix (v2.1.92+)
+
+v2.1.92 restored `preventContinuation:true` semantics for non-Stop prompt-type hooks and fixed prompt-type Stop hooks incorrectly failing when the small fast model returns `ok:false`. This ensures hook-driven control flow works correctly in pipeline contexts.
+
+#### Tool Input Validation Fix (v2.1.92+)
+
+v2.1.92 fixed tool input validation failures when streaming emits array/object fields as JSON-encoded strings. This prevents spurious validation errors in hooks that parse `tool_input` from stdin during streaming responses.
+
+#### Write Tool Performance (v2.1.92+)
+
+Write tool diff computation is 60% faster for files containing tabs, `&`, or `$` characters. This benefits pipeline builds that write to files with these characters (common in bash scripts and shell tests).
 
 #### file_path Handling
 
@@ -168,7 +184,7 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.90) and emits a warning if below threshold.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.92) and emits a warning if below threshold.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 
@@ -196,7 +212,8 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
-    └── iteration-log.md                   # Build-verify cycle tracking
+    ├── iteration-log.md                   # Build-verify cycle tracking
+    └── pipeline-state.json                # Persistent per-task status (survives compaction)
 ```
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.

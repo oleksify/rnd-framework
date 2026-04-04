@@ -13,22 +13,30 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 If `$RND_DIR` does not exist or contains no artifacts (no `plan.md`, no `builds/`, no `verifications/`), report: "No active pipeline. Start one with `/rnd-framework:rnd-start <task>`."
 
-Otherwise, use `TaskList` as the **primary status source** to get an overview of all tasks, their states, owners, and blockers.
+### Primary source: pipeline-state.json
 
-Then supplement with `$RND_DIR` artifact details for richer context:
-- Check `$RND_DIR/iteration-log.md` for iteration history
+If `$RND_DIR/pipeline-state.json` exists, read it and derive task statuses directly from the `tasks` object. Each task's `status` field maps to the display icons below. This is the authoritative source — it is updated at every phase gate and survives context compaction.
+
+Supplement with `$RND_DIR` artifact details for richer context:
+- Check `$RND_DIR/iteration-log.md` for iteration history and cycle counts
 - Check `$RND_DIR/verifications/` for verdict details
 - Check `$RND_DIR/integration/` for SHIP/NO-SHIP verdicts
 
-Map task states to pipeline phases:
+### Fallback: TaskList + artifact scanning
 
-- **📋 Planned** — Task is `pending` with no build artifacts
-- **🔨 Built** — Task is `completed` and `$RND_DIR/builds/T<id>-manifest.md` exists, but no verification report yet
-- **🔍 In Verification** — Task is `in_progress` during verify phase
-- **✅ Verified** — Task is `completed` with PASS verdict in `$RND_DIR/verifications/T<id>-verification.md`
-- **🔄 Iterating** — Task is `in_progress` with `iteration` metadata > 0
-- **⚠️ Escalated** — Iteration metadata shows 3+ cycles
-- **🚀 Integrated** — Part of a SHIP verdict in `$RND_DIR/integration/`
+If `$RND_DIR/pipeline-state.json` does not exist (older pipeline session or pipeline started before this feature), fall back to the previous approach: use `TaskList` as the primary source and supplement with artifact directory scanning.
+
+### Status icon mapping
+
+Map task statuses to display icons:
+
+- **📋 Planned** — status `planned` (or `pending` in TaskList fallback)
+- **🔨 Built** — status `built`
+- **✅ Verified** — status `verified`
+- **🔄 Iterating** — status `iterating`
+- **⚠️ Escalated** — status `iterating` with iteration count >= 3 (check `iteration-log.md`)
+- **🚀 Integrated** — status `integrated`
+- **❌ Failed** — status `failed`
 
 Display as a table:
 

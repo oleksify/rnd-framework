@@ -61,7 +61,18 @@ Before planning, explore the codebase and gather requirements.
      - "Manage roadmap" — route to `/rnd-framework:rnd-roadmap`
    - **If `roadmap.md` does not exist:** If the task seems multi-day, `AskUserQuestion`: "Create a roadmap first (Recommended)" or "Proceed as single session". If single-session, skip silently.
 
-5. **Discover environment and infrastructure.** Run a structured checklist scan to catalog the project's build environment:
+5. **Load project facts.** Check for a persistent project facts file:
+
+   ```bash
+   FACTS_PATH=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --facts)
+   ```
+
+   - **If `project-facts.md` exists:** Read it and compare its `Scan commit:` line against `git rev-parse HEAD`.
+     - **If fresh** (commits match): Use the facts directly — they will populate plan.md's Environment Setup, Infrastructure, Worker Guidelines, and Testing Strategy sections during Phase 1. Skip the manual discovery checklist.
+     - **If stale** (commits differ): Use `AskUserQuestion`: "Rescan project facts (Recommended)" — run `/rnd-framework:rnd-scan`, then continue; "Use existing facts" — proceed with stale facts; "Do manual discovery" — fall through to the checklist below.
+   - **If `project-facts.md` does not exist:** Use `AskUserQuestion`: "Scan project now (Recommended)" — run `/rnd-framework:rnd-scan`, then continue; "Do manual discovery" — run the environment checklist below.
+
+   **Manual discovery fallback** (only when project-facts.md is missing and user declines scan):
    - **Package manager:** Glob for package.json, Cargo.toml, mix.exs, go.mod, pyproject.toml
    - **Test framework:** Grep for test runner configs (vitest, jest, pytest, etc.), count existing tests, identify exact run commands
    - **CI config:** Read .github/workflows/ or equivalent — extract build/test/deploy commands

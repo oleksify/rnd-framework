@@ -145,7 +145,9 @@ Unmet Correctness criteria cause FAIL (blocks progress). Unmet Quality criteria 
 
 ## Environment Discovery
 
-Before decomposition, run a structured checklist scan to catalog the project's build environment. Present findings to the user via `AskUserQuestion` for confirmation and gap-filling.
+Before decomposition, check if `project-facts.md` exists at the project base dir (via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --facts`). If it exists and is fresh (commit hash matches `git rev-parse HEAD`), use its contents directly to populate the Environment Setup, Infrastructure, and Testing Strategy sections — skip the checklist below.
+
+If `project-facts.md` does not exist or is stale, run the structured checklist scan below. Present findings to the user via `AskUserQuestion` for confirmation and gap-filling.
 
 ### Checklist
 

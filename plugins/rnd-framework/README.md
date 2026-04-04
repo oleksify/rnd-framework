@@ -293,6 +293,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
 ```
 ~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 8-char hash of path)
 ├── .current-session                    # Active session ID
+├── project-facts.md                    # Persistent project environment scan (created by /rnd-scan)
 ├── calibration.jsonl                   # Verdict accuracy tracking (cross-session); stored in CLAUDE_PLUGIN_DATA when set
 └── sessions/
     └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run

@@ -7,6 +7,7 @@
 #   rnd-dir.sh --finish Delete .current-session (idempotent); exit 0
 #   rnd-dir.sh --base   Print just the project base dir; never creates directories
 #   rnd-dir.sh --roadmap Print <base-dir>/roadmap.md; never creates directories
+#   rnd-dir.sh --facts   Print <base-dir>/project-facts.md; never creates directories
 #
 # Session path: <base>/sessions/<YYYYMMDD-HHMMSS-XXXX>/
 # Base path:    <claude-config-dir>/.rnd/<project-slug>/
@@ -20,6 +21,7 @@ source "${_SCRIPT_DIR}/plugin-dir-base.sh" ".rnd" "${1:-}"
 
 [[ "$FLAG" = "--base"    ]] && { echo "$BASE_DIR";              exit 0; }
 [[ "$FLAG" = "--roadmap" ]] && { echo "${BASE_DIR}/roadmap.md"; exit 0; }
+[[ "$FLAG" = "--facts"   ]] && { echo "${BASE_DIR}/project-facts.md"; exit 0; }
 [[ "$FLAG" = "--finish"  ]] && { rm -f "$SESSION_FILE";         exit 0; }
 [[ "$FLAG" = "-c"        ]] && { _plugin_dir_create_session builds verifications integration; exit 0; }
 

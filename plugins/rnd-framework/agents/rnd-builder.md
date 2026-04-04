@@ -119,6 +119,7 @@ When the status is `DONE_WITH_CONCERNS`, include a brief `concerns:` line in the
 - **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
 - **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
 - **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+- **Shell loops:** Never use `for`, `while`, or `until` loops in the Bash tool — they hang. Use the Glob tool to list files and the Grep tool to search content instead
 - **Python packages:** Use `uv` instead of `pip`, `pip3`, or `pipx` — `uv pip install`, `uv add`, `uv sync`, `uvx` for one-off tools
 - **Python linting/formatting:** Use `ruff check` for linting and `ruff format` for formatting — not flake8, pylint, black, or autopep8
 

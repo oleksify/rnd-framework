@@ -6,10 +6,11 @@
 #
 # Responsibilities:
 #   1. Database guard — blocks destructive DB operations (Ecto, Postgres, MySQL, SQLite)
-#   2. Tool discipline — blocks sed/awk/cat/grep/find/echo-redirects/inline interpreters
-#   3. Git guards — blocks git add .rnd/ and git push to protected branches
+#   2. Git guards — blocks git add .rnd/ and git push to protected branches
+#   3. Shell loop guard — blocks for/while/until loops (they hang in the Bash tool)
 #   4. /tmp redirect guard — steers writes to $RND_DIR
-#   5. Auto-allow — .rnd/ paths, echo/printf without redirect, plugin lib scripts
+#   5. Tool discipline — blocks sed/awk/cat/grep/find/echo-redirects/inline interpreters
+#   6. Auto-allow — .rnd/ paths, echo/printf without redirect, plugin lib scripts
 #
 # Exit codes:
 #   0 + hookSpecificOutput JSON  — auto-allow
@@ -347,7 +348,22 @@ fi
 unset _branch_pattern
 
 # ---------------------------------------------------------------------------
-# 3. /tmp redirect guard
+# 3. Shell loop guard
+# ---------------------------------------------------------------------------
+# Detects for/while/until loops which frequently hang in the Bash tool.
+# Requires both the loop keyword AND the `do` keyword to avoid false positives
+# on commands that merely contain the word "for" (e.g., `echo "search for files"`).
+
+if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])for[[:space:]] ]] && [[ "$cmd_lower" =~ [[:space:]\;]do([[:space:]\;]|$) ]]; then
+  block_msg "Avoid shell for-loops — they frequently hang in the Bash tool. Use the Glob tool to list files and the Grep tool to search content. For cross-referencing, use Grep with alternation patterns or multiple parallel tool calls."
+fi
+
+if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])(while|until)[[:space:]] ]] && [[ "$cmd_lower" =~ [[:space:]\;]do([[:space:]\;]|$) ]]; then
+  block_msg "Avoid shell while/until loops — they can hang in the Bash tool. Use dedicated tools (Glob, Grep, Read) for file operations."
+fi
+
+# ---------------------------------------------------------------------------
+# 4. /tmp redirect guard
 # ---------------------------------------------------------------------------
 
 _is_compound=0
@@ -365,7 +381,7 @@ if [[ "$_skip_tmp_guard" -eq 0 ]] && [[ "$command" =~ $_TMP_REDIRECT_PATTERN ]];
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Tool discipline
+# 5. Tool discipline
 # ---------------------------------------------------------------------------
 
 _discipline_result="$(split_and_check "$command")" || true
@@ -381,7 +397,7 @@ if [[ "$_discipline_result" == "echo_safe" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Auto-allow plugin artifact paths and lib scripts
+# 6. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
 
 if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then

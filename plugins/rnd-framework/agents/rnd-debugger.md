@@ -90,6 +90,7 @@ When escalating, still write the diagnosis report with the evidence gathered, bu
 - **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
 - **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
 - **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
+- **Shell loops:** Never use `for`, `while`, or `until` loops in the Bash tool — they hang. Use the Glob tool to list files and the Grep tool to search content instead
 
 ## Communication
 

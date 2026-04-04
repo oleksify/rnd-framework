@@ -29,6 +29,7 @@
 - Don't use `cat file | grep` — use `grep pattern file` directly
 - Don't add `2>/dev/null` to silence errors you should be fixing
 - Use `mktemp` for temp files — don't hardcode `/tmp/myscript.tmp`
+- Don't use `for`/`while`/`until` loops in the Bash tool — they hang. Use the Glob tool to list files by pattern and the Grep tool to search content. For cross-referencing multiple items, use Grep with alternation patterns or multiple parallel tool calls
 
 ## Error Handling
 

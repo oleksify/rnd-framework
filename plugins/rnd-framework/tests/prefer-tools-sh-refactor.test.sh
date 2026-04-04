@@ -50,7 +50,8 @@ _shim() {
 # giving us check_segment and split_and_check without triggering the main body.
 _FUNCS_FILE="$(mktemp)"
 awk '
-  NR <= 21 { next }
+  !past_header && /^source / { past_header=1; next }
+  !past_header { next }
   /^# Main$/ { in_main=1 }
   /^# -+$/ && in_main { exit }
   !in_main { print }

@@ -1,6 +1,5 @@
 .DS_Store
 .rnd/
-.factory/
 node_modules/
 .claude/settings.local.json
 .playwright-mcp

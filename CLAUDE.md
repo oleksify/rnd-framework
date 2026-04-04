@@ -21,7 +21,7 @@ plugins/rnd-framework/
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, PreToolUse, PostToolUse, PermissionDenied, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop
+│   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
@@ -45,7 +45,8 @@ plugins/rnd-framework/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   └── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```

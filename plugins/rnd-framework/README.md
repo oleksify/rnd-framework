@@ -15,7 +15,7 @@ A Claude Code plugin that applies the scientific method to software engineering.
 Add the marketplace and install:
 
 ```
-/plugin marketplace add git@tangled.org:oleksify.me/rnd-framework
+/plugin marketplace add https://tangled.org/oleksify.me/rnd-framework
 /plugin install rnd-framework@oleksify-plugins
 ```
 
@@ -132,6 +132,7 @@ Use `/rnd-framework:rnd-start` for the full pipeline with mode selection.
 | `/rnd-framework:rnd-calibrate` | Record manual ground-truth verdict corrections for calibration |
 | `/rnd-framework:rnd-debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
 | `/rnd-framework:rnd-roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
+| `/rnd-framework:rnd-scan` | Scan the project environment and build a persistent project-facts.md |
 
 ## Skills
 
@@ -170,6 +171,12 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
 | `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
 | `rnd-reality-auditing` | Adversarial methodology for reality verification — experiment design, evidence chains, report format for external service contract validation |
+| `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
+| `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
+| `lean-proving` | Formal Lean 4 proofs of pre-registration criteria — theorem generation, companion tests, proof reports |
+| `lib-sh-patterns` | Shared lib.sh utilities — FP primitives, path predicates, response functions, stdin parsing |
+| `plugin-architecture` | Plugin structure — config dir detection, path matching, hooks.json, hook events |
+| `plugin-versioning` | Version bumping, changelog entries, validation, and the release workflow |
 
 ## Agents
 
@@ -327,24 +334,26 @@ rnd-framework/
 ├── agents/                      # 8 specialized agents for multi-agent mode
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
-│   ├── hooks.json               # SessionStart + SessionEnd + PreToolUse + PostToolUse hook routing
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output)
-│   ├── read-gate.sh             # Read hook: information barrier + .rnd/ and plugin cache auto-allow
+│   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
+│   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
-│   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
-│   ├── session-start.sh         # SessionStart hook: injects skill context
+│   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit + output size advisory
-│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl
+│   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit/Bash + output size advisory
+│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
 │   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
-│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to read project standards
+│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to extract project standards
 │   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
 │   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
 │   ├── cwd-changed.sh           # CwdChanged hook: warns on cross-repo directory change
 │   ├── file-changed.sh          # FileChanged hook: advises on external .rnd/ artifact edits
 │   ├── task-created.sh          # TaskCreated hook: logs task creation to audit.jsonl
-│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
+│   ├── permission-denied.sh     # PermissionDenied hook: logs auto-mode denials to audit.jsonl, returns {retry: true}
+│   ├── format-on-save.sh        # PostToolUse hook: auto-formats code files after Write/Edit using detected project formatter
+│   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
+│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 ├── skills/                      # Skills (rnd-* namespace)
@@ -352,7 +361,9 @@ rnd-framework/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   └── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
+│   └── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
+├── tests/                       # Bash test suite for hooks and lib scripts
 └── README.md
 ```
 

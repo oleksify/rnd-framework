@@ -150,8 +150,23 @@ check_segment() {
       fi
       ;;
     grep|rg)
-      printf 'blocked:Use the Grep tool instead of %s. Grep supports regex, file globs, and output modes.' "$cmd"
-      return 0
+      local rest
+      rest="$(_args_after_cmd "$seg" "$first_word")"
+      local non_flag_count=0
+      local has_recursive=0
+      for word in $rest; do
+        if [[ "$word" == -* ]]; then
+          case "$word" in -r|-R|--recursive) has_recursive=1 ;; esac
+          continue
+        fi
+        non_flag_count=$((non_flag_count + 1))
+      done
+      # Block if: recursive flag (searches cwd) or 2+ non-flag args (pattern + file).
+      # Allow if: only pattern, no file — stdin filter (e.g., git diff | grep pattern).
+      if [[ "$has_recursive" -eq 1 ]] || [[ "$non_flag_count" -ge 2 ]]; then
+        printf 'blocked:Use the Grep tool instead of %s. Grep supports regex, file globs, and output modes.' "$cmd"
+        return 0
+      fi
       ;;
     find)
       printf 'blocked:Use the Glob tool instead of find. Glob supports patterns like **/*.ts.'

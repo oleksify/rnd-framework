@@ -149,16 +149,24 @@ run_hook "$(payload 'npm run build && cmd | tail -5')"
 assert_exit   "tail pipe filter in compound command → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Blocks grep/rg with stderr mentioning "Grep tool", exit 2
+# Blocks grep/rg with file args; allows grep/rg as stdin filters (no file arg)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'grep pattern file')"
 assert_exit   "grep → exit 2" 2
 assert_stderr_contains "grep → stderr mentions Grep tool" "Grep tool"
 
+run_hook "$(payload 'rg pattern file.txt')"
+assert_exit   "rg with file → exit 2" 2
+assert_stderr_contains "rg with file → stderr mentions Grep tool" "Grep tool"
+
 run_hook "$(payload 'rg pattern')"
-assert_exit   "rg → exit 2" 2
-assert_stderr_contains "rg → stderr mentions Grep tool" "Grep tool"
+assert_exit   "rg stdin filter → exit 0" 0
+assert_stdout_empty "rg stdin filter → no opinion"
+
+run_hook "$(payload 'grep -r pattern')"
+assert_exit   "grep -r → exit 2" 2
+assert_stderr_contains "grep -r → Grep tool" "Grep tool"
 
 # ---------------------------------------------------------------------------
 # Blocks find with stderr mentioning "Glob tool", exit 2
@@ -293,12 +301,12 @@ assert_exit   "cat after ; → exit 2" 2
 assert_stderr_contains "cat after ; → Read tool" "Read tool"
 
 run_hook "$(payload 'npm test | grep FAIL')"
-assert_exit   "grep after | → exit 2" 2
-assert_stderr_contains "grep after | → Grep tool" "Grep tool"
+assert_exit   "grep pipe filter → exit 0" 0
+assert_stdout_empty "grep pipe filter → no opinion"
 
 run_hook "$(payload 'true | rg pattern')"
-assert_exit   "rg after | → exit 2" 2
-assert_stderr_contains "rg after | → Grep tool" "Grep tool"
+assert_exit   "rg pipe filter → exit 0" 0
+assert_stdout_empty "rg pipe filter → no opinion"
 
 run_hook "$(payload 'test -f file || cat fallback.txt')"
 assert_exit   "cat after || → exit 2" 2

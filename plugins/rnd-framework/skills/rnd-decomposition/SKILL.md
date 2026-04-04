@@ -116,6 +116,9 @@ Success criteria:
   - [ ] [Code quality, naming, patterns, or documentation condition]
 Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
+Preconditions:
+  - [File/content assertion verified before build starts]
+  - [Another assertion — if any fails, task is BLOCKED]
 Local expert: [optional — name of project-local agent/skill to invoke, e.g., security-reviewer]
 External Dependencies:
   - system: [DB | API | file | env | service]
@@ -125,6 +128,14 @@ fulfills: [VAL-AREA-NNN, ...]
 ```
 
 The `fulfills` field links each task to specific Validation Contract assertions (see Output section). This creates bidirectional traceability: from task to assertions and from assertion to responsible tasks.
+
+The `Preconditions` field declares file/content assertions the Builder verifies before writing code. If any precondition fails, the task is immediately BLOCKED — preventing mid-build failures from missing files or wrong project state. Use concrete, tool-checkable assertions:
+
+- `Glob for src/auth/middleware.ts returns at least 1 match` — file existence
+- `Grep for "export function validateToken" in src/auth/middleware.ts returns at least 1 match` — function existence
+- `Read package.json contains "jsonwebtoken" in dependencies` — dependency presence
+
+Omit the field entirely if the task has no preconditions (e.g., creating new files from scratch).
 
 ### Tiered Criteria: Correctness vs Quality
 

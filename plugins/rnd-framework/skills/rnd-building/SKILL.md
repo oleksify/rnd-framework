@@ -42,6 +42,18 @@ Find your task in `$RND_DIR/plan.md`. Read its pre-registration — especially s
 
 These sections tell you HOW to build and test without rediscovering the environment.
 
+### 2. Verify Preconditions
+
+If the pre-registration has a `Preconditions:` field, check each assertion before writing code:
+
+- **File existence:** run Glob for the declared path pattern
+- **Content existence:** run Grep for the declared pattern in the declared file
+- **Dependency presence:** run Read on the config file and check for the declared key
+
+If **any precondition fails**: report status `BLOCKED` with the specific failing assertion. Do not proceed to coding.
+
+If the pre-registration has no `Preconditions:` field, skip this step silently.
+
 ### 2.5. Read Exploration Cache
 
 If `$RND_DIR/exploration/` exists, read it before writing code. The Planner writes structured findings there — file summaries, key patterns, dependencies — so you don't re-explore what was already mapped.

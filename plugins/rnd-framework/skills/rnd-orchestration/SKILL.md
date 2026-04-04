@@ -69,6 +69,8 @@ Success criteria:
   - [ ] Specific, testable condition 2
 Verification level: unit | integration | system
 Dependencies: [list of task IDs]
+Preconditions:
+  - [File/content assertion verified before build starts — omit if none]
 External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]

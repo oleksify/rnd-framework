@@ -273,7 +273,7 @@ command="$(printf '%s' "$raw" | jq -r '.tool_input.command // ""' 2>/dev/null ||
 
 if [[ -z "$command" ]]; then exit 0; fi
 
-cmd_lower="${command,,}"
+cmd_lower="$(_lower "$command")"
 
 # ---------------------------------------------------------------------------
 # 1. Database guard (from db-guard.sh)

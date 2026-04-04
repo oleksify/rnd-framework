@@ -5,6 +5,13 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
+# String utilities (bash 3.2 compatible)
+# ---------------------------------------------------------------------------
+
+# Lowercase a string. Uses tr instead of ${var,,} for macOS stock bash (3.2) compat.
+_lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
+# ---------------------------------------------------------------------------
 # Path utilities
 # ---------------------------------------------------------------------------
 
@@ -37,7 +44,7 @@ is_learnings_path() {
 is_code_file() {
   local path="$1"
   local ext="${path##*.}"
-  ext="${ext,,}"
+  ext="$(_lower "$ext")"
   case "$ext" in
     ts|tsx|js|jsx|mjs|cjs|\
     py|rb|go|rs|java|\
@@ -123,7 +130,7 @@ extract_file_path() {
 
 # Regex for valid session IDs (YYYYMMDD-HHMMSS-xxxx) as written by rnd-dir.sh.
 # Guard prevents a re-declaration error when lib.sh is sourced more than once.
-[[ -v SESSION_ID_RE ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$'
+[[ -n "${SESSION_ID_RE+x}" ]] || readonly SESSION_ID_RE='^[0-9]{8}-[0-9]{6}-[0-9a-f]{4,8}$'
 
 # Resolves the Claude config directory from environment variables.
 # Mirrors the precedence in plugin-dir-base.sh — keep them in sync.

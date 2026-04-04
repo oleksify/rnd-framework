@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.13 — 2026-04-04
+
+### Fix bash 3.2 compatibility for macOS stock bash
+
+Replace bash 4.0+ features with POSIX-compatible alternatives. Adds _lower() helper using tr. Fixes all hooks failing on macOS systems without Homebrew bash.
+
 ## 3.0.12 — 2026-04-04
 
 ### Add per-assertion evidence files to verification pipeline

@@ -17,11 +17,11 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 
 ### Trivial (fix typo, add log line)
 
-**Entry:** `/rnd-framework:rnd-start` (single-flow mode)
+**Entry:** `/rnd-framework:rnd-start`
 **Process:**
-1. Write a one-line pre-registration (inline, no subagent)
-2. Make the change yourself
-3. Verify inline against criteria
+1. Write a one-line pre-registration inline
+2. Spawn a Builder agent for the change
+3. Spawn a Verifier agent to check against criteria
 4. Done
 
 **Skip:** Planner, dependency scheduling, Integrator
@@ -29,11 +29,11 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 
 ### Small (<1 hour of work)
 
-**Entry:** `/rnd-framework:rnd-start` (single-flow mode)
+**Entry:** `/rnd-framework:rnd-start`
 **Process:**
-1. Write a brief pre-registration (inline)
-2. Implement with TDD (use `rnd-framework:rnd-building`)
-3. Independent verification per task
+1. Write a brief pre-registration inline
+2. Spawn a Builder agent with TDD (uses `rnd-framework:rnd-building`)
+3. Spawn a Verifier agent for independent verification
 4. Max 2 iterations
 
 **Skip:** Planner subagent, dependency scheduling, Integrator

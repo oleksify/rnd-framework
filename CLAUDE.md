@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Supports dual execution modes: single-flow (all phases sequential in one session) and multi-agent (8 specialized agents with structural isolation).
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 8 specialized agents with structural isolation enforce the information barrier at the context-window level.
 
 The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
@@ -55,24 +55,20 @@ plugins/rnd-framework/
 
 ## Architecture
 
-### Dual-Mode Execution Model
+### Execution Model
 
-The framework supports two execution modes, selectable via `/rnd-framework:rnd-start`:
+Eight specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
-**Single-flow mode:** All pipeline phases run sequentially in a single session. No agents are spawned. The session invokes skills directly for each phase. Best for quick iterations and smaller tasks.
-
-**Multi-agent mode:** Eight specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers. Best for complex tasks requiring maximum verification rigor.
-
-| Phase | Skill | Agent (multi-agent mode) | Purpose |
-|---|---|---|---|
-| Planning | `rnd-decomposition` | `rnd-planner` (opus) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
-| Building | `rnd-building` | `rnd-builder` (sonnet) | Implements tasks using TDD; produces build manifest + self-assessment |
-| Reality Audit | `rnd-reality-auditing` | `rnd-reality-auditor` (sonnet) | Adversarially verifies external service contracts |
-| Proof Gate | `lean-proving` | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory) |
-| Verification | `rnd-verification` | `rnd-verifier` (opus) | Checks output against pre-registered criteria (information barrier enforced) |
-| Integration | `rnd-integration` | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
-| Debugging | `rnd-debugging` | `rnd-debugger` (opus) | Root cause analysis for failing tasks |
-| Data Science | `rnd-data-science` | `rnd-data-scientist` (opus) | Standalone specialist for numerical/analytical work |
+| Phase | Agent | Purpose |
+|---|---|---|
+| Planning | `rnd-planner` (opus) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
+| Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces build manifest + self-assessment |
+| Reality Audit | `rnd-reality-auditor` (sonnet) | Adversarially verifies external service contracts |
+| Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory) |
+| Verification | `rnd-verifier` (opus) | Checks output against pre-registered criteria (information barrier enforced) |
+| Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
+| Debugging | `rnd-debugger` (opus) | Root cause analysis for failing tasks |
+| Data Science | `rnd-data-scientist` (opus) | Standalone specialist for numerical/analytical work |
 
 ### Information Barrier and Permission Hooks
 

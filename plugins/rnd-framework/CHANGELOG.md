@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.18 — 2026-04-09
+
+### Remove single-flow mode — multi-agent only
+
+Single-flow mode ran build and verification in the same context window, making the information barrier behavioral (prompting) rather than structural (separate contexts). Behavioral barriers fail. Multi-agent is now the only execution mode. Commands (rnd-start, rnd-debug), skills (rnd-orchestration, using-rnd-framework, rnd-scaling, rnd-iteration), agents (rnd-planner), and documentation (CLAUDE.md, README) all updated. rnd-debug now spawns builder + verifier agents instead of running inline.
+
 ## 3.0.17 — 2026-04-09
 
 ### Fix intermittent UserPromptSubmit hook error

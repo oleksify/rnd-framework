@@ -1,12 +1,12 @@
 ---
-description: "Debug pipeline: reproduce a bug, diagnose root cause, fix, and verify — all in a single flow."
+description: "Debug pipeline: reproduce a bug, diagnose root cause, fix, and verify using specialized agents."
 argument-hint: "<bug description or symptom>"
 effort: high
 ---
 
 # R&D Framework: Debug Mode
 
-For reported bugs that need root cause analysis before fixing. All phases run sequentially in this session. Use `/rnd-framework:rnd-start` if the bug turns out to be architectural.
+For reported bugs that need root cause analysis before fixing. Diagnosis runs inline; build and verify phases spawn specialized agents. Use `/rnd-framework:rnd-start` if the bug turns out to be architectural.
 
 > **Iteration budget: 2.** If the fix fails verification twice, escalate to `/rnd-framework:rnd-start` for proper decomposition.
 
@@ -69,27 +69,58 @@ Check the escalation recommendation:
 
 ## Step 2: Build the Fix
 
-Invoke `rnd-framework:rnd-building` to load build discipline.
-
 Write the full pre-registration to `$RND_DIR/plan.md`, informed by the diagnosis report. Success criteria must include:
 - Bug is no longer reproducible using the original reproduction steps
 - Fix targets the root cause (not a symptom patch)
 - 1-2 criteria specific to the root cause
 - Existing tests continue to pass (no regressions)
 
-Implement the fix using TDD. Save manifest and self-assessment.
+Spawn an `rnd-builder` agent to implement the fix:
+
+```
+subagent_type: "rnd-framework:rnd-builder"
+mode: "bypassPermissions"
+prompt: |
+  You are building the fix for: [bug description]
+
+  RND_DIR: [value of $RND_DIR]
+
+  Pre-registration: [paste the pre-registration from $RND_DIR/plan.md]
+
+  Diagnosis report: [paste $RND_DIR/diagnosis/T1-diagnosis.md]
+
+  Implement the fix using TDD. Save the build manifest to $RND_DIR/builds/T1-manifest.md
+  and the self-assessment to $RND_DIR/builds/T1-self-assessment.md.
+```
+
+The agent completes and returns via `SendMessage`. Wait for it before proceeding.
 
 ## Step 3: Verify the Fix
 
-**CRITICAL: Information Barrier.** Do NOT re-read the self-assessment. Verify purely against the pre-registered criteria.
+**CRITICAL: Information Barrier.** Do NOT pass the self-assessment to the verifier agent. The verifier must assess work purely against the pre-registered criteria.
 
-Invoke `rnd-framework:rnd-verification` to load verification discipline.
+Spawn an `rnd-verifier` agent to verify the fix:
 
-1. Write independent experiment tests from the spec.
-2. Run experiments against the fixed code.
-3. Run the built tests.
-4. Code inspection and failure mode analysis.
-5. Save verification report to `$RND_DIR/verifications/T1-verification.md`.
+```
+subagent_type: "rnd-framework:rnd-verifier"
+mode: "bypassPermissions"
+prompt: |
+  You are verifying the fix for: [bug description]
+
+  RND_DIR: [value of $RND_DIR]
+
+  Pre-registration: [paste the pre-registration from $RND_DIR/plan.md]
+
+  Builder artifacts:
+  - Build manifest: $RND_DIR/builds/T1-manifest.md
+
+  Do NOT read $RND_DIR/builds/T1-self-assessment.md — information barrier.
+
+  Write independent experiment tests from the spec, run them, inspect the code,
+  and save the verification report to $RND_DIR/verifications/T1-verification.md.
+```
+
+The agent completes and returns its verdict via `SendMessage`. Wait for it before proceeding.
 
 ## Step 4: Iterate or Ship
 

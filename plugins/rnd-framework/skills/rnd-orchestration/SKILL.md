@@ -34,7 +34,7 @@ This framework applies the scientific method to structured coding:
 
 ## Agent Roles & Information Barriers
 
-The framework defines 8 specialized agent roles. In single-flow mode, the session plays all roles sequentially. In multi-agent mode, dedicated agents are spawned for each role.
+The framework defines 8 specialized agent roles. Dedicated agents are spawned for each role.
 
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets. Uses `rnd-framework:rnd-orchestration` skill.
@@ -78,23 +78,9 @@ External dependencies:
 fulfills: [VAL-AREA-NNN, ...]
 ```
 
-## Execution Modes
+## Execution Mode
 
-The framework supports two execution modes. Use `/rnd-framework:rnd-start` to select.
-
-### Single-Flow Mode
-
-All pipeline phases run sequentially in one session. No agents are spawned. The session model handles all phases — planning, building, verification, and integration. Best for small-to-medium tasks or when agent spawning is unavailable.
-
-Skills provide phase-specific discipline:
-- Planning: `rnd-framework:rnd-decomposition`
-- Building: `rnd-framework:rnd-building`
-- Verification: `rnd-framework:rnd-verification`
-- Integration: `rnd-framework:rnd-integration`
-
-### Multi-Agent Mode
-
-Dedicated agents are spawned for each pipeline role. The orchestrator session coordinates them, enforcing information barriers and gate criteria. Best for medium-to-large tasks requiring rigorous separation of concerns.
+Dedicated agents are spawned for each pipeline role. The orchestrator session coordinates them, enforcing information barriers and gate criteria.
 
 Agent assignments:
 - **rnd-planner** — Planning phase (Opus model)
@@ -135,7 +121,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce enriched plan.md with sections: Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets. Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
-3. **Build** — Work tasks (parallel within waves in multi-agent mode, sequential in single-flow). Produce code + tests + self-assessment. In multi-agent mode, Builder agents are spawned per task.
+3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
 3.5. **Proof Gate** (advisory) — Attempt Lean 4 formal proofs for each task's pre-registered criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable. In multi-agent mode, Proof-Gate agents handle this phase.
 3.75. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification. In multi-agent mode, Reality-Auditor agents handle this phase.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
@@ -233,9 +219,9 @@ Common decision points:
 
 ## Scaling Rules
 
-- **Small tasks (<1hr):** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration. Use single-flow mode.
-- **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task. Single-flow or multi-agent mode.
-- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification. Multi-agent mode recommended.
+- **Small tasks (<1hr):** Collapse — one Builder + one Verifier (single judge). Lightweight pre-registration.
+- **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task.
+- **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
-- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate. Multi-agent mode required.
+- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate.
 

@@ -14,24 +14,9 @@ This is a scientific process. Results are true or false — never "almost true".
 
 **Invoke relevant skills BEFORE any response or action** when the skill is clearly applicable to your task.
 
-## Execution Modes
+## Execution Mode
 
-The R&D framework supports two execution modes. Use `/rnd-framework:rnd-start` to select the mode at pipeline start.
-
-### Single-Flow Mode
-
-All pipeline phases (Plan → Build → Verify → Integrate) run sequentially in the current session. No agents are spawned. The session handles all phases directly, with skills providing phase-specific discipline. Best for:
-
-- Small to medium tasks where rate-limit overhead of agent spawning is not justified
-- Quick iterations where the main session has sufficient context
-
-### Multi-Agent Mode
-
-Pipeline phases are executed by specialized agents spawned as subagents. Each agent has a dedicated role, model assignment, and skill preloading. The orchestrator (main session) coordinates agent spawning, collects results via `SendMessage`, and manages phase gates. Best for:
-
-- Complex multi-task pipelines requiring deep specialization
-- High-criticality work where the information barrier must be mechanically enforced between separate agent contexts
-- Tasks requiring parallel execution across independent subtasks
+Pipeline phases are executed by specialized agents spawned as subagents. Each agent has a dedicated role, model assignment, and skill preloading. The orchestrator (main session) coordinates agent spawning, collects results via `SendMessage`, and manages phase gates.
 
 **Agent types and their roles:**
 
@@ -52,8 +37,7 @@ In multi-agent mode, agents are spawned using `subagent_type` (e.g., `subagent_t
 
 When a task involves analytical or numerical work — financial calculations, data wiring, chart generation, statistical analysis, or anything requiring Julia or DuckDB:
 
-- **In multi-agent mode:** Spawn `rnd-data-scientist` instead of `rnd-builder`. The Planner pre-registers as usual; the Verifier checks output as normal.
-- **In single-flow mode:** Invoke `rnd-framework:rnd-data-science` during the build phase. The pre-registration and verification phases work as normal.
+Spawn `rnd-data-scientist` instead of `rnd-builder`. The Planner pre-registers as usual; the Verifier checks output as normal.
 
 ## Skill Priority
 
@@ -64,7 +48,7 @@ When a task involves analytical or numerical work — financial calculations, da
 
 ## Red Flags
 
-Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-start` with single-flow mode; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
+Stop rationalizing: "too simple for R&D" → use `/rnd-framework:rnd-start`; "I'll verify later" → verification is mandatory; "TDD will slow me down" → TDD is faster than debugging; "I already know the approach" → pre-registration prevents scope creep.
 
 ## User Interaction
 

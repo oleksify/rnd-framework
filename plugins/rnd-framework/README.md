@@ -1,6 +1,6 @@
 # R&D Framework Plugin for Claude Code
 
-A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. Supports two execution modes: **single-flow** (all phases sequential in one session) and **multi-agent** (specialized agents per pipeline phase with structural information barriers).
+A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. Uses a **multi-agent** execution model: specialized agents per pipeline phase with structural information barriers enforced at the context-window level.
 
 | Scientific Method | Framework Principle | Role |
 |---|---|---|
@@ -84,31 +84,19 @@ After configuring, start a Claude Code session in the project and check:
 - The session should show `rnd-framework` in the startup context
 - `/rnd-framework:rnd-status` should work
 
-## Execution Modes
+## Execution Model
 
-The framework supports two execution modes, selectable via `/rnd-framework:rnd-start`:
-
-### Single-Flow Mode
-
-All pipeline phases run sequentially in a single session. No agents are spawned — the session invokes skills directly for each phase. Best for quick iterations, smaller tasks, or environments where multi-agent overhead is undesirable.
-
-```
-Plan → Schedule → Build → Verify → Iterate? → Integrate
-```
-
-### Multi-Agent Mode
-
-Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning. Best for complex tasks requiring maximum verification rigor.
+The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
 
 ```
 Plan → Schedule → Build → [Reality Audit] → [Proof Gate] → Verify → Iterate? → Integrate
 ```
 
-Additional phases in multi-agent mode:
+Additional pipeline phases:
 - **Reality Audit** — `rnd-reality-auditor` adversarially verifies external contracts (SQL schemas, API responses, env vars). Blocking — routes back to build on INVALID findings.
 - **Proof Gate** — `rnd-proof-gate` attempts formal Lean 4 proofs of pre-registration criteria. Advisory — findings inform but don't block.
 
-Use `/rnd-framework:rnd-start` for the full pipeline with mode selection.
+Use `/rnd-framework:rnd-start` to launch the pipeline.
 
 ## Commands
 
@@ -193,7 +181,7 @@ Eight specialized agents for the multi-agent execution mode. All have persistent
 | `rnd-framework:rnd-reality-auditor` | sonnet | teal | Adversarially verifies external service contracts (SQL, APIs, env vars) |
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 
-In single-flow mode, agents are not spawned — the session invokes skills directly. In multi-agent mode, the orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
+The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 
 ## Pipeline Scaling
 
@@ -202,7 +190,7 @@ Every task goes through the pipeline, scaled to complexity:
 | Complexity | Entry Point | What Happens |
 |---|---|---|
 | Bug (reported symptom) | `/rnd-framework:rnd-debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
-| Trivial to small | `/rnd-framework:rnd-start` | Single-flow: plan → build → verify inline |
+| Trivial to small | `/rnd-framework:rnd-start` | Planner + Builder + Verifier (minimal wave) |
 | Medium (1-4hr) | `/rnd-framework:rnd-start` | Planner + N Builders + N Verifiers + Integrator |
 | Large (multi-day) | `/rnd-framework:rnd-start` | Full pipeline + design review gate |
 | High-stakes | `/rnd-framework:rnd-start` | Full pipeline + dual independent verification |
@@ -266,16 +254,10 @@ See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 
 ## How Information Barriers Work
 
-The Verifier never sees the Builder's self-assessment or reasoning. Enforcement varies by execution mode:
+The Verifier never sees the Builder's self-assessment or reasoning. Enforcement is two-layered:
 
-**Single-flow mode:**
-1. **PreToolUse hook** — `read-gate.sh` blocks any Read call targeting files with `self-assessment` in the path
-2. **Skill instructions** — the `rnd-verification` skill explicitly prohibits reading self-assessment files
-
-**Multi-agent mode:**
 1. **Structural isolation** — agents run in separate context windows, so the Verifier literally cannot see the Builder's internal reasoning
-2. **PreToolUse hook** — same hook enforcement as single-flow (defense-in-depth)
-3. **Agent instructions** — each agent's system prompt clearly states what it can and cannot access
+2. **PreToolUse hook** — `read-gate.sh` blocks any Read call targeting files with `self-assessment` in the path (defense-in-depth)
 
 Without this barrier:
 - The Verifier gets anchored by the Builder's framing
@@ -413,7 +395,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use single-flow mode for smaller tasks.
+- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use the pipeline scaling tiers to right-size the number of agents for the task complexity.
 - **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
 
 ## Acknowledgements

@@ -143,7 +143,7 @@ Before decomposition, run a structured checklist scan to catalog the project's b
 | Environment variables | .env.example, .env.template, CI secrets config | Read env templates, Grep for process.env/ENV/os.environ |
 | Secrets and off-limits | .gitignore patterns, CI secret names, sensitive file paths | Read .gitignore, infer from CI config |
 
-Present findings to the orchestrator (or user in single-flow mode) for confirmation and gap-filling.
+Present findings to the orchestrator for confirmation and gap-filling.
 
 ## Output Format
 

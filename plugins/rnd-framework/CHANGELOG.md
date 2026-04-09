@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.15 — 2026-04-09
+
+### Add v2.1.97 upstream support
+
+Statusline refreshInterval + git_worktree display, UserPromptSubmit session title hook, MIN_CLAUDE_VERSION bump to 2.1.97, bash-gate Accept Edits clarification, CLAUDE.md v2.1.94-v2.1.97 documentation
+
 ## 3.0.14 — 2026-04-04
 
 ### Block shell loops, allow grep pipe filters, fix stale docs

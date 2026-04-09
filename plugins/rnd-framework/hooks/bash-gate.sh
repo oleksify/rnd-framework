@@ -102,6 +102,11 @@ strip_cd_prefix() {
 # Strips leading environment variable assignments (e.g., FOO=bar BAZ=quux)
 # from a command segment. Env-var prefixes match [A-Za-z_][A-Za-z_0-9]*=<value>.
 # The value may be quoted or unquoted.
+#
+# Note: This is orthogonal to upstream Accept Edits mode (v2.1.97+), which
+# auto-approves filesystem commands prefixed with safe env vars. Our stripping
+# enforces tool discipline (which tool to use — Edit vs sed, Read vs cat),
+# while upstream decides whether to prompt for permission on the tool call.
 strip_env_prefix() {
   local seg="$1"
   local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='

@@ -39,8 +39,9 @@ plugins/rnd-framework/
 │   ├── permission-denied.sh     # PermissionDenied hook (v2.1.89+): logs auto-mode denials to audit.jsonl, returns {retry: true}
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── format-on-save.sh        # PostToolUse hook (v2.1.90+): auto-formats code files after Write/Edit using detected project formatter
+│   ├── session-title.sh         # UserPromptSubmit hook (v2.1.94+): sets session title to pipeline phase + project name
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
-│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase (v2.1.80)
+│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase + worktree indicator (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
@@ -86,6 +87,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
 - **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
 - **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
+- **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
 
 #### Defer Permission Decision (v2.1.89+)
 
@@ -95,7 +97,7 @@ The `defer_json` helper in `lib.sh` outputs this response. It is available as in
 
 #### Claude Code Version Check
 
-The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.92). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
+The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.97). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
 
 #### Symlink Resolution for Allow Rules (v2.1.89+)
 
@@ -137,13 +139,67 @@ v2.1.92 fixed tool input validation failures when streaming emits array/object f
 
 Write tool diff computation is 60% faster for files containing tabs, `&`, or `$` characters. This benefits pipeline builds that write to files with these characters (common in bash scripts and shell tests).
 
+#### Default Effort Level Change (v2.1.94+)
+
+v2.1.94 changed the default effort level from medium to high for API-key, Bedrock/Vertex/Foundry, Team, and Enterprise users. This affects pipeline agents spawned without an explicit effort level — they now reason more deeply by default. Users can control this with `/effort`.
+
+#### keep-coding-instructions Output Style Frontmatter (v2.1.94+)
+
+v2.1.94 added `keep-coding-instructions` frontmatter field support for plugin output styles. When set to `true`, the coding instructions section of the output style is preserved across context compaction rather than being discarded. All three rnd-framework output styles (scientific, rigorous, pipeline) have this field set to `true`.
+
+#### Skill Invocation Name from Frontmatter (v2.1.94+)
+
+v2.1.94 changed plugin skills declared via `"skills": ["./"]` to use the skill's frontmatter `name` field for the invocation name instead of the directory basename. This gives a stable name across install methods (marketplace vs local). rnd-framework skills already use explicit directory names matching their frontmatter names, so this change has no practical impact on the plugin.
+
+#### UserPromptSubmit Session Title (v2.1.94+)
+
+v2.1.94 added `hookSpecificOutput.sessionTitle` support for `UserPromptSubmit` hooks. The hook can return `{hookSpecificOutput:{sessionTitle:"..."}}` to set the session title dynamically. The rnd-framework `session-title.sh` hook uses this to display the current pipeline phase and project name in the `/resume` picker.
+
+#### Plugin Skill Hooks Fix (v2.1.94+)
+
+v2.1.94 fixed plugin skill hooks defined in YAML frontmatter being silently ignored. Skills that declare hooks in their frontmatter now have those hooks correctly registered. rnd-framework skills do not currently use frontmatter-defined hooks, but this fix unblocks future use.
+
+#### CLAUDE_PLUGIN_ROOT Resolution Fix (v2.1.94+)
+
+v2.1.94 fixed `${CLAUDE_PLUGIN_ROOT}` resolving to the marketplace source directory instead of the installed cache for local-marketplace plugins on startup. This ensures hooks and lib scripts receive the correct plugin root path regardless of install method.
+
+#### Statusline refreshInterval and git_worktree (v2.1.97+)
+
+v2.1.97 added `refreshInterval` as a per-status-line setting — an integer specifying seconds between automatic statusline re-runs. The rnd-framework `settings.json` sets `refreshInterval: 5` so the statusline auto-refreshes every 5 seconds during pipeline execution.
+
+v2.1.97 also added `workspace.git_worktree` to the statusline JSON input, set when the current directory is inside a linked git worktree. The rnd-framework `statusline.sh` extracts this and appends `[wt: <name>]` to the status text when present.
+
+#### Subagent Working Directory Isolation Fix (v2.1.97+)
+
+v2.1.97 fixed subagents with worktree isolation or `cwd:` override leaking their working directory back to the parent session's Bash tool. This directly improves multi-agent mode — prior to this fix, an agent spawned with a different cwd could corrupt the orchestrator's working directory state.
+
+#### Compaction Transcript Dedup Fix (v2.1.97+)
+
+v2.1.97 fixed compaction writing duplicate multi-MB subagent transcript files on prompt-too-long retries. This reduces transcript bloat in multi-agent pipelines where context compaction triggers mid-run.
+
+#### Stop/SubagentStop Hook Reliability Fix (v2.1.97+)
+
+v2.1.97 fixed prompt-type Stop/SubagentStop hooks failing on long sessions, and hook evaluator API errors displaying "JSON validation failed" instead of the actual message. This improves hook reliability in long-running pipeline sessions.
+
+#### 429 Retry Exponential Backoff Fix (v2.1.97+)
+
+v2.1.97 fixed 429 retries burning all attempts in ~13 seconds when the server returns a small Retry-After. Exponential backoff now applies as a minimum. This prevents pipeline agents from exhausting retry budget on transient rate limits.
+
+#### Accept Edits Mode Env-Var Improvement (v2.1.97+)
+
+v2.1.97 improved Accept Edits mode to auto-approve filesystem commands prefixed with safe env vars or process wrappers (e.g., `LANG=C rm foo`, `timeout 5 mkdir out`). This is orthogonal to the rnd-framework `bash-gate.sh` `strip_env_prefix()` function, which strips env-var prefixes for tool discipline enforcement (determining which tool to use), not for permission decisions.
+
+#### Plugin Update Fix (v2.1.97+)
+
+v2.1.97 fixed `claude plugin update` reporting "already at the latest version" for git-based marketplace plugins when the remote had newer commits.
+
 #### file_path Handling
 
 Tool schemas require absolute paths and the model typically complies. However, hooks receive raw `tool_input` without mechanical path normalization — relative paths could theoretically reach hooks. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) guard against this by rejecting paths that don't start with `/`. If a relative path reaches a hook, the conservative behavior is to not auto-allow (falls through to the default permission prompt).
 
 #### Plugin Settings Defaults
 
-The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`. These are defaults — user settings take precedence.
+The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines` with `refreshInterval: 5` (v2.1.97+). These are defaults — user settings take precedence.
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 
@@ -185,7 +241,7 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.92) and emits a warning if below threshold.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.97) and emits a warning if below threshold.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 

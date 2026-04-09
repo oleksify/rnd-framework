@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# tests/session-title.test.sh — Tests for hooks/session-title.sh
+# Usage: bash tests/session-title.test.sh
+# Exits 0 if all tests pass, 1 if any fail.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOOK="${SCRIPT_DIR}/../hooks/session-title.sh"
+RND_DIR_SH="${SCRIPT_DIR}/../lib/rnd-dir.sh"
+
+# shellcheck source=./test-helpers.sh
+source "${SCRIPT_DIR}/test-helpers.sh"
+
+# Helper: run session-title with optional CLAUDE_CONFIG_DIR override
+run_title() {
+  local env_override="${1:-}"
+  HOOK_EXIT=0
+  local tmp_out tmp_err
+  tmp_out="$(mktemp)"
+  tmp_err="$(mktemp)"
+  if [[ -n "$env_override" ]]; then
+    printf '{}' | env "$env_override" "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+  else
+    printf '{}' | "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+  fi
+  HOOK_STDOUT="$(cat "$tmp_out")"
+  HOOK_STDERR="$(cat "$tmp_err")"
+  rm -f "$tmp_out" "$tmp_err"
+}
+
+# ---------------------------------------------------------------------------
+# Basic operation
+# ---------------------------------------------------------------------------
+printf '%s\n' '--- session-title: basic ---'
+
+run_title
+assert_exit_code "exits 0" 0
+
+if printf '%s' "$HOOK_STDOUT" | jq . > /dev/null 2>&1; then
+  assert_eq "outputs valid JSON" "0" "0"
+else
+  assert_eq "outputs valid JSON" "0" "1"
+fi
+
+title="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+assert_contains "title starts with RND:" "RND:" "$title"
+
+# ---------------------------------------------------------------------------
+# Idle phase: no active session
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-title: idle phase ---'
+
+tmp_idle="$(mktemp -d)"
+run_title "CLAUDE_CONFIG_DIR=${tmp_idle}"
+assert_exit_code "no session → exits 0" 0
+
+title_idle="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+assert_contains "no session → title has RND:" "RND:" "$title_idle"
+# Idle titles should NOT have " | " separator (no phase prefix)
+if [[ "$title_idle" != *" | "* ]]; then
+  assert_eq "no session → no phase separator" "0" "0"
+else
+  assert_eq "no session → no phase separator" "0" "1"
+fi
+rm -rf "$tmp_idle"
+
+# ---------------------------------------------------------------------------
+# Planning phase: plan.md present
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-title: planning phase ---'
+
+tmp_plan="$(mktemp -d)"
+base_plan="$(CLAUDE_CONFIG_DIR="$tmp_plan" "$RND_DIR_SH" --base 2>/dev/null || true)"
+if [[ -n "$base_plan" ]]; then
+  session_id="20260101-120000-abcd"
+  session_dir="${base_plan}/sessions/${session_id}"
+  mkdir -p "$session_dir"
+  printf '%s' "$session_id" > "${base_plan}/.current-session"
+  touch "${session_dir}/plan.md"
+
+  run_title "CLAUDE_CONFIG_DIR=${tmp_plan}"
+  assert_exit_code "planning → exits 0" 0
+  title_plan="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+  assert_contains "planning → title contains Planning" "Planning" "$title_plan"
+fi
+rm -rf "$tmp_plan"
+
+# ---------------------------------------------------------------------------
+# Resilience: always exits 0 under failure conditions
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-title: resilience ---'
+
+# Broken config dir (stale .active-base-dir)
+tmp_broken="$(mktemp -d)"
+mkdir -p "${tmp_broken}/.rnd"
+printf '/nonexistent/path' > "${tmp_broken}/.rnd/.active-base-dir"
+
+run_title "CLAUDE_CONFIG_DIR=${tmp_broken}"
+assert_exit_code "broken cache → exits 0" 0
+rm -rf "$tmp_broken"
+
+# Empty stdin
+HOOK_EXIT=0
+tmp_out="$(mktemp)"
+tmp_err="$(mktemp)"
+printf '' | "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+HOOK_STDOUT="$(cat "$tmp_out")"
+rm -f "$tmp_out" "$tmp_err"
+assert_exit_code "empty stdin → exits 0" 0
+
+report

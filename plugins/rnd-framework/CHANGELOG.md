@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.17 — 2026-04-09
+
+### Fix intermittent UserPromptSubmit hook error
+
+session-title.sh inherited `set -euo pipefail` from lib.sh, causing transient failures (file I/O races, git lock contention) to exit non-zero and display "UserPromptSubmit hook error". Added `set +e` after sourcing lib.sh — advisory hooks must never block prompt submission. Added session-title.test.sh (10 assertions).
+
 ## 3.0.16 — 2026-04-09
 
 ### Re-introduce write-gate.sh hook for Write/Edit auto-allow on .rnd/ paths

@@ -6,6 +6,11 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# Advisory hook — must never block prompt submission.
+# lib.sh sets -euo pipefail; disable errexit so transient failures
+# (stale cache files, slow git, missing jq) degrade to a no-op.
+set +e
+
 # Pipeline phase names (constants — mirrors statusline.sh)
 readonly PHASE_IDLE="Idle"
 readonly PHASE_PLANNING="Planning"

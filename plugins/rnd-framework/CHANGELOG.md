@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.16 — 2026-04-09
+
+### Re-introduce write-gate.sh hook for Write/Edit auto-allow on .rnd/ paths
+
+The allowWrite sandbox rule in settings.json does not reliably match in all contexts (particularly subagents). Re-introduce a PreToolUse hook for Write and Edit that auto-allows .rnd/ artifact paths via is_plugin_artifact_path(), mirroring the existing glob-grep-gate.sh pattern. The allowWrite rule is retained as belt-and-suspenders.
+
 ## 3.0.15 — 2026-04-09
 
 ### Add v2.1.97 upstream support

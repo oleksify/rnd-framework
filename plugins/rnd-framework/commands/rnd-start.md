@@ -102,6 +102,7 @@ Otherwise:
 
 ```
 Agent({
+  description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "bypassPermissions",
   prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>"
@@ -130,6 +131,7 @@ Once approved, create a `TaskCreate` entry for each task.
 
 ```
 Agent({
+  description: "Build task T<id>",
   subagent_type: "rnd-framework:rnd-builder",
   mode: "bypassPermissions",
   prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nLearnings: <language-specific learnings if any>"
@@ -159,6 +161,7 @@ For each task with external dependencies, **spawn a Reality Auditor agent:**
 
 ```
 Agent({
+  description: "Audit external contracts",
   subagent_type: "rnd-framework:rnd-reality-auditor",
   mode: "bypassPermissions",
   prompt: "Task: T<id>\nRND_DIR: <path>\nExternal dependencies: <from pre-registration>"
@@ -175,6 +178,7 @@ Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `
 
 ```
 Agent({
+  description: "Verify task T<id>",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "bypassPermissions",
   prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
@@ -219,6 +223,7 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 
 ```
 Agent({
+  description: "Integrate verified wave",
   subagent_type: "rnd-framework:rnd-integrator",
   mode: "bypassPermissions",
   prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list of T<id>s>"

@@ -32,6 +32,7 @@ Create a `TaskCreate` entry for the integration itself (e.g., "Integrate wave-1"
 
 ```
 Agent({
+  description: "Integrate verified wave",
   subagent_type: "rnd-framework:rnd-integrator",
   mode: "bypassPermissions",
   prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list>\nFinal wave: <true/false>"

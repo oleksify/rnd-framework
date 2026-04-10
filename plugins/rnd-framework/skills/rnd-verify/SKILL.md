@@ -43,6 +43,7 @@ If $ARGUMENTS is "all": find all built but unverified tasks.
 
 ```
 Agent({
+  description: "Verify task T<id>",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "bypassPermissions",
   prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"

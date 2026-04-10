@@ -36,6 +36,7 @@ If $ARGUMENTS is "next":
 
 ```
 Agent({
+  description: "Build task T<id>",
   subagent_type: "rnd-framework:rnd-builder",
   mode: "bypassPermissions",
   prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"

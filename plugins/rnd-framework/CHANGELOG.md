@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.1 — 2026-04-10
+
+### Add missing description parameter to all Agent spawn templates
+
 ## 3.2.0 — 2026-04-10
 
 ### Enforce multi-agent execution, remove pipeline-state.json

@@ -1,11 +1,12 @@
 # Changelog
 
-## 3.0.19 — 2026-04-10
+## 3.1.0 — 2026-04-10
 
 ### Migrate 9 commands to skills, fix UserPromptSubmit hook schema
 
 - **Commands → skills migration:** rnd-build, rnd-bump, rnd-calibrate, rnd-doctor, rnd-integrate, rnd-narrative, rnd-plan, rnd-validate, rnd-verify moved from `commands/` to `skills/` directories. Cross-reference validation and tests updated for new paths.
 - **session-title.sh fix:** Claude Code v2.1.100 requires `hookEventName` and `additionalContext` in UserPromptSubmit hook output. The hook was only emitting `sessionTitle`, causing "Hook JSON output validation failed" on every prompt. Added required fields; `sessionTitle` is now accepted alongside them.
+- **bump.sh:** Support `--patch`, `--minor`, `--major` flags (default: `--patch`). The rnd-bump skill now asks the user which version type to bump with a `(Recommended)` suggestion based on change analysis.
 - **Lean 4 proofs:** Added lake-manifest.json for proof gate dependencies.
 
 ## 3.0.18 — 2026-04-09

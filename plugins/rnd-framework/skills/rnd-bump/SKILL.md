@@ -1,37 +1,58 @@
 ---
 name: rnd-bump
-description: "Bump the plugin patch version and add a CHANGELOG entry. Stages plugin.json and CHANGELOG.md, then offers to commit and optionally tag."
+description: "Bump the plugin version (patch/minor/major) and add a CHANGELOG entry. Stages plugin.json and CHANGELOG.md, then offers to commit and optionally tag."
 user-invocable: false
 effort: low
 ---
 
 # R&D Framework: Bump Version
 
-Increment the patch version of the rnd-framework plugin and record a CHANGELOG entry.
+Increment the rnd-framework plugin version and record a CHANGELOG entry.
 
-## Step 1: Get the Changelog Headline
+## Step 1: Determine Version Bump Type
+
+Analyze the changes since the last version tag to determine the appropriate bump type. Check `git log` from the last `v*` tag to HEAD.
+
+Use `AskUserQuestion` to ask:
+
+> "What type of version bump?"
+
+Present three options. Mark exactly one as `(Recommended)` based on these rules:
+- **Major** — breaking changes: removed commands/skills, renamed public APIs, changed hook output schemas, incompatible config changes
+- **Minor** — new features or non-trivial improvements: new commands/skills, new hook events, significant behavior changes
+- **Patch** — bug fixes, documentation updates, internal refactors with no user-facing behavior change
+
+Format the options showing what the next version would be (read current version from plugin.json):
+- `"Patch (X.Y.Z+1)"` or `"Patch (X.Y.Z+1) (Recommended)"`
+- `"Minor (X.Y+1.0)"` or `"Minor (X.Y+1.0) (Recommended)"`
+- `"Major (X+1.0.0)"` or `"Major (X+1.0.0) (Recommended)"`
+
+If the user provides an explicit version type in `$ARGUMENTS` (e.g., "minor", "patch"), skip this step and use that type directly.
+
+## Step 2: Get the Changelog Headline
 
 Parse `$ARGUMENTS` to extract the headline and optional description:
 
-- **If `$ARGUMENTS` is non-empty**, split on ` --- ` (space-dash-dash-dash-space) or a bare newline:
+- **If `$ARGUMENTS` contains a headline**, split on ` --- ` (space-dash-dash-dash-space) or a bare newline:
   - Everything before the separator is the **headline**
   - Everything after (if present) is the **description**
-- **If `$ARGUMENTS` is empty**, use `AskUserQuestion` to ask:
+- **If no headline in `$ARGUMENTS`**, use `AskUserQuestion` to ask:
   > "What should the CHANGELOG headline be for this release?"
 
   Ask for a short imperative title (e.g., "Add bump command"). If the user wants to include a description body, they can provide it as a second line or after ` --- `.
 
-## Step 2: Run bump.sh
+## Step 3: Run bump.sh
 
 Call `bump.sh` via the Bash tool. The script auto-detects the source repo from the git working tree, so it works correctly even when invoked from the plugin cache path:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/lib/bump.sh" "<headline>" "<description>"
+"${CLAUDE_PLUGIN_ROOT}/lib/bump.sh" --<type> "<headline>" "<description>"
 ```
 
-- Pass `<headline>` as the first argument (always required).
-- Pass `<description>` as the second argument only if non-empty; omit it otherwise.
-- Capture and display the output (e.g., `Bumped version 0.7.20 → 0.7.21`).
+- Pass `--patch`, `--minor`, or `--major` as the first argument based on the chosen bump type.
+- Pass `<headline>` as the next argument (always required).
+- Pass `<description>` as the last argument only if non-empty; omit it otherwise.
+- Capture and display the output (e.g., `Bumped version 3.0.18 → 3.1.0`).
 
 If the script exits non-zero, show the error and stop.
 

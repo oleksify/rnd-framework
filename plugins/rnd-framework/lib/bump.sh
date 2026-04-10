@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# bump.sh — Increment patch version, prepend CHANGELOG entry, stage files.
+# bump.sh — Increment version, prepend CHANGELOG entry, stage files.
 #
 # Usage:
-#   bump.sh <headline> [description]
+#   bump.sh [--patch|--minor|--major] <headline> [description]
+#
+# Flags:
+#   --patch   Increment patch (X.Y.Z → X.Y.Z+1) — default
+#   --minor   Increment minor (X.Y.Z → X.Y+1.0)
+#   --major   Increment major (X.Y.Z → X+1.0.0)
 #
 # Arguments:
 #   headline     Required. Short title for the CHANGELOG entry.
@@ -10,7 +15,7 @@
 #
 # Effect:
 #   1. Reads current version from plugin.json via jq
-#   2. Increments patch number (e.g., 0.7.24 → 0.7.25)
+#   2. Increments version based on flag (default: patch)
 #   3. Writes new version back to plugin.json atomically
 #   4. Prepends new CHANGELOG entry to CHANGELOG.md
 #   5. Stages plugin.json and CHANGELOG.md via git add
@@ -43,9 +48,17 @@ if ! command -v jq &>/dev/null; then
   exit 1
 fi
 
+# --- Parse version type flag ---
+BUMP_TYPE="patch"
+case "${1:-}" in
+  --patch) BUMP_TYPE="patch"; shift ;;
+  --minor) BUMP_TYPE="minor"; shift ;;
+  --major) BUMP_TYPE="major"; shift ;;
+esac
+
 # --- Validate arguments ---
 if [[ $# -lt 1 || -z "${1:-}" ]]; then
-  echo "usage: bump.sh <headline> [description]" >&2
+  echo "usage: bump.sh [--patch|--minor|--major] <headline> [description]" >&2
   exit 1
 fi
 
@@ -65,8 +78,11 @@ if ! [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-NEW_PATCH=$(( PATCH + 1 ))
-NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+case "$BUMP_TYPE" in
+  major) NEW_VERSION="$(( MAJOR + 1 )).0.0" ;;
+  minor) NEW_VERSION="${MAJOR}.$(( MINOR + 1 )).0" ;;
+  patch) NEW_VERSION="${MAJOR}.${MINOR}.$(( PATCH + 1 ))" ;;
+esac
 
 # --- Write new version atomically ---
 TMP_JSON="$(mktemp)"

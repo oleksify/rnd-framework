@@ -143,7 +143,7 @@ fi
 printf '\n%s\n' '--- advisory_json ---'
 
 adv_out="$(advisory_json "Test advisory message")"
-assert_contains "advisory_json: contains additionalContext key" '"additionalContext"' "$adv_out"
+assert_contains "advisory_json: contains systemMessage key" '"systemMessage"' "$adv_out"
 assert_contains "advisory_json: contains the message" "Test advisory message" "$adv_out"
 
 # Verify it's valid JSON

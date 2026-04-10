@@ -84,7 +84,7 @@ if [[ -n "$base_dir" ]]; then
   large_json="$(jq -cn --arg s "$large_stdout" '{"tool_name":"Bash","stdout":$s}')"
   run_hook "$large_json" "CLAUDE_CONFIG_DIR=${tmp_config}"
   assert_exit "stdout over threshold with session → exits 0" 0
-  assert_stdout_contains "stdout over threshold → advisory emitted" '"additionalContext"'
+  assert_stdout_contains "stdout over threshold → advisory emitted" '"systemMessage"'
   assert_stdout_contains "stdout over threshold → advisory mentions line count" "55"
 
   # Advisory is valid JSON

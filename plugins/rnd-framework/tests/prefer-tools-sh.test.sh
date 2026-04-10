@@ -249,15 +249,15 @@ assert_stdout_empty "git add .rnd.backup → empty stdout (no opinion)"
 
 run_hook "$(payload 'git push origin main')"
 assert_exit   "git push origin main → exit 0 (advisory)" 0
-assert_stdout_contains "git push origin main → advisory" "additionalContext"
+assert_stdout_contains "git push origin main → advisory" "systemMessage"
 
 run_hook "$(payload 'git push origin master')"
 assert_exit   "git push origin master → exit 0 (advisory)" 0
-assert_stdout_contains "git push origin master → advisory" "additionalContext"
+assert_stdout_contains "git push origin master → advisory" "systemMessage"
 
 run_hook "$(payload 'git push origin production')"
 assert_exit   "git push origin production → exit 0 (advisory)" 0
-assert_stdout_contains "git push origin production → advisory" "additionalContext"
+assert_stdout_contains "git push origin production → advisory" "systemMessage"
 
 # Non-protected branches should pass through
 run_hook "$(payload 'git push origin feature-branch')"
@@ -458,7 +458,7 @@ assert_stderr_contains "cd && git add .rnd/ → BLOCKED" "BLOCKED"
 # git push main after && should emit advisory via full-command git guard
 run_hook "$(payload 'npm install && git push origin main')"
 assert_exit   "npm && git push main → exit 0 (advisory)" 0
-assert_stdout_contains "npm && git push main → advisory" "additionalContext"
+assert_stdout_contains "npm && git push main → advisory" "systemMessage"
 
 # No-opinion cases
 run_hook "$(payload 'ls -la')"
@@ -650,7 +650,7 @@ assert_stderr_contains "ENV_VAR=value && grep → Grep tool" "Grep tool"
 # Env-var prefix with git push advisory
 run_hook "$(payload 'FOO=bar git push origin main')"
 assert_exit   "FOO=bar git push main → exit 0 (advisory)" 0
-assert_stdout_contains "FOO=bar git push main → advisory" "additionalContext"
+assert_stdout_contains "FOO=bar git push main → advisory" "systemMessage"
 
 # ---------------------------------------------------------------------------
 # /tmp redirect: no-space before > (cmd>/tmp/out)

@@ -49,12 +49,12 @@ assert_stdout_contains() {
 
 run_hook '{"error_type":"rate_limit","message":"Too many requests"}'
 assert_exit "stop-failure → always exits 0" 0
-assert_stdout_contains "stop-failure → emits advisory JSON" '"additionalContext"'
+assert_stdout_contains "stop-failure → emits advisory JSON" '"systemMessage"'
 assert_stdout_contains "stop-failure → advisory mentions rate limit or retry" "Wait a moment"
 
 run_hook '{}'
 assert_exit "empty JSON → exits 0" 0
-assert_stdout_contains "empty JSON → still emits advisory" '"additionalContext"'
+assert_stdout_contains "empty JSON → still emits advisory" '"systemMessage"'
 
 run_hook 'not json'
 assert_exit "malformed stdin → exits 0" 0

@@ -26,11 +26,11 @@ else
   assert_eq "instructions-loaded outputs valid JSON" "0" "1"
 fi
 
-# Output must be an advisory (contains additionalContext)
-assert_contains "instructions-loaded output contains additionalContext" '"additionalContext"' "$HOOK_STDOUT"
+# Output must be an advisory (contains systemMessage)
+assert_contains "instructions-loaded output contains systemMessage" '"systemMessage"' "$HOOK_STDOUT"
 
 # Advisory text should mention CLAUDE.md
-ctx="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+ctx="$(printf '%s' "$HOOK_STDOUT" | jq -r '.systemMessage // ""' 2>/dev/null || true)"
 assert_contains "instructions-loaded advisory mentions CLAUDE.md" "CLAUDE.md" "$ctx"
 
 # Advisory text should not be empty

@@ -75,10 +75,12 @@ defer_json() {
   printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"defer"}}'
 }
 
-# Outputs an advisory JSON to stdout. Properly JSON-escapes the message via jq.
+# Outputs an advisory JSON to stdout via top-level systemMessage.
+# Uses systemMessage (not hookSpecificOutput.additionalContext) because
+# additionalContext requires hookEventName and is only valid for
+# PostToolUse/UserPromptSubmit — not PreToolUse or other event types.
 advisory_json() {
-  local msg="$1"
-  printf '{"hookSpecificOutput":{"additionalContext":%s}}\n' "$(printf '%s' "$msg" | jq -Rs .)"
+  system_message_json "$1"
 }
 
 # Outputs a system message JSON to stdout. Creates a system-level message in the transcript.

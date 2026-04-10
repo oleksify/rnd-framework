@@ -268,8 +268,7 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
-    ├── iteration-log.md                   # Build-verify cycle tracking
-    └── pipeline-state.json                # Persistent per-task status (survives compaction)
+    └── iteration-log.md                   # Build-verify cycle tracking
 ```
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.

@@ -13,18 +13,20 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 If `$RND_DIR` does not exist or contains no artifacts (no `plan.md`, no `builds/`, no `verifications/`), report: "No active pipeline. Start one with `/rnd-framework:rnd-start <task>`."
 
-### Primary source: pipeline-state.json
+### Status determination
 
-If `$RND_DIR/pipeline-state.json` exists, read it and derive task statuses directly from the `tasks` object. Each task's `status` field maps to the display icons below. This is the authoritative source — it is updated at every phase gate and survives context compaction.
+Derive task status by scanning artifact directories. Read `$RND_DIR/plan.md` for the task list, then check:
 
-Supplement with `$RND_DIR` artifact details for richer context:
-- Check `$RND_DIR/iteration-log.md` for iteration history and cycle counts
-- Check `$RND_DIR/verifications/` for verdict details
-- Check `$RND_DIR/integration/` for SHIP/NO-SHIP verdicts
+1. `$RND_DIR/integration/wave-<N>-report.md` — if exists and contains SHIP → **integrated**
+2. `$RND_DIR/verifications/T<id>-verification.md` — if exists, read verdict:
+   - PASS → **verified**
+   - NEEDS ITERATION → **iterating**
+3. `$RND_DIR/builds/T<id>-manifest.md` — if exists and non-empty → **built**
+4. Otherwise → **planned**
 
-### Fallback: TaskList + artifact scanning
-
-If `$RND_DIR/pipeline-state.json` does not exist (older pipeline session or pipeline started before this feature), fall back to the previous approach: use `TaskList` as the primary source and supplement with artifact directory scanning.
+Supplement with:
+- `$RND_DIR/iteration-log.md` for iteration history and cycle counts
+- `TaskList` for blocked/in-progress metadata
 
 ### Status icon mapping
 

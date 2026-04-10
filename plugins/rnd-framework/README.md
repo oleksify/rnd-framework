@@ -302,8 +302,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   └── T1-theorems/            # Lean theorem files
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
-        ├── iteration-log.md            # Build-verify cycle tracking
-        └── pipeline-state.json         # Persistent per-task status (survives compaction)
+        └── iteration-log.md            # Build-verify cycle tracking
 ```
 
 Since artifacts live outside the project directory, no `.gitignore` changes are needed.

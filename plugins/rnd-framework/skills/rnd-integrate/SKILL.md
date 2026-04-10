@@ -28,15 +28,17 @@ Create a `TaskCreate` entry for the integration itself (e.g., "Integrate wave-1"
 
 ## Integration Process
 
-Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform integration yourself:
+**Spawn an Integrator agent:**
 
-1. Confirm all tasks in the wave are verified (check `$RND_DIR/verifications/`).
-2. Ensure all code integrates cleanly — no merge conflicts, interfaces match, imports correct.
-3. Run integration tests — do modules communicate correctly? Are API contracts honored?
-4. If $ARGUMENTS is "final", run full system validation against the original task requirements.
-5. Run the existing project test suite to check for regressions.
-6. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
-7. Issue SHIP or NO-SHIP verdict.
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-integrator",
+  mode: "bypassPermissions",
+  prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list>\nFinal wave: <true/false>"
+})
+```
+
+Do NOT integrate yourself. The Integrator merges verified outputs, runs integration tests, checks for regressions, and produces `$RND_DIR/integration/wave-<N>-report.md` with a SHIP or NO-SHIP verdict.
 
 Summarize integration results. Then use `AskUserQuestion`:
 

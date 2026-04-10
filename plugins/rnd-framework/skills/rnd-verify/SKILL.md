@@ -33,43 +33,23 @@ fi
 
 ## Execution
 
-Invoke `rnd-framework:rnd-verification` to load verification discipline.
-
 Use `TaskUpdate` to mark target tasks as `in_progress` before verifying.
 
 If $ARGUMENTS is a task ID: verify that one task.
 If $ARGUMENTS is a wave: verify all tasks in the wave.
 If $ARGUMENTS is "all": find all built but unverified tasks.
 
-For each task:
+**For each task, spawn a Verifier agent:**
 
-### Step 1 — Read Criticality
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-verifier",
+  mode: "bypassPermissions",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
+})
+```
 
-Read the task's `Criticality` field from its pre-registration in `$RND_DIR/plan.md`. If absent, treat as NORMAL.
-
-### Step 2 — Verify
-
-1. **Read the pre-registration document.** Understand intent, approach, and success criteria.
-
-2. **Write independent experiment tests** — before reviewing your build code, write one experiment test per criterion. Derive from spec text only. Save to `$RND_DIR/verifications/T<id>-experiments/`.
-
-3. **Run experiments against the built code.** Record raw output verbatim.
-
-4. **Run the built tests and compare.** Check test adequacy per criterion.
-
-5. **Code inspection and failure mode analysis.** Scan for boundary cases, error handling, race conditions, external contract conformance. Cross-reference build manifest evidence.
-
-6. **Cross-criterion sweep.** Before writing any verdicts: look for systemic patterns, shared root causes, fragile passes.
-
-7. **Produce verification report.** Save to `$RND_DIR/verifications/T<id>-verification.md`.
-
-**Iteration budget by criticality:**
-
-| Criticality | Max iterations |
-|-------------|---------------|
-| LOW         | 2             |
-| NORMAL      | 3             |
-| HIGH        | 5             |
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a verification report with a verdict.
 
 ## After Verification
 

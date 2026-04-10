@@ -32,16 +32,17 @@ If $ARGUMENTS is "next":
 
 ## Build Process
 
-Invoke `rnd-framework:rnd-building` to load build discipline. For each task:
+**For each task, spawn a Builder agent:**
 
-1. Use `TaskUpdate` to mark the task `in_progress`.
-2. Read the pre-registration from `$RND_DIR/plan.md`.
-3. Read exploration cache from `$RND_DIR/exploration/` if it exists.
-4. Verify external dependencies against actual systems.
-5. Implement using TDD (Red-Green-Refactor per criterion).
-6. Save build manifest to `$RND_DIR/builds/T<id>-manifest.md`.
-7. Save honest self-assessment to `$RND_DIR/builds/T<id>-self-assessment.md`.
-8. Assess status: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-builder",
+  mode: "bypassPermissions",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
+})
+```
+
+Do NOT build tasks yourself. The Builder agent handles implementation, TDD, manifest, and self-assessment. It returns a status code.
 
 Route each result:
 
@@ -49,10 +50,10 @@ Route each result:
 |--------|--------|
 | `DONE` | Proceed to Gate 2 normally. |
 | `DONE_WITH_CONCERNS` | Proceed to Gate 2, note concerns for verification. |
-| `NEEDS_CONTEXT` | Pause. Use `AskUserQuestion` to collect missing context. Resume with user's answer. |
+| `NEEDS_CONTEXT` | Pause. Use `AskUserQuestion` to collect missing context. Re-spawn Builder with answer. |
 | `BLOCKED` | Pause. `AskUserQuestion`: "Provide missing dependency manually", "Re-plan this task", "Skip this task". |
 
-Gate 2: Confirm all tasks have code, tests, artifacts, and self-assessment. Use `TaskUpdate` to mark each successfully built task as `completed`.
+Gate 2: Verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty. Use `TaskUpdate` to mark each successfully built task as `completed`.
 
 Summarize build results. Then use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — run `/rnd-framework:rnd-verify` for this wave

@@ -98,14 +98,19 @@ Otherwise:
 
 ## Phase 1: Plan
 
-Invoke `rnd-framework:rnd-decomposition` to guide decomposition. Using that skill's protocol, decompose the task yourself:
+**Spawn a Planner agent** to decompose the task:
 
-1. Write structured exploration findings to `$RND_DIR/exploration/` (one markdown file per area explored).
-2. Decompose the task into a hierarchical task tree with pre-registration documents.
-3. Build the dependency matrix and execution schedule.
-4. Save to `$RND_DIR/plan.md`.
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-planner",
+  mode: "bypassPermissions",
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>"
+})
+```
 
-**Gate 1:** Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. Revise until every criterion specifies an observable outcome.
+The Planner writes `$RND_DIR/plan.md` with pre-registrations, dependency matrix, and execution schedule.
+
+**Gate 1:** Read the returned `plan.md`. Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. If any criterion is vague, send the Planner back with specific feedback.
 
 **After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion` with options:
 - "Approve plan and auto-continue (Recommended)" — run the full pipeline automatically, pausing only for escalations
@@ -119,68 +124,70 @@ Once approved, create a `TaskCreate` entry for each task.
 
 ## Phase 2: Build (per wave)
 
-Invoke `rnd-framework:rnd-building` to load build discipline.
+**Before each wave:** Scan `$RND_DIR/builds/` and `$RND_DIR/verifications/` to confirm which tasks are complete. Skip tasks that already have build manifests or verification reports.
 
-**Before each wave:** Scan `$RND_DIR/builds/` and `$RND_DIR/verifications/` to confirm which tasks are complete. Skip tasks that already have build manifests or verification reports. This prevents re-building after context compaction.
+**For each task in the wave, spawn a Builder agent:**
 
-For each wave in the execution schedule, build each task sequentially:
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-builder",
+  mode: "bypassPermissions",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nLearnings: <language-specific learnings if any>"
+})
+```
 
-1. **Mark tasks as started:** `TaskUpdate` each task to `in_progress`.
+Do NOT build tasks yourself. The Builder agent handles implementation, TDD, manifest creation, and self-assessment. It returns a status code: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
 
-2. **Inject learnings.** For each task, detect languages from file extensions in "Expected outputs". Read `$CLAUDE_CONFIG_DIR/learnings/{language}.md` and use as context. Skip silently if no file exists.
+**Route each result:**
 
-3. **Build each task sequentially.** For each task in the wave:
-   - Read the pre-registration and exploration cache
-   - Verify external dependencies against actual systems
-   - Implement using TDD (Red-Green-Refactor per criterion)
-   - Save build manifest to `$RND_DIR/builds/T<id>-manifest.md`
-   - Save honest self-assessment to `$RND_DIR/builds/T<id>-self-assessment.md`
-   - Assess your own status: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED
+| Status code | Action |
+|-------------|--------|
+| `DONE` | Proceed to Gate 2. |
+| `DONE_WITH_CONCERNS` | Proceed to Gate 2. Note concerns for verification. |
+| `NEEDS_CONTEXT` | `AskUserQuestion` to get missing info. Re-spawn Builder with the answer. |
+| `BLOCKED` | `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
 
-4. **Route each result by status code:**
+**Gate 2:** Verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty (use Bash `test -s`). If missing, report via `AskUserQuestion`. `TaskUpdate` each passing task to `completed`.
 
-   | Status code | Action |
-   |-------------|--------|
-   | `DONE` | Proceed to Gate 2. |
-   | `DONE_WITH_CONCERNS` | Proceed to Gate 2. Note concerns for verification phase. |
-   | `NEEDS_CONTEXT` | Pause. `AskUserQuestion` to get missing info. Resume with user's answer. |
-   | `BLOCKED` | Pause. `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
-
-5. **Gate 2:** Confirm code, tests, artifacts, and self-assessment. `TaskUpdate` each task to `completed`.
-
-6. **Artifact validation:** For each task in the wave, verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty (use Bash `test -s`). If missing or empty, report via `AskUserQuestion` and do not proceed with that task.
-
-**After Gate 2:** Summarize results. If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
+**After Gate 2:** If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
 - "Proceed to verification (Recommended)"
 - "Review build artifacts first"
 
 ## Phase 2.5: Reality Audit (blocking)
 
-For each task with external dependencies, invoke `rnd-framework:rnd-reality-auditing` to adversarially test external service contracts. Save reports to `$RND_DIR/reality/`. Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
+For each task with external dependencies, **spawn a Reality Auditor agent:**
+
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-reality-auditor",
+  mode: "bypassPermissions",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nExternal dependencies: <from pre-registration>"
+})
+```
+
+Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
 
 ## Phase 3: Verify (per task)
 
-**CRITICAL: Information Barrier.** Do NOT read `$RND_DIR/builds/T<id>-self-assessment.md` during verification. The `read-gate.sh` hook enforces this mechanically. You wrote the self-assessment during build, but during verification you must assess work purely against the pre-registered spec.
+**CRITICAL: Information Barrier.** The Verifier runs in a separate context window and cannot see the Builder's reasoning. The `read-gate.sh` hook blocks reads of self-assessment files. Do NOT pass self-assessment content to the Verifier.
 
-Invoke `rnd-framework:rnd-verification` to load verification discipline. For each completed task:
+**For each built task, spawn a Verifier agent:**
 
-1. **Pre-flight:** Confirm `$RND_DIR/builds/T<id>-self-assessment.md` exists but do NOT read it. Assemble verification context from pre-registration and builder artifacts only. Read **Criticality** from the pre-registration (default: NORMAL if absent).
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-verifier",
+  mode: "bypassPermissions",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
+})
+```
 
-2. **Write independent experiment tests** — before reviewing your own build code, write one experiment test per criterion. Derive from spec text only. Save to `$RND_DIR/verifications/T<id>-experiments/`.
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces a verification report. It returns a verdict: PASS, PASS (quality: NEEDS ITERATION), NEEDS ITERATION, or FAIL.
 
-3. **Run experiments against the built code.** Record raw output verbatim.
-
-4. **Run the built tests and compare.** Check test adequacy per criterion.
-
-5. **Code inspection and failure mode analysis.** Scan for boundary cases, error handling, race conditions, external contract conformance. Cross-reference build manifest evidence.
-
-6. **Produce verification report** at `$RND_DIR/verifications/T<id>-verification.md`.
-
-7. **Gate 3:** Verify `$RND_DIR/verifications/T<id>-verification.md` exists and is non-empty. If missing, report via `AskUserQuestion`. Then check the verdict:
-   - **PASS** → `TaskUpdate` to `completed`.
-   - **PASS (quality: NEEDS ITERATION)** → Same as PASS. Save quality feedback. Does NOT block integration.
-   - **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
-   - **FAIL** → Do NOT iterate — route to re-planning.
+**Gate 3:** Verify `$RND_DIR/verifications/T<id>-verification.md` exists and is non-empty. Read the verdict:
+- **PASS** → `TaskUpdate` to `completed`.
+- **PASS (quality: NEEDS ITERATION)** → Same as PASS. Save quality feedback. Does NOT block integration.
+- **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
+- **FAIL** → Do NOT iterate — route to re-planning.
 
 **After Gate 3:** Summarize verdicts. Then route:
 
@@ -191,11 +198,10 @@ Invoke `rnd-framework:rnd-verification` to load verification discipline. For eac
 ## Phase 4: Iterate (if needed)
 
 1. Extract feedback from the verification report (WHAT is wrong, not HOW to fix).
-2. Re-invoke `rnd-framework:rnd-building`. Fix all failed criteria in a single pass.
-3. Save updated manifest and self-assessment.
-4. Re-invoke `rnd-framework:rnd-verification` to re-verify (same information barrier rules).
-5. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`.
-6. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`:
+2. **Re-spawn a Builder agent** with the feedback. Do NOT fix the code yourself.
+3. After the Builder returns, **re-spawn a Verifier agent** to re-verify (same information barrier).
+4. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`.
+5. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`:
    - "Re-plan this task"
    - "Skip and continue (Recommended)"
    - "Stop pipeline"
@@ -209,14 +215,19 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 
 ## Phase 5: Integrate
 
-Invoke `rnd-framework:rnd-integration` to load integration discipline. Perform integration yourself:
+**Spawn an Integrator agent:**
 
-1. Confirm all tasks in the wave are verified (check `$RND_DIR/verifications/`).
-2. Ensure all code integrates cleanly — no conflicts, interfaces match, imports correct.
-3. Run integration tests and the project's existing test suite.
-4. For the final wave, run full system validation.
-5. Save integration report to `$RND_DIR/integration/wave-<N>-report.md`.
-6. **Gate 4:** Verify `$RND_DIR/integration/wave-<N>-report.md` exists and is non-empty.
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-integrator",
+  mode: "bypassPermissions",
+  prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list of T<id>s>"
+})
+```
+
+Do NOT integrate yourself. The Integrator merges verified outputs, runs integration tests, and produces `$RND_DIR/integration/wave-<N>-report.md`.
+
+**Gate 4:** Verify `$RND_DIR/integration/wave-<N>-report.md` exists and is non-empty.
 
 **After Gate 4:** Summarize results.
 

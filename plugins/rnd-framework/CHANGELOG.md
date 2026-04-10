@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.1 — 2026-04-10
+
+### Remove pipeline-state.json, derive task status from artifacts
+
+Removed `pipeline-state.json` and all 8 orchestrator read/write points. Task status is now derived from artifact files (`builds/`, `verifications/`, `integration/`). Eliminates dual-state synchronization risk. The `rnd-status` command scans artifact directories directly.
+
 ## 3.1.0 — 2026-04-10
 
 ### Migrate 9 commands to skills, fix UserPromptSubmit hook schema

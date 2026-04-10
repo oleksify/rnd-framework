@@ -1,10 +1,11 @@
 # Changelog
 
-## 3.1.1 — 2026-04-10
+## 3.2.0 — 2026-04-10
 
-### Remove pipeline-state.json, derive task status from artifacts
+### Enforce multi-agent execution, remove pipeline-state.json
 
-Removed `pipeline-state.json` and all 8 orchestrator read/write points. Task status is now derived from artifact files (`builds/`, `verifications/`, `integration/`). Eliminates dual-state synchronization risk. The `rnd-status` command scans artifact directories directly.
+- **Multi-agent enforcement:** Replaced inline build/verify/integrate instructions in rnd-start.md with explicit `Agent()` spawn blocks using `subagent_type`. Each phase now has a concrete code example and a "Do NOT [build/verify/integrate] yourself" prohibition. The orchestrator dispatches to agents — it no longer contains implementation steps. Same pattern applied to rnd-build, rnd-verify, and rnd-integrate skills.
+- **Remove pipeline-state.json:** Task status derived from artifact files (`builds/`, `verifications/`, `integration/`). Eliminates 8 orchestrator read/write points and dual-state synchronization risk.
 
 ## 3.1.0 — 2026-04-10
 

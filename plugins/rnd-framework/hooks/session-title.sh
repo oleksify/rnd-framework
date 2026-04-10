@@ -44,5 +44,5 @@ else
   title="RND: ${phase} | ${project_name}"
 fi
 
-jq -cn --arg t "$title" '{hookSpecificOutput:{sessionTitle:$t}}'
+jq -cn --arg t "$title" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",sessionTitle:$t,additionalContext:""}}'
 exit 0

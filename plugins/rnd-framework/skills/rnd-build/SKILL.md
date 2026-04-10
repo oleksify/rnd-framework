@@ -1,6 +1,7 @@
 ---
+name: rnd-build
 description: "Run the Build phase for a specific task or wave from the existing RND plan."
-argument-hint: "<task ID like T3 or wave number like wave-2>"
+user-invocable: false
 effort: medium
 ---
 

@@ -1,6 +1,7 @@
 ---
+name: rnd-integrate
 description: "Run integration and system validation for a verified wave. Merges outputs, runs integration tests, checks for regressions."
-argument-hint: "<wave number like wave-2, or 'final' for system validation>"
+user-invocable: false
 effort: medium
 ---
 

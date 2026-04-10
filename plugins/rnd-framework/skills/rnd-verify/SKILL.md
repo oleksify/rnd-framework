@@ -1,6 +1,7 @@
 ---
+name: rnd-verify
 description: "Run criticality-conditional verification on a built task. Verifies against pre-registered criteria with information barrier."
-argument-hint: "<task ID like T3, or 'wave-2' to verify all tasks in a wave>"
+user-invocable: false
 effort: high
 ---
 

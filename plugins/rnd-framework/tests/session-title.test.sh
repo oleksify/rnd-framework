@@ -45,6 +45,12 @@ fi
 title="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
 assert_contains "title starts with RND:" "RND:" "$title"
 
+hook_event="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.hookEventName // ""' 2>/dev/null || true)"
+assert_eq "hookEventName is UserPromptSubmit" "UserPromptSubmit" "$hook_event"
+
+has_context="$(printf '%s' "$HOOK_STDOUT" | jq 'has("hookSpecificOutput") and (.hookSpecificOutput | has("additionalContext"))' 2>/dev/null || true)"
+assert_eq "additionalContext field present" "true" "$has_context"
+
 # ---------------------------------------------------------------------------
 # Idle phase: no active session
 # ---------------------------------------------------------------------------

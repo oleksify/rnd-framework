@@ -1,5 +1,7 @@
 ---
+name: rnd-doctor
 description: "Check runtime environment readiness: CLI tools, hook scripts, artifact directory, plugin registration, version sync, and Julia MCP tools."
+user-invocable: false
 effort: low
 ---
 

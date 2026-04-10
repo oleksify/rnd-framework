@@ -1,6 +1,7 @@
 ---
+name: rnd-calibrate
 description: "Record a manual ground-truth verdict correction for a completed task. Reads the original verdict from the verification report and appends a correction record to calibration.jsonl."
-argument-hint: "<session-id> <task-id> <true-verdict> [reason]"
+user-invocable: false
 effort: low
 ---
 

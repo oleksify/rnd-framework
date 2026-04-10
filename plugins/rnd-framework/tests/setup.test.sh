@@ -158,17 +158,17 @@ fi
 # ---------------------------------------------------------------------------
 # Test: validate.md command references an existing script
 # ---------------------------------------------------------------------------
-VALIDATE_CMD="${SCRIPT_DIR}/../commands/rnd-validate.md"
-if [[ -f "$VALIDATE_CMD" ]]; then
-  # Extract the script path pattern from the command file (e.g., validate.sh or validate.ts)
-  script_ref="$(grep -oE 'lib/validate\.[a-z]+' "$VALIDATE_CMD" | head -1)"
+VALIDATE_SKILL="${SCRIPT_DIR}/../skills/rnd-validate/SKILL.md"
+if [[ -f "$VALIDATE_SKILL" ]]; then
+  # Extract the script path pattern from the skill file (e.g., validate.sh or validate.ts)
+  script_ref="$(grep -oE 'lib/validate\.[a-z]+' "$VALIDATE_SKILL" | head -1)"
   if [[ -n "$script_ref" ]] && [[ -f "${SCRIPT_DIR}/../${script_ref}" ]]; then
-    run_case "rnd-validate.md references existing script (${script_ref})" pass
+    run_case "rnd-validate skill references existing script (${script_ref})" pass
   else
-    run_case "rnd-validate.md references existing script (got: ${script_ref:-none})" fail
+    run_case "rnd-validate skill references existing script (got: ${script_ref:-none})" fail
   fi
 else
-  run_case "rnd-validate.md command file exists" fail
+  run_case "rnd-validate skill file exists" fail
 fi
 
 # ---------------------------------------------------------------------------

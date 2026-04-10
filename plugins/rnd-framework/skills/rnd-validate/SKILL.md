@@ -1,5 +1,7 @@
 ---
+name: rnd-validate
 description: "Validate plugin structure: frontmatter, JSON files, hook references, and cross-references."
+user-invocable: false
 effort: low
 ---
 

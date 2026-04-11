@@ -151,7 +151,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
 | `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Koka |
-| `fp-practices` | Functional programming principles — pure functions, data transformations, composition, command-query separation, immutability |
+| `fp-practices` | Language-specific FP patterns loaded via detection table (9 languages) — pure functions, data transformations, composition, CQS, immutability |
 | `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
 | `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
 | `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |

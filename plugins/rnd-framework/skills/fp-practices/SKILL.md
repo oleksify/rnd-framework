@@ -12,11 +12,28 @@ Concrete rules for writing code in a functional style. These complement KISS pra
 
 **Core principle:** Separate what you compute from what you do. Pure logic in, effects out.
 
-## When to Use
+## How to Use
 
-- Load during Phase 0 alongside KISS practices
-- Loaded during the build phase for all builds
-- Apply to any language — these are structural principles, not syntax rules
+**During Phase 0 (Discovery):**
+1. Detect which languages/frameworks are present in the project (by file extensions, config files, or dependencies)
+2. Read only the relevant language files (e.g., `${CLAUDE_SKILL_DIR}/elixir.md`, `${CLAUDE_SKILL_DIR}/javascript.md`)
+3. Include the language-specific FP rules in the discovery context passed to the Planner
+
+**Language detection heuristics:**
+
+| Files present | Load |
+|---|---|
+| `*.sh`, `*.bash`, `Makefile` | `${CLAUDE_SKILL_DIR}/bash.md` |
+| `*.ex`, `*.exs`, `mix.exs` | `${CLAUDE_SKILL_DIR}/elixir.md` |
+| `*.js`, `*.ts`, `*.jsx`, `*.tsx`, `*.css`, `*.html` | `${CLAUDE_SKILL_DIR}/javascript.md` |
+| `*.py`, `pyproject.toml`, `requirements.txt` | `${CLAUDE_SKILL_DIR}/python.md` |
+| `*.lean`, `lakefile.lean` | `${CLAUDE_SKILL_DIR}/lean.md` |
+| `*.svelte`, `svelte.config.*` | `${CLAUDE_SKILL_DIR}/svelte.md` |
+| `*.kk`, `koka.json` | `${CLAUDE_SKILL_DIR}/koka.md` |
+| `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `${CLAUDE_SKILL_DIR}/postgresql.md` |
+| DuckDB usage, `*.duckdb` files, or analytical/data tasks | `${CLAUDE_SKILL_DIR}/duckdb.md` |
+
+**Overriding:** Projects can ship their own `fp-practices` skill in `.claude/skills/fp-practices/SKILL.md` to override these defaults with project-specific rules.
 
 ## The Rules
 

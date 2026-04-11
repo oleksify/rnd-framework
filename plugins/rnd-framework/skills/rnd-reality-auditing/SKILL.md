@@ -16,8 +16,9 @@ This is adversarial by design. You are not confirming what the Builder said — 
 
 ## When to Use
 
+Run on every pipeline task — the audit is mandatory, not conditional on the presence of external dependencies. Even tasks that appear purely internal may reference external data (URLs, package names, service endpoints) in generated content, configuration, or seed data.
+
 - After the Builder produces a build manifest and before the Verifier writes its verdict
-- When a build touches SQL schemas, HTTP APIs, MCP tools, external SDKs, or environment-based configuration
 - When the Builder's self-assessment lists unverified external assumptions
 - Whenever the post-tool-use hook emits a Reality Auditor advisory
 
@@ -34,7 +35,7 @@ This is adversarial by design. You are not confirming what the Builder said — 
 
 ## Identifying External Service Interactions
 
-Scan the Builder's code for these five categories. Each one is a candidate for an adversarial experiment.
+Scan the Builder's code and changed files for these six categories. Each one is a candidate for an adversarial experiment.
 
 ### 1. SQL / Database
 
@@ -82,6 +83,37 @@ Patterns to look for:
 - Any variable whose value comes from outside the process
 
 For each: identify the variable name and what the code assumes about its value (non-empty, valid URL, valid key format).
+
+### 6. External Data References
+
+Patterns to look for:
+- URLs embedded in data: `https://example.com`, `http://`, `ftp://`
+- Email addresses: `user@domain.com` patterns in seed data, config files, or generated content
+- Phone numbers: formatted phone strings in data files
+- Physical addresses: street/city/postal code strings in seed data or content
+- API endpoints referenced as string literals in data (not code): `"endpoint": "https://api.service.com/v1"`
+- Package or library names embedded in content: `"dependency": "some-package@2.3.0"`, documentation references
+
+For each: identify the referenced entity and what the code or data assumes about its existence, reachability, or format.
+
+## Reading Builder's Manifest
+
+Before scanning code, read `$RND_DIR/builds/T<id>-manifest.md` and extract the `## External References` section if present. This section lists external dependencies the Builder declared explicitly.
+
+Use declared references as your starting hypothesis list. Do not trust them — treat each declared reference as a claim that must survive adversarial testing. The Builder may have declared correct references or may have missed some.
+
+After extracting declared references, proceed to Diff-Based Reference Discovery to catch references the Builder did not declare.
+
+## Diff-Based Reference Discovery
+
+Scan all files created or modified by the Builder (listed under `## Files Created/Modified` in the build manifest) for undeclared external references. This catches what the Builder missed.
+
+For each changed file:
+1. Read the file and scan for all six categories above (SQL, HTTP APIs, MCP Tools, SDK/Library, Environment Variables, External Data References)
+2. Cross-reference against the declared references from the manifest
+3. Any reference found in scanning but absent from the manifest is an undeclared assumption — add it to your experiment list and flag it as undeclared in the reality report
+
+Record every discovered reference, whether declared or undeclared. Undeclared references are higher-priority audit targets — the Builder may not have considered whether they are correct.
 
 ## Adversarial Experiment Design
 

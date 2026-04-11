@@ -102,6 +102,9 @@ Save to `$RND_DIR/builds/T<id>-manifest.md`:
 
 ## Edge Cases Covered
 - [list edge cases and how they're handled]
+
+## External References
+- `[reference value]` — type: [URL | email | address | API endpoint | package name | …] — provenance: [verified from user input | from existing codebase file X:line Y | generated from training data]
 ```
 
 ### 6. Write Honest Self-Assessment
@@ -178,6 +181,7 @@ Summarize verbose output rather than processing raw. Test/build output >50 lines
 - [ ] Output is clean (no errors, warnings)
 - [ ] Every external dependency verified against the actual system, evidence in manifest
 - [ ] Build manifest `### Evidence Gathered` contains file:line citations for each external contract
+- [ ] All external references (URLs, APIs, packages, addresses) declared in the manifest's `## External References` section with type and provenance
 - [ ] No pipeline task IDs in project code (comments, test names, variable names)
 
 ## Convergent Iteration

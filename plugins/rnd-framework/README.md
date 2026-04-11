@@ -89,11 +89,11 @@ After configuring, start a Claude Code session in the project and check:
 The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
 
 ```
-Plan → Schedule → Build → [Reality Audit] → [Proof Gate] → Verify → Iterate? → Integrate
+Plan → Schedule → Build → Reality Audit → [Proof Gate] → Verify → Iterate? → Integrate
 ```
 
 Additional pipeline phases:
-- **Reality Audit** — `rnd-reality-auditor` adversarially verifies external contracts (SQL schemas, API responses, env vars). Blocking — routes back to build on INVALID findings.
+- **Reality Audit** — `rnd-reality-auditor` runs on every task (mandatory). Reads the Builder's `## External References` manifest section, then diff-scans all changed files for undeclared references (URLs, emails, addresses, APIs, schemas, env vars, package names). Blocking — INVALID routes back to build.
 - **Proof Gate** — `rnd-proof-gate` attempts formal Lean 4 proofs of pre-registration criteria. Advisory — findings inform but don't block.
 
 Use `/rnd-framework:rnd-start` to launch the pipeline.
@@ -158,7 +158,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
 | `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
-| `rnd-reality-auditing` | Adversarial methodology for reality verification — experiment design, evidence chains, report format for external service contract validation |
+| `rnd-reality-auditing` | Mandatory per-task audit — manifest cross-check, diff-based discovery, adversarial experiments, evidence chains for all external references |
 | `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
 | `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
 | `lean-proving` | Formal Lean 4 proofs of pre-registration criteria — theorem generation, companion tests, proof reports |
@@ -178,7 +178,7 @@ Eight specialized agents for the multi-agent execution mode. All have persistent
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
 | `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking) |
-| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Adversarially verifies external service contracts (SQL, APIs, env vars) |
+| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Mandatory per-task audit of all external references (URLs, APIs, schemas, env vars, data) |
 | `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 
 The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.

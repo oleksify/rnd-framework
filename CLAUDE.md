@@ -63,7 +63,7 @@ Eight specialized agents handle each pipeline phase in isolated context windows.
 |---|---|---|
 | Planning | `rnd-planner` (opus) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
 | Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces build manifest + self-assessment |
-| Reality Audit | `rnd-reality-auditor` (sonnet) | Adversarially verifies external service contracts |
+| Reality Audit | `rnd-reality-auditor` (sonnet) | Mandatory per-task audit of all external references (URLs, APIs, schemas, env vars, data) |
 | Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory) |
 | Verification | `rnd-verifier` (opus) | Checks output against pre-registered criteria (information barrier enforced) |
 | Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |

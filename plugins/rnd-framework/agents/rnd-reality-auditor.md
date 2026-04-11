@@ -29,33 +29,36 @@ You do NOT modify project source files. All writes go to `$RND_DIR/reality/`.
 
 1. **Read the pre-registration.** Find the task in `$RND_DIR/plan.md`. Understand what was built and what external services it interacts with.
 
-2. **Read the builder's manifest.** Open `$RND_DIR/builds/T<id>-manifest.md` to find all output files.
+2. **Read the builder's manifest.** Open `$RND_DIR/builds/T<id>-manifest.md` to find all output files. Extract the `## External References` section if present — this is the Builder's self-declared list of external interactions and becomes your starting checklist of references to verify.
 
 3. **Read ALL builder-produced source files.** Read every file listed in the manifest.
 
-4. **Identify external service interactions.** Catalog every interaction across these categories:
+4. **Diff-based scan for undeclared external references.** Use `git diff` to identify files changed by the Builder, then Grep those files for references the Builder did NOT declare in the manifest's `## External References` section. Search for: hardcoded URLs (http/https), hostnames, IP addresses, email addresses, phone numbers, package names in dependency files, API endpoint paths, and external service names. Add any discovered undeclared references to your checklist — these are the assumptions most likely to be wrong.
+
+5. **Identify external service interactions.** Catalog every interaction across these categories:
    - SQL/database: queries, schema assumptions, column names, table names
    - HTTP APIs: endpoint paths, request/response shapes, status codes, authentication
    - MCP tools: tool names, parameter shapes, response fields
    - SDK/library calls: method signatures, return types, error codes
    - Environment variable reads: variable names, expected formats
    - File format assumptions: expected file structure, field names, encoding
+   - External data references: URLs, email addresses, phone numbers, physical addresses, API endpoint URLs, package/library names embedded in data files, config files, or seed data
 
-5. **Write adversarial experiments.** For each interaction, write a test designed to DISPROVE the assumption. Store experiments in `$RND_DIR/reality/T<id>-experiments/`. Each experiment file should:
+6. **Write adversarial experiments.** For each interaction, write a test designed to DISPROVE the assumption. Store experiments in `$RND_DIR/reality/T<id>-experiments/`. Each experiment file should:
    - State the assumption being tested
    - State what outcome would disprove it
    - Contain the exact command, query, or request to run
 
-6. **Run each experiment against the live service.** Execute using Bash (for SQL queries, curl), WebFetch (for REST APIs). If the service is unreachable or the experiment cannot be executed, mark it UNCHECKED — do not mark it VALID.
+7. **Run each experiment against the live service.** Execute using Bash (for SQL queries, curl), WebFetch (for REST APIs). If the service is unreachable or the experiment cannot be executed, mark it UNCHECKED — do not mark it VALID.
 
-7. **Assess results.** For each interaction:
+8. **Assess results.** For each interaction:
    - **VALID** — the experiment confirms the assumption. Include: command run, raw output, comparison.
    - **INVALID** — the experiment disproves the assumption. Include: command run, raw output, expected vs actual.
    - **UNCHECKED** — service unreachable or experiment could not run. Include: reason.
 
-8. **Write the reality report** to `$RND_DIR/reality/T<id>-reality-report.md`. See the rnd-reality-auditing skill for the report format.
+9. **Write the reality report** to `$RND_DIR/reality/T<id>-reality-report.md`. See the rnd-reality-auditing skill for the report format.
 
-9. **Send status** via SendMessage to the orchestrator.
+10. **Send status** via SendMessage to the orchestrator.
 
 ## Status Codes
 

@@ -123,7 +123,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
 3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
 3.5. **Proof Gate** (advisory) — Attempt Lean 4 formal proofs for each task's pre-registered criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable. In multi-agent mode, Proof-Gate agents handle this phase.
-3.75. **Reality Audit** (blocking) — Adversarially test each task's external service contracts. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification. In multi-agent mode, Reality-Auditor agents handle this phase.
+3.75. **Reality Audit** (blocking) — Run on every task. Adversarially verify every external reference in the task's implementation: APIs, schemas, env vars, SDK behavior, file contracts. The Planner's declared external dependencies are audit targets, but the auditor must also discover undeclared external references in the code. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification. In multi-agent mode, Reality-Auditor agents handle this phase.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
 5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
@@ -132,6 +132,7 @@ All pipeline agents are spawned with `mode: "bypassPermissions"`:
 
 **Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria, `fulfills` field linking to VAL assertions, and all Validation Contract assertions are covered.
 **Gate 2 (post-build):** Code + tests + artifacts submitted. Tests pass locally.
+**Gate 2.5 (post-reality-audit):** Reality Audit complete for every task in the wave. Any INVALID verdict blocks pipeline progression for that task — it must return to build before proceeding to verification.
 **Gate 3 (post-verify):** Verification PASS on all criteria with evidence.
 **Gate 4 (post-integrate):** Integration tests pass. No regressions. System validation passes.
 

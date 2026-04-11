@@ -157,14 +157,14 @@ Do NOT build tasks yourself. The Builder agent handles implementation, TDD, mani
 
 ## Phase 2.5: Reality Audit (blocking)
 
-For each task with external dependencies, **spawn a Reality Auditor agent:**
+For each task in the wave, **spawn a Reality Auditor agent:**
 
 ```
 Agent({
   description: "Audit external contracts",
   subagent_type: "rnd-framework:rnd-reality-auditor",
   mode: "bypassPermissions",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nExternal dependencies: <from pre-registration>"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <from pre-registration>"
 })
 ```
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.0 — 2026-04-11
+
+### Make Reality Audit mandatory per-task with Builder self-declaration and diff-based discovery
+
+Builder manifest now requires External References section with provenance tagging. Reality Auditor runs on every task, reads manifest cross-check, and diff-scans all changed files. Gate 2.5 added — INVALID verdicts are hard gates.
+
 ## 3.2.1 — 2026-04-10
 
 ### Add missing description parameter to all Agent spawn templates

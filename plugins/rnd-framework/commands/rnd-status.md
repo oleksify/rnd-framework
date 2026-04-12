@@ -54,7 +54,7 @@ Wave | Task ID | Name                    | Status        | Iterations
 
 Also show:
 - Current wave being worked on
-- Any blocked tasks (from `TaskList` blockedBy data)
+- Any blocked tasks (from `TaskList` blockedBy data) — resolve `#<n>` blockedBy IDs to pipeline IDs by matching against task `metadata.pipelineId` or by extracting the `T<n>` prefix from the blocked task's subject; never display raw `#<n>` internal IDs to the user
 - Iteration log summary (which tasks needed rework and why)
 - Overall progress percentage
 

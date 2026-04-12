@@ -13,7 +13,7 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task states.
+Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to identify current task states. When displaying blocked tasks or blocked-by references, always translate Claude Code internal IDs (`#<n>`) to pipeline IDs (`T<n>`) by matching against `metadata.pipelineId` or extracting the `T<n>` prefix from the blocking task's subject.
 
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-build` with no arguments):
 - Read `$RND_DIR/plan.md` and inspect `TaskList` to find the next wave where all tasks are `pending` and unblocked.

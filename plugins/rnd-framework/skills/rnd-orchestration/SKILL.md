@@ -150,6 +150,8 @@ Task status is derived from artifact files — no separate state file is needed.
 
 **At each gate**, validate the expected artifact exists and is non-empty (use Bash `test -s`). If missing, report to the user via `AskUserQuestion` and do not proceed with that task.
 
+**Always use pipeline IDs in user-facing output.** When displaying task references, blocked-by relationships, or status updates, always use `T<n>` pipeline IDs — never raw Claude Code internal IDs (`#<n>`). Resolve internal IDs by matching against `metadata.pipelineId` set during `TaskCreate`, or by extracting the `T<n>` prefix from the task subject.
+
 **Before scheduling each wave**, scan `$RND_DIR/builds/` and `$RND_DIR/verifications/` to determine which tasks are complete. Skip tasks that already have the expected artifacts for the current phase.
 
 ## User Decision Points

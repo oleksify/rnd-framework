@@ -62,6 +62,7 @@ Run ONLY the planning phase for: $ARGUMENTS
    - `subject`: Task name (e.g., "T1: Design API contracts")
    - `description`: The full pre-registration content for that task
    - `activeForm`: Present-continuous form (e.g., "Designing API contracts")
+   - `metadata`: `{ pipelineId: "T<n>" }` where `<n>` is the pipeline task number — this creates a persistent mapping from the Claude Code internal ID (#<n>) to the pipeline ID
    - Then use `TaskUpdate` with `addBlockedBy` to wire up dependencies matching the plan's dependency matrix
 
 10. Summarize the plan to the user: how many tasks, how many waves, key architectural decisions. Then use `AskUserQuestion` with options:

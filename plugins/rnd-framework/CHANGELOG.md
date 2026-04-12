@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.2 — 2026-04-12
+
+### Fix blocked-by ID mismatch in task display
+
+Pipeline tasks displayed Claude Code internal IDs (`#21`) instead of pipeline IDs (`T5`) in blocked-by references. Added `metadata.pipelineId` to TaskCreate calls and rendering instructions to resolve internal IDs to pipeline IDs across rnd-plan, rnd-status, rnd-orchestration, and rnd-build.
+
 ## 3.3.1 — 2026-04-12
 
 ### Enforce information barrier across Grep, Glob, and Bash tools

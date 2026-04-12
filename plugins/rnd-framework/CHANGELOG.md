@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.1 — 2026-04-12
+
+### Enforce information barrier across Grep, Glob, and Bash tools
+
+Closes the Grep/Glob and Bash bypass vectors found in audit. glob-grep-gate.sh now blocks self-assessment access for Verifier agents (path and pattern check). bash-gate.sh now blocks any command referencing self-assessment files (Section 0, before tool discipline). 28 new barrier test assertions.
+
 ## 3.3.0 — 2026-04-11
 
 ### Make Reality Audit mandatory per-task with Builder self-declaration and diff-based discovery

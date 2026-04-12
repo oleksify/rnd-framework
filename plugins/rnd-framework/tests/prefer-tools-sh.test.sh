@@ -37,6 +37,11 @@ payload() {
   jq -n --arg cmd "$1" '{"tool_input":{"command":$cmd}}'
 }
 
+# Build a hook payload with agent_type included.
+payload_with_agent() {
+  jq -n --arg cmd "$1" --arg agent "$2" '{"tool_input":{"command":$cmd},"agent_type":$agent}'
+}
+
 pass() {
   local name="$1"
   printf 'PASS  %s\n' "$name"
@@ -202,7 +207,7 @@ assert_exit   "echo > /dev/null → exit 0" 0
 run_hook "$(payload 'echo foo > /dev/stderr')"
 assert_exit   "echo > /dev/stderr → exit 0" 0
 
-run_hook "$(payload 'echo DONE > /home/user/.claude/.rnd/builds/T1-self-assessment.md')"
+run_hook "$(payload_with_agent 'echo DONE > /home/user/.claude/.rnd/builds/T1-self-assessment.md' 'rnd-builder')"
 assert_exit   "echo > .rnd/ → exit 0" 0
 assert_stdout_contains "echo > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
@@ -659,6 +664,57 @@ assert_stdout_contains "FOO=bar git push main → advisory" "systemMessage"
 run_hook "$(payload 'npm test>/tmp/log.txt')"
 assert_exit   "npm test>/tmp/ (no space) → exit 2" 2
 assert_stderr_contains "npm test>/tmp/ (no space) → /tmp" "/tmp"
+
+# ---------------------------------------------------------------------------
+# Information barrier: self-assessment commands
+# ---------------------------------------------------------------------------
+
+# verifier running diff on self-assessment → blocked
+run_hook "$(payload_with_agent 'diff /rnd/builds/T3-self-assessment.md /tmp/x' 'rnd-verifier')"
+assert_exit   "diff self-assessment + verifier → exit 2" 2
+assert_stderr_contains "diff self-assessment + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# empty agent_type running jq on self-assessment → blocked
+run_hook "$(payload_with_agent 'jq . /rnd/builds/T3-self-assessment.md' '')"
+assert_exit   "jq self-assessment + empty agent_type → exit 2" 2
+assert_stderr_contains "jq self-assessment + empty agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# missing agent_type key (null from jq) → blocked
+run_hook "$(jq -n --arg cmd 'less /rnd/builds/T3-self-assessment.md' '{"tool_input":{"command":$cmd}}')"
+assert_exit   "less self-assessment + null agent_type → exit 2" 2
+assert_stderr_contains "less self-assessment + null agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# builder running self-assessment command → allowed (exit 0)
+run_hook "$(payload_with_agent 'wc -l /rnd/builds/T3-self-assessment.md' 'rnd-builder')"
+assert_exit   "wc self-assessment + rnd-builder → exit 0" 0
+
+# case-insensitive: SELF-ASSESSMENT uppercase + verifier → blocked
+run_hook "$(payload_with_agent 'strings /rnd/builds/T3-SELF-ASSESSMENT.md' 'rnd-verifier')"
+assert_exit   "SELF-ASSESSMENT uppercase + verifier → exit 2" 2
+assert_stderr_contains "SELF-ASSESSMENT uppercase + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# case-insensitive: Self-Assessment mixed case + empty agent → blocked
+run_hook "$(payload_with_agent 'ls /rnd/builds/T3-Self-Assessment.md' '')"
+assert_exit   "Self-Assessment mixed case + empty agent → exit 2" 2
+assert_stderr_contains "Self-Assessment mixed case + empty agent → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# barrier fires before tool discipline: diff is not blocked by tool discipline, but barrier catches it
+run_hook "$(payload_with_agent 'diff T3-self-assessment.md other.md' 'rnd-verifier')"
+assert_exit   "diff (not tool-discipline-blocked) + verifier + self-assessment → exit 2" 2
+assert_stderr_contains "diff (barrier before discipline) → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# non-self-assessment .rnd/ path + verifier → not blocked by barrier (auto-allow or no-opinion)
+run_hook "$(payload_with_agent 'ls /home/.claude/.rnd/builds/T3-manifest.md' 'rnd-verifier')"
+assert_exit   ".rnd/ manifest path + verifier → exit 0 (no barrier)" 0
+
+# existing tool-discipline blocks still work after barrier is in place
+run_hook "$(payload 'sed s/foo/bar/ file.txt')"
+assert_exit   "sed still blocked after barrier code added → exit 2" 2
+assert_stderr_contains "sed still blocked → Edit tool" "Edit tool"
+
+run_hook "$(payload 'cat somefile.txt')"
+assert_exit   "cat still blocked after barrier code added → exit 2" 2
+assert_stderr_contains "cat still blocked → Read tool" "Read tool"
 
 # ---------------------------------------------------------------------------
 # Summary

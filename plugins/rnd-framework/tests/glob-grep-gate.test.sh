@@ -40,6 +40,65 @@ assert_stdout_empty() {
   if [[ -z "$HOOK_STDOUT" ]]; then pass "$name"; else fail "$name" "expected empty stdout, got: '$HOOK_STDOUT'"; fi
 }
 
+assert_stderr_contains() {
+  local name="$1" needle="$2"
+  if [[ "$HOOK_STDERR" == *"$needle"* ]]; then pass "$name"; else fail "$name" "expected stderr to contain '$needle', got: '$HOOK_STDERR'"; fi
+}
+
+# ---------------------------------------------------------------------------
+# Information barrier — self-assessment
+# ---------------------------------------------------------------------------
+
+# Grep + self-assessment + rnd-verifier → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":"rnd-verifier"}'
+assert_exit "Grep self-assessment + verifier → exit 2" 2
+assert_stderr_contains "Grep self-assessment + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# Grep + self-assessment + empty agent_type → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":""}'
+assert_exit "Grep self-assessment + empty agent_type → exit 2" 2
+assert_stderr_contains "Grep self-assessment + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# Grep + self-assessment + null/missing agent_type key → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"}}'
+assert_exit "Grep self-assessment + null agent_type → exit 2" 2
+assert_stderr_contains "Grep self-assessment + null agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# Glob + self-assessment + empty agent_type → block
+run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.rnd/builds","pattern":"*self-assessment*"},"agent_type":""}'
+assert_exit "Glob self-assessment (in pattern) + empty agent_type → exit 2" 2
+assert_stderr_contains "Glob self-assessment (in pattern) + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# Glob + self-assessment in path + empty agent_type → block
+run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"*.md"},"agent_type":""}'
+assert_exit "Glob self-assessment (in path) + empty agent_type → exit 2" 2
+assert_stderr_contains "Glob self-assessment (in path) → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# Grep + self-assessment + rnd-builder → allowed (exit 0, empty stdout)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":"rnd-builder"}'
+assert_exit "Grep self-assessment + rnd-builder → exit 0" 0
+assert_stdout_empty "Grep self-assessment + rnd-builder → empty stdout"
+
+# Case-insensitive: SELF-ASSESSMENT uppercase + empty agent_type → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-SELF-ASSESSMENT.md","pattern":"HIGH"},"agent_type":""}'
+assert_exit "Grep SELF-ASSESSMENT uppercase + empty agent_type → exit 2" 2
+assert_stderr_contains "Grep SELF-ASSESSMENT uppercase → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# .rnd/ path WITHOUT self-assessment → auto-allow (barrier does not interfere)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-manifest.md","pattern":"PASS"},"agent_type":""}'
+assert_exit ".rnd/ path without self-assessment → exit 0" 0
+assert_stdout_contains ".rnd/ path without self-assessment → allow JSON" '"permissionDecision":"allow"'
+
+# .rnd/ path WITH self-assessment → barrier takes priority over auto-allow
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":""}'
+assert_exit ".rnd/ + self-assessment → exit 2 (barrier beats auto-allow)" 2
+assert_stderr_contains ".rnd/ + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# regular non-.rnd/ path → no opinion (exit 0, empty stdout)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/project/src","pattern":"foo"},"agent_type":""}'
+assert_exit "regular path with agent_type → exit 0" 0
+assert_stdout_empty "regular path with agent_type → empty stdout"
+
 # ---------------------------------------------------------------------------
 # .rnd/ path → auto-allow
 # ---------------------------------------------------------------------------

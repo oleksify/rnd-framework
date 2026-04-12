@@ -257,7 +257,7 @@ See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
 The Verifier never sees the Builder's self-assessment or reasoning. Enforcement is two-layered:
 
 1. **Structural isolation** — agents run in separate context windows, so the Verifier literally cannot see the Builder's internal reasoning
-2. **PreToolUse hook** — `read-gate.sh` blocks any Read call targeting files with `self-assessment` in the path (defense-in-depth)
+2. **PreToolUse hooks** — three hooks enforce the barrier across all file-reading tools: `read-gate.sh` blocks Read calls, `glob-grep-gate.sh` blocks Grep/Glob calls, and `bash-gate.sh` blocks Bash commands targeting files with `self-assessment` in the path (defense-in-depth)
 
 Without this barrier:
 - The Verifier gets anchored by the Builder's framing

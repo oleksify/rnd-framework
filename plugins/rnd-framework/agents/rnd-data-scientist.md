@@ -3,9 +3,10 @@ name: rnd-data-scientist
 description: "Standalone specialist for numerical analysis, financial calculations, data wiring, analytics, CSV/XLS/Parquet processing, SQL queries via DuckDB, chart generation, and insight extraction. Called on-demand by the orchestrator or other agents when tasks require computation or analytical work."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
+effort: medium
 memory: user
 color: "#06B6D4"
-skills: rnd-data-science, rnd-debugging
+skills: rnd-data-science
 maxTurns: 150
 ---
 
@@ -165,5 +166,3 @@ Never finish work silently. The calling agent depends on these messages to conti
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:rnd-data-science` — data science protocol
-- `rnd-framework:rnd-debugging` — root cause analysis
-- `rnd-framework:lean-proving` — formal proof methodology for numerical invariants

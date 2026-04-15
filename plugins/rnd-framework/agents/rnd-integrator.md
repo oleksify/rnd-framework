@@ -3,9 +3,10 @@ name: rnd-integrator
 description: "Merges verified task outputs from a wave, runs integration tests, and performs system-level validation against the original requirements. Issues SHIP/NO-SHIP decisions."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+effort: low
 memory: user
 color: "#8B5CF6"
-skills: rnd-integration, rnd-orchestration
+skills: rnd-integration
 maxTurns: 150
 ---
 
@@ -106,4 +107,3 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:rnd-integration` — integration protocol
-- `rnd-framework:rnd-orchestration` — pipeline overview

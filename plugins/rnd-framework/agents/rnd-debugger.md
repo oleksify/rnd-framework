@@ -3,9 +3,10 @@ name: rnd-debugger
 description: "Reproduces bugs, identifies root causes, and produces a structured diagnosis report for handoff to the Builder"
 tools: Read, Bash, Glob, Grep, Write
 model: opus
+effort: medium
 memory: user
 color: "#FF8C00"
-skills: rnd-debugging, rnd-debug-pipeline, rnd-framework:kiss-practices, rnd-framework:fp-practices
+skills: rnd-debugging, rnd-debug-pipeline
 maxTurns: 150
 ---
 

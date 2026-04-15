@@ -4,6 +4,7 @@ description: "Independently verifies a Builder's output against the pre-register
 tools: Read, Write, Bash, Grep, Glob
 disallowedTools: Edit
 model: opus
+effort: medium
 memory: user
 color: "#F59E0B"
 skills: rnd-verification
@@ -198,6 +199,3 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:rnd-verification` — verification protocol
-- `rnd-framework:rnd-failure-modes` — anti-pattern catalog
-- `rnd-framework:rnd-debugging` — root cause analysis
-- `rnd-framework:rnd-experiments` — writing independent experiment tests from spec

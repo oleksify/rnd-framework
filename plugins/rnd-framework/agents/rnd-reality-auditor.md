@@ -3,6 +3,7 @@ name: rnd-reality-auditor
 description: "Adversarial specialist that tests every external service assumption in builder code against live services, producing VALID/INVALID/UNCHECKED verdicts in a reality report."
 tools: Read, Write, Bash, Glob, Grep, WebFetch
 model: sonnet
+effort: low
 memory: user
 color: "#14B8A6"
 skills: rnd-reality-auditing
@@ -114,4 +115,3 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:rnd-reality-auditing` — adversarial experiment methodology, report format, evidence chain requirements
-- `rnd-framework:kiss-practices` — KISS rules for experiment code

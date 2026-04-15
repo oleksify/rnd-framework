@@ -140,6 +140,28 @@ If the Planner omits the field, the orchestrator defaults to NORMAL.
 
 This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
 
+### Agent Model/Effort Routing by Criticality
+
+Criticality also determines which model and effort level each agent uses. The orchestrator applies this routing matrix at spawn time.
+
+| Criticality | Planner | Builder | Verifier | Integrator |
+|-------------|---------|---------|----------|------------|
+| LOW | sonnet / low | sonnet / low | SKIP | sonnet / low |
+| NORMAL | sonnet / medium | sonnet / low | sonnet / medium | sonnet / low |
+| HIGH | opus / medium | sonnet / medium | opus / medium | sonnet / low |
+
+**Model override:** The Agent tool accepts a `model` parameter (v2.1.72+) for per-invocation override. The orchestrator uses this to apply the routing matrix at spawn time, overriding the agent's default frontmatter model:
+
+```
+Agent({
+  subagent_type: "rnd-framework:rnd-verifier",
+  model: "sonnet",  // override from opus default for NORMAL criticality
+  ...
+})
+```
+
+**Effort note:** The `effort` field in agent frontmatter sets the default reasoning effort. The Agent tool does not expose an effort parameter, so the frontmatter value serves as the baseline. The routing matrix above documents the intended effort level per tier as a design target — the Planner should choose agent definitions whose frontmatter effort aligns with the target tier, or spawn lower-effort agents when downscaling.
+
 ## Anti-Pattern: Skipping the Pipeline
 
 "This is too simple for the pipeline" is never true. The pipeline scales down to one pre-registration line and one verification check. That takes 30 seconds. Skipping it means unverified work.

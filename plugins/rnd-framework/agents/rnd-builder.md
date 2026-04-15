@@ -3,9 +3,10 @@ name: rnd-builder
 description: "Implements a single task from the RND plan. Writes code, tests, and verification artifacts against the pre-registered success criteria. Produces an honest self-assessment. Does NOT verify its own work — that is the Verifier's job."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+effort: low
 memory: user
 color: "#22C55E"
-skills: rnd-building, rnd-debugging, rnd-iteration
+skills: rnd-building, rnd-iteration
 maxTurns: 200
 ---
 
@@ -148,5 +149,4 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:rnd-building` — TDD discipline and build protocol
-- `rnd-framework:rnd-debugging` — root cause analysis
 - `rnd-framework:rnd-iteration` — build-verify feedback loops

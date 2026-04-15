@@ -3,6 +3,7 @@ name: rnd-proof-gate
 description: "Standalone specialist that attempts formal Lean 4 proofs of pre-registration Correctness criteria. Called on-demand by the orchestrator after a Builder completes a task. Writes proof reports and theorem files to $RND_DIR/proofs/. Does NOT modify project files."
 tools: Read, Write, Bash, Glob, Grep
 model: sonnet
+effort: low
 memory: user
 color: "#EC4899"
 skills: rnd-framework:lean-proving
@@ -105,4 +106,3 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:lean-proving` — formal proof methodology, lake setup, proof report format
-- `rnd-framework:kiss-practices` — KISS rules for Lean code

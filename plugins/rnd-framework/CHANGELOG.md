@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.4.0 — 2026-04-16
+
+### Aggressive token reduction for pipeline agents
+
+- **Effort frontmatter on all 8 agents:** Opus agents set to `medium`, Sonnet agents set to `low`. Counteracts the v2.1.94 default-high change — reduces reasoning tokens ~30-40% per agent turn.
+- **Skill preload trimming:** Removed rnd-debugging from builder (-85 lines), rnd-orchestration from integrator (-181 lines), rnd-debugging from data-scientist (-85 lines), kiss-practices + fp-practices from debugger. Total: ~430 lines of auto-injected content eliminated per pipeline run.
+- **Fixed stale "Required Skills" body text** in 7 of 8 agents to match actual frontmatter.
+- **Model/effort routing matrix** added to rnd-scaling skill: maps criticality tiers (LOW/NORMAL/HIGH) to model + effort per agent type, with Agent tool `model` parameter documentation for orchestrator overrides.
+- **Criticality-based verifier routing** in /rnd-start Phase 3: LOW/NORMAL → single verifier, HIGH → multi-judge protocol via rnd-multi-judge.
+- **Skill prose condensing:** rnd-verification 265→180 lines (-32%), rnd-building 223→180 (-19%), rnd-decomposition 283→160 (-43%). Multi-judge section replaced with pointer, failure modes converted to compact table.
+
 ## 3.3.2 — 2026-04-12
 
 ### Fix blocked-by ID mismatch in task display

@@ -174,7 +174,9 @@ Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `
 
 **CRITICAL: Information Barrier.** The Verifier runs in a separate context window and cannot see the Builder's reasoning. The `read-gate.sh` hook blocks reads of self-assessment files. Do NOT pass self-assessment content to the Verifier.
 
-**For each built task, spawn a Verifier agent:**
+**For each built task, check the `Criticality` field in its pre-registration and route:**
+
+- **LOW or NORMAL (default):** Spawn a single Verifier agent:
 
 ```
 Agent({
@@ -184,6 +186,8 @@ Agent({
   prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
 })
 ```
+
+- **HIGH:** Invoke the `rnd-framework:rnd-multi-judge` protocol — spawn 2 independent Verifier agents in parallel, aggregate verdicts, trigger a tiebreaker on disagreement. See that skill for the full protocol.
 
 Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces a verification report. It returns a verdict: PASS, PASS (quality: NEEDS ITERATION), NEEDS ITERATION, or FAIL.
 

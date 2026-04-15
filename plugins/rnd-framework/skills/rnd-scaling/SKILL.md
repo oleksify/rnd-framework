@@ -146,7 +146,7 @@ Criticality also determines which model and effort level each agent uses. The or
 
 | Criticality | Planner | Builder | Verifier | Integrator |
 |-------------|---------|---------|----------|------------|
-| LOW | sonnet / low | sonnet / low | SKIP | sonnet / low |
+| LOW | sonnet / low | sonnet / low | sonnet / low | sonnet / low |
 | NORMAL | sonnet / medium | sonnet / low | sonnet / medium | sonnet / low |
 | HIGH | opus / medium | sonnet / medium | opus / medium | sonnet / low |
 

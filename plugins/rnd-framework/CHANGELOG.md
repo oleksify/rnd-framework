@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.2 — 2026-04-16
+
+### Restore Content Parity markers in rnd-build and rnd-verify skills
+
+Add a sentence documenting the Builder's external-dependency verification duty to rnd-build/SKILL.md, and a sentence documenting the Verifier's external-contract-conformance sweep to rnd-verify/SKILL.md. validate.sh now reports 281/281 checks passing (was 279/2).
+
 ## 3.4.1 — 2026-04-16
 
 ### Fix builder agents blocked on Edit/Write under latest Claude Code

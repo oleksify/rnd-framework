@@ -43,7 +43,7 @@ Agent({
 })
 ```
 
-Do NOT build tasks yourself. The Builder agent handles implementation, TDD, manifest, and self-assessment. It returns a status code.
+Do NOT build tasks yourself. The Builder agent handles implementation, TDD, manifest, and self-assessment. As part of its process, the Builder will verify external dependencies (APIs, libraries, schemas) against live sources before writing code and record the evidence in its manifest. It returns a status code.
 
 Route each result:
 

@@ -50,7 +50,7 @@ Agent({
 })
 ```
 
-Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a verification report with a verdict.
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a verification report with a verdict. Its failure-mode sweep includes External contract conformance — the Verifier queries the real external systems (APIs, schemas, services) to confirm the Builder's claims rather than trusting the manifest.
 
 ## After Verification
 

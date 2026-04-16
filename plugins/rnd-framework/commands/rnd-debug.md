@@ -79,7 +79,7 @@ Spawn an `rnd-builder` agent to implement the fix:
 
 ```
 subagent_type: "rnd-framework:rnd-builder"
-mode: "bypassPermissions"
+mode: "auto"
 prompt: |
   You are building the fix for: [bug description]
 
@@ -103,7 +103,7 @@ Spawn an `rnd-verifier` agent to verify the fix:
 
 ```
 subagent_type: "rnd-framework:rnd-verifier"
-mode: "bypassPermissions"
+mode: "auto"
 prompt: |
   You are verifying the fix for: [bug description]
 

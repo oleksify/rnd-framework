@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.1 — 2026-04-16
+
+### Fix builder agents blocked on Edit/Write under latest Claude Code
+
+Replace mode: "bypassPermissions" with mode: "auto" in 13 pipeline-agent spawn sites across 7 files. On Claude Code v2.1.112 with Opus 4.7, bypassPermissions is not honored for team-spawned (tmux-backed) subagents, so Edit/Write on project files were denied, blocking every build. auto mode uses the in-context auto-approval classifier which propagates reliably to subagents.
+
 ## 3.4.0 — 2026-04-16
 
 ### Aggressive token reduction for pipeline agents

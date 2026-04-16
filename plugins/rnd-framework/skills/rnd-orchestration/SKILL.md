@@ -98,14 +98,14 @@ Agent assignments:
 
 ### Agent Permission Mode
 
-All pipeline agents are spawned with `mode: "bypassPermissions"`:
+All pipeline agents are spawned with `mode: "auto"`:
 
 - **Planner** — decomposes tasks and writes pre-registrations
 - **Builder** — implements tasks with TDD discipline
 - **Verifier** — independently checks outputs against pre-registered criteria
 - **Integrator** — merges verified outputs and runs integration tests
 
-**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. OS-level permission prompts are redundant and disruptive to autonomous pipeline operation.
+**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. `auto` mode uses Claude Code's auto-approval classifier, which reliably propagates to team-spawned subagents (unlike `bypassPermissions`, which did not honor the spawn-time setting for tmux-backed agents).
 
 ### Blocking Behavior
 

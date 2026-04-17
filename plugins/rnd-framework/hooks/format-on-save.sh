@@ -161,7 +161,10 @@ if [[ -z "$formatter_cmd" ]]; then
   exit 0
 fi
 
-# Run formatter on the file — non-blocking (errors do not stop the pipeline)
-eval "$formatter_cmd" "$file_path" >/dev/null 2>&1 || true
+# Run formatter on the file — non-blocking (errors do not stop the pipeline).
+# Security: split formatter_cmd into argv via word-splitting and invoke directly.
+# Never eval $file_path — a path containing $(...), backticks, or ; would execute.
+read -r -a cmd_parts <<< "$formatter_cmd"
+"${cmd_parts[@]}" "$file_path" >/dev/null 2>&1 || true
 
 exit 0

@@ -169,6 +169,35 @@ assert_exit_code "malformed input → exit 0" 0
 assert_eq "malformed input → no stdout" "" "$HOOK_STDOUT"
 
 # ---------------------------------------------------------------------------
+# Test 11: command injection via file_path is not executed
+# ---------------------------------------------------------------------------
+# Regression: formerly `eval "$formatter_cmd" "$file_path"` would expand $(...)
+# and backticks inside file_path. The array-split invocation must pass the path
+# as an inert argv[1] even when it contains shell-substitution syntax.
+printf '\n%s\n' '--- format-on-save: injection defense ---'
+
+rm -f "${session_dir}/.formatter-cache"
+injection_marker="$(mktemp -u)"
+rm -f "$injection_marker"
+# Formatter command is harmless (`true` ignores all arguments).
+printf '{"detected":true,"command":"true","name":"inert-fmt"}' > "${session_dir}/.formatter-cache"
+touch "${tmp_project}/ok.ts"
+
+# file_path contains an embedded command substitution pointing at the marker.
+# With the pre-fix eval, this would run `touch $injection_marker`.
+injection_payload="${tmp_project}/x\$(touch ${injection_marker}).ts"
+stdin_json="$(jq -nc --arg fp "$injection_payload" '{tool_input:{file_path:$fp}}')"
+run_fmt_hook "$stdin_json" "CLAUDE_CONFIG_DIR=${tmp_config}"
+assert_exit_code "injection: hook exits 0" 0
+
+if [[ -e "$injection_marker" ]]; then
+  assert_eq "injection defense: marker file not created" "absent" "present"
+  rm -f "$injection_marker"
+else
+  assert_eq "injection defense: marker file not created" "absent" "absent"
+fi
+
+# ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
 rm -rf "$tmp_config" "$tmp_project"

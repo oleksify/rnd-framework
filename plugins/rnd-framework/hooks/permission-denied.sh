@@ -28,5 +28,5 @@ fi
 # Response — tell the model it can retry the tool call
 # ---------------------------------------------------------------------------
 
-printf '%s\n' '{"hookSpecificOutput":{"retry":true}}'
+printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PermissionDenied","retry":true}}'
 exit 0

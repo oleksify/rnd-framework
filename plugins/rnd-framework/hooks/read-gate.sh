@@ -15,23 +15,18 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Main
 # ---------------------------------------------------------------------------
 
-readonly BARRIER_KEYWORD="self-assessment"
-readonly VERIFIER_KEYWORD="verifier"
-
 parse_input
 file_path="$(extract_file_path "$TOOL_INPUT")"
-agent_type="${AGENT_TYPE}"
 
+if is_barrier_violation "$file_path" "${AGENT_TYPE}"; then
+  block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
+fi
+
+# A non-verifier agent reading a self-assessment path is not blocked, but is
+# still not auto-allowed — defer to Claude Code's standard permission flow
+# so the user sees the prompt rather than silently allowing the read.
 lower="$(_lower "$file_path")"
-
-if [[ "$lower" == *"${BARRIER_KEYWORD}"* ]]; then
-  # Known non-verifier agents are allowed through.
-  # Empty agent_type or any agent containing "verifier" is blocked.
-  agent_lower="$(_lower "$agent_type")"
-  if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
-    block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
-  fi
-  # Non-verifier agent: fall through (no-opinion, exit 0)
+if [[ "$lower" == *"self-assessment"* ]]; then
   exit 0
 fi
 

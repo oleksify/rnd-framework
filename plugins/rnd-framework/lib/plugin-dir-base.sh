@@ -3,7 +3,7 @@
 #
 # INTERFACE (source this script; do not execute it directly):
 #   source plugin-dir-base.sh <ARTIFACT_DIR_NAME> <FLAG>
-#     $1  ARTIFACT_DIR_NAME — subdir under the Claude config dir (e.g. ".rnd" or ".rnd")
+#     $1  ARTIFACT_DIR_NAME — subdir under the Claude config dir (e.g. ".rnd")
 #     $2  FLAG              — the flag passed to the wrapper (e.g. "", "-c", "--base", "--finish")
 #
 # After sourcing, the following are set in the caller's scope:

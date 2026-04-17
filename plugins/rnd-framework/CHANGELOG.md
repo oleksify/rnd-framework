@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.1 — 2026-04-17
+
+### Fix format-on-save command injection and deduplicate hook barrier/phase logic
+
+Replace eval with array-split invocation in format-on-save.sh to close a command-injection vector via tool_input.file_path (regression test added). Extract is_barrier_violation and detect_pipeline_phase helpers into hooks/lib.sh, replacing 5 duplicated sites across read-gate.sh, glob-grep-gate.sh, bash-gate.sh, statusline.sh, session-title.sh. Also: add hookEventName:"PermissionDenied" to permission-denied.sh output, switch _ver_gte to explicit IFS='.' read -ra, fix duplicate example in plugin-dir-base.sh doc header (both copies), and rename the untracked agent-effort-frontmatter test into the tests/*.test.sh convention so run-tests.sh picks it up.
+
 ## 3.5.0 — 2026-04-17
 
 ### Require options after brainstorm

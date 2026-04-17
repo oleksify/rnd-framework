@@ -33,8 +33,6 @@ readonly _BACKTICK_PATTERN='`([^`]*)`'
 readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 readonly _PROTECTED_BRANCHES="main master production"
 readonly _INTERPRETER_BLOCKED_MSG='blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
-readonly BARRIER_KEYWORD="self-assessment"
-readonly VERIFIER_KEYWORD="verifier"
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -307,11 +305,8 @@ cmd_lower="$(_lower "$command")"
 # read-gate.sh so that commands like diff, jq, less, strings, etc. cannot
 # be used to read self-assessment files around the Read tool's guard.
 
-if [[ "$cmd_lower" == *"${BARRIER_KEYWORD}"* ]]; then
-  _agent_lower="$(_lower "$_agent_type")"
-  if [[ -z "$_agent_lower" ]] || [[ "$_agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
-    block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
-  fi
+if is_barrier_violation "$command" "$_agent_type"; then
+  block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
 # ---------------------------------------------------------------------------

@@ -5,13 +5,6 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-# Pipeline phase names (constants)
-readonly PHASE_IDLE="Idle"
-readonly PHASE_PLANNING="Planning"
-readonly PHASE_BUILDING="Building"
-readonly PHASE_VERIFYING="Verifying"
-readonly PHASE_INTEGRATING="Integrating"
-
 raw="$(cat)"
 
 # Extract rate limit percentages (round to nearest integer).
@@ -21,21 +14,8 @@ seven_day_pct="$(jq_extract "$raw" '.rate_limits.sevenDay.used_percentage')"
 # Extract git worktree path (v2.1.97+). Non-empty when cwd is inside a linked worktree.
 git_worktree="$(jq_extract "$raw" '.workspace.git_worktree')"
 
-# Detect pipeline phase by checking session directories.
-phase="$PHASE_IDLE"
 session_dir="$(active_session_dir 2>/dev/null || true)"
-
-if [[ -n "$session_dir" ]]; then
-  if compgen -G "${session_dir}/integration/"*.md > /dev/null 2>&1; then
-    phase="$PHASE_INTEGRATING"
-  elif compgen -G "${session_dir}/verifications/"*.md > /dev/null 2>&1; then
-    phase="$PHASE_VERIFYING"
-  elif compgen -G "${session_dir}/builds/"*.md > /dev/null 2>&1; then
-    phase="$PHASE_BUILDING"
-  elif [[ -f "${session_dir}/plan.md" ]]; then
-    phase="$PHASE_PLANNING"
-  fi
-fi
+phase="$(detect_pipeline_phase "$session_dir")"
 
 # Build rate limit parts string.
 parts=""

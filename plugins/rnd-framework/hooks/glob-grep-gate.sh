@@ -13,23 +13,20 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-readonly BARRIER_KEYWORD="self-assessment"
-readonly VERIFIER_KEYWORD="verifier"
-
 parse_input
 path="$(printf '%s' "$TOOL_INPUT" | jq -r '.path // ""' 2>/dev/null || true)"
 pattern="$(printf '%s' "$TOOL_INPUT" | jq -r '.pattern // ""' 2>/dev/null || true)"
-
-# Check both path and pattern for the barrier keyword (case-insensitive).
 path_lower="$(_lower "$path")"
 pattern_lower="$(_lower "$pattern")"
 
-if [[ "$path_lower" == *"${BARRIER_KEYWORD}"* ]] || [[ "$pattern_lower" == *"${BARRIER_KEYWORD}"* ]]; then
-  agent_lower="$(_lower "${AGENT_TYPE}")"
-  if [[ -z "$agent_lower" ]] || [[ "$agent_lower" == *"${VERIFIER_KEYWORD}"* ]]; then
-    block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
-  fi
-  # Non-verifier agent: no opinion, exit 0
+# Block verifier/unknown agents that touch self-assessment content.
+if is_barrier_violation "$path" "${AGENT_TYPE}" \
+   || is_barrier_violation "$pattern" "${AGENT_TYPE}"; then
+  block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
+fi
+
+# Non-verifier agent touching self-assessment: no-opinion, not auto-allow.
+if [[ "$path_lower" == *"self-assessment"* ]] || [[ "$pattern_lower" == *"self-assessment"* ]]; then
   exit 0
 fi
 

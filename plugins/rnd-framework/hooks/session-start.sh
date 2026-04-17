@@ -117,8 +117,9 @@ cc_version="$(claude --version 2>/dev/null | awk '{print $1}' || true)"
 if [[ -n "$cc_version" ]]; then
   # Compare semver: split on dots, compare numerically left-to-right.
   _ver_gte() {
-    local IFS='.'
-    local -a a=($1) b=($2)
+    local -a a b
+    IFS='.' read -ra a <<< "$1"
+    IFS='.' read -ra b <<< "$2"
     local i
     for i in 0 1 2; do
       local ai="${a[$i]:-0}" bi="${b[$i]:-0}"

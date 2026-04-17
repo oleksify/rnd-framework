@@ -206,6 +206,50 @@ active_session_dir() {
 }
 
 # ---------------------------------------------------------------------------
+# Information barrier
+# ---------------------------------------------------------------------------
+
+# Returns 0 iff the lowered <text> contains "self-assessment" AND the caller
+# has no agent_type OR has one that names a verifier. Pure; no side effects.
+# Shared by read-gate.sh, glob-grep-gate.sh, and bash-gate.sh — the three
+# hooks must agree exactly on the barrier semantics.
+is_barrier_violation() {
+  local text="$1"
+  local agent_type="${2:-}"
+  local text_lower agent_lower
+  text_lower="$(_lower "$text")"
+  [[ "$text_lower" == *"self-assessment"* ]] || return 1
+  agent_lower="$(_lower "$agent_type")"
+  [[ -z "$agent_lower" || "$agent_lower" == *"verifier"* ]]
+}
+
+# ---------------------------------------------------------------------------
+# Pipeline phase detection
+# ---------------------------------------------------------------------------
+
+# Echoes one of Idle|Planning|Building|Verifying|Integrating based on which
+# artifact directories exist under <session_dir>. Empty/missing dir → Idle.
+# Shared by statusline.sh and session-title.sh.
+detect_pipeline_phase() {
+  local dir="${1:-}"
+  if [[ -z "$dir" ]] || [[ ! -d "$dir" ]]; then
+    printf 'Idle'
+    return 0
+  fi
+  if compgen -G "${dir}/integration/"*.md > /dev/null 2>&1; then
+    printf 'Integrating'
+  elif compgen -G "${dir}/verifications/"*.md > /dev/null 2>&1; then
+    printf 'Verifying'
+  elif compgen -G "${dir}/builds/"*.md > /dev/null 2>&1; then
+    printf 'Building'
+  elif [[ -f "${dir}/plan.md" ]]; then
+    printf 'Planning'
+  else
+    printf 'Idle'
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Timestamps
 # ---------------------------------------------------------------------------
 

@@ -70,6 +70,12 @@ check_echo_redirect() {
   while [[ "$stripped" =~ \>\ *[^[:space:]]*\.claude[^/]*/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
     stripped="${stripped//${BASH_REMATCH[0]}/}"
   done
+  while [[ "$stripped" =~ 2\>\ *\&[[:digit:]] ]]; do
+    stripped="${stripped//${BASH_REMATCH[0]}/}"
+  done
+  while [[ "$stripped" =~ 2\>\ */dev/[^[:space:]]* ]]; do
+    stripped="${stripped//${BASH_REMATCH[0]}/}"
+  done
   if [[ "$stripped" == *">"* ]]; then
     printf 'block'
   else
@@ -432,6 +438,7 @@ fi
 # ---------------------------------------------------------------------------
 # 6. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
+# Tool discipline has already cleared every segment above; the whole-command allow is safe.
 
 if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
   allow_json

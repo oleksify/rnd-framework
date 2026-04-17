@@ -6,7 +6,7 @@ model: sonnet
 effort: low
 memory: user
 color: "#EC4899"
-skills: rnd-framework:lean-proving
+skills: lean-proving
 maxTurns: 100
 ---
 

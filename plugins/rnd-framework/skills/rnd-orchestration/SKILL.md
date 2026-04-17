@@ -98,14 +98,14 @@ Agent assignments:
 
 ### Agent Permission Mode
 
-All pipeline agents are spawned with `mode: "auto"`:
+All pipeline agents are spawned with `mode: "acceptEdits"`:
 
 - **Planner** — decomposes tasks and writes pre-registrations
 - **Builder** — implements tasks with TDD discipline
 - **Verifier** — independently checks outputs against pre-registered criteria
 - **Integrator** — merges verified outputs and runs integration tests
 
-**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. `auto` mode uses Claude Code's auto-approval classifier, which reliably propagates to team-spawned subagents (unlike `bypassPermissions`, which did not honor the spawn-time setting for tmux-backed agents).
+**Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. `acceptEdits` auto-approves Edit/Write on project files — the exact surface pipeline agents need — while leaving Bash under the normal classifier. Observed on Claude Code 2.1.112: `mode: "auto"` denied project-file Edit/Write for team-spawned subagents (see audit log), and `mode: "bypassPermissions"` was not honored for tmux-backed team agents.
 
 ### Blocking Behavior
 

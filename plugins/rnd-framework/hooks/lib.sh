@@ -52,7 +52,8 @@ is_code_file() {
     swift|kt|scala|\
     sh|bash|zsh|fish|\
     lua|php|vue|svelte|\
-    ex|exs)
+    ex|exs|\
+    lean|kk|ml|mli)
       return 0 ;;
     *)
       return 1 ;;

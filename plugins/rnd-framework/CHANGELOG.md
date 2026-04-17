@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.0 — 2026-04-17
+
+### Fix builder permission denials + audit cleanup
+
+Replaced mode: "auto" with mode: "acceptEdits" across 13 pipeline-agent spawn sites in 6 files (commands/rnd-start, commands/rnd-debug, skills/rnd-build, skills/rnd-verify, skills/rnd-integrate, skills/rnd-multi-judge) and rewrote the rationale in skills/rnd-orchestration. Empirically, mode: "auto" denied project-file Edit/Write for team-spawned Builders on Claude Code 2.1.112, contradicting the 3.4.1 fix claim. Also addressed six minor issues from codebase audit: dropped stale v2.1.81 parenthetical in session-start.sh; extended is_code_file in lib.sh to recognize .lean/.kk/.ml/.mli; de-namespaced skills field in rnd-proof-gate.md for agent parity; added whole-command-allow clarifying comment in bash-gate.sh; updated CLAUDE.md tool-discipline wording; taught check_echo_redirect to strip 2>&N and 2>/dev/... stderr redirects so "echo foo 2>&1" is allowed while "echo foo > /file" remains blocked; added tests/bash-gate-echo-redirect.test.sh covering the three cases.
+
 ## 3.5.1 — 2026-04-17
 
 ### Fix format-on-save command injection and deduplicate hook barrier/phase logic

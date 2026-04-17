@@ -122,21 +122,25 @@ Present the plan as regular text output (not abbreviated). Then proceed to Phase
 
 ## Phase 6: Output
 
+**MANDATORY: You MUST invoke `AskUserQuestion` to present next-step options. Do NOT end the brainstorming session with a plain-text message (e.g., "Plan saved to X. Kick off the pipeline with /rnd-framework:rnd-start ..."). Leaving a text message instead of asking is a defect — the user must always be presented with selectable options.**
+
 Use `AskUserQuestion` to present options:
 
-- "Implement now with /rnd-framework:rnd-start (Recommended)" — save the plan to `$RND_DIR/brainstorm.md` and suggest the user run `/rnd-framework:rnd-start` with the plan as the task description
+- "Implement now with /rnd-framework:rnd-start (Recommended)" — save the plan to `$RND_DIR/brainstorm.md` and immediately invoke `/rnd-framework:rnd-start` with the plan as the task description
 - "Save for later" — save the plan to `$RND_DIR/brainstorm.md` and tell the user the file path so they can reference it in a future session
 - "Refine further" — go back to Phase 4 with additional questions (max 2 refinement rounds)
 - "Discard" — don't save anything; the brainstorming session ends
 
-If the user chooses "Save for later," also offer to save to a project-local location:
-> "Save to `$RND_DIR/brainstorm.md` (default) or to a project file like `docs/brainstorm-[topic].md`?"
+If the user chooses "Save for later," also offer to save to a project-local location via a follow-up `AskUserQuestion`:
+- "Save to `$RND_DIR/brainstorm.md` (default)"
+- "Save to a project file like `docs/brainstorm-[topic].md`"
 
 ## Guidelines
 
 - **No pipeline phases.** This is a conversation between you and the user. Do not run Build, Verify, Plan, or any other pipeline phase.
 - **No code.** Do not write or modify any project files during brainstorming. The output is a plan, not code.
 - **Use AskUserQuestion for every question.** Never ask questions as plain text. Every question must be structured with options.
+- **Never end with a plain-text message.** Every phase that requires a user decision — including the final Phase 6 output — MUST use `AskUserQuestion`. Writing "Plan saved to X. Run /rnd-framework:rnd-start ..." as the terminal response is a defect. The user must always receive selectable options, not a suggestion to run a command themselves.
 - **Be opinionated.** Offer concrete suggestions and push back constructively. A brainstorming partner who agrees with everything is useless.
 - **Keep momentum.** Each phase should take 1-2 question rounds, not 10. The total session should be 5-8 questions, not 20.
 - **Respect the funnel.** Go broad first (Phase 2), then narrow (Phase 4). Don't jump to implementation details in Phase 2.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.0 — 2026-04-17
+
+### Require options after brainstorm
+
+Strengthen rnd-brainstorm Phase 6 to mandate AskUserQuestion for next-step selection; forbid ending the session with a plain-text 'plan saved, run X' message. Updated Guidelines to explicitly call out that pattern as a defect.
+
 ## 3.4.2 — 2026-04-16
 
 ### Restore Content Parity markers in rnd-build and rnd-verify skills

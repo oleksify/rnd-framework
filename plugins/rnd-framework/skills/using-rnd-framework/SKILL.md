@@ -16,22 +16,7 @@ This is a scientific process. Results are true or false — never "almost true".
 
 ## Execution Mode
 
-Pipeline phases are executed by specialized agents spawned as subagents. Each agent has a dedicated role, model assignment, and skill preloading. The orchestrator (main session) coordinates agent spawning, collects results via `SendMessage`, and manages phase gates.
-
-**Agent types and their roles:**
-
-| Agent | Model | Role |
-|-------|-------|------|
-| `rnd-planner` | Opus | Decomposes tasks, builds dependency matrix, writes exploration cache |
-| `rnd-builder` | Sonnet | Implements tasks using TDD, produces build manifests and self-assessments |
-| `rnd-verifier` | Opus | Independent verification with information barrier, evidence-based verdicts |
-| `rnd-integrator` | Sonnet | Wave integration, SHIP/NO-SHIP verdicts, system validation |
-| `rnd-debugger` | Opus | Root cause analysis, diagnosis reports, escalation criteria |
-| `rnd-proof-gate` | Sonnet | Lean 4 formal proofs of pipeline criteria |
-| `rnd-reality-auditor` | Sonnet | Adversarial external contract testing |
-| `rnd-data-scientist` | Opus | Julia/DuckDB numerical analysis, financial calculations, chart generation |
-
-In multi-agent mode, agents are spawned using `subagent_type` (e.g., `subagent_type: "rnd-builder"`). Each agent communicates completion and status back to the orchestrator via `SendMessage`.
+Pipeline work runs in specialized subagents spawned via `subagent_type` (e.g., `rnd-builder`, `rnd-verifier`). Each agent has its own model, effort, and preloaded skills; the orchestrator collects results via `SendMessage` and manages phase gates. For the full agent/model/role table, see the project `CLAUDE.md` (§Architecture → Execution Model) — it is already loaded into context.
 
 ## Data Science Tasks
 

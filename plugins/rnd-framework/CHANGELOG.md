@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.0 — 2026-04-17
+
+### Adopt v2.1.111-2.1.113 features and trim session bootstrap
+
+Dedupe the 18-line agent table in skills/using-rnd-framework/SKILL.md with a one-paragraph pointer to CLAUDE.md §Execution Model, saving ~125 tokens per SessionStart fire (including every compaction). Raise effort from medium to xhigh (v2.1.111) for the three Opus agents (rnd-planner, rnd-verifier, rnd-debugger) for deeper reasoning on hard tasks. Add sandbox.network.deniedDomains (v2.1.113) with a default denylist (pastebin.com, hastebin.com, 0x0.st, transfer.sh) as defense-in-depth against accidental exfiltration by Builder/Reality-Auditor agents. Drop the now-default showTurnDuration:true from settings.json. Remove the unused defer_json() helper from hooks/lib.sh and its test — it was flagged in CLAUDE.md as 'available infrastructure' but had zero call sites. Document four v2.1.113 features in CLAUDE.md: find -exec/-delete tightening (plugin's blanket find block already covers this), 10-minute subagent stall timeout (does not resolve the rnd-integrator hang on its own), native CLI binary, and sandbox.network.deniedDomains.
+
 ## 3.6.0 — 2026-04-17
 
 ### Fix builder permission denials + audit cleanup

@@ -4,7 +4,7 @@ description: "Independently verifies a Builder's output against the pre-register
 tools: Read, Write, Bash, Grep, Glob
 disallowedTools: Edit
 model: opus
-effort: medium
+effort: xhigh
 memory: user
 color: "#F59E0B"
 skills: rnd-verification

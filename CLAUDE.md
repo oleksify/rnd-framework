@@ -86,12 +86,6 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
 - **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
 
-#### Defer Permission Decision (v2.1.89+)
-
-Claude Code v2.1.89 adds a `defer` permission decision for PreToolUse hooks. When a hook returns `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"defer"}}`, headless sessions (`-p` mode) pause at the tool call. The operator can then resume with `-p --resume` to have the hook re-evaluate.
-
-The `defer_json` helper in `lib.sh` outputs this response. It is available as infrastructure for hooks that need "pause and let operator decide" semantics. It is **not** used for information-barrier violations — those remain hard blocks (exit 2) because `defer` would allow the operator to approve the read, breaking the barrier.
-
 #### Claude Code Version Check
 
 The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.97). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
@@ -189,6 +183,22 @@ v2.1.97 improved Accept Edits mode to auto-approve filesystem commands prefixed 
 #### Plugin Update Fix (v2.1.97+)
 
 v2.1.97 fixed `claude plugin update` reporting "already at the latest version" for git-based marketplace plugins when the remote had newer commits.
+
+#### Bash find -exec/-delete Security Tightening (v2.1.113+)
+
+v2.1.113 stopped auto-approving destructive `find` invocations (`-exec`, `-delete`) under `Bash(find:*)` allow rules. The plugin's `bash-gate.sh` already blocks `find` unconditionally in favor of the `Glob` tool, so this upstream change has no impact on rnd-framework users — the blanket block remains load-bearing for non-destructive `find` patterns too.
+
+#### Subagent Stall Timeout (v2.1.113+)
+
+v2.1.113 added a 10-minute stall timeout for subagents stuck mid-stream; prior to this, they could hang silently. This surfaces a concrete error when an agent wedges, improving pipeline observability. It does **not**, on its own, resolve the `rnd-integrator` hang documented in project memory — the integrator still requires a live re-test before any decision to re-enable spawned integration.
+
+#### Native CLI Binary (v2.1.113+)
+
+v2.1.113 shipped Claude Code as a native per-platform binary (via optional dependencies) rather than bundled JavaScript. This reduces cold-start latency for `claude` invocations, including the `claude --version` check in `session-start.sh`.
+
+#### sandbox.network.deniedDomains (v2.1.113+)
+
+v2.1.113 added `sandbox.network.deniedDomains` to `settings.json` — a blocklist that overrides broader `allowedDomains` wildcards. The plugin now ships a conservative default denylist (`pastebin.com`, `hastebin.com`, `0x0.st`, `transfer.sh`) as defense-in-depth against accidental exfiltration of evidence or self-assessments by Builder / Reality-Auditor agents using `WebFetch` or `Bash`. Users can prune or extend the list in their local settings.
 
 #### file_path Handling
 

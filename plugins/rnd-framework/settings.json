@@ -2,8 +2,17 @@
   "allowWrite": [
     "~/.claude*/.rnd/**"
   ],
+  "sandbox": {
+    "network": {
+      "deniedDomains": [
+        "pastebin.com",
+        "hastebin.com",
+        "0x0.st",
+        "transfer.sh"
+      ]
+    }
+  },
   "showThinkingSummaries": true,
-  "showTurnDuration": true,
   "spinnerTipsEnabled": false,
   "spinnerVerbs": [
     "Planning",

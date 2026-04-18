@@ -24,7 +24,7 @@ plugins/rnd-framework/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters/for-while-until loops//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
+│   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters/for-while-until loops//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
 │   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit operations + advises when output exceeds 50 lines

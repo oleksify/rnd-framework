@@ -136,7 +136,7 @@ Add new PostToolUse behaviors as additional `case` branches here.
 
 ## Common Anti-Patterns
 
-- **Using cat/grep/sed/find inside hooks** — these are blocked by `bash-gate.sh`, the very hook system you're extending. Use `jq` for JSON, `lib.sh` functions for path checks.
+- **Using sed/awk inside hooks** — these are blocked by `bash-gate.sh`, the very hook system you're extending. Use `jq` for JSON, `lib.sh` functions for path checks. (Read-side tools `cat`/`grep`/`find`/`head`/`tail` are allowed since v3.8.0, but hooks should still prefer purpose-built helpers.)
 - **Forgetting to handle empty stdin** — `parse_input` handles this gracefully (sets empty strings). Raw `jq` calls need `// ""` fallbacks.
 - **Not quoting file paths** — paths with spaces break unquoted expansions. Always `"$file_path"`.
 - **Using `exit 1` to block** — use `block_msg` (exit 2). Exit 1 means script error.

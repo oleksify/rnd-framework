@@ -123,26 +123,26 @@ else
   fail "check_segment: echo hello prints 'echo_safe' on stdout" "got: '$CS_RESULT'"
 fi
 
-# Additional protocol checks
+# Additional protocol checks — read-side commands now pass through as 'allowed'
 run_check_segment "grep pattern file"
-if [[ "$CS_RESULT" == blocked:* ]]; then
-  pass "check_segment: grep prints blocked: prefix on stdout"
+if [[ "$CS_RESULT" == "allowed" ]]; then
+  pass "check_segment: grep prints 'allowed' on stdout (read-side gate removed)"
 else
-  fail "check_segment: grep prints blocked: prefix on stdout" "got: '$CS_RESULT'"
+  fail "check_segment: grep prints 'allowed' on stdout" "got: '$CS_RESULT'"
 fi
 
 run_check_segment "cat somefile"
-if [[ "$CS_RESULT" == blocked:* ]]; then
-  pass "check_segment: cat prints blocked: prefix on stdout"
+if [[ "$CS_RESULT" == "allowed" ]]; then
+  pass "check_segment: cat prints 'allowed' on stdout (read-side gate removed)"
 else
-  fail "check_segment: cat prints blocked: prefix on stdout" "got: '$CS_RESULT'"
+  fail "check_segment: cat prints 'allowed' on stdout" "got: '$CS_RESULT'"
 fi
 
 run_check_segment "find . -name '*.ts'"
-if [[ "$CS_RESULT" == blocked:* ]]; then
-  pass "check_segment: find prints blocked: prefix on stdout"
+if [[ "$CS_RESULT" == "allowed" ]]; then
+  pass "check_segment: find prints 'allowed' on stdout (find gate removed)"
 else
-  fail "check_segment: find prints blocked: prefix on stdout" "got: '$CS_RESULT'"
+  fail "check_segment: find prints 'allowed' on stdout" "got: '$CS_RESULT'"
 fi
 
 run_check_segment "printf hello"
@@ -227,11 +227,18 @@ else
   fail "split_and_check: returns 'echo_safe' for npm && echo" "got: '$SAC_RESULT'"
 fi
 
-run_split_and_check "npm install && cat package.json"
+run_split_and_check "npm install && sed -i s/a/b/ file"
 if [[ "$SAC_RESULT" == blocked:* ]]; then
-  pass "split_and_check: returns blocked: for compound with cat"
+  pass "split_and_check: returns blocked: for compound with sed"
 else
-  fail "split_and_check: returns blocked: for compound with cat" "got: '$SAC_RESULT'"
+  fail "split_and_check: returns blocked: for compound with sed" "got: '$SAC_RESULT'"
+fi
+
+run_split_and_check "npm install && cat package.json"
+if [[ "$SAC_RESULT" == "allowed" ]]; then
+  pass "split_and_check: returns 'allowed' for compound with cat (read-side gate removed)"
+else
+  fail "split_and_check: returns 'allowed' for compound with cat" "got: '$SAC_RESULT'"
 fi
 
 # ---------------------------------------------------------------------------
@@ -245,11 +252,11 @@ else
   fail "check_segment: FOO=bar sed blocked after env prefix strip" "got: '$CS_RESULT'"
 fi
 
-run_check_segment "FOO=bar BAZ=quux cat somefile"
+run_check_segment "FOO=bar BAZ=quux sed s/a/b/ file"
 if [[ "$CS_RESULT" == blocked:* ]]; then
-  pass "check_segment: multiple env prefixes + cat blocked"
+  pass "check_segment: multiple env prefixes + sed blocked"
 else
-  fail "check_segment: multiple env prefixes + cat blocked" "got: '$CS_RESULT'"
+  fail "check_segment: multiple env prefixes + sed blocked" "got: '$CS_RESULT'"
 fi
 
 run_check_segment "FOO=bar ls -la"
@@ -278,11 +285,11 @@ fi
 # split_and_check with env-var prefix in compound command
 # ---------------------------------------------------------------------------
 
-run_split_and_check "FOO=bar npm test && cat file"
+run_split_and_check "FOO=bar npm test && sed s/a/b/ file"
 if [[ "$SAC_RESULT" == blocked:* ]]; then
-  pass "split_and_check: env prefix + compound with cat blocked"
+  pass "split_and_check: env prefix + compound with sed blocked"
 else
-  fail "split_and_check: env prefix + compound with cat blocked" "got: '$SAC_RESULT'"
+  fail "split_and_check: env prefix + compound with sed blocked" "got: '$SAC_RESULT'"
 fi
 
 # ---------------------------------------------------------------------------

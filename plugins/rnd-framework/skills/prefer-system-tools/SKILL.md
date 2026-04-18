@@ -202,7 +202,7 @@ Or use the **Glob tool** in Claude Code for file pattern matching — it's revie
 
 **POSIX fallback — `find`:**
 
-> **Note:** `find`, `grep`, and `sed` are blocked by the `prefer-tools` hook in pipeline sessions. Use `fd`/`rg`/`sd` or Claude Code's Glob/Grep/Edit tools instead.
+> **Note:** `sed` and `awk` are blocked by `bash-gate.sh` in pipeline sessions — use the Edit tool or `sd` instead. `find`, `grep`, `cat`, `head`, and `tail` are allowed, but Claude Code's Glob/Grep/Read tools are usually preferable (reviewable, no shell).
 
 ```bash
 # find: use only when fd is unavailable
@@ -242,7 +242,7 @@ sd 'oldPattern' 'newPattern' src/**/*.ts
 
 **POSIX fallback — `grep` / `sed`:**
 
-> **Note:** `find`, `grep`, and `sed` are blocked by the `prefer-tools` hook in pipeline sessions. Use `fd`/`rg`/`sd` or Claude Code's Glob/Grep/Edit tools instead.
+> **Note:** `sed` and `awk` are blocked by `bash-gate.sh` in pipeline sessions — use the Edit tool or `sd` instead. `find`, `grep`, `cat`, `head`, and `tail` are allowed, but Claude Code's Glob/Grep/Read tools are usually preferable (reviewable, no shell).
 
 ```bash
 # grep/sed: use only when rg/sd are unavailable

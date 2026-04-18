@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.0 — 2026-04-18
+
+### Remove read-side tool-discipline gates (cat, head, tail, grep, rg, find)
+
+Drop the `cat`, `head`/`tail` (with file arg), `grep`/`rg` (recursive or with file arg), and `find` blocks from `hooks/bash-gate.sh`. These gates tried to steer Claude toward the Read/Grep/Glob tools but fought training-level habits and triggered excessively on benign one-shot commands, generating noise without preventing anything dangerous. Write-side gates (`sed`/`awk`/`echo>file`/`printf>file`), interpreter blocks (`python -c`/`node -e`/`bun -e`/`perl -e`/`ruby -e`), shell-loop guard, `/tmp` redirect guard, information barrier, DB destructive guards, and git-add-`.rnd/` protection are all unchanged — those have concrete behavioral reasons (hang risk, silent file mutation, context leaks, data loss) rather than stylistic preference. Updates `tests/prefer-tools-sh.test.sh` and `tests/prefer-tools-sh-refactor.test.sh` to match: read-side commands now assert `allowed` / exit 0 instead of `blocked:` / exit 2. Also fixes pre-existing `tests/agent-effort-frontmatter.test.sh` (expected the three Opus agents to use `effort: medium` — v3.7.0 bumped them to `xhigh`; test updated to match the source of truth). Updates tool-discipline wording in `CLAUDE.md`, `README.md`, `skills/prefer-system-tools/SKILL.md`, and `skills/hook-authoring/SKILL.md`.
+
 ## 3.7.0 — 2026-04-17
 
 ### Adopt v2.1.111-2.1.113 features and trim session bootstrap

@@ -318,7 +318,7 @@ rnd-framework/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: blocks sed/cat/grep/find/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
+│   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch

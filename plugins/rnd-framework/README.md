@@ -158,7 +158,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
 | `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
 | `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
-| `rnd-reality-auditing` | Mandatory per-task audit — manifest cross-check, diff-based discovery, adversarial experiments, evidence chains for all external references |
+| `rnd-reality-auditing` | Conditional per-task audit (runs when task declares `External dependencies`) — manifest cross-check, diff-based discovery, adversarial experiments, evidence chains for declared external references |
 | `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
 | `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
 | `lean-proving` | Formal Lean 4 proofs of pre-registration criteria — theorem generation, companion tests, proof reports |
@@ -172,14 +172,14 @@ Eight specialized agents for the multi-agent execution mode. All have persistent
 
 | Agent | Model | Color | Role |
 |---|---|---|---|
-| `rnd-framework:rnd-planner` | opus | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
+| `rnd-framework:rnd-planner` | sonnet (high effort) | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
 | `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces build manifest + self-assessment |
-| `rnd-framework:rnd-verifier` | opus | amber | Independent verification against pre-registered criteria with information barrier |
+| `rnd-framework:rnd-verifier` | sonnet (high effort) | amber | Independent verification against pre-registered criteria with information barrier |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
-| `rnd-framework:rnd-debugger` | opus | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
-| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking) |
-| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Mandatory per-task audit of all external references (URLs, APIs, schemas, env vars, data) |
-| `rnd-framework:rnd-data-scientist` | opus | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
+| `rnd-framework:rnd-debugger` | sonnet (high effort) | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
+| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking); only runs when task declares `Proof: lean` and Lean is on PATH |
+| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when task declares `External dependencies` |
+| `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
 
 The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 
@@ -377,9 +377,9 @@ Then switch with `/output-style scientific`, `/output-style rigorous`, or `/outp
 
 In each agent's YAML frontmatter, change the `model:` field:
 
-- Planner: `opus` (strong reasoning for decomposition)
+- Planner: `sonnet` with `effort: high` (strong reasoning for decomposition)
 - Builder: `sonnet` (speed + quality for implementation)
-- Verifier: `opus` (strong reasoning to catch subtle issues)
+- Verifier: `sonnet` with `effort: high` (strong reasoning to catch subtle issues)
 - Integrator: `sonnet` (mostly mechanical merge + test running)
 
 ### Adjust iteration budget

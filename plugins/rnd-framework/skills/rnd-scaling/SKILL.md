@@ -175,7 +175,7 @@ Criticality also determines which model and effort level each agent uses. The or
 ```
 Agent({
   subagent_type: "rnd-framework:rnd-verifier",
-  model: "sonnet",  // override from opus default for NORMAL criticality
+  model: "sonnet",  // matches sonnet default; override here if downscaling from a higher-effort variant
   ...
 })
 ```

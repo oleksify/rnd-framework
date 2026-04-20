@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.11.0 — 2026-04-20
+
+### Add Planner self-review checklist
+
+Planner now runs a fresh-eyes self-review against plan.md before notifying the orchestrator — spec coverage, placeholder scan, VAL traceability, identifier consistency, external-dependency completeness, and Verifier test on each Correctness criterion. Catches plan-level mistakes that would otherwise cascade through Build and Verify.
+
 ## 3.10.0 — 2026-04-20
 
 ### Collaborative pipeline: anti-popularity brainstorming, cross-phase decisions log, barrier-protected user-facing briefs, artifact trims

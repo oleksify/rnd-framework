@@ -133,6 +133,8 @@ Every success criterion belongs to exactly one tier:
    - Continue until all tasks are scheduled
    - Flag parallel opportunities within each wave
 
+6. **Self-review.** Run the Plan Self-Review checklist from the `rnd-decomposition` skill against the finished plan.md. Fix any issues inline before sending "Plan ready".
+
 ## Environment Discovery
 
 Before decomposition, run a structured checklist scan to catalog the project's build environment. This feeds into the Environment Setup, Infrastructure, and Testing Strategy sections of plan.md.

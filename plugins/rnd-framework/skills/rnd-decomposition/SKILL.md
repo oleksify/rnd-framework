@@ -152,6 +152,26 @@ ID format: `VAL-` + area abbreviation (2-6 uppercase chars) + `-` + 3-digit numb
 - [ ] Validation Contract has VAL-AREA-NNN assertions with Tool and Evidence for every Correctness criterion
 - [ ] Every task has a `fulfills` field; every VAL assertion is fulfilled by at least one task
 
+## Plan Self-Review
+
+After writing all sections of plan.md, reread it with fresh eyes. This is a checklist you run yourself before notifying the orchestrator — not a subagent dispatch. The Verifier cannot save you from plan-level mistakes; they cascade through every downstream phase.
+
+Run these six checks against the finished plan.md. If any fails, fix inline and re-check.
+
+1. **Spec coverage.** For each explicit user requirement or discovery-context constraint, point to the task(s) covering it. Gaps → add a task or explicitly note it as out-of-scope in Worker Guidelines.
+
+2. **Placeholder scan.** Grep the plan for `TODO`, `TBD`, `???`, `XXX`, `[...]`, `handle appropriately`, `works correctly`, `as needed`. Any hit → replace with concrete content or remove.
+
+3. **VAL traceability.** Every `VAL-AREA-NNN` is named in at least one task's `fulfills` field, and every task has a non-empty `fulfills`. A VAL with no fulfiller, or a task fulfilling nothing, means the Validation Contract and Pre-Registration drifted apart — fix whichever side is wrong.
+
+4. **Identifier consistency.** For each function name, file path, type name, or env var that appears in multiple tasks, confirm the spelling matches across mentions. A function named `clearLayers` in T3 and `clearFullLayers` in T7 is the most common cascading plan error.
+
+5. **External-dependency completeness.** Any task whose Intent, Approach, or Expected outputs references a DB, API, file, env var, or external service MUST have a populated `External Dependencies` block with `system`, `contract`, and `verification`. Missing block → add it (this is also what gates the Reality Auditor).
+
+6. **Verifier test on each Correctness criterion.** Reread each Correctness criterion as if you have no context. If you can't translate it into "run X, expect Y" in under 10 seconds, rewrite it with an observable outcome, concrete condition, and binary result.
+
+If the plan has >10 tasks or any HIGH criticality task, consider one additional escalation: dispatch a fresh reviewer via the Task tool with the spec and plan.md, asking them to flag only concrete problems from this same checklist. Optional; not required.
+
 ## Related Skills
 
 - `rnd-framework:rnd-scheduling` — For detailed wave scheduling

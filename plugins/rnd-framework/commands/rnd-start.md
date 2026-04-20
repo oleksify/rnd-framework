@@ -1,6 +1,6 @@
 ---
 description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Build → Verify → Integrate using specialized agents."
-argument-hint: "<description of the feature, refactor, or bug fix>"
+argument-hint: "[--tier=prototype|standard|high-stakes] [--multi-judge] <description of the feature, refactor, or bug fix>"
 effort: high
 ---
 
@@ -47,6 +47,48 @@ If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-start` with no task descr
 **Never fall back to plain text** — `AskUserQuestion` is mandatory at every decision point.
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
+
+## Phase 0.1: Pipeline Tier Selection
+
+Pipeline ceremony costs tokens. A quick prototype and a security-critical migration should not run the same pipeline. Ask the user to pick the ceremony level BEFORE discovery begins.
+
+**If `$ARGUMENTS` contains `--tier=prototype`, `--tier=standard`, or `--tier=high-stakes`**, use that value directly — skip the prompt. Strip the flag from the task description before further processing.
+
+**Otherwise**, ask with `AskUserQuestion` (one question, three options):
+
+- **Prototype / Experiment** — No agents. No verification. Orchestrator implements inline, shows the diff. For throwaway exploration, quick hacks, API experimentation.
+- **Standard (Recommended)** — Full pipeline: Plan → Build → Verify → Integrate. Single-judge verification. Reality Audit for tasks with external deps.
+- **High-stakes** — Full pipeline with amplified verification: multi-judge consensus on every HIGH-criticality task, Reality Audit on every task regardless of external-dep declaration, iteration budget 5. Use for security/auth/financial/data-integrity code.
+
+Store the selection as `PIPELINE_TIER` for the remainder of the session.
+
+**Route based on tier:**
+- `PIPELINE_TIER=prototype` → Skip the rest of this file and follow the "Prototype Short-Circuit Flow" section below.
+- `PIPELINE_TIER=standard` → Proceed to Phase 0 as written. No overrides.
+- `PIPELINE_TIER=high-stakes` → Proceed to Phase 0. Apply two overrides when you reach Phase 2.5 and Phase 3:
+  - Phase 2.5: Spawn the Reality Auditor for every task in the wave, even if `External dependencies` is absent.
+  - Phase 3: For every HIGH-criticality task, invoke `rnd-framework:rnd-multi-judge` (equivalent to setting `--multi-judge` on the task).
+
+## Prototype Short-Circuit Flow
+
+**Entry condition:** `PIPELINE_TIER=prototype`. Use this flow in place of Phase 0 through Phase 6.
+
+The orchestrator implements the task directly. No Planner, Builder, Verifier, or Integrator agents are spawned. There are no pre-registration, manifest, verification, or integration artifacts. `$RND_DIR` is still created but most of it remains empty — this is expected.
+
+1. **Quick codebase scan.** Glob/Grep to locate the files that matter. 2-5 minutes of context-gathering. No Local Experts scan, no project-facts reload, no KISS/FP skill loading unless the task explicitly calls for discipline.
+
+2. **State the plan in chat.** One paragraph: what files will change, what logic, what you are explicitly NOT doing. Do not write `plan.md`. Do not create a pre-registration.
+
+3. **Implement directly.** Use Edit/Write. No TDD unless the task is about tests. No self-assessment artifact. No briefs. Keep the working tree honest — you own the diff.
+
+4. **Summarize the diff.** 3-5 lines: files touched, behavior change, anything surprising. Then `AskUserQuestion`:
+   - "Looks good — wrap up"
+   - "Iterate on the prototype" — continue revising inline based on feedback
+   - "Upgrade to Standard pipeline and verify" — this restarts the pipeline at Phase 0 with `PIPELINE_TIER=standard`. The prototype diff becomes the starting point; the Planner and Verifier will inspect what was built.
+
+5. **Wrap-up.** Invoke `rnd-framework:rnd-formatting` on changed files. Skip doc-polish unless the user asks. Do not auto-commit.
+
+**When to reject the prototype tier:** If the task description implies production impact (auth, payments, migrations, data deletion, deployment, anything user-facing at scale) and the user still picked Prototype, push back once with `AskUserQuestion`: "This looks like production work — switch to Standard?" before proceeding. Users overriding after being asked once is their call.
 
 ## Phase 0: Discovery
 

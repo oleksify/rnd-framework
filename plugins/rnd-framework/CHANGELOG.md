@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.0 — 2026-04-20
+
+### Pipeline tier selection for rnd-start
+
+Adds a Phase 0.1 tier-selection prompt at the top of /rnd-framework:rnd-start. The user picks Prototype, Standard (current default), or High-stakes before discovery begins — via AskUserQuestion or inline --tier=... flag. Prototype tier short-circuits the pipeline: no Planner, Builder, Verifier, or Integrator spawned; orchestrator implements inline and shows the diff. Standard tier is the current full-pipeline behavior. High-stakes tier applies two overrides during execution — Reality Audit runs for every task (not just those declaring External dependencies) and every HIGH-criticality task gets multi-judge consensus automatically. Adds an explicit upgrade path from Prototype to Standard mid-session when the user decides exploration is now worth verifying. Release for real-session testing before hardening.
+
 ## 3.11.0 — 2026-04-20
 
 ### Add Planner self-review checklist

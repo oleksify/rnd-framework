@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.9.0 (2026-04-20)
+
+### Token Optimization & Model Efficiency
+
+**Agent Model Downgrades (Major Cost Reduction)**
+- `rnd-planner`: opus/xhigh → sonnet/high
+- `rnd-verifier`: opus/xhigh → sonnet/high  
+- `rnd-debugger`: opus/xhigh → sonnet/high
+- `rnd-data-scientist`: opus/medium → sonnet/medium
+- **Impact**: ~75% reduction in token costs for typical pipelines
+
+**Multi-Judge Verification Now Opt-In**
+- Changed from default 2-judge + tiebreaker for HIGH tasks to single-judge default
+- Multi-judge consensus available via `--multi-judge` flag or `Verification: multi-judge` annotation
+- **Impact**: Eliminates 3× token multiplier for high-criticality tasks unless explicitly requested
+
+**Conditional Phase Execution**
+- Proof Gate now only runs when task has `Proof: lean` annotation AND Lean is available
+- Reality Audit now only runs when task has `External dependencies` declared
+- **Impact**: Reduces unnecessary agent spawns for tasks without external deps or formal proof requirements
+
+**Information Barriers Preserved**
+- All read-gate.sh protections remain intact
+- Verification independence maintained with single-judge default
+- Framework quality gates unchanged
+
 ## 3.8.0 — 2026-04-18
 
 ### Remove read-side tool-discipline gates (cat, head, tail, grep, rg, find)

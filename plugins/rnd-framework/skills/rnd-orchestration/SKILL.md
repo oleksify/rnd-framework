@@ -122,8 +122,16 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
 1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce enriched plan.md with sections: Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets. Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
 3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
-3.5. **Proof Gate** (advisory) — Attempt Lean 4 formal proofs for each task's pre-registered criteria. Results (PROVEN/UNPROVEN) are passed to the Verifier as supplementary evidence. Pipeline continues regardless of proof outcomes. Skipped when Lean is unavailable. In multi-agent mode, Proof-Gate agents handle this phase.
-3.75. **Reality Audit** (blocking) — Run on every task. Adversarially verify every external reference in the task's implementation: APIs, schemas, env vars, SDK behavior, file contracts. The Planner's declared external dependencies are audit targets, but the auditor must also discover undeclared external references in the code. INVALID_FOUND routes the task back to build with "expected X, found Y" feedback before verification proceeds. VALIDATED_ALL, VALIDATED_PARTIAL, and SKIPPED proceed to verification. In multi-agent mode, Reality-Auditor agents handle this phase.
+3.5. **Proof Gate** (advisory, conditional) — Attempt Lean 4 formal proofs for tasks with mathematical invariants. Only runs when:
+   - Task has `Proof: lean` annotation in pre-registration
+   - Lean is available in PATH
+   Results (PROVEN/UNPROVEN) passed to Verifier. Pipeline continues regardless.
+
+3.75. **Reality Audit** (blocking, conditional) — Run only when:
+   - Task has `External dependencies` declared in pre-registration AND
+   - User has not disabled via `--skip-reality-checks`
+   Adversarially verifies declared external references. INVALID_FOUND routes back to build.
+   If no external dependencies declared → auto-SKIPPED.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
 5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.

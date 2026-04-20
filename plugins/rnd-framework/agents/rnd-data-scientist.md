@@ -2,7 +2,7 @@
 name: rnd-data-scientist
 description: "Standalone specialist for numerical analysis, financial calculations, data wiring, analytics, CSV/XLS/Parquet processing, SQL queries via DuckDB, chart generation, and insight extraction. Called on-demand by the orchestrator or other agents when tasks require computation or analytical work."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: opus
+model: sonnet
 effort: medium
 memory: user
 color: "#06B6D4"

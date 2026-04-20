@@ -57,6 +57,8 @@ The R&D pipeline scales to task complexity. A typo fix doesn't need the full pip
 **Process:**
 1. Full pipeline + design review gate between Plan and Schedule
 2. Sub-waves within large waves
+3. Proof Gate skipped unless explicitly requested (rarely needed)
+4. Reality Audit only for tasks with external dependencies
 
 ### Multi-session (multiple days, independent deliverables)
 
@@ -115,8 +117,8 @@ Orthogonal to task size, **criticality** determines how much verification effort
 
 ### HIGH criticality
 **Examples:** Security-sensitive code, data migrations, authentication changes, financial calculations, architectural decisions that constrain future work.
-**Verification:** 2-judge consensus + explicit edge-case enumeration in pre-registration. Extended iteration budget (5). If Lean is available, invoke Proof Gate.
-**Rationale:** False negatives here are expensive. The extra verification cost is justified.
+**Verification:** Single-judge by default. 2-judge consensus available via explicit opt-in (see below). Extended iteration budget (5). If Lean is available, invoke Proof Gate.
+**Rationale:** Sonnet at high effort provides sufficient verification for most high-stakes tasks. Multi-judge available when user explicitly requests maximum confidence.
 
 ### How the Planner annotates criticality
 
@@ -136,7 +138,25 @@ If the Planner omits the field, the orchestrator defaults to NORMAL.
 |-------------|--------|-----------------|------------|
 | LOW | 1 | 2 | Skip |
 | NORMAL | 1 | 3 | If available |
-| HIGH | 2 | 5 | If available |
+| HIGH | 1 (2 on opt-in) | 5 | If available |
+
+### Multi-Judge Opt-In
+
+By default, all tasks use single-judge verification. To enable 2-judge consensus for a specific task, the user must explicitly request it when starting the pipeline:
+
+```
+/rnd-framework:rnd-start --multi-judge <task description>
+```
+
+Or add to the pre-registration:
+```
+Task ID: T3
+Intent: Add rate limiting to API endpoints
+Criticality: HIGH
+Verification: multi-judge
+```
+
+When multi-judge is enabled, two independent Verifier agents run in parallel. If they disagree, a third tiebreaker judge resolves the conflict. See `rnd-framework:rnd-multi-judge` for the full consensus protocol.
 
 This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
 
@@ -148,7 +168,7 @@ Criticality also determines which model and effort level each agent uses. The or
 |-------------|---------|---------|----------|------------|
 | LOW | sonnet / low | sonnet / low | sonnet / low | sonnet / low |
 | NORMAL | sonnet / medium | sonnet / low | sonnet / medium | sonnet / low |
-| HIGH | opus / medium | sonnet / medium | opus / medium | sonnet / low |
+| HIGH | sonnet / high | sonnet / medium | sonnet / high | sonnet / low |
 
 **Model override:** The Agent tool accepts a `model` parameter (v2.1.72+) for per-invocation override. The orchestrator uses this to apply the routing matrix at spawn time, overriding the agent's default frontmatter model:
 

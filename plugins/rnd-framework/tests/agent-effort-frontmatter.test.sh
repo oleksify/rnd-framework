@@ -63,10 +63,10 @@ assert_effort() {
   (( pass++ )) || true
 }
 
-# opus agents: planner/verifier/debugger use xhigh for deeper reasoning on hard tasks (v2.1.111+)
-assert_effort "$AGENTS_DIR/rnd-planner.md"         "xhigh"
-assert_effort "$AGENTS_DIR/rnd-verifier.md"        "xhigh"
-assert_effort "$AGENTS_DIR/rnd-debugger.md"        "xhigh"
+# sonnet reasoning agents: planner/verifier/debugger use high effort (v3.9.0 downgraded from opus/xhigh)
+assert_effort "$AGENTS_DIR/rnd-planner.md"         "high"
+assert_effort "$AGENTS_DIR/rnd-verifier.md"        "high"
+assert_effort "$AGENTS_DIR/rnd-debugger.md"        "high"
 assert_effort "$AGENTS_DIR/rnd-data-scientist.md"  "medium"
 
 # sonnet agents → low

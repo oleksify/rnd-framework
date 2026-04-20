@@ -61,14 +61,14 @@ Eight specialized agents handle each pipeline phase in isolated context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|
-| Planning | `rnd-planner` (opus) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
+| Planning | `rnd-planner` (sonnet/high) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
 | Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces build manifest + self-assessment |
-| Reality Audit | `rnd-reality-auditor` (sonnet) | Mandatory per-task audit of all external references (URLs, APIs, schemas, env vars, data) |
-| Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory) |
-| Verification | `rnd-verifier` (opus) | Checks output against pre-registered criteria (information barrier enforced) |
+| Reality Audit | `rnd-reality-auditor` (sonnet) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies` |
+| Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH |
+| Verification | `rnd-verifier` (sonnet/high) | Checks output against pre-registered criteria (information barrier enforced); single-judge by default, multi-judge consensus available via `--multi-judge` |
 | Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
-| Debugging | `rnd-debugger` (opus) | Root cause analysis for failing tasks |
-| Data Science | `rnd-data-scientist` (opus) | Standalone specialist for numerical/analytical work |
+| Debugging | `rnd-debugger` (sonnet/high) | Root cause analysis for failing tasks |
+| Data Science | `rnd-data-scientist` (sonnet) | Standalone specialist for numerical/analytical work |
 
 ### Information Barrier and Permission Hooks
 

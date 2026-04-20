@@ -50,10 +50,20 @@ After this phase, summarize what you've learned in 3-5 bullet points and confirm
 
 Based on the expanded understanding, identify **2-4 meaningfully different directions** the idea could go. These are not implementation approaches (that's `/rnd-framework:rnd-start`'s design phase) — they're conceptual directions.
 
+**Before generating directions, do this private step:** name the first, most-obvious direction — the one an LLM trained on the popular literature would suggest by default ("use library X", "build a CRUD UI", "add a LangChain agent", "wrap it in a microservice"). Call this the **baseline**. Your job in this phase is NOT to present the baseline as the "safe default" — your job is to diverge from it and force the user to see what lies off the well-trodden path.
+
+Then produce the 2-4 directions under these rules:
+
+- **At least one direction must be a road-less-traveled angle** — a genuinely different framing that most developers (and most LLMs) would not suggest first. Examples: inverting the data flow, replacing a stateful component with a pure function, using a legacy/unfashionable primitive that fits better than the trendy one, dropping a feature instead of building it, building nothing and changing the workflow instead.
+- **At least one direction should explicitly question the problem framing** — a direction where the "right" move is to reshape what the user thinks they need (e.g., "what if this isn't a feature, it's a documentation gap?").
+- **The baseline direction is optional.** Only include it if it's genuinely competitive on the stated priorities. If you include it, label it honestly (e.g., "The conventional approach — do the thing most projects would do here") rather than dressing it up as insight.
+- **Alternatives must be meaningfully different** — not surface variations of the same approach dressed up with different names.
+
 For each direction, provide:
 - **Name:** Short, memorable label
 - **One sentence:** What this direction means
 - **What it prioritizes:** What trade-off does it make?
+- **Why it's non-obvious (if applicable):** For the road-less-traveled direction(s), one sentence on why someone wouldn't reach for this first and why it might still be right here.
 
 Present all directions and use `AskUserQuestion`:
 > "Which direction resonates most?"
@@ -142,5 +152,6 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 - **Use AskUserQuestion for every question.** Never ask questions as plain text. Every question must be structured with options.
 - **Never end with a plain-text message.** Every phase that requires a user decision — including the final Phase 6 output — MUST use `AskUserQuestion`. Writing "Plan saved to X. Run /rnd-framework:rnd-start ..." as the terminal response is a defect. The user must always receive selectable options, not a suggestion to run a command themselves.
 - **Be opinionated.** Offer concrete suggestions and push back constructively. A brainstorming partner who agrees with everything is useless.
+- **Diverge before you converge.** The LLM-default is to regress to the mean — the most popular framing, the most common library, the approach you've seen a hundred times in training data. In Phase 3, actively resist this. Identify the obvious answer, then find what's on the other side of it.
 - **Keep momentum.** Each phase should take 1-2 question rounds, not 10. The total session should be 5-8 questions, not 20.
 - **Respect the funnel.** Go broad first (Phase 2), then narrow (Phase 4). Don't jump to implementation details in Phase 2.

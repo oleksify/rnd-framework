@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.10.0 — 2026-04-20
+
+### Collaborative pipeline: anti-popularity brainstorming, cross-phase decisions log, barrier-protected user-facing briefs, artifact trims
+
+Shifts the framework toward iterative collaboration without sacrificing the automation-friendly pipeline.
+
+Key changes:
+- /rnd-framework:rnd-brainstorm Phase 3 now requires naming the LLM-default baseline privately, then diverging. At least one direction must be road-less-traveled and at least one must question the problem framing. New 'Diverge before you converge' guideline.
+- rnd-design skill softened anti-popularity rules (escape hatch when constraints only admit conventional approaches) plus a Verification Checklist item.
+- New $RND_DIR/briefs/decisions.md cross-phase structured judgment log: Planner, Builder, Debugger, and Integrator append entries when rejecting real alternatives. Each entry records options, chosen option, why, and flip condition. Explicit-fork discipline requires narrating the fork in agent output before logging.
+- New $RND_DIR/briefs/*-briefs.md user-facing narratives: plan-briefs.md, T<id>-briefs.md, wave-<N>-briefs.md. Agents write them and fire [user-brief] SendMessages; orchestrator relays to user chat. Keeps the developer informed during background agent work.
+- Information barrier extended to cover /briefs/ paths: hooks/lib.sh is_barrier_violation now matches both self-assessment and /briefs/ path segments. read-gate.sh, glob-grep-gate.sh, and bash-gate.sh all enforce. Triple protection: orchestrator policy, Verifier startup self-check, and mechanical hook layer.
+- rnd-verifier: Information Barrier section, startup self-check, and Rules extended to forbid /briefs/ paths.
+- rnd-start: new User-Facing Brief Relay section documenting the orchestrator's relay protocol and the no-leak-to-Verifier constraint.
+- Artifact trims to reduce token footprint: evidence files only on FAIL or NEEDS ITERATION verdicts (skip on PASS); self-assessment uses a one-line minimal form for plain DONE status; Builder manifest uses a skinny form for Criticality: LOW tasks.
+- 7 new read-gate.test.sh cases for the /briefs/ barrier, including confirmation that the bare word 'brief' in a non-/briefs/ path (e.g. debrief.ts) is not blocked.
+- CLAUDE.md updated to document the new artifact layout and the extended information barrier.
+
+All 281 plugin validation checks pass. All hook test suites (read-gate, glob-grep-gate, bash-gate) pass.
+
 ## 3.9.0 (2026-04-20)
 
 ### Token Optimization & Model Efficiency

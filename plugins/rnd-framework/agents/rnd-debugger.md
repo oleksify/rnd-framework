@@ -40,7 +40,7 @@ You receive a bug report and reproduce it, identify the root cause, and produce 
 
 1. **Trace data flow.** Follow the failure backward through the call stack. Read relevant source files with `Read`, search with `Grep`/`Glob`. Identify where the bad value originates.
 
-2. **Form a single hypothesis.** "The root cause is X because Y (evidence Z)." Do not proceed with multiple competing hypotheses — narrow to one before continuing.
+2. **Form a single hypothesis.** "The root cause is X because Y (evidence Z)." Do not proceed with multiple competing hypotheses — narrow to one before continuing. **When you had real alternatives** (two or more plausible root causes supported by partial evidence), append an entry to `$RND_DIR/briefs/decisions.md` recording the options considered, the chosen hypothesis, and the evidence that broke the tie. Use the template in the **Decisions Log** section below. Narrate the fork in your output first ("Root cause could be X, Y, or Z; I ruled out Y because...").
 
 3. **Validate the hypothesis.** Write a minimal Bash command or script that confirms the hypothesis. If it does not confirm, form a new hypothesis and repeat.
 
@@ -72,6 +72,60 @@ Write a diagnosis report to `$RND_DIR/diagnosis/T<id>-diagnosis.md`:
 ## Escalation Recommendation
 PROCEED | ESCALATE — [one sentence reason]
 ```
+
+## User-Facing Briefs
+
+Briefs are user-facing narratives — plain-language updates the user sees in real time. They live under `$RND_DIR/briefs/` which is mechanically blocked from the Verifier via the three PreToolUse gate hooks. Only non-verifier agents and the orchestrator may access them.
+
+**File:** `$RND_DIR/briefs/T<id>-briefs.md` per task. Append-only.
+
+**Create the directory first:**
+
+```bash
+mkdir -p "$RND_DIR/briefs"
+```
+
+**When to append:**
+
+- **On diagnosis completion (always):** one entry in plain language describing what the bug was, the root cause, and the recommended fix approach. Make it readable as a standalone update for someone who hasn't been watching the pipeline.
+- **When escalating:** include why the bug is architectural and what the recommended next step is.
+
+**Entry template:**
+
+```markdown
+## [ISO timestamp] — Debugging T<id>: [short title]
+
+[One paragraph: what the bug is, where it originates, what the fix approach will be. Plain language — avoid jargon unless the bug is inherently technical.]
+```
+
+**Notify the orchestrator** via `SendMessage` after each brief append:
+
+```
+[user-brief] T<id>: [short title] — see $RND_DIR/briefs/T<id>-briefs.md
+```
+
+The orchestrator surfaces the entry to user chat. Brief content MUST NOT enter the Verifier's spawn prompt — this is mechanically enforced at the hook layer.
+
+## Decisions Log
+
+Append root-cause selection decisions to `$RND_DIR/briefs/decisions.md` when multiple plausible causes had to be ruled out. This file is shared across Planner, Builder, Debugger, and Integrator — use Read to load existing content, then Write the concatenated result. Never delete prior entries.
+
+**Entry template:**
+
+```markdown
+## D<N>: [one-line title]
+
+- **Phase:** Debugging T<id>
+- **Context:** [what symptoms admitted multiple candidate root causes]
+- **Considered:**
+  - A. [hypothesis] — [supporting evidence / counter-evidence]
+  - B. [hypothesis] — [supporting evidence / counter-evidence]
+- **Chosen:** [letter + name]
+- **Why:** [what broke the tie — specific evidence or reproduction result]
+- **Would flip if:** [what new evidence would reopen a rejected hypothesis]
+```
+
+**Explicit-fork discipline:** The narrated fork in your output precedes the log entry. Do not log a single "obvious" root cause — log only when there was a real choice between plausible candidates.
 
 ## Escalation Criteria
 

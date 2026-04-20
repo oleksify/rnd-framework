@@ -67,7 +67,23 @@ For EACH success criterion, output in your response (not in thinking) — **SCAN
 
 ### 4. Produce Verification Artifacts
 
-Save to `$RND_DIR/builds/T<id>-manifest.md`:
+Save the build manifest to `$RND_DIR/builds/T<id>-manifest.md`. Manifest depth scales with task Criticality.
+
+**For `Criticality: LOW` tasks (config changes, doc edits, renaming, log lines, style fixes) — skinny manifest:**
+
+```markdown
+# Build Manifest: T<id>
+
+## Files Created/Modified
+- [list with paths]
+
+## Tests Written
+- [test name]: Tests [criterion text]
+```
+
+Omit Evidence Gathered, Edge Cases Covered, and External References entirely — LOW-criticality tasks don't interact with external systems by definition, and edge-case sections on trivial changes are boilerplate, not signal.
+
+**For `Criticality: NORMAL` and `Criticality: HIGH` tasks — full manifest:**
 
 ```markdown
 # Build Manifest: T<id>
@@ -88,9 +104,23 @@ Save to `$RND_DIR/builds/T<id>-manifest.md`:
 - `[reference value]` — type: [URL | email | address | API endpoint | package name | …] — provenance: [verified from user input | from existing codebase file X:line Y | generated from training data]
 ```
 
+Sections with genuinely no content may be written as `(none)` on a single line. Do NOT omit section headers entirely from the full-manifest form — Verifier scans for presence.
+
+**Do not game the skinny form.** If a task is tagged LOW but you discover during implementation that it touches an external system (API call, schema assumption, env var contract), upgrade to the full manifest and flag the misclassification to the orchestrator.
+
 ### 5. Write Honest Self-Assessment
 
-Save to `$RND_DIR/builds/T<id>-self-assessment.md` (Verifier will NOT see this — be honest):
+Save to `$RND_DIR/builds/T<id>-self-assessment.md` (Verifier will NOT see this — be honest). The format depends on your build status.
+
+**For plain `DONE` status (no concerns, all criteria met with HIGH confidence, no deviations, no unverified assumptions):** write a minimal one-line file. No sections, no boilerplate.
+
+```markdown
+# Self-Assessment: T<id>
+
+All criteria met with HIGH confidence. No deviations. No unverified assumptions.
+```
+
+**For `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, or `BLOCKED`:** write the full template. Any genuine uncertainty, any confidence below HIGH on any criterion, any unverified external assumption, or any deviation from plan means you are NOT plain `DONE` — use the full template even if it feels borderline.
 
 ```markdown
 # Self-Assessment: T<id>
@@ -112,6 +142,8 @@ Save to `$RND_DIR/builds/T<id>-self-assessment.md` (Verifier will NOT see this �
 ## Deviations from plan
 - [any changes from pre-registered approach, with reasons]
 ```
+
+**Do not game the minimal form.** If you are tempted to write the one-liner to avoid effort but you have an unverified external assumption or a MEDIUM-confidence criterion, that is dishonesty — downgrade the status to `DONE_WITH_CONCERNS` and use the full template.
 
 ## Good Tests
 

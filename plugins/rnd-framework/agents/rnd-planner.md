@@ -125,6 +125,8 @@ Every success criterion belongs to exactly one tier:
    - What depends on it (blocks downstream)
    - Any mutual dependencies (iteration loops)
 
+4.5. **Log plan-level decisions.** Whenever decomposition involved a non-trivial judgment call — scope cuts, architectural forks between meaningfully different approaches, rejected alternatives worth remembering, non-obvious ordering choices — append an entry to `$RND_DIR/briefs/decisions.md` using the template in the **Decisions Log** section below. Skip micro-choices (naming, whitespace, following an already-specified path); log the ones future-you would want to find again.
+
 5. **Identify execution waves:**
    - Wave 1: Tasks with zero dependencies
    - Wave 2: Tasks depending only on Wave 1
@@ -195,6 +197,74 @@ Save your plan to `$RND_DIR/plan.md`. Structure:
 ## Iteration Budgets
 [Default 3 per task, note any exceptions]
 ```
+
+## User-Facing Briefs
+
+Briefs are user-facing narratives — plain-language updates the user sees in real time while the pipeline runs in the background. They live under `$RND_DIR/briefs/` which is mechanically blocked from the Verifier via `hooks/read-gate.sh`, `hooks/glob-grep-gate.sh`, and `hooks/bash-gate.sh`. Only non-verifier agents (Planner, Builder, Debugger, Integrator) and the orchestrator may write or read briefs.
+
+**File:** `$RND_DIR/briefs/plan-briefs.md` (Planner-specific). Append-only — use the Read tool to load existing content, then Write the concatenated result.
+
+**Create the directory first:**
+
+```bash
+mkdir -p "$RND_DIR/briefs"
+```
+
+**When to append a brief entry:**
+
+- After completing planning (one entry summarizing the decomposition — number of tasks, major architectural choices, any scope cuts, what you deferred)
+- When a non-trivial planning decision needed explanation the user should see in real time (e.g., "I decomposed into 7 tasks instead of the obvious 3 because...")
+
+**Entry template:**
+
+```markdown
+## [ISO timestamp] — Planning: [short title]
+
+[One paragraph in plain language. What was decided, what the user should know, what to expect next. No jargon or pipeline internals unless the user would ask about them.]
+```
+
+**Notify the orchestrator** via `SendMessage` after each brief append so the orchestrator can relay the new entry to user chat:
+
+```
+[user-brief] Planning: [short title] — see $RND_DIR/briefs/plan-briefs.md
+```
+
+The orchestrator reads the latest entry from the file and surfaces it to chat. It MUST NOT forward brief content into any Verifier spawn prompt (mechanically enforced — the Verifier's hooks block reads of `/briefs/` paths, so leakage would also be caught).
+
+## Decisions Log
+
+Persistent record of non-trivial judgment calls. Appended across phases by Planner, Builder, Debugger, and Integrator so the "why we chose X" thread survives past the chat transcript.
+
+**File:** `$RND_DIR/briefs/decisions.md` (append-only — use the Read tool to load existing content, then Write the concatenated result; never delete prior entries).
+
+**When to log:**
+
+- Architectural fork between meaningfully different approaches (not surface variations)
+- Scope cut (deferring or rejecting a requirement)
+- Library / framework / primitive choice when there were real alternatives
+- Interface-shape decision (API contract, function signature) that callers will depend on
+- Non-obvious ordering or sequencing choice
+- A fork where the LLM-default was rejected in favor of something else — always log these
+
+**When NOT to log:** variable naming, formatting, micro-refactors within a function, following an already-specified path without divergence, decisions dictated by the pre-registration.
+
+**Entry template:**
+
+```markdown
+## D<N>: [one-line title]
+
+- **Phase:** Planning | Building T<id> | Debugging T<id> | Integration wave <N>
+- **Context:** [what situation forced a choice — 1 sentence]
+- **Considered:**
+  - A. [option name] — [tradeoff / why it could work]
+  - B. [option name] — [tradeoff / why it could work]
+  - C. [option name] (optional) — [tradeoff]
+- **Chosen:** [letter + name]
+- **Why:** [1-2 sentences, tied to constraints or evidence]
+- **Would flip if:** [condition under which a different option becomes better]
+```
+
+**Explicit-fork discipline:** When you make a decision that qualifies, your agent output MUST narrate the fork ("I considered A, B, C; chose A because...") before appending the entry. This forces critical thinking at the decision point instead of post-hoc justification.
 
 ## Local Experts
 

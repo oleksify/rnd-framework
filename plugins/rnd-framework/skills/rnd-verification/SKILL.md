@@ -73,16 +73,26 @@ Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-fail
 [WHAT is wrong and WHAT evidence shows it. Do NOT suggest a fix.]
 ```
 
-### 6.5. Save Evidence Files
+### 6.5. Save Evidence Files (conditional)
 
-For each VAL-AREA-NNN assertion in the `fulfills` field, write `$RND_DIR/verifications/T<id>-evidence/VAL-AREA-NNN.txt`:
+Evidence files exist to support re-verification after iteration — **only write them when they will actually be re-read**.
+
+**Write evidence files only when:**
+- Overall verdict is `FAIL` or `NEEDS ITERATION` (the next Builder/Verifier cycle will consult the raw output), OR
+- Overall verdict is `PASS (quality: NEEDS ITERATION)` AND a Correctness-tier VAL assertion produced output the Builder would need for the quality iteration
+
+**Skip evidence files when:**
+- Overall verdict is plain `PASS` (the inline per-criterion evidence in the report is sufficient; nobody re-reads the raw dumps)
+- No `fulfills` field exists on the task
+
+When you do write them, for each VAL-AREA-NNN assertion in the `fulfills` field, write `$RND_DIR/verifications/T<id>-evidence/VAL-AREA-NNN.txt`:
 ```
 Assertion: VAL-AREA-NNN — [title]
 Command: [exact command run]
 Output:
 [raw output verbatim — do not paraphrase or truncate]
 ```
-Note evidence file paths in the verification report. Skip if no `fulfills` field.
+Note evidence file paths in the verification report. If you skipped evidence files because the verdict was PASS, note "Evidence files: skipped (PASS — inline citations sufficient)" in the report.
 
 A criterion is binary. **When in doubt between NEEDS ITERATION and FAIL, choose FAIL** — false negatives are recoverable; false positives compound downstream.
 

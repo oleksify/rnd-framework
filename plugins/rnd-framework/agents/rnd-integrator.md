@@ -36,6 +36,8 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
    - Interfaces match across modules
    - Imports and dependencies are correct
 
+   **Log integration decisions** to `$RND_DIR/briefs/decisions.md` when you resolve a non-trivial conflict: reconciling mismatched interfaces between tasks, choosing one task's approach over another's on a shared concern, or deciding to defer integration of a module. Narrate the fork in your output first ("Task T3 and T7 both defined handle(); considered A: merge to shared util, B: keep T3's and update T7's callers; chose B because..."). Use the template in the **Decisions Log** section below. Skip logging when merges are mechanical.
+
 3. **Run integration tests:**
    - Do the modules communicate correctly?
    - Are API contracts honored across boundaries?
@@ -69,6 +71,60 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
 ## If NO-SHIP:
 [Which integration points failed and which tasks they trace back to]
 ```
+
+## User-Facing Briefs
+
+Briefs are user-facing narratives — plain-language updates the user sees in real time as the wave integrates. They live under `$RND_DIR/briefs/` which is mechanically blocked from the Verifier via the three PreToolUse gate hooks.
+
+**File:** `$RND_DIR/briefs/wave-<N>-briefs.md` per wave. Append-only.
+
+**Create the directory first:**
+
+```bash
+mkdir -p "$RND_DIR/briefs"
+```
+
+**When to append:**
+
+- **On wave completion (always):** one entry describing the SHIP / NO-SHIP outcome and what the user should know — regressions, integration surprises, cross-module issues that surfaced.
+- **When resolving a non-trivial integration conflict:** one entry in plain language describing how the conflict was reconciled.
+
+**Entry template:**
+
+```markdown
+## [ISO timestamp] — Integration wave <N>: [short title]
+
+[One paragraph in plain language. What was merged, what the outcome is, any surprises or regressions. If SHIP, a brief 'what's new' summary the user could paste into a release note. If NO-SHIP, the specific blocker and next step.]
+```
+
+**Notify the orchestrator** via `SendMessage` after each brief append:
+
+```
+[user-brief] Wave <N>: [short title] — see $RND_DIR/briefs/wave-<N>-briefs.md
+```
+
+The orchestrator surfaces the entry to user chat. Brief content MUST NOT enter the Verifier's spawn prompt — mechanically enforced at the hook layer.
+
+## Decisions Log
+
+Append non-trivial integration judgment calls to `$RND_DIR/briefs/decisions.md`. Shared with Planner, Builder, Debugger — use Read to load existing content, then Write the concatenated result. Never delete prior entries.
+
+**Entry template:**
+
+```markdown
+## D<N>: [one-line title]
+
+- **Phase:** Integration wave <N>
+- **Context:** [what conflict or reconciliation forced a choice — 1 sentence]
+- **Considered:**
+  - A. [option name] — [tradeoff / which task(s) it favors]
+  - B. [option name] — [tradeoff / which task(s) it favors]
+- **Chosen:** [letter + name]
+- **Why:** [1-2 sentences, tied to the SHIP/NO-SHIP decision or system-level criterion]
+- **Would flip if:** [condition under which a different reconciliation becomes better]
+```
+
+**Explicit-fork discipline:** Narrate the fork in your output before appending the entry. Mechanical merges (no conflicts, pure append) do not qualify.
 
 ## Rules
 

@@ -178,6 +178,35 @@ assert_exit   "learnings + self-assessment in path → exit 2 (barrier first)" 2
 assert_stderr_contains "learnings + self-assessment in path → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
 # ---------------------------------------------------------------------------
+# Briefs barrier tests
+# ---------------------------------------------------------------------------
+
+# /briefs/ path with verifier agent_type → block
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":"rnd-verifier"}'
+assert_exit   "/briefs/ + verifier → exit 2" 2
+assert_stderr_contains "/briefs/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# /briefs/ path with no agent_type → block
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":""}'
+assert_exit   "/briefs/ + empty agent_type → exit 2" 2
+
+# /briefs/ path with rnd-builder → exit 0 (builder writes its own briefs)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":"rnd-builder"}'
+assert_exit   "/briefs/ + rnd-builder → exit 0" 0
+
+# /briefs/ path with rnd-planner → exit 0
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":"rnd-planner"}'
+assert_exit   "/briefs/ + rnd-planner → exit 0" 0
+
+# Word "brief" appearing in a regular path (not /briefs/) → exit 0 (not blocked)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/Developer/myproject/src/debrief.ts"},"agent_type":"rnd-verifier"}'
+assert_exit   "debrief.ts (word 'brief' but no /briefs/ segment) + verifier → exit 0" 0
+
+# /briefs/ + self-assessment → block (both patterns present, block still fires)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/briefs/T3-self-assessment.md"},"agent_type":"rnd-verifier"}'
+assert_exit   "/briefs/ + self-assessment + verifier → exit 2" 2
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

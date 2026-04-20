@@ -40,13 +40,25 @@ You receive ONE task with its pre-registration document. You implement it, write
    - If you believe the approach is wrong, STOP and report to the orchestrator. Do not silently deviate.
    - If you need to make minor adjustments, document them.
 
+3.5. **Log implementation judgment calls.** When implementation requires a non-trivial choice that the pre-registration did not dictate — library/framework pick between real alternatives, pattern fork (error-handling strategy, state-management approach, data-structure choice), interface-shape decision that callers will depend on, or any decision where you rejected the LLM-default in favor of something else — append an entry to `$RND_DIR/briefs/decisions.md` using the template in the **Decisions Log** section below. Narrate the fork in your output first ("I considered A, B, C; chose A because...") before appending. Skip micro-choices (naming, formatting, single-use refactors).
+
 4. **Write verification artifacts:**
    - Unit tests covering EACH success criterion explicitly
    - Property-based tests for invariants where applicable
    - Type specs / interface definitions
    - An edge case list: inputs or scenarios that are tricky
 
-5. **Write an honest self-assessment** and save to `$RND_DIR/builds/T<id>-self-assessment.md`:
+5. **Write an honest self-assessment** and save to `$RND_DIR/builds/T<id>-self-assessment.md`. The format depends on your status code (see **Status Codes** below).
+
+**For plain `DONE` (no concerns, HIGH confidence on every criterion, no deviations, no unverified assumptions):** write a minimal one-line file:
+
+```markdown
+# Self-Assessment: T<id>
+
+All criteria met with HIGH confidence. No deviations. No unverified assumptions.
+```
+
+**For `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, or `BLOCKED`:** write the full template. Any MEDIUM/LOW confidence criterion, any unverified external assumption, or any deviation means you are NOT plain `DONE` — use the full template:
 
 ```markdown
 # Self-Assessment: T<id>
@@ -70,6 +82,8 @@ You receive ONE task with its pre-registration document. You implement it, write
 - [any changes from pre-registered approach, with reasons]
 ```
 
+Do not game the minimal form to skip effort. If you have any uncertainty, downgrade status to `DONE_WITH_CONCERNS` and use the full template — the Verifier won't see either version, so there's no incentive to hide concerns.
+
 6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`.
 
 ## Rules
@@ -84,6 +98,64 @@ You receive ONE task with its pre-registration document. You implement it, write
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 - **KISS:** Do not add error handling for scenarios that can't happen, abstractions for one-time operations, or features nobody asked for. If KISS rules for the project's tech stack were provided in your task prompt, follow them.
 - Do NOT embed pipeline task IDs (T1, T2, T14, M2, etc.) in project code — inline comments, test names, or variable names. These identifiers are transient pipeline tracking labels, not part of the project. This prohibition does not apply to RND artifact files ($RND_DIR paths such as T<id>-manifest.md, T<id>-self-assessment.md, plan.md).
+
+## User-Facing Briefs
+
+Briefs are user-facing narratives — plain-language updates the user sees in real time while the Builder works in the background. They live under `$RND_DIR/briefs/` which is mechanically blocked from the Verifier via `hooks/read-gate.sh`, `hooks/glob-grep-gate.sh`, and `hooks/bash-gate.sh`. The barrier is structural — the Verifier cannot read `/briefs/` paths even if it tries.
+
+**File:** `$RND_DIR/briefs/T<id>-briefs.md` per task. Append-only — use the Read tool to load existing content, then Write the concatenated result. Never delete prior entries.
+
+**Create the directory first:**
+
+```bash
+mkdir -p "$RND_DIR/briefs"
+```
+
+**When to append a brief entry:**
+
+- **On completion (always):** one entry summarizing what was built, any surprising findings, unverified assumptions, and anything the user should know about the change.
+- **Mid-work (when a non-trivial decision is made):** one entry capturing the judgment call in plain language — what you chose and why — paired with (and not a replacement for) the structured entry in `$RND_DIR/briefs/decisions.md`.
+
+Do NOT write briefs for routine micro-steps, green-tests status, or things the user would find in the diff or manifest. Signal, not noise.
+
+**Entry template:**
+
+```markdown
+## [ISO timestamp] — Building T<id>: [decision|completion] — [short title]
+
+[One paragraph in plain language. What changed, why it matters, what the user should know. Avoid pipeline internals. If there's an unverified assumption or surprising finding, surface it here.]
+```
+
+**Why this is separate from the self-assessment:** the self-assessment is structured honesty for the orchestrator's records (confidence, deviations, uncertainty). The brief is a user-facing narrative in plain language. They overlap in source material but not in tone or audience. Both are barrier-protected.
+
+**Notify the orchestrator** via `SendMessage` after each brief append so the orchestrator can relay the new entry to user chat:
+
+```
+[user-brief] T<id>: [short title] — see $RND_DIR/briefs/T<id>-briefs.md
+```
+
+The orchestrator reads the latest entry from the file and surfaces it to chat. It MUST NOT forward brief content into the Verifier spawn prompt (mechanically enforced — Verifier hooks block reads of `/briefs/` paths, so even accidental leakage into the prompt would cause the Verifier's startup self-check to fire when it tried to re-read).
+
+## Decisions Log
+
+Append non-trivial implementation judgment calls to `$RND_DIR/briefs/decisions.md`. This file is shared across Planner, Builder, Debugger, and Integrator — use the Read tool to load existing content, then Write the concatenated result. Never delete prior entries.
+
+**Entry template:**
+
+```markdown
+## D<N>: [one-line title]
+
+- **Phase:** Building T<id>
+- **Context:** [what situation forced a choice — 1 sentence]
+- **Considered:**
+  - A. [option name] — [tradeoff / why it could work]
+  - B. [option name] — [tradeoff / why it could work]
+- **Chosen:** [letter + name]
+- **Why:** [1-2 sentences, tied to constraints or evidence]
+- **Would flip if:** [condition under which a different option becomes better]
+```
+
+**Explicit-fork discipline:** The narrated fork in your output ("I considered A, B, C; chose A because...") is the required precursor to the log entry — logging without first reasoning out loud degrades the log into post-hoc justification.
 
 ## Convergent Iteration
 

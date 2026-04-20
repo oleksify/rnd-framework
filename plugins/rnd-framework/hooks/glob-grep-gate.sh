@@ -19,14 +19,15 @@ pattern="$(printf '%s' "$TOOL_INPUT" | jq -r '.pattern // ""' 2>/dev/null || tru
 path_lower="$(_lower "$path")"
 pattern_lower="$(_lower "$pattern")"
 
-# Block verifier/unknown agents that touch self-assessment content.
+# Block verifier/unknown agents that touch self-assessment or briefs/ content.
 if is_barrier_violation "$path" "${AGENT_TYPE}" \
    || is_barrier_violation "$pattern" "${AGENT_TYPE}"; then
-  block_msg "INFORMATION BARRIER: self-assessment files are write-only records for the orchestrator. Direct reading is blocked to maintain information barriers between Builder and Verifier."
+  block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
-# Non-verifier agent touching self-assessment: no-opinion, not auto-allow.
-if [[ "$path_lower" == *"self-assessment"* ]] || [[ "$pattern_lower" == *"self-assessment"* ]]; then
+# Non-verifier agent touching self-assessment or briefs/: no-opinion, not auto-allow.
+if [[ "$path_lower" == *"self-assessment"* ]] || [[ "$pattern_lower" == *"self-assessment"* ]] \
+   || [[ "$path_lower" == *"/briefs/"* ]] || [[ "$pattern_lower" == *"/briefs/"* ]]; then
   exit 0
 fi
 

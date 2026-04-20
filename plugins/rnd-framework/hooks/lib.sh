@@ -203,16 +203,28 @@ active_session_dir() {
 # Information barrier
 # ---------------------------------------------------------------------------
 
-# Returns 0 iff the lowered <text> contains "self-assessment" AND the caller
-# has no agent_type OR has one that names a verifier. Pure; no side effects.
-# Shared by read-gate.sh, glob-grep-gate.sh, and bash-gate.sh — the three
-# hooks must agree exactly on the barrier semantics.
+# Returns 0 iff the lowered <text> contains a barrier-protected pattern AND
+# the caller has no agent_type OR has one that names a verifier. Pure; no
+# side effects. Shared by read-gate.sh, glob-grep-gate.sh, and bash-gate.sh —
+# the three hooks must agree exactly on the barrier semantics.
+#
+# Barrier-protected patterns:
+#   - "self-assessment" — Builder uncertainty records (blocked from Verifier)
+#   - "/briefs/" — user-facing narrative artifacts that may echo Builder reasoning
+#     (matched as a path segment with slashes so the bare word "brief" in a
+#     grep pattern is not flagged)
 is_barrier_violation() {
   local text="$1"
   local agent_type="${2:-}"
   local text_lower agent_lower
   text_lower="$(_lower "$text")"
-  [[ "$text_lower" == *"self-assessment"* ]] || return 1
+  local has_pattern=0
+  if [[ "$text_lower" == *"self-assessment"* ]]; then
+    has_pattern=1
+  elif [[ "$text_lower" == *"/briefs/"* ]]; then
+    has_pattern=1
+  fi
+  [[ "$has_pattern" -eq 1 ]] || return 1
   agent_lower="$(_lower "$agent_type")"
   [[ -z "$agent_lower" || "$agent_lower" == *"verifier"* ]]
 }

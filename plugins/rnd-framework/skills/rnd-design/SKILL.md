@@ -64,6 +64,8 @@ For each alternative, define:
 Guidelines for generating alternatives:
 - Alternatives must be meaningfully different — not surface variations of the same approach
 - At least one alternative should be a simpler/lighter approach, even if not optimal
+- **Name the LLM-default before you draft.** Before producing the alternatives, privately identify the single approach a model trained on popular literature would reach for first ("use library X", "wrap it in a microservice", "add an agent", "use the trendy primitive"). This is the **baseline**. Then draft the alternatives with the baseline in mind — not as the anchor to beat, but as a direction to diverge from where the constraints permit.
+- **Include one road-less-traveled alternative when it's credible.** At least one alternative should be a genuinely different framing that most engineers would not reach for first (inverting the data flow, using a legacy/unfashionable primitive that fits the constraints better than the trendy one, dropping a requirement instead of building for it, building nothing and changing the workflow). Include it only if it's competitive on the stated constraints — do not manufacture a contrarian option for its own sake. If the constraints genuinely only admit conventional approaches, say so in the recommendation rather than forcing divergence.
 - Do not stack-rank alternatives before presenting them to the user
 - Cover the space of real trade-offs: performance vs simplicity, flexibility vs predictability, up-front cost vs ongoing cost
 
@@ -226,6 +228,7 @@ Before declaring design phase complete:
 
 - [ ] Spec contains 2-3 meaningfully different alternatives (not surface variations)
 - [ ] Each alternative has strengths, weaknesses, effort estimate, and risk level
+- [ ] Baseline (LLM-default) was identified and the alternatives diverge from it, OR the recommendation explicitly states why only conventional approaches fit the constraints
 - [ ] Recommendation includes key assumptions and conditions that would change it
 - [ ] User approved via `AskUserQuestion` (not plain text acknowledgment)
 - [ ] `$RND_DIR/design-spec.md` exists and contains `STATUS: APPROVED`

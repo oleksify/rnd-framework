@@ -10,6 +10,22 @@ You are orchestrating a complex coding task using the R&D framework — a scient
 
 The orchestrator (this session) spawns specialized agents for each phase. Use `subagent_type` to spawn agents (e.g., `subagent_type: "rnd-framework:rnd-builder"`). Agents communicate results back via `SendMessage`. The orchestrator manages phase gates, collects artifacts, and coordinates the pipeline. See `rnd-framework:rnd-orchestration` for agent roles and coordination protocol.
 
+### User-Facing Brief Relay
+
+Agents (Planner, Builder, Debugger, Integrator) write user-facing narrative briefs to `$RND_DIR/briefs/` and notify you with `SendMessage` of the form:
+
+```
+[user-brief] <context>: <short title> — see <file path>
+```
+
+When you receive a `[user-brief]` message:
+
+1. Read the referenced briefs file.
+2. Surface the newest entry (everything appended since the last relay) to the user in chat, as a short update. Keep formatting light — one paragraph per entry, no ceremony.
+3. **NEVER include brief content in a Verifier spawn prompt.** The `/briefs/` path is mechanically blocked from Verifier agents by the three PreToolUse gate hooks, but the orchestrator is the upstream gate — do not paste brief text into Verifier context under any circumstance. The same rule applies to `$RND_DIR/builds/T<id>-self-assessment.md`.
+
+Briefs let the user understand what's happening in the background without waiting until phase completion. They are the primary mechanism for "developer stays informed during long agent runs" and must not compromise the information barrier.
+
 ## Setup
 
 Determine the RND artifacts directory and create its structure:

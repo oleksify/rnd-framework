@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.1 — 2026-04-21
+
+### Inject tool-discipline guidance into orchestrator session
+
+Adds a Tool Discipline section to the using-rnd-framework skill, placed before the session-start trim headers so it is injected into the orchestrator context at session start. Covers the four gate-hook rules the model hit most often — temp files ($RND_DIR vs /tmp), file read/write (Read/Write vs cat/echo), search/listing (Grep/Glob vs grep/find/ls), iteration (Grep alternation or parallel Bash calls vs for/while/until loops), and inline interpreter code (project files only vs -c/-e). Each bullet names both the blocked pattern and the allowed alternative so the guidance is proactive, not only reactive via the hook block message. Pipeline subagents already had this guidance in their system prompts; this closes the gap for the main session.
+
 ## 3.12.0 — 2026-04-20
 
 ### Pipeline tier selection for rnd-start

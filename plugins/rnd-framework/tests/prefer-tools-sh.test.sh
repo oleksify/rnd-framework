@@ -650,6 +650,24 @@ run_hook "$(payload 'sed s/foo/bar/ file.txt')"
 assert_exit   "sed still blocked after barrier code added → exit 2" 2
 assert_stderr_contains "sed still blocked → Edit tool" "Edit tool"
 
+# bfs with self-assessment path + verifier → barrier blocks
+run_hook "$(payload_with_agent 'bfs /rnd/builds/T3-self-assessment.md' 'rnd-verifier')"
+assert_exit   "bfs self-assessment + verifier → exit 2" 2
+assert_stderr_contains "bfs self-assessment + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# ugrep with /briefs/ path + verifier → barrier blocks
+run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-verifier')"
+assert_exit   "ugrep /briefs/ + verifier → exit 2" 2
+assert_stderr_contains "ugrep /briefs/ + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
+
+# bfs with self-assessment path + builder → allowed (barrier does not fire)
+run_hook "$(payload_with_agent 'bfs /rnd/builds/T3-self-assessment.md' 'rnd-builder')"
+assert_exit   "bfs self-assessment + rnd-builder → exit 0" 0
+
+# ugrep with briefs/ path + builder → allowed (barrier does not fire)
+run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-builder')"
+assert_exit   "ugrep /briefs/ + rnd-builder → exit 0" 0
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------

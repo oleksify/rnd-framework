@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.2 — 2026-04-22
+
+### Raise minimum Claude Code version to v2.1.117 and extend info-barrier tests to bfs/ugrep
+
+Primary motivator is the Opus-4.7 1M-context fix in v2.1.117, which restores correct autocompaction behavior for Opus-4.7 pipeline agents. Also added four bfs/ugrep information-barrier test cases in prefer-tools-sh.test.sh to confirm the barrier pattern check catches native-build search tools when used by verifier agents. Corrected stale tool-discipline documentation in CLAUDE.md and skills/committing/SKILL.md that incorrectly claimed cat/grep/find are blocked by bash-gate.sh — they are not; only sed and awk are blocked.
+
 ## 3.12.1 — 2026-04-21
 
 ### Inject tool-discipline guidance into orchestrator session

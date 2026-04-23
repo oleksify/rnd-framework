@@ -89,26 +89,31 @@ where `X.Y.Z` is the new version read from `plugin.json`.
 
 **If "Skip commit"** is chosen, confirm to the user that files are staged and ready for manual commit.
 
-## Step 5: Tag Offer
+## Step 5: Push Tag
 
-After a successful commit, use `AskUserQuestion` to ask:
+`bump.sh` attempts `claude plugin tag "$PLUGIN_DIR"` after staging, but `claude plugin tag` refuses to tag when the working tree is dirty — which it always is immediately after bump.sh stages its changes. The attempt is non-fatal (warns and continues). The expected flow is: bump stages → user commits → then create the release tag on the new commit.
 
-> "Create an annotated git tag `vX.Y.Z`?"
+**After a successful commit**, create the tag:
 
-Options:
-- "Tag and push" — create the tag and push it to the remote
-- "Tag only" — create the tag locally, don't push
-- "Skip tagging (Recommended)" — no tag, done
+```bash
+claude plugin tag <plugin-dir>
+```
 
-**If "Tag and push"** or **"Tag only"** is chosen, run:
+Then ask the user:
+
+> "Plugin release tag vX.Y.Z created. Push it?"
+
+Use `AskUserQuestion` with options:
+- "Push tag (Recommended)" — push the tag to the remote with `git push origin vX.Y.Z`
+- "Skip push" — tag stays local, done
+
+**If `claude plugin tag` is not in PATH or fails,** fall back to manual tagging:
 
 ```bash
 git tag -a vX.Y.Z -m "<headline>"
 ```
 
-where `<headline>` is the CHANGELOG headline from Step 1. If "Tag and push", also run `git push origin vX.Y.Z`.
-
-**If "Skip tagging"** is chosen, done — no further action.
+where `<headline>` is the CHANGELOG headline from Step 2. Then offer to push as above.
 
 ## Commit Message Convention
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.0 — 2026-04-23
+
+### Add per-task cleanup phase and adopt Claude Code v2.1.118 features
+
+Introduce rnd-cleanup agent that sweeps dead code, orphan files, duplicate implementations, and stale comments after each Verifier PASS, applies fixes, and rolls back if cleanup breaks re-verification. Raise minimum recommended Claude Code to v2.1.118 to pick up the agent-type hooks, SendMessage cwd restoration, and prompt-hook re-firing fixes. Ship a curated autoMode.allow extension using the v2.1.118 $defaults keyword and wire 'claude plugin tag' into bump.sh so version bumps emit a validated git tag automatically.
+
 ## 3.12.2 — 2026-04-22
 
 ### Raise minimum Claude Code version to v2.1.117 and extend info-barrier tests to bfs/ugrep

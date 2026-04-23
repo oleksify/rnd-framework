@@ -114,4 +114,17 @@ printf '%s\n\n%s%s' "$HEADER" "$NEW_ENTRY" "$REST" > "$CHANGELOG"
 # --- Stage files ---
 git -C "$PLUGIN_DIR" add "$PLUGIN_JSON" "$CHANGELOG"
 
+# --- Auto-tag via claude plugin tag (non-fatal) ---
+# `claude plugin tag` (v2.1.118+) reads the version from plugin.json and
+# creates a git tag for the plugin release.  This is best-effort: if claude
+# is not in PATH, or the tag already exists, we warn and continue — the bump
+# itself has already succeeded and is fully recoverable without the tag.
+if command -v claude &>/dev/null; then
+  if ! claude plugin tag "$PLUGIN_DIR" 2>&1; then
+    echo "warning: 'claude plugin tag' failed — tag the release manually if needed" >&2
+  fi
+else
+  echo "warning: claude not in PATH; skipping plugin tag — run 'claude plugin tag' manually after committing" >&2
+fi
+
 echo "Bumped version $CURRENT_VERSION → $NEW_VERSION"

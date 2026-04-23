@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 8 specialized agents with structural isolation enforce the information barrier at the context-window level.
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 9 specialized agents with structural isolation enforce the information barrier at the context-window level.
 
 The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
@@ -16,7 +16,7 @@ lib/
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── agents/                      # 8 specialized agents for multi-agent execution mode
+├── agents/                      # 9 specialized agents for multi-agent execution mode
 ├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
@@ -46,7 +46,7 @@ plugins/rnd-framework/
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
-│   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
+│   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage + `claude plugin tag` auto-tag (v2.1.118+)
 │   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 │   └── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
@@ -57,7 +57,7 @@ plugins/rnd-framework/
 
 ### Execution Model
 
-Eight specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
+Nine specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|
@@ -66,6 +66,7 @@ Eight specialized agents handle each pipeline phase in isolated context windows.
 | Reality Audit | `rnd-reality-auditor` (sonnet) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies` |
 | Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH |
 | Verification | `rnd-verifier` (sonnet/high) | Checks output against pre-registered criteria (information barrier enforced); single-judge by default, multi-judge consensus available via `--multi-judge` |
+| Cleanup | `rnd-cleanup` (sonnet/medium) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
 | Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
 | Debugging | `rnd-debugger` (sonnet/high) | Root cause analysis for failing tasks |
 | Data Science | `rnd-data-scientist` (sonnet) | Standalone specialist for numerical/analytical work |
@@ -73,7 +74,7 @@ Eight specialized agents handle each pipeline phase in isolated context windows.
 ### Information Barrier and Permission Hooks
 
 The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
-- **Information barrier** (`read-gate.sh`, `glob-grep-gate.sh`, `bash-gate.sh`): Blocks any tool call where the file path or command string contains `self-assessment` OR the path segment `/briefs/` when the agent is a verifier or has no agent_type, preventing the verification phase from anchoring on build-phase reasoning. Both patterns share the same barrier semantics. The `/briefs/` segment (with slashes) is matched so the bare word "brief" in a grep pattern is not flagged. Enforced across all file-reading tools: `Read` (path check), `Grep`/`Glob` (path and pattern check), `Bash` (command string check). The `/briefs/` protection covers the Planner/Builder/Debugger/Integrator user-facing brief artifacts under `$RND_DIR/briefs/` and the cross-phase `decisions.md` log located there.
+- **Information barrier** (`read-gate.sh`, `glob-grep-gate.sh`, `bash-gate.sh`): Blocks any tool call where the file path or command string contains `self-assessment`, the path segment `/briefs/`, or the path segment `/cleanup/` when the agent is a verifier or has no agent_type, preventing the verification phase from anchoring on build-phase or cleanup-phase reasoning. All three patterns share the same barrier semantics. The `/briefs/` and `/cleanup/` segments (with slashes) are matched so the bare words "brief" or "cleanup" in a grep pattern are not flagged. Enforced across all file-reading tools: `Read` (path check), `Grep`/`Glob` (path and pattern check), `Bash` (command string check). The `/briefs/` protection covers the Planner/Builder/Debugger/Integrator user-facing brief artifacts under `$RND_DIR/briefs/` and the cross-phase `decisions.md` log located there. The `/cleanup/` protection covers the cleanup agent's per-task reports under `$RND_DIR/cleanup/`.
 - **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`, `settings.json`): `Read` operations on `.rnd/` artifact paths are auto-allowed via hook. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed via hook (`write-gate.sh`) with `settings.json` `allowWrite` as belt-and-suspenders. `Glob` and `Grep` operations targeting these paths are auto-allowed via hook. For `Bash`, `.rnd/` auto-allow fires at the command level after tool-discipline segment checks have all passed — so sed and inline interpreters are still blocked even when a `.rnd/` path appears in the command. `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
 - **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `awk`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), shell loops (`for`/`while`/`until`), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Read-side commands (`cat`, `head`, `tail`, `grep`, `rg`, `find`) pass through without opinion. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. Strips environment-variable prefixes (`FOO=bar command`) before checking each segment, ensuring tool discipline applies regardless of env-var assignments. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches. **Note on Edit-without-Read (v2.1.89+):** Claude Code v2.1.89 allows Edit on files viewed via `sed -n` or `cat` without a separate Read call. Since bash-gate blocks `sed`, this upstream feature does not affect rnd-framework users — the model must still use Read → Edit.
 - **Audit logging** (`post-dispatch.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` and advises when command output exceeds 50 lines
@@ -204,13 +205,29 @@ v2.1.113 added `sandbox.network.deniedDomains` to `settings.json` — a blocklis
 
 v2.1.117 fixed Opus-4.7 failing to use its full 1M-token context window in Claude Code sessions. This is the primary driver for raising the minimum recommended version to v2.1.117 — pipelines using Opus-4.7 as the orchestrator or a high-reasoning agent could silently truncate context on earlier versions. Update via `claude update`.
 
+#### Agent-Type Hooks for Non-Stop Events (v2.1.118+)
+
+v2.1.118 fixed agent-type hooks failing with "Messages are required for agent hooks" when configured for events other than Stop or SubagentStop. This unblocks attaching hooks to specific named agents — for example, a PreToolUse hook that only fires for the `rnd-verifier` agent. Prior to this fix, any attempt to scope a hook to a specific agent on a non-Stop event would error silently.
+
+#### Prompt Hook Re-Fire Fix (v2.1.118+)
+
+v2.1.118 fixed prompt hooks re-firing on tool calls made by an agent-hook verifier subagent. This is relevant if multi-judge verification adopts agent-hook verifiers — without this fix, prompt hooks (e.g., UserPromptSubmit) would incorrectly re-trigger on each tool call the verifier subagent made, polluting context and potentially double-counting session events.
+
+#### SendMessage Subagent cwd Restore Fix (v2.1.118+)
+
+v2.1.118 fixed subagents resumed via SendMessage not restoring the explicit `cwd` they were spawned with. This directly addresses a class of orchestrator bugs — the pipeline uses SendMessage to wake sleeping agents, and prior to this fix those agents could silently operate in the wrong working directory after resumption, corrupting relative path assumptions.
+
+#### /fork Pointer-Only Writes (v2.1.118+)
+
+v2.1.118 changed `/fork` to write a pointer file instead of copying the full conversation per fork. This improves multi-agent performance when forking agents during long-running pipeline sessions — fork overhead scales with conversation length, so large pipelines benefit most.
+
 #### file_path Handling
 
 Tool schemas require absolute paths and the model typically complies. However, hooks receive raw `tool_input` without mechanical path normalization — relative paths could theoretically reach hooks. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) guard against this by rejecting paths that don't start with `/`. If a relative path reaches a hook, the conservative behavior is to not auto-allow (falls through to the default permission prompt).
 
 #### Plugin Settings Defaults
 
-The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines` with `refreshInterval: 5` (v2.1.97+). These are defaults — user settings take precedence.
+The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines` with `refreshInterval: 5` (v2.1.97+), and `autoMode.allow` with the v2.1.118 `$defaults` keyword plus a curated list of safe pipeline Bash invocations (`bun test:*`, `python -m pytest:*`, read-only `git` subcommands, `jq:*`, `ls:*`) to reduce permission prompts during pipeline execution. The `$defaults` keyword extends rather than replaces the built-in auto-mode allow list. These are defaults — user settings take precedence.
 
 #### Hook Allow/Deny Precedence (v2.1.77+)
 
@@ -282,6 +299,7 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
+    ├── cleanup/T*-cleanup-report.md        # Cleanup agent per-task reports (barrier-protected from Verifier)
     ├── briefs/                             # Barrier-protected Builder-reasoning artifacts (blocked from Verifier by read-gate/glob-grep-gate/bash-gate hooks)
     │   ├── decisions.md                    # Cross-phase structured judgment-call log (Planner/Builder/Debugger/Integrator append when rejecting real alternatives)
     │   ├── plan-briefs.md                  # Planner user-facing narrative briefs

@@ -2,6 +2,19 @@
   "allowWrite": [
     "~/.claude*/.rnd/**"
   ],
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Bash(bun test:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(jq:*)",
+      "Bash(ls:*)"
+    ]
+  },
   "sandbox": {
     "network": {
       "deniedDomains": [

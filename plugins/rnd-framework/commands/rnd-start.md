@@ -252,16 +252,42 @@ Do NOT verify tasks yourself. The Verifier agent independently writes experiment
 **Gate 3:** Verify `$RND_DIR/verifications/T<id>-verification.md` exists and is non-empty. Read the verdict:
 - **PASS** → `TaskUpdate` to `completed`.
 - **PASS (quality: NEEDS ITERATION)** → Same as PASS. Save quality feedback. Does NOT block integration.
-- **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 4.
+- **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5.
 - **FAIL** → Do NOT iterate — route to re-planning.
 
 **After Gate 3:** Summarize verdicts. Then route:
 
-- All PASS/PASS(quality): auto-continue to Phase 5, or `AskUserQuestion`: "Proceed to integration (Recommended)", "Iterate on quality first", "Review verification reports".
-- Any NEEDS ITERATION: auto-continue to Phase 4, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
+- All PASS/PASS(quality): auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
+- Any NEEDS ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
 - Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
 
-## Phase 4: Iterate (if needed)
+## Phase 4: Cleanup (per task)
+
+After each task passes Gate 3, spawn a Cleanup agent to sweep dead code and stale artifacts introduced or exposed by that task's changes.
+
+**Spawn a Cleanup agent:**
+
+```
+Agent({
+  description: "Cleanup task T<id>",
+  subagent_type: "rnd-framework:rnd-cleanup",
+  mode: "acceptEdits",
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier report: $RND_DIR/verifications/T<id>-verification.md"
+})
+```
+
+The Cleanup agent inspects the working tree for dead code, unused imports, unreachable exports, and leftover scaffolding. It applies fixes in-place and produces `$RND_DIR/cleanup/T<id>-cleanup-report.md`. If applied fixes break re-verification, the agent rolls back its changes and notes `cleanup: rolled_back` in the report.
+
+**Gate 4:** Verify `$RND_DIR/cleanup/T<id>-cleanup-report.md` exists and is non-empty.
+
+- If the report contains `cleanup: rolled_back`, note `cleanup: skipped (rollback)` in `$RND_DIR/iteration-log.md` and proceed — this is NOT a pipeline failure.
+- If the file is missing, `AskUserQuestion`: "Re-run cleanup", "Skip cleanup for this task".
+
+**After Gate 4:** If **auto-continue mode is ON**, proceed directly to Phase 6 (Integrate) once all tasks in the wave have completed cleanup. Otherwise, `AskUserQuestion`:
+- "Proceed to integration (Recommended)"
+- "Review cleanup reports"
+
+## Phase 5: Iterate (if needed)
 
 1. Extract feedback from the verification report (WHAT is wrong, not HOW to fix).
 2. **Re-spawn a Builder agent** with the feedback. Do NOT fix the code yourself.
@@ -279,7 +305,7 @@ Track iterations in `$RND_DIR/iteration-log.md`.
 1. `TaskUpdate`: `status: "completed"`, `metadata: {"skipped": true, "reason": "..."}`.
 2. Check downstream dependents via `TaskList`. Warn the user and `AskUserQuestion` for each: skip dependent, proceed anyway, or re-plan.
 
-## Phase 5: Integrate
+## Phase 6: Integrate
 
 **Spawn an Integrator agent:**
 
@@ -294,9 +320,9 @@ Agent({
 
 Do NOT integrate yourself. The Integrator merges verified outputs, runs integration tests, and produces `$RND_DIR/integration/wave-<N>-report.md`.
 
-**Gate 4:** Verify `$RND_DIR/integration/wave-<N>-report.md` exists and is non-empty.
+**Gate 5:** Verify `$RND_DIR/integration/wave-<N>-report.md` exists and is non-empty.
 
-**After Gate 4:** Summarize results.
+**After Gate 5:** Summarize results.
 
 If SHIP and more waves remain: auto-continue to Phase 2 next wave, or `AskUserQuestion`:
 - "Proceed to next wave (Recommended)"
@@ -310,7 +336,7 @@ If NO-SHIP: `AskUserQuestion`:
 - "Fix failing integration points (Recommended)"
 - "Re-plan affected tasks"
 
-## Phase 6: Report & Cleanup
+## Phase 7: Report & Cleanup
 
 Summarize: what was built, verification results, iterations, integration status, remaining concerns.
 

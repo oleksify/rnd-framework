@@ -223,6 +223,9 @@ is_barrier_violation() {
     has_pattern=1
   elif [[ "$text_lower" == *"/briefs/"* ]]; then
     has_pattern=1
+  elif [[ "$text_lower" == *"/cleanup/"* ]]; then
+    # /cleanup/ — barrier-protected cleanup-report artifacts (mirrors /briefs/)
+    has_pattern=1
   fi
   [[ "$has_pattern" -eq 1 ]] || return 1
   agent_lower="$(_lower "$agent_type")"

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.2 — 2026-04-26
+
+### Batch verification per wave with lazy prose on FAIL, decomposition caps, and wave-level iteration
+
+Verifier now spawns once per wave and returns a per-task verdict map at wave-N-verdict-map.json. Happy path writes T<id>-pass-receipt.json instead of full prose; FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes the prose report. Planner is capped at max 4 tasks per wave with min 1-hour scope and forced coalescing. Builder/Verifier artifact templates are terse-by-default (structured bullets, no narrative). Phase 5 iteration is wave-level: a single Builder spawn handles all failing tasks in a wave with the full verdict map; budget = highest-criticality task's per-task budget. Information barrier and per-task pre-registration unchanged.
+
 ## 3.13.1 — 2026-04-26
 
 ### Trim planner maxTurns and verifier overhead to eliminate multi-minute hangs

@@ -48,6 +48,14 @@ A criterion is testable if a skeptical Verifier can evaluate it from evidence al
 - **Unverified external contract:** DB schema, API shape, env var not confirmed → add Phase 0 spike or dedicated verification step before that task
 - **Local expert available:** set the `Local expert` field in the pre-registration so the Builder knows to invoke it
 
+## Decomposition Caps
+
+Hard limits that apply after heuristics:
+
+- **Maximum 4 tasks per wave** — if a wave would contain more, split into sub-waves or coalesce tasks.
+- **Minimum task scope: 1 hour of work** — tasks smaller than this must coalesce with a sibling. A task that touches one line or one config key is below the minimum scope.
+- **Coalescing rule:** when two tasks share the same file set and could be reviewed in a single pass, merge them unless their success criteria require different verification levels.
+
 ## Exploration Cache
 
 Before decomposition, write structured findings to `$RND_DIR/exploration/` (`mkdir -p`). One kebab-case file per area (e.g., `hooks-architecture.md`). Each file: `## Files Examined`, `## Key Patterns`, `## Relevant Dependencies`, `## Notes for Builders`.

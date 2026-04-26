@@ -61,11 +61,11 @@ Nine specialized agents handle each pipeline phase in isolated context windows. 
 
 | Phase | Agent | Purpose |
 |---|---|---|
-| Planning | `rnd-planner` (sonnet/high) | Decomposes tasks into pre-registered sub-tasks with testable criteria |
-| Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces build manifest + self-assessment |
+| Planning | `rnd-planner` (sonnet/high) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing |
+| Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces terse build manifest (structured bullets, no narrative) + self-assessment |
 | Reality Audit | `rnd-reality-auditor` (sonnet) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies` |
 | Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH |
-| Verification | `rnd-verifier` (sonnet/high) | Checks output against pre-registered criteria (information barrier enforced); single-judge by default, multi-judge consensus available via `--multi-judge` |
+| Verification | `rnd-verifier` (sonnet/high) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; on PASS writes `T<id>-pass-receipt.json` (lazy prose), on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes prose report; information barrier enforced; HIGH criticality routes through wave-batched multi-judge |
 | Cleanup | `rnd-cleanup` (sonnet/medium) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
 | Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
 | Debugging | `rnd-debugger` (sonnet/high) | Root cause analysis for failing tasks |
@@ -291,9 +291,11 @@ The framework stores artifacts in a centralized directory outside the project tr
 └── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, environment, testing strategy, worker guidelines, validation contract, pre-registrations (with preconditions), schedule
     ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
-    ├── builds/T*-manifest.md              # Builder output records
+    ├── builds/T*-manifest.md              # Builder output records (terse: structured bullets, no narrative)
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
-    ├── verifications/T*-verification.md   # Verifier evidence-based verdicts
+    ├── verifications/wave-*-verdict-map.json  # Per-wave verdict map keyed by task_id (PASS/PASS_QUALITY_NEEDS_ITERATION/NEEDS_ITERATION/FAIL + evidence + feedback)
+    ├── verifications/T*-pass-receipt.json # Lazy-prose PASS receipt (criteria_met + evidence_refs + timestamp); written instead of full prose on PASS
+    ├── verifications/T*-verification.md   # Verifier evidence-based verdicts (auto-materialized only on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION)
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
     ├── verifications/T*-evidence/         # Per-VAL-assertion evidence files (raw command output)
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)

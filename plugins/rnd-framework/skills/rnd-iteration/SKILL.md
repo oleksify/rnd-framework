@@ -54,32 +54,44 @@ When receiving verification feedback:
 | Standard | 3 | Escalate to re-planning |
 | High-stakes | 5 | Escalate to re-planning |
 
+### Wave-Scoped Budget
+
+Iteration is wave-scoped: the budget for a wave rebuild equals the per-task budget of the highest-criticality task in the wave. All failing tasks in the wave are rebuilt in a single pass; re-verification covers the full wave. One cycle = one wave rebuild + one wave re-verify.
+
+Example: a wave containing LOW and NORMAL tasks uses NORMAL budget (3 iterations max).
+
 ### When Budget Exhausted
 
-If a task fails verification after max iterations:
+If a wave still has failures after max iterations:
 
 1. **STOP building** — More hammering won't help
-2. **Report to orchestrator:** "Task T<id> exceeded iteration budget"
+2. **Report to orchestrator:** "Wave <N> exceeded iteration budget"
 3. **Likely causes:**
-   - Task was decomposed wrong
+   - Tasks were decomposed wrong
    - Success criteria were ambiguous
    - The approach is fundamentally flawed
-4. **Orchestrator decision:** Re-plan the task, merge it with another task, or escalate to user
+4. **Orchestrator decision:** Re-plan failing tasks, skip them, or escalate to user
 
-**Progress visibility:** When entering an iteration cycle, update the task's `activeForm` via `TaskUpdate` to include the iteration count — e.g., `"Iterating T3 (2/3)"`. This shows progress in the user's task list spinner and prevents the "silent pipeline" problem.
+**Progress visibility:** When entering a wave iteration cycle, update the wave's active tasks via `TaskUpdate` to include the iteration count — e.g., `"Iterating Wave <N> (2/3)"`. This shows progress in the user's task list spinner and prevents the "silent pipeline" problem.
 
-Track all iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set; session is `${CLAUDE_SESSION_ID}`):
+Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set; session is `${CLAUDE_SESSION_ID}`):
 
 ```markdown
-## T<id> Iteration Log
+## Wave-<N> Iteration Log
 
 ### Cycle 1
-- **Verifier feedback:** [summary]
-- **Builder response:** [what was changed]
-- **Result:** PASS | FAIL | NEEDS ITERATION
+- **Failing tasks:** [T<id>, T<id>, ...]
+- **Wave failure report:** [summary of per-task verdict map sent to Builder]
+- **Builder response:** [what was changed across all failing tasks]
+- **Result:** PASS | NEEDS_ITERATION | FAIL
 
 ### Cycle 2
 ...
+
+#### T<id> detail
+- **Criterion failed:** [criterion text]
+- **Evidence:** [evidence summary]
+- **Fix applied:** [what Builder changed]
 ```
 
 ## Common Rationalizations

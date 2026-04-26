@@ -19,6 +19,21 @@ This skill defines the protocol shared by `/rnd-framework:rnd-verify` and the Ve
 - Any time higher confidence in a verification verdict is required
 - When a task's failure would be expensive to fix downstream
 
+## Wave-Batched Multi-Judge Protocol
+
+When a wave contains any HIGH-criticality task, the orchestrator runs wave-batched multi-judge verification: both judges each receive all task pre-registrations for the wave, each returns a per-task verdict map, and the tiebreaker is triggered per-task (only for tasks where the two judges disagree).
+
+**Wave-level flow:**
+1. Spawn 2 parallel Verifier agents — both receive all task pre-registrations for the wave.
+2. Each judge returns a per-task verdict map for all tasks in the wave.
+3. Compare verdict maps task by task. For each task:
+   - Both agree → use shared verdict for that task.
+   - Judges disagree on a task → spawn a tiebreaker for that specific task only.
+4. Assemble the final per-task verdict map from agreed verdicts plus tiebreaker verdicts where applicable.
+5. Save the aggregated report to `$RND_DIR/verifications/T<id>-verification.md` for each task and the final verdict map to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
+
+The information barrier applies identically in wave-batched mode — no judge prompt includes self-assessment content for any task.
+
 ## Protocol
 
 ### Step 1 — Pre-flight

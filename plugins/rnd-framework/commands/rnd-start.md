@@ -228,37 +228,63 @@ Agent({
 
 Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
 
-## Phase 3: Verify (per task)
+## Phase 3: Verify (per wave — batch verification)
 
 **CRITICAL: Information Barrier.** The Verifier runs in a separate context window and cannot see the Builder's reasoning. The `read-gate.sh` hook blocks reads of self-assessment files. Do NOT pass self-assessment content to the Verifier.
 
-**For each built task, check the `Criticality` field in its pre-registration and route:**
+**Batch verification:** Spawn ONE Verifier agent per wave with ALL task pre-registrations in the prompt. The Verifier processes each task in the wave sequentially, then returns a per-task verdict map JSON saved to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
-- **LOW or NORMAL (default):** Spawn a single Verifier agent:
+**Verdict map schema:**
+```json
+{
+  "T1": {
+    "verdict": "PASS",
+    "evidence": ["grep for X exited 0", "test foo passed"],
+    "feedback": ""
+  },
+  "T2": {
+    "verdict": "NEEDS_ITERATION",
+    "evidence": ["criterion Y not met: output missing field Z"],
+    "feedback": "The response schema omits the 'feedback' field required by the criterion."
+  }
+}
+```
+Valid verdict values: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`, `NEEDS_ITERATION`, `FAIL`. The `feedback` field is required and non-empty for any non-PASS verdict; empty string for PASS.
+
+**Determine the criticality of tasks in the wave to route correctly:**
+
+- **Wave contains only LOW or NORMAL tasks:** Spawn a single Verifier agent for the whole wave:
 
 ```
 Agent({
-  description: "Verify task T<id>",
+  description: "Verify wave <N> tasks",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
 })
 ```
 
-- **HIGH:** Invoke the `rnd-framework:rnd-multi-judge` protocol — spawn 2 independent Verifier agents in parallel, aggregate verdicts, trigger a tiebreaker on disagreement. See that skill for the full protocol.
+- **Wave contains any HIGH-criticality task:** Invoke the `rnd-framework:rnd-multi-judge` protocol for the whole wave. Both judges each receive all wave task pre-registrations and each returns a per-task verdict map. Tiebreaker is triggered per-task — only for tasks where Judge A and Judge B disagree. See that skill for the full wave-batched protocol.
 
-Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces a verification report. It returns a verdict: PASS, PASS (quality: NEEDS ITERATION), NEEDS ITERATION, or FAIL.
+The Verifier writes per-task traceability artifacts for every task in the wave: a `T<id>-pass-receipt.json` for PASS tasks, or a full `T<id>-verification.md` prose report for FAIL/NEEDS_ITERATION tasks (auto-materialized). PASS_QUALITY_NEEDS_ITERATION tasks get both. Plus the aggregate verdict map.
 
-**Gate 3:** Verify `$RND_DIR/verifications/T<id>-verification.md` exists and is non-empty. Read the verdict:
-- **PASS** → `TaskUpdate` to `completed`.
-- **PASS (quality: NEEDS ITERATION)** → Same as PASS. Save quality feedback. Does NOT block integration.
-- **NEEDS ITERATION** → Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5.
-- **FAIL** → Do NOT iterate — route to re-planning.
+The Verifier saves the aggregate verdict map to: `$RND_DIR/verifications/wave-<N>-verdict-map.json`
 
-**After Gate 3:** Summarize verdicts. Then route:
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces per-task verification reports. It returns a per-task verdict map.
 
-- All PASS/PASS(quality): auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
-- Any NEEDS ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
+**Gate 3:** Verify `$RND_DIR/verifications/wave-<N>-verdict-map.json` exists and is non-empty. Read the verdict map and dispatch each task based on its verdict:
+
+| Verdict | Action |
+|---------|--------|
+| `PASS` | `TaskUpdate` to `completed`. Route to Phase 4 (cleanup). |
+| `PASS_QUALITY_NEEDS_ITERATION` | Same as PASS. Save quality feedback. Does NOT block integration. Route to Phase 4. |
+| `NEEDS_ITERATION` | Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5 for this task. |
+| `FAIL` | Do NOT iterate — route to re-planning. |
+
+**After Gate 3:** Summarize per-task verdicts from the verdict map. Then route:
+
+- All PASS/PASS_QUALITY: auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
+- Any NEEDS_ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
 - Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
 
 ## Phase 4: Cleanup (per task)
@@ -272,7 +298,7 @@ Agent({
   description: "Cleanup task T<id>",
   subagent_type: "rnd-framework:rnd-cleanup",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier report: $RND_DIR/verifications/T<id>-verification.md"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)"
 })
 ```
 
@@ -287,18 +313,20 @@ The Cleanup agent inspects the working tree for dead code, unused imports, unrea
 - "Proceed to integration (Recommended)"
 - "Review cleanup reports"
 
-## Phase 5: Iterate (if needed)
+## Phase 5: Wave-Level Iteration (if needed)
 
-1. Extract feedback from the verification report (WHAT is wrong, not HOW to fix).
-2. **Re-spawn a Builder agent** with the feedback. Do NOT fix the code yourself.
-3. After the Builder returns, **re-spawn a Verifier agent** to re-verify (same information barrier).
-4. **If re-verification returns PASS**, extract a learning via `rnd-framework:rnd-learning`.
-5. If iteration budget exhausted (LOW=2, NORMAL=3, HIGH=5), `AskUserQuestion`:
-   - "Re-plan this task"
-   - "Skip and continue (Recommended)"
+Iteration operates at the wave level — a single Builder spawn handles ALL failing tasks in the wave, and re-verification re-batches the full wave.
+
+1. **Collect the full wave failure report**: extract per-task feedback from `$RND_DIR/verifications/wave-<N>-verdict-map.json` for every task with verdict `FAIL` or `NEEDS_ITERATION`. This is the "affected slice" — do not iterate tasks that passed.
+2. **Spawn ONE Builder agent** with the full wave failure report (the complete per-task verdict map with evidence refs for all failing tasks — not just feedback for a single task). Do NOT fix the code yourself. The Builder must address every failing task in a single pass.
+3. After the Builder returns, **loop back to Phase 3** to re-batch-verify the full wave (same Verifier spawn, same information barrier, all tasks).
+4. **If wave re-verification returns all PASS**, extract learnings via `rnd-framework:rnd-learning`.
+5. **Wave iteration budget**: budget = per-task budget of the highest-criticality task in the wave (LOW=2, NORMAL=3, HIGH=5). If the wave rebuild still has failures after budget exhausted, `AskUserQuestion`:
+   - "Re-plan failing tasks"
+   - "Skip failing tasks and continue (Recommended)"
    - "Stop pipeline"
 
-Track iterations in `$RND_DIR/iteration-log.md`.
+Track wave iterations in `$RND_DIR/iteration-log.md` using the `## Wave-<N> Iteration Log` template (see `rnd-framework:rnd-iteration`).
 
 ### Skip Procedure
 

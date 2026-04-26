@@ -132,11 +132,11 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
 | `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
 | `rnd-building` | Builder methodology with TDD discipline baked in |
-| `rnd-verification` | Independent verification with information barriers and evidence-based verdicts |
+| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; PASS writes pass-receipt.json (lazy prose), FAIL/NEEDS_ITERATION auto-materializes prose; information barrier intact |
 | `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |
 | `rnd-scheduling` | Dependency-based wave scheduling, parallel agent dispatch |
 | `rnd-scaling` | Pipeline scaling rules: trivial → small → medium → large → high-stakes |
-| `rnd-iteration` | Build-verify feedback loops, iteration budgets, escalation |
+| `rnd-iteration` | Wave-level build-verify feedback loops; budget = highest-criticality task's per-task budget; single Builder spawn per failing wave receives full verdict map |
 | `rnd-integration` | Merge verified outputs, integration/system validation |
 | `rnd-completion` | Post-SHIP workflow: branch management, PR creation, cleanup |
 | `rnd-formatting` | Pre-commit formatting — detects project formatter (biome, prettier, mix format, cargo fmt, etc.) and runs it on pipeline-changed files |
@@ -146,7 +146,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `committing` | Commit message style, length limits, and user confirmation before committing |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
 | `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
-| `rnd-multi-judge` | Multi-judge consensus verification — 2 independent verifiers with tiebreaker on disagreement |
+| `rnd-multi-judge` | Wave-batched multi-judge consensus — 2 independent verifiers each receive the full wave; per-task tiebreaker on disagreement |
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
@@ -294,7 +294,9 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   ├── T1-manifest.md          # What the builder produced
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
         ├── verifications/
-        │   ├── T1-verification.md      # Verifier report with evidence
+        │   ├── wave-1-verdict-map.json # Per-wave verdict map keyed by task_id (one Verifier spawn per wave)
+        │   ├── T1-pass-receipt.json    # Lazy-prose PASS receipt; written instead of full prose on PASS
+        │   ├── T1-verification.md      # Full prose report (auto-materialized only on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION)
         │   ├── T1-experiments/         # Verifier-written independent experiment tests
         │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
         ├── proofs/

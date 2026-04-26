@@ -67,7 +67,7 @@ For EACH success criterion, output in your response (not in thinking) — **SCAN
 
 ### 4. Produce Verification Artifacts
 
-Save the build manifest to `$RND_DIR/builds/T<id>-manifest.md`. Manifest depth scales with task Criticality.
+Save the build manifest to `$RND_DIR/builds/T<id>-manifest.md`. **Terse format: structured bullets only — no narrative, no recap of what you did.** Manifest depth scales with task Criticality.
 
 **For `Criticality: LOW` tasks (config changes, doc edits, renaming, log lines, style fixes) — skinny manifest:**
 
@@ -107,6 +107,8 @@ Omit Evidence Gathered, Edge Cases Covered, and External References entirely —
 Sections with genuinely no content may be written as `(none)` on a single line. Do NOT omit section headers entirely from the full-manifest form — Verifier scans for presence.
 
 **Do not game the skinny form.** If a task is tagged LOW but you discover during implementation that it touches an external system (API call, schema assumption, env var contract), upgrade to the full manifest and flag the misclassification to the orchestrator.
+
+**Note on Verifier output:** When your task passes verification, the Verifier writes a `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` instead of a full prose report. A full prose report is only materialized on FAIL or NEEDS_ITERATION. You do not need to write the pass-receipt — the Verifier produces it.
 
 ### 5. Write Honest Self-Assessment
 

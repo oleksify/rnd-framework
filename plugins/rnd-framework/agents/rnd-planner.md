@@ -132,6 +132,7 @@ Every success criterion belongs to exactly one tier:
    - Wave 2: Tasks depending only on Wave 1
    - Continue until all tasks are scheduled
    - Flag parallel opportunities within each wave
+   - **Decomposition Caps (hard limits):** maximum 4 tasks per wave; minimum task scope is 1 hour of work — tasks smaller than that must coalesce with a sibling; if a wave would exceed 4 tasks, split into sub-waves or coalesce tasks until the cap is met
 
 6. **Self-review.** Run the Plan Self-Review checklist from the `rnd-decomposition` skill against the finished plan.md. Fix any issues inline before sending "Plan ready".
 

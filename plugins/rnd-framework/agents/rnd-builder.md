@@ -84,7 +84,7 @@ All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 
 Do not game the minimal form to skip effort. If you have any uncertainty, downgrade status to `DONE_WITH_CONCERNS` and use the full template — the Verifier won't see either version, so there's no incentive to hide concerns.
 
-6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`.
+6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. **Terse format: no narrative, no recap — structured bullets only.**
 
 ## Rules
 

@@ -83,14 +83,14 @@ fulfills: [VAL-AREA-NNN, ...]
 Dedicated agents are spawned for each pipeline role. The orchestrator session coordinates them, enforcing information barriers and gate criteria.
 
 Agent assignments:
-- **rnd-planner** — Planning phase (Opus model)
+- **rnd-planner** — Planning phase (Sonnet model)
 - **rnd-builder** — Build phase (Sonnet model)
 - **rnd-proof-gate** — Proof Gate phase (Sonnet model, advisory)
 - **rnd-reality-auditor** — Reality Audit phase (Sonnet model, blocking)
-- **rnd-verifier** — Verification phase (Opus model, Edit disallowed)
+- **rnd-verifier** — Verification phase (Sonnet model, Edit disallowed)
 - **rnd-integrator** — Integration phase (Sonnet model)
-- **rnd-data-scientist** — On-demand for analytical tasks (Opus model)
-- **rnd-debugger** — On-demand for root cause analysis (Opus model)
+- **rnd-data-scientist** — On-demand for analytical tasks (Sonnet model)
+- **rnd-debugger** — On-demand for root cause analysis (Sonnet model)
 
 > **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 

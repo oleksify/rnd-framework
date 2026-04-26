@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.1 — 2026-04-26
+
+### Trim planner maxTurns and verifier overhead to eliminate multi-minute hangs
+
+Drops rnd-planner maxTurns 250 to 100; scopes rnd-experiments mandatory iron law to Correctness criteria only; adds mid-run heartbeat brief triggers to planner (after exploration cache write, after plan.md write) and verifier (after experiments written, after tests run); reconciles all 9 agent assignments in rnd-orchestration from Opus to Sonnet; replaces inline 6-mode failure list in rnd-verifier with forward reference to the 8-mode quick-scan table in rnd-verification skill; deduplicates rnd-verifier.md by 91 body lines (196 to 114) by removing content that already lives in the preloaded rnd-verification skill; adds agent-runtime-budgets.test.sh regression test asserting maxTurns bounds across all 9 agents.
+
 ## 3.13.0 — 2026-04-23
 
 ### Add per-task cleanup phase and adopt Claude Code v2.1.118 features

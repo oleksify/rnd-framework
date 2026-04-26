@@ -23,10 +23,12 @@ Experiments are independent tests written by the Verifier from the pre-registrat
 ## The Iron Law
 
 ```
-EXPERIMENTS ARE MANDATORY FOR EVERY CRITERION — NOT OPTIONAL, NOT ON-DEMAND
+EXPERIMENTS ARE MANDATORY FOR EVERY CORRECTNESS CRITERION — NOT OPTIONAL, NOT ON-DEMAND
 ```
 
-If the pre-registration lists N criteria, the Verifier writes N experiments. Skipping an experiment for a criterion — because it "looks simple" or "is obviously met" — is a verification failure. The point is to produce independent evidence, not to confirm what already seems true.
+If the pre-registration lists N Correctness criteria, the Verifier writes N experiments. Skipping an experiment for a Correctness criterion — because it "looks simple" or "is obviously met" — is a verification failure. The point is to produce independent evidence, not to confirm what already seems true.
+
+Quality criteria are optional for experiments — writing experiments for them is encouraged but not required when time is limited. Correctness criteria always get experiments.
 
 ## What Makes Experiments Different from Builder Tests
 

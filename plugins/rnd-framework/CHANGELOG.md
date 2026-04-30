@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.13.3 — 2026-04-30
+
+### Fix detect_pipeline_phase JSON-only state, cleanup-path barrier consistency, lazy-prose PASS contract drift, and four minor hook and tooling bugs from audit findings
+
 ## 3.13.2 — 2026-04-26
 
 ### Batch verification per wave with lazy prose on FAIL, decomposition caps, and wave-level iteration

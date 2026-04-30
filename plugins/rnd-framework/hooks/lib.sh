@@ -213,6 +213,8 @@ active_session_dir() {
 #   - "/briefs/" — user-facing narrative artifacts that may echo Builder reasoning
 #     (matched as a path segment with slashes so the bare word "brief" in a
 #     grep pattern is not flagged)
+#   - "/cleanup/" — per-task cleanup reports (barrier-protected from Verifier;
+#     mirrors /briefs/ semantics)
 is_barrier_violation() {
   local text="$1"
   local agent_type="${2:-}"
@@ -247,7 +249,7 @@ detect_pipeline_phase() {
   fi
   if compgen -G "${dir}/integration/"*.md > /dev/null 2>&1; then
     printf 'Integrating'
-  elif compgen -G "${dir}/verifications/"*.md > /dev/null 2>&1; then
+  elif [[ -n "$(ls -A "${dir}/verifications/" 2>/dev/null)" ]]; then
     printf 'Verifying'
   elif compgen -G "${dir}/builds/"*.md > /dev/null 2>&1; then
     printf 'Building'

@@ -151,7 +151,7 @@ Task status is derived from artifact files — no separate state file is needed.
 | Artifact exists? | Status |
 |-----------------|--------|
 | `$RND_DIR/integration/wave-<N>-report.md` contains SHIP | integrated |
-| `$RND_DIR/verifications/T<id>-verification.md` contains PASS | verified |
+| `$RND_DIR/verifications/T<id>-pass-receipt.json` exists | verified |
 | `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS ITERATION | iterating |
 | `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty | built |
 | Task in plan.md but no build artifact | planned |

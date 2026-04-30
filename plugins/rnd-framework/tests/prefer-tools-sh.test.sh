@@ -669,6 +669,25 @@ run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-builder')"
 assert_exit   "ugrep /briefs/ + rnd-builder → exit 0" 0
 
 # ---------------------------------------------------------------------------
+# Env-var prefix with quoted value containing internal space (known limitation)
+# strip_env_prefix splits on the first space, so FOO="abc breaks out of the
+# while loop leaving "def" sed" as the segment. "def"" is not a blocked
+# command name, so tool discipline does not fire. Result: exit 0 (no opinion).
+# See the comment above strip_env_prefix in bash-gate.sh for details.
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'FOO="abc def" sed s/a/b/ file')"
+assert_exit   'FOO="abc def" sed → exit 0 (quoted-space limitation, no opinion)' 0
+
+# ---------------------------------------------------------------------------
+# Shell loop guard: simple for-loop is detected and blocked (bracket-class fix)
+# ---------------------------------------------------------------------------
+
+run_hook "$(payload 'for i in 1; do echo hi; done')"
+assert_exit   "for i in 1; do echo hi; done → exit 2 (loop guard)" 2
+assert_stderr_contains "for-loop → loop guard message" "for"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

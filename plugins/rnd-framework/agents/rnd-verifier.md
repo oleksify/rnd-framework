@@ -35,7 +35,7 @@ When the orchestrator spawns you for a whole wave, your prompt will contain:
 - `Wave: <N>` and `Tasks in wave: T<id1>, T<id2>, ...`
 - All task pre-registrations for the wave
 
-Process each task in the wave sequentially using the standard verification protocol (steps 1–6 from `rnd-framework:rnd-verification`). Produce a `T<id>-verification.md` prose report for each task, then aggregate all per-task verdicts into the verdict map.
+Process each task in the wave sequentially using the standard verification protocol (steps 1–6 from `rnd-framework:rnd-verification`). On PASS: write a `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` instead of a prose report. On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: produce a `T<id>-verification.md` prose report. Then aggregate all per-task verdicts into the verdict map.
 
 ### Per-Task Verdict Map Output
 
@@ -61,7 +61,7 @@ After completing all tasks in the wave, save the verdict map to `$RND_DIR/verifi
 - `evidence` — array of strings; at least one entry; cite command output or line references
 - `feedback` — string; non-empty for any non-PASS verdict; empty string (`""`) for PASS
 
-If you are verifying a single task (not a wave), produce only the `T<id>-verification.md` prose report. The verdict map is only produced for wave batches.
+If you are verifying a single task (not a wave), the verdict map is not produced. On PASS: write a `T<id>-pass-receipt.json` instead of a prose report. On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: produce a `T<id>-verification.md` prose report.
 
 See `rnd-framework:rnd-verification` for the full verification protocol (information barrier rules, two-stage evaluation table, process steps 1–6, tool discipline).
 

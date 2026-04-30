@@ -182,6 +182,7 @@ PARITY_TABLE=(
   "skills/rnd-local-experts/SKILL.md:commands/rnd-start.md:Local Experts Discovered:local expert discovery summary field"
   "skills/rnd-local-experts/SKILL.md:skills/rnd-decomposition/SKILL.md:ocal expert:local expert field in decomposition skill"
   "skills/rnd-failure-modes/SKILL.md:skills/rnd-verification/SKILL.md:failure modes:failure modes catalog reference in verification skill"
+  "skills/rnd-verification/SKILL.md:agents/rnd-verifier.md:pass-receipt.json:lazy-prose PASS receipt parity"
 )
 
 validate_content_parity() {

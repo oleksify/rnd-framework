@@ -151,5 +151,31 @@ run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.claude/plugins
 assert_exit "plugin cache path → exit 0" 0
 assert_stdout_empty "plugin cache path → empty stdout (no opinion)"
 
+# ---------------------------------------------------------------------------
+# Cleanup barrier tests
+# ---------------------------------------------------------------------------
+
+# /cleanup/ path with verifier → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":"rnd-verifier"}'
+assert_exit   "/cleanup/ + verifier → exit 2" 2
+assert_stderr_contains "/cleanup/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# /cleanup/ path with empty agent_type → block
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":""}'
+assert_exit   "/cleanup/ + empty agent_type → exit 2" 2
+
+# /cleanup/ path with rnd-builder → exit 0, empty stdout (not auto-allowed)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":"rnd-builder"}'
+assert_exit   "/cleanup/ + rnd-builder → exit 0" 0
+assert_stdout_empty "/cleanup/ + rnd-builder → empty stdout (not auto-allowed)"
+
+# /cleanup/ in pattern with verifier → block
+run_hook '{"tool_name":"Glob","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd","pattern":"/cleanup/*.md"},"agent_type":"rnd-verifier"}'
+assert_exit   "/cleanup/ in Glob pattern + verifier → exit 2" 2
+
+# Word "cleanup" without /cleanup/ segment → not affected
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/someone/project/src/cleanup.ts","pattern":"dead"},"agent_type":"rnd-verifier"}'
+assert_exit   "cleanup.ts (no /cleanup/ segment) + verifier → exit 0" 0
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]] || exit 1

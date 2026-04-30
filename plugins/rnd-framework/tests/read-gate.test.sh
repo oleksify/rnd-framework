@@ -207,6 +207,28 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/briefs/
 assert_exit   "/briefs/ + self-assessment + verifier → exit 2" 2
 
 # ---------------------------------------------------------------------------
+# Cleanup barrier tests
+# ---------------------------------------------------------------------------
+
+# /cleanup/ path with verifier agent_type → block
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md"},"agent_type":"rnd-verifier"}'
+assert_exit   "/cleanup/ + verifier → exit 2" 2
+assert_stderr_contains "/cleanup/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+
+# /cleanup/ path with empty agent_type → block
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md"},"agent_type":""}'
+assert_exit   "/cleanup/ + empty agent_type → exit 2" 2
+
+# /cleanup/ path with rnd-builder → exit 0, empty stdout (not auto-allowed)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md"},"agent_type":"rnd-builder"}'
+assert_exit   "/cleanup/ + rnd-builder → exit 0" 0
+assert_stdout_empty "/cleanup/ + rnd-builder → empty stdout (not auto-allowed)"
+
+# Word "cleanup" without /cleanup/ path segment → not affected (verifier reads regular cleanup.ts freely)
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/project/src/cleanup.ts"},"agent_type":"rnd-verifier"}'
+assert_exit   "cleanup.ts (no /cleanup/ segment) + verifier → exit 0" 0
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

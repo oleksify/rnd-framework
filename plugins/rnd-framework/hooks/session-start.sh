@@ -33,7 +33,7 @@ if [[ -f "$SKILL_PATH" ]]; then
   trim_line="$(printf '%s\n' "$raw_content" | grep -n -m1 -E "$TRIM_HEADERS" \
     2>/dev/null | cut -d: -f1 | head -1 || true)"
 
-  if [[ -n "$trim_line" && "$trim_line" -gt 0 ]]; then
+  if [[ -n "$trim_line" && "$trim_line" -ge 2 ]]; then
     skill_content="$(printf '%s\n' "$raw_content" | awk -v n="$((trim_line - 1))" 'NR<=n')"
   else
     skill_content="$raw_content"

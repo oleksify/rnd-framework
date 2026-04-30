@@ -9,7 +9,8 @@
 #   3. No opinion for all other paths.
 #
 # The barrier check MUST precede the auto-allow check so that a .rnd/ path
-# containing "self-assessment" is blocked rather than silently allowed.
+# containing a barrier-protected pattern (self-assessment, /briefs/, /cleanup/)
+# is blocked rather than silently allowed.
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -25,9 +26,10 @@ if is_barrier_violation "$path" "${AGENT_TYPE}" \
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
-# Non-verifier agent touching self-assessment or briefs/: no-opinion, not auto-allow.
+# Non-verifier agent touching self-assessment, briefs/, or cleanup/: no-opinion, not auto-allow.
 if [[ "$path_lower" == *"self-assessment"* ]] || [[ "$pattern_lower" == *"self-assessment"* ]] \
-   || [[ "$path_lower" == *"/briefs/"* ]] || [[ "$pattern_lower" == *"/briefs/"* ]]; then
+   || [[ "$path_lower" == *"/briefs/"* ]] || [[ "$pattern_lower" == *"/briefs/"* ]] \
+   || [[ "$path_lower" == *"/cleanup/"* ]] || [[ "$pattern_lower" == *"/cleanup/"* ]]; then
   exit 0
 fi
 

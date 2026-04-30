@@ -107,7 +107,12 @@ else
 fi
 
 # --- Prepend entry after first line (# Changelog header) ---
-HEADER="$(head -1 "$CHANGELOG")"
+first_line="$(head -1 "$CHANGELOG")"
+if ! printf '%s\n' "$first_line" | grep -q "^# "; then
+  printf 'error: CHANGELOG first line is not an H1 header (expected "# ..."), got: %s\n' "$first_line" >&2
+  exit 1
+fi
+HEADER="$first_line"
 REST="$(tail -n +2 "$CHANGELOG")"
 printf '%s\n\n%s%s' "$HEADER" "$NEW_ENTRY" "$REST" > "$CHANGELOG"
 

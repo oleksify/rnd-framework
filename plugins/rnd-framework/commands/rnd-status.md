@@ -18,11 +18,11 @@ If `$RND_DIR` does not exist or contains no artifacts (no `plan.md`, no `builds/
 Derive task status by scanning artifact directories. Read `$RND_DIR/plan.md` for the task list, then check:
 
 1. `$RND_DIR/integration/wave-<N>-report.md` — if exists and contains SHIP → **integrated**
-2. `$RND_DIR/verifications/T<id>-verification.md` — if exists, read verdict:
-   - PASS → **verified**
+2. `$RND_DIR/verifications/T<id>-pass-receipt.json` — if exists → **verified**
+3. `$RND_DIR/verifications/T<id>-verification.md` — if exists, read verdict:
    - NEEDS ITERATION → **iterating**
-3. `$RND_DIR/builds/T<id>-manifest.md` — if exists and non-empty → **built**
-4. Otherwise → **planned**
+4. `$RND_DIR/builds/T<id>-manifest.md` — if exists and non-empty → **built**
+5. Otherwise → **planned**
 
 Supplement with:
 - `$RND_DIR/iteration-log.md` for iteration history and cycle counts

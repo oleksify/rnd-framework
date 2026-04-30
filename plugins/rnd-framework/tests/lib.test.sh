@@ -252,4 +252,37 @@ _got_dir3=""
 _got_dir3="$(active_session_dir 2>/dev/null)" || true
 assert_eq "active_session_dir: valid ID with all-f hex returns correct path" "${_BASE}/sessions/${_VALID_ID3}" "$_got_dir3"
 
+# ---------------------------------------------------------------------------
+# detect_pipeline_phase
+# ---------------------------------------------------------------------------
+
+printf '%s\n' '--- detect_pipeline_phase ---'
+
+_PPD_DIR="$(mktemp -d)"
+
+# Idle when dir empty
+assert_eq "detect_pipeline_phase: empty dir → Idle" "Idle" "$(detect_pipeline_phase "$_PPD_DIR")"
+
+# Planning when plan.md exists
+printf '' > "${_PPD_DIR}/plan.md"
+assert_eq "detect_pipeline_phase: plan.md only → Planning" "Planning" "$(detect_pipeline_phase "$_PPD_DIR")"
+
+# Building when builds/*.md exists
+mkdir -p "${_PPD_DIR}/builds"
+printf '' > "${_PPD_DIR}/builds/manifest.md"
+assert_eq "detect_pipeline_phase: builds/*.md → Building" "Building" "$(detect_pipeline_phase "$_PPD_DIR")"
+
+# Verifying: JSON-only files in verifications/ (no .md)
+mkdir -p "${_PPD_DIR}/verifications"
+printf '' > "${_PPD_DIR}/verifications/wave-1-verdict-map.json"
+printf '' > "${_PPD_DIR}/verifications/T1-pass-receipt.json"
+assert_eq "detect_pipeline_phase: verifications/ with JSON-only files → Verifying" "Verifying" "$(detect_pipeline_phase "$_PPD_DIR")"
+
+# Integrating takes priority over Verifying
+mkdir -p "${_PPD_DIR}/integration"
+printf '' > "${_PPD_DIR}/integration/wave-1-report.md"
+assert_eq "detect_pipeline_phase: integration/*.md present → Integrating (ordering preserved)" "Integrating" "$(detect_pipeline_phase "$_PPD_DIR")"
+
+rm -rf "$_PPD_DIR"
+
 report

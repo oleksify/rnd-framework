@@ -40,7 +40,7 @@ When the orchestrator spawns the Verifier for an entire wave (all task pre-regs 
 **Batch flow:**
 1. Receive all task pre-registrations for the wave in a single prompt.
 2. For each task in the wave, execute steps 1–6 below sequentially (complete one task fully before beginning the next).
-3. Write per-task `T<id>-verification.md` prose reports to `$RND_DIR/verifications/`.
+3. For each task: on PASS write a `T<id>-pass-receipt.json` to `$RND_DIR/verifications/`; on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION write a `T<id>-verification.md` prose report.
 4. After completing all tasks in the wave, aggregate per-task verdicts into `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
 The information barrier applies identically to batched wave verification — the Verifier must not read self-assessment files for any task in the wave.

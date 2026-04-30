@@ -22,12 +22,12 @@ if is_barrier_violation "$file_path" "${AGENT_TYPE}"; then
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
-# A non-verifier agent reading a self-assessment or briefs/ path is not
-# blocked, but is still not auto-allowed — defer to Claude Code's standard
+# A non-verifier agent reading a self-assessment, briefs/, or cleanup/ path is
+# not blocked, but is still not auto-allowed — defer to Claude Code's standard
 # permission flow so the user sees the prompt rather than silently allowing
 # the read.
 lower="$(_lower "$file_path")"
-if [[ "$lower" == *"self-assessment"* ]] || [[ "$lower" == *"/briefs/"* ]]; then
+if [[ "$lower" == *"self-assessment"* ]] || [[ "$lower" == *"/briefs/"* ]] || [[ "$lower" == *"/cleanup/"* ]]; then
   exit 0
 fi
 

@@ -113,6 +113,14 @@ strip_cd_prefix() {
 # auto-approves filesystem commands prefixed with safe env vars. Our stripping
 # enforces tool discipline (which tool to use — Edit vs sed, Read vs cat),
 # while upstream decides whether to prompt for permission on the tool call.
+#
+# Limitation: quoted values containing internal spaces are NOT fully stripped.
+# For example, FOO="abc def" sed → first_word becomes FOO="abc, leaving seg as
+# def" sed; the pattern no longer matches on the next iteration, so the check
+# proceeds on "def" sed" rather than "sed". Result: exit 0 (no opinion) instead
+# of exit 2. This is a known parsing limitation with no security impact — the
+# model would need to contrive a deliberately malformed env prefix to bypass
+# tool discipline, and even then the surrounding command runs unchanged.
 strip_env_prefix() {
   local seg="$1"
   local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='
@@ -352,11 +360,11 @@ unset _branch_pattern
 # Requires both the loop keyword AND the `do` keyword to avoid false positives
 # on commands that merely contain the word "for" (e.g., `echo "search for files"`).
 
-if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])for[[:space:]] ]] && [[ "$cmd_lower" =~ [[:space:]\;]do([[:space:]\;]|$) ]]; then
+if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])for[[:space:]] ]] && [[ "$cmd_lower" =~ (;|[[:space:]])do((;|[[:space:]])|$) ]]; then
   block_msg "Avoid shell for-loops — they frequently hang in the Bash tool. Use the Glob tool to list files and the Grep tool to search content. For cross-referencing, use Grep with alternation patterns or multiple parallel tool calls."
 fi
 
-if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])(while|until)[[:space:]] ]] && [[ "$cmd_lower" =~ [[:space:]\;]do([[:space:]\;]|$) ]]; then
+if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])(while|until)[[:space:]] ]] && [[ "$cmd_lower" =~ (;|[[:space:]])do((;|[[:space:]])|$) ]]; then
   block_msg "Avoid shell while/until loops — they can hang in the Bash tool. Use dedicated tools (Glob, Grep, Read) for file operations."
 fi
 

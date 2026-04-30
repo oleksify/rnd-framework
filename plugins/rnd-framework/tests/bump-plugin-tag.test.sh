@@ -71,6 +71,42 @@ fi
 assert_file_contains "rnd-bump skill: mentions auto-tag behavior" "$SKILL" "[Aa]uto"
 
 # ---------------------------------------------------------------------------
+# Runtime: bump.sh with CHANGELOG missing H1 header → exit 1 + error on stderr
+# ---------------------------------------------------------------------------
+
+# Build a minimal temp git repo with plugin.json and a bad CHANGELOG.md
+TMPDIR_TEST="$(mktemp -d)"
+cleanup_test() { rm -rf "$TMPDIR_TEST"; }
+trap cleanup_test EXIT
+
+(
+  cd "$TMPDIR_TEST"
+  git init -q
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  mkdir -p .claude-plugin
+  printf '{"name":"test-plugin","version":"1.0.0","description":"test"}' > .claude-plugin/plugin.json
+  printf 'Some random text without H1 header\n\n## 1.0.0 — previous entry\n' > CHANGELOG.md
+  git add .
+  git commit -q -m "init"
+) 2>/dev/null
+
+stderr_output="$(cd "$TMPDIR_TEST" && bash "$BUMP" "Test headline" 2>&1 1>/dev/null)" || exit_code=$?
+exit_code="${exit_code:-0}"
+
+if [[ "$exit_code" -eq 1 ]]; then
+  pass "bump.sh: exits 1 when CHANGELOG first line is not an H1 header"
+else
+  fail "bump.sh: exits 1 when CHANGELOG first line is not an H1 header" "got exit code $exit_code"
+fi
+
+if printf '%s\n' "$stderr_output" | grep -q 'error:.*CHANGELOG.*H1\|error:.*not an H1\|expected.*#'; then
+  pass "bump.sh: error message names expected format and shows problem"
+else
+  fail "bump.sh: error message names expected format and shows problem" "got: $stderr_output"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

@@ -58,7 +58,7 @@ fi
 log_file="${session_dir}/iteration-log.md"
 iteration_count=0
 if [[ -f "$log_file" ]]; then
-  iteration_count="$(wc -l < "$log_file" 2>/dev/null || printf '0')"
+  iteration_count="$(awk 'END{print NR}' "$log_file" 2>/dev/null || printf '0')"
   iteration_count="${iteration_count// /}"
   [[ "$iteration_count" =~ ^[0-9]+$ ]] || iteration_count=0
 fi

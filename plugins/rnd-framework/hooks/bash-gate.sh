@@ -114,13 +114,10 @@ strip_cd_prefix() {
 # enforces tool discipline (which tool to use — Edit vs sed, Read vs cat),
 # while upstream decides whether to prompt for permission on the tool call.
 #
-# Limitation: quoted values containing internal spaces are NOT fully stripped.
-# For example, FOO="abc def" sed → first_word becomes FOO="abc, leaving seg as
-# def" sed; the pattern no longer matches on the next iteration, so the check
-# proceeds on "def" sed" rather than "sed". Result: exit 0 (no opinion) instead
-# of exit 2. This is a known parsing limitation with no security impact — the
-# model would need to contrive a deliberately malformed env prefix to bypass
-# tool discipline, and even then the surrounding command runs unchanged.
+# Quoted values with internal spaces (e.g. FOO="abc def") are detected and
+# blocked immediately: strip_env_prefix identifies an unmatched leading quote in
+# the value portion of first_word and emits a blocked: message rather than
+# attempting to strip an incomplete prefix.
 strip_env_prefix() {
   local seg="$1"
   local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='
@@ -129,6 +126,17 @@ strip_env_prefix() {
     # If the entire segment is a single env assignment, no command follows
     if [[ "$first_word" == "$seg" ]]; then
       printf '%s' "$seg"
+      return 0
+    fi
+    # Detect unmatched quote in the value portion of the env prefix.
+    # A quoted value containing spaces (e.g. FOO="abc def") causes first_word
+    # to capture only FOO="abc, leaving the quote unmatched. Attempting to strip
+    # such a prefix and continue checking the remainder ("def" sed ...) would
+    # allow tool-discipline bypass. Block immediately instead.
+    local _value="${first_word#*=}"
+    if [[ "$_value" == '"'* && "$_value" != *'"' ]] || \
+       [[ "$_value" == "'"* && "$_value" != *"'" ]]; then
+      printf 'blocked:BLOCKED: Env-var prefix with a quoted value containing spaces (e.g. FOO="abc def") cannot be safely stripped. Remove the env-var assignment and use the appropriate tool directly.'
       return 0
     fi
     seg="${seg#"$first_word"}"
@@ -141,6 +149,10 @@ check_segment() {
   local seg
   seg="$(strip_cd_prefix "$1")"
   seg="$(strip_env_prefix "$seg")"
+  if [[ "$seg" == blocked:* ]]; then
+    printf '%s' "$seg"
+    return 0
+  fi
   local first_word="${seg%% *}"
   local cmd="${first_word##*/}"
 
@@ -261,9 +273,9 @@ split_and_check() {
 # Main
 # ---------------------------------------------------------------------------
 
-raw="$(cat)"
-command="$(printf '%s' "$raw" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
-_agent_type="$(printf '%s' "$raw" | jq -r '.agent_type // ""' 2>/dev/null || true)"
+parse_input
+command="$(printf '%s' "$TOOL_INPUT" | jq -r '.command // ""')"
+_agent_type="$AGENT_TYPE"
 
 if [[ -z "$command" ]]; then exit 0; fi
 

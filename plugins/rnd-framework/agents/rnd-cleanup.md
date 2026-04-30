@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: sonnet
 effort: medium
 color: "#F59E0B"
-skills: rnd-framework:kiss-practices rnd-framework:fp-practices
+skills: kiss-practices, fp-practices
 maxTurns: 150
 ---
 

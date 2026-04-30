@@ -34,12 +34,12 @@ run_hook() {
 
 # Build a hook payload from a command string, properly JSON-encoding it.
 payload() {
-  jq -n --arg cmd "$1" '{"tool_input":{"command":$cmd}}'
+  jq -n --arg cmd "$1" '{"tool_name":"Bash","tool_input":{"command":$cmd},"agent_type":""}'
 }
 
 # Build a hook payload with agent_type included.
 payload_with_agent() {
-  jq -n --arg cmd "$1" --arg agent "$2" '{"tool_input":{"command":$cmd},"agent_type":$agent}'
+  jq -n --arg cmd "$1" --arg agent "$2" '{"tool_name":"Bash","tool_input":{"command":$cmd},"agent_type":$agent}'
 }
 
 pass() {
@@ -618,7 +618,7 @@ assert_exit   "jq self-assessment + empty agent_type → exit 2" 2
 assert_stderr_contains "jq self-assessment + empty agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
 
 # missing agent_type key (null from jq) → blocked
-run_hook "$(jq -n --arg cmd 'less /rnd/builds/T3-self-assessment.md' '{"tool_input":{"command":$cmd}}')"
+run_hook "$(jq -n --arg cmd 'less /rnd/builds/T3-self-assessment.md' '{"tool_name":"Bash","tool_input":{"command":$cmd}}')"
 assert_exit   "less self-assessment + null agent_type → exit 2" 2
 assert_stderr_contains "less self-assessment + null agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
 
@@ -669,15 +669,15 @@ run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-builder')"
 assert_exit   "ugrep /briefs/ + rnd-builder → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Env-var prefix with quoted value containing internal space (known limitation)
-# strip_env_prefix splits on the first space, so FOO="abc breaks out of the
-# while loop leaving "def" sed" as the segment. "def"" is not a blocked
-# command name, so tool discipline does not fire. Result: exit 0 (no opinion).
-# See the comment above strip_env_prefix in bash-gate.sh for details.
+# Env-var prefix with quoted value containing internal space — now blocked.
+# strip_env_prefix detects an unmatched leading quote in the value portion of
+# first_word (e.g. FOO="abc) and emits a blocked: message rather than attempting
+# to strip an incomplete prefix. Result: exit 2 (blocked).
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'FOO="abc def" sed s/a/b/ file')"
-assert_exit   'FOO="abc def" sed → exit 0 (quoted-space limitation, no opinion)' 0
+assert_exit   'FOO="abc def" sed → exit 2 (unmatched-quote env prefix blocked)' 2
+assert_stderr_contains 'FOO="abc def" sed → blocked message' 'BLOCKED'
 
 # ---------------------------------------------------------------------------
 # Shell loop guard: simple for-loop is detected and blocked (bracket-class fix)

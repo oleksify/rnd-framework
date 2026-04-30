@@ -303,35 +303,3 @@ strip_frontmatter() {
     seen_close || !seen_open { print }
   '
 }
-
-# Reads stdin line-by-line, applies the named function to each line, prints results.
-map_lines() {
-  local fn="$1"
-  local line
-  while IFS= read -r line; do
-    "$fn" "$line"
-  done
-}
-
-# Reads stdin line-by-line, prints only lines where the named function returns 0.
-filter_lines() {
-  local fn="$1"
-  local line
-  while IFS= read -r line; do
-    if "$fn" "$line"; then
-      printf '%s\n' "$line"
-    fi
-  done
-}
-
-# Reads stdin line-by-line, accumulates via function(accumulator, line), prints final accumulator.
-reduce_lines() {
-  local fn="$1"
-  local acc="$2"
-  local line
-  while IFS= read -r line; do
-    acc="$("$fn" "$acc" "$line")"
-  done
-  printf '%s' "$acc"
-}
-

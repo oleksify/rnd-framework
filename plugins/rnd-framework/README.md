@@ -162,7 +162,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
 | `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
 | `lean-proving` | Formal Lean 4 proofs of pre-registration criteria — theorem generation, companion tests, proof reports |
-| `lib-sh-patterns` | Shared lib.sh utilities — FP primitives, path predicates, response functions, stdin parsing |
+| `lib-sh-patterns` | Shared lib.sh utilities — path predicates, response functions, stdin parsing |
 | `plugin-architecture` | Plugin structure — config dir detection, path matching, hooks.json, hook events |
 | `plugin-versioning` | Version bumping, changelog entries, validation, and the release workflow |
 
@@ -318,7 +318,7 @@ rnd-framework/
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations

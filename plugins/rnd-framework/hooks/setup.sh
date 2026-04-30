@@ -9,13 +9,10 @@ PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Run validation script and capture pass/fail counts.
 _run_validation() {
   local validate_sh="${PLUGIN_ROOT}/lib/validate.sh"
-  local validate_ts="${PLUGIN_ROOT}/lib/validate.ts"
   local val_out pass_count fail_count val_status
 
   if [[ -x "$validate_sh" ]]; then
     val_out="$("$validate_sh" 2>&1 || true)"
-  elif [[ -f "$validate_ts" ]]; then
-    val_out="$(bun "$validate_ts" 2>&1 || true)"
   else
     val_out="(no validation script found)"
   fi

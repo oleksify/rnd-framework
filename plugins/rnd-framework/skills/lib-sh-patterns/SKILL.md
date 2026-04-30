@@ -1,6 +1,6 @@
 ---
 name: lib-sh-patterns
-description: "Use when writing hooks or lib scripts — covers lib.sh shared utilities, FP primitives, path predicates, response functions, stdin parsing, and the active_session_dir caching pattern"
+description: "Use when writing hooks or lib scripts — covers lib.sh shared utilities, path predicates, response functions, stdin parsing, and the active_session_dir caching pattern"
 effort: low
 ---
 
@@ -8,7 +8,7 @@ effort: low
 
 ## Overview
 
-`hooks/lib.sh` is the foundation sourced by every hook script. It provides path predicates, hook response output, stdin parsing, RND directory resolution with caching, timestamps, and FP primitives. Use these functions instead of reimplementing — they handle edge cases (malformed JSON, empty input, missing fields) that raw `jq` calls do not.
+`hooks/lib.sh` is the foundation sourced by every hook script. It provides path predicates, hook response output, stdin parsing, RND directory resolution with caching, and timestamps. Use these functions instead of reimplementing — they handle edge cases (malformed JSON, empty input, missing fields) that raw `jq` calls do not.
 
 ## Path Predicates
 
@@ -149,37 +149,6 @@ body="$(strip_frontmatter < skill.md)"
 ```
 
 Passes through unchanged if no frontmatter delimiters are found.
-
-### map_lines
-
-Applies a function to each line of stdin, prints results:
-
-```bash
-_upper() { printf '%s\n' "${1^^}"; }
-printf 'hello\nworld\n' | map_lines _upper
-# HELLO
-# WORLD
-```
-
-### filter_lines
-
-Keeps only lines where the function returns 0:
-
-```bash
-_has_pattern() { [[ "$1" == *"error"* ]]; }
-printf 'ok line\nerror found\nok again\n' | filter_lines _has_pattern
-# error found
-```
-
-### reduce_lines
-
-Accumulates via function from an initial value:
-
-```bash
-_sum() { printf '%d' $(( $1 + $2 )); }
-printf '1\n2\n3\n' | reduce_lines _sum 0
-# 6
-```
 
 ## Timestamps
 

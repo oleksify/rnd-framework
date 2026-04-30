@@ -22,7 +22,7 @@ plugins/rnd-framework/
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer, FP primitives)
+│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters/for-while-until loops//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
 │   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check

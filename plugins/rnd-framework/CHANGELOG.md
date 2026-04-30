@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.4 — 2026-04-30
+
+### Audit fixes: dead FP primitives, bash-gate hardening, config drift
+
+Resolves 6 audit findings: removed unused map_lines/filter_lines/reduce_lines from lib.sh; hardened strip_env_prefix against unmatched-quote bypass and refactored bash-gate.sh main to use parse_input; fixed rnd-cleanup.md skills frontmatter format; replaced wc -l with awk in pre-compact.sh; reconciled settings.json with documented defaults (showTurnDuration, allowRead); removed dead validate.ts fallback in setup.sh.
+
 ## 3.13.3 — 2026-04-30
 
 ### Fix detect_pipeline_phase JSON-only state, cleanup-path barrier consistency, lazy-prose PASS contract drift, and four minor hook and tooling bugs from audit findings

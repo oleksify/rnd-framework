@@ -39,35 +39,42 @@ If $ARGUMENTS is a task ID: verify that one task.
 If $ARGUMENTS is a wave: verify all tasks in the wave.
 If $ARGUMENTS is "all": find all built but unverified tasks.
 
-**For each task, spawn a Verifier agent:**
+**Wave-batched spawn:** Spawn one Verifier agent per wave (not per task). The Verifier receives all task pre-registrations for the wave and returns a `wave-N-verdict-map.json` plus per-task artifacts.
+
+**Criticality routing:**
+- Tasks with `Criticality: LOW` or `Criticality: NORMAL` → single-judge verification.
+- Tasks with `Criticality: HIGH` → invoke `rnd-framework:rnd-multi-judge` for multi-judge consensus.
 
 ```
 Agent({
-  description: "Verify task T<id>",
+  description: "Verify wave <N>",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>"
+  prompt: "Wave: <N>\nTasks in wave: T<id1>, T<id2>, ...\nRND_DIR: <path>\n<paste all task pre-registrations from plan.md>"
 })
 ```
 
-Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a verification report with a verdict. Its failure-mode sweep includes External contract conformance — the Verifier queries the real external systems (APIs, schemas, services) to confirm the Builder's claims rather than trusting the manifest.
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a per-task verdict map. Its failure-mode sweep includes External contract conformance — the Verifier queries the real external systems (APIs, schemas, services) to confirm the Builder's claims rather than trusting the manifest.
+
+On PASS: the Verifier writes `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` — no prose report is produced.
+On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: the Verifier produces a `T<id>-verification.md` prose report.
 
 ## After Verification
 
-Process each task's verdict:
+Read `$RND_DIR/verifications/wave-<N>-verdict-map.json`. Process each task's verdict:
 - **PASS:** Use `TaskUpdate` to mark the task `completed`.
-- **PASS (quality: NEEDS ITERATION):** Mark `completed`. Save quality feedback to `$RND_DIR/verifications/T<id>-quality-feedback.md`. Does NOT block integration.
-- **NEEDS ITERATION:** Keep `in_progress`. Track with `metadata: {"iteration": N}`. Extract ONLY the feedback section — do NOT include your internal reasoning. Save feedback for the build phase.
+- **PASS_QUALITY_NEEDS_ITERATION:** Mark `completed`. Save quality feedback to `$RND_DIR/verifications/T<id>-quality-feedback.md`. Does NOT block integration.
+- **NEEDS_ITERATION:** Keep `in_progress`. Track with `metadata: {"iteration": N}`. Extract ONLY the feedback section — do NOT include your internal reasoning. Save feedback for the build phase.
 - **FAIL:** Route to re-planning.
 
 Summarize verification results. Then use `AskUserQuestion`:
 
-If all tasks PASS or PASS (quality: NEEDS ITERATION):
+If all tasks PASS or PASS_QUALITY_NEEDS_ITERATION:
 - "Proceed to integration (Recommended)" — run `/rnd-framework:rnd-integrate`
 - "Iterate on quality first"
 - "Review verification reports"
 
-If any tasks got NEEDS ITERATION:
+If any tasks got NEEDS_ITERATION:
 - "Iterate on failing tasks (Recommended)" — re-build and re-verify
 - "Skip failing tasks and continue"
 

@@ -34,7 +34,7 @@ This framework applies the scientific method to structured coding:
 
 ## Agent Roles & Information Barriers
 
-The framework defines 8 specialized agent roles. Dedicated agents are spawned for each role.
+The framework defines 9 specialized agent roles. Dedicated agents are spawned for each role.
 
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets. Uses `rnd-framework:rnd-orchestration` skill.
@@ -42,6 +42,7 @@ The framework defines 8 specialized agent roles. Dedicated agents are spawned fo
 **Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
 **Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
 **Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
+**Cleanup** — Post-verification per-task entropy reduction: dead code, orphan files, duplicate implementations, stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Uses `rnd-framework:rnd-cleanup` skill.
 **Integrator** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
 **Data Scientist** — Handles numerical analysis, financial calculations, data wiring, chart generation. Uses `rnd-framework:rnd-data-science` skill. Spawned on-demand when the task requires Julia, DuckDB, or statistical analysis.
 
@@ -88,6 +89,7 @@ Agent assignments:
 - **rnd-proof-gate** — Proof Gate phase (Sonnet model, advisory)
 - **rnd-reality-auditor** — Reality Audit phase (Sonnet model, blocking)
 - **rnd-verifier** — Verification phase (Sonnet model, Edit disallowed)
+- **rnd-cleanup** — Cleanup phase (Sonnet model, per task after PASS)
 - **rnd-integrator** — Integration phase (Sonnet model)
 - **rnd-data-scientist** — On-demand for analytical tasks (Sonnet model)
 - **rnd-debugger** — On-demand for root cause analysis (Sonnet model)
@@ -103,6 +105,7 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
 - **Planner** — decomposes tasks and writes pre-registrations
 - **Builder** — implements tasks with TDD discipline
 - **Verifier** — independently checks outputs against pre-registered criteria
+- **Cleanup** — sweeps dead code and stale artifacts per task after PASS
 - **Integrator** — merges verified outputs and runs integration tests
 
 **Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. `acceptEdits` auto-approves Edit/Write on project files — the exact surface pipeline agents need — while leaving Bash under the normal classifier. Observed on Claude Code 2.1.112: `mode: "auto"` denied project-file Edit/Write for team-spawned subagents (see audit log), and `mode: "bypassPermissions"` was not honored for tmux-backed team agents.
@@ -133,7 +136,8 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
    Adversarially verifies declared external references. INVALID_FOUND routes back to build.
    If no external dependencies declared → auto-SKIPPED.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
-5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Max 3 cycles, then escalate.
+4.5. **Cleanup** (per task, after PASS) — Spawn a Cleanup agent for each task that passed verification. The agent detects and removes: dead functions/variables, orphan files, duplicate implementations, and stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. A `cleanup: rolled_back` result is not a pipeline failure.
+5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Iteration budget is wave-scoped and tier-keyed (LOW=2, NORMAL=3, HIGH=5, by highest-criticality task in the wave); see `rnd-framework:rnd-iteration` for the table. Budget exhausted → escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
 
 ## Gate Criteria
@@ -152,7 +156,7 @@ Task status is derived from artifact files — no separate state file is needed.
 |-----------------|--------|
 | `$RND_DIR/integration/wave-<N>-report.md` contains SHIP | integrated |
 | `$RND_DIR/verifications/T<id>-pass-receipt.json` exists | verified |
-| `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS ITERATION | iterating |
+| `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS_ITERATION | iterating |
 | `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty | built |
 | Task in plan.md but no build artifact | planned |
 
@@ -186,4 +190,71 @@ Common decision points:
 - **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
 - **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate.
+
+## User-Facing Briefs
+
+Briefs are user-facing narratives — plain-language updates the user sees in real time while a non-verifier agent works in the background. They live under `$RND_DIR/briefs/` which is mechanically blocked from Verifier agents via the three PreToolUse gate hooks (`hooks/read-gate.sh`, `hooks/glob-grep-gate.sh`, `hooks/bash-gate.sh`). Only Planner, Builder, Debugger, Integrator, and the orchestrator may read or write briefs.
+
+**Files (per agent):**
+- Planner: `$RND_DIR/briefs/plan-briefs.md`
+- Builder / Debugger: `$RND_DIR/briefs/T<id>-briefs.md`
+- Integrator: `$RND_DIR/briefs/wave-<N>-briefs.md`
+
+All brief files are append-only. Use the Read tool to load existing content, then Write the concatenated result. Never delete prior entries. `mkdir -p "$RND_DIR/briefs"` before first write.
+
+**When to append a brief entry:**
+- **On phase completion (always):** one entry summarizing what was built/decided/integrated, surprising findings, unverified assumptions, anything the user should know.
+- **Mid-phase, on a non-trivial judgment call:** one entry capturing the choice in plain language. Pair (do not replace) with the structured `decisions.md` entry.
+
+Skip briefs for routine micro-steps, green-tests status, or anything the user can read off the diff or manifest. Signal, not noise.
+
+**Entry template:**
+
+```markdown
+## [ISO timestamp] — <Phase> <T<id>|wave-<N>>: [decision|completion] — [short title]
+
+[One paragraph in plain language. What changed, why it matters, what the user should know. Avoid pipeline internals. If there is an unverified assumption or surprising finding, surface it here.]
+```
+
+**Notify the orchestrator** via `SendMessage` after each brief append:
+
+```
+[user-brief] <context>: <short title> — see <file path>
+```
+
+The orchestrator reads the latest entry and surfaces it to user chat. The orchestrator MUST NOT forward brief content into any Verifier spawn prompt — the hook layer also enforces this mechanically by blocking `/briefs/` reads when no agent_type is set or when the agent is the verifier.
+
+## Decisions Log
+
+Persistent, append-only record of non-trivial judgment calls shared across Planner, Builder, Debugger, and Integrator. Survives past the chat transcript so the "why we chose X" thread remains discoverable.
+
+**File:** `$RND_DIR/briefs/decisions.md` (append-only — Read existing content, then Write the concatenated result; never delete prior entries).
+
+**When to log an entry:**
+- Architectural fork between meaningfully different approaches (not surface variations).
+- Scope cut (deferring or rejecting a requirement).
+- Library / framework / primitive choice when there were real alternatives.
+- Interface-shape decision (API contract, function signature) callers will depend on.
+- Non-obvious ordering or sequencing choice.
+- A fork where the LLM-default was rejected in favor of something else — always log these.
+
+**When NOT to log:** variable naming, formatting, micro-refactors within a function, following an already-specified path without divergence, decisions dictated by the pre-registration.
+
+**Entry template:**
+
+```markdown
+## D<N>: [one-line title]
+
+- **Phase:** Planning | Building T<id> | Debugging T<id> | Integration wave <N>
+- **Context:** [what situation forced a choice — 1 sentence]
+- **Considered:**
+  - A. [option name] — [tradeoff / why it could work]
+  - B. [option name] — [tradeoff / why it could work]
+  - C. [option name] (optional) — [tradeoff]
+- **Chosen:** [letter + name]
+- **Why:** [1-2 sentences, tied to constraints or evidence]
+- **Would flip if:** [condition under which a different option becomes better]
+```
+
+**Explicit-fork discipline:** when an agent makes a decision that qualifies, the agent's output MUST narrate the fork ("I considered A, B, C; chose A because...") before appending the entry. This forces critical thinking at the decision point instead of post-hoc justification.
 

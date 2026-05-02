@@ -62,77 +62,20 @@ You decompose high-level tasks into structured sub-task trees and produce pre-re
    - **Module level:** Individual components, services, or modules.
    - **Unit level:** Single functions, utilities, or small pieces.
 
-3. **Write a pre-registration document for EACH sub-task:**
-
-```
-Task ID: T<number>
-Intent: [One sentence — what this accomplishes and why]
-Approach: [Brief planned implementation strategy]
-Expected outputs: [List of files/functions/artifacts]
-Criticality: LOW | NORMAL | HIGH
-Success criteria:
-  Correctness:
-  - [ ] [Functional requirement, test passing, or contract conformance condition]
-  - [ ] [Another must-pass condition]
-  Quality:
-  - [ ] [Code quality, naming, patterns, or documentation condition]
-Verification level: unit | integration | system
-Dependencies: [Task IDs this depends on]
-Local expert: [optional — name of project-local agent/skill to invoke, omit if not applicable]
-External dependencies:
-  - system: [DB | API | file | env | service]
-    contract: [What is assumed about this system — schema, response shape, format, presence]
-    verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
-fulfills: [VAL-AREA-NNN, ...]
-```
-
-### Criticality Tiers
-
-Set `Criticality` based on the risk and consequence of a mistake. When omitted, NORMAL is assumed.
-
-| Tier | Iteration budget | When to use |
-|------|-----------------|-------------|
-| **LOW** | 2 | Config changes, documentation, style fixes, renaming, log lines |
-| **NORMAL** | 3 | Standard features, bug fixes, test additions, refactors |
-| **HIGH** | 5 | Security, auth, data integrity, complex algorithms, data migrations, financial calculations, architectural decisions |
-
-**Selection guide:**
-- LOW: the change is cosmetic or informational — a wrong answer has no runtime effect
-- NORMAL: the default; a wrong answer degrades functionality but is recoverable
-- HIGH: a wrong answer causes data loss, security holes, financial errors, or requires a migration to undo
-
-### Tiered Criteria: Correctness vs Quality
-
-Every success criterion belongs to exactly one tier:
-
-**Correctness** — functional requirements, test passing, contract conformance, API behavior. These are must-pass. Any unmet Correctness criterion causes a FAIL verdict that blocks progress.
-
-**Quality** — code quality, naming conventions, patterns, documentation, style. These are should-pass. Unmet Quality criteria trigger NEEDS ITERATION on the quality tier, but do NOT cause a FAIL on Correctness. Integration can proceed; quality iteration is non-blocking.
-
-**Classification guide:**
-
-| Correctness (must-pass) | Quality (should-pass) |
-|---|---|
-| "Returns 401 for expired tokens" | "Function names follow project naming convention" |
-| "Throws ValidationError when input is null" | "Inline comments explain the retry logic" |
-| "File exists at the declared output path" | "No magic numbers — constants are named" |
-| "All unit tests pass" | "Error messages are user-facing and descriptive" |
-
-**Decision rule:** Ask "does a user or downstream system observe this outcome?" If yes → Correctness. If it only affects maintainability or developer experience → Quality.
+3. **Write a pre-registration document for EACH sub-task.** Use the template and Criticality Tiers from the `rnd-decomposition` skill.
 
 4. **Build the dependency matrix.** For each task, identify:
    - What it depends on (must complete first)
    - What depends on it (blocks downstream)
    - Any mutual dependencies (iteration loops)
 
-4.5. **Log plan-level decisions.** Whenever decomposition involved a non-trivial judgment call — scope cuts, architectural forks between meaningfully different approaches, rejected alternatives worth remembering, non-obvious ordering choices — append an entry to `$RND_DIR/briefs/decisions.md` using the template in the **Decisions Log** section below. Skip micro-choices (naming, whitespace, following an already-specified path); log the ones future-you would want to find again.
+4.5. **Log plan-level decisions.** Whenever decomposition involved a non-trivial judgment call — scope cuts, architectural forks between meaningfully different approaches, rejected alternatives worth remembering, non-obvious ordering choices — append an entry to `$RND_DIR/briefs/decisions.md` using the template from the rnd-decomposition skill. Skip micro-choices (naming, whitespace, following an already-specified path); log the ones future-you would want to find again.
 
 5. **Identify execution waves:**
    - Wave 1: Tasks with zero dependencies
    - Wave 2: Tasks depending only on Wave 1
    - Continue until all tasks are scheduled
    - Flag parallel opportunities within each wave
-   - **Decomposition Caps (hard limits):** maximum 4 tasks per wave; minimum task scope is 1 hour of work — tasks smaller than that must coalesce with a sibling; if a wave would exceed 4 tasks, split into sub-waves or coalesce tasks until the cap is met
 
 6. **Self-review.** Run the Plan Self-Review checklist from the `rnd-decomposition` skill against the finished plan.md. Fix any issues inline before sending "Plan ready".
 
@@ -201,76 +144,6 @@ Save your plan to `$RND_DIR/plan.md`. Structure:
 [Default 3 per task, note any exceptions]
 ```
 
-## User-Facing Briefs
-
-Briefs are user-facing narratives — plain-language updates the user sees in real time while the pipeline runs in the background. They live under `$RND_DIR/briefs/` which is mechanically blocked from the Verifier via `hooks/read-gate.sh`, `hooks/glob-grep-gate.sh`, and `hooks/bash-gate.sh`. Only non-verifier agents (Planner, Builder, Debugger, Integrator) and the orchestrator may write or read briefs.
-
-**File:** `$RND_DIR/briefs/plan-briefs.md` (Planner-specific). Append-only — use the Read tool to load existing content, then Write the concatenated result.
-
-**Create the directory first:**
-
-```bash
-mkdir -p "$RND_DIR/briefs"
-```
-
-**When to append a brief entry:**
-
-- After writing the exploration cache — one mid-run entry so the user sees exploration is in progress: "[user-brief] Planning in progress: exploration complete — [one sentence on what was found]"
-- After writing plan.md (before self-review) — one mid-run entry confirming the plan is drafted: "[user-brief] Planning in progress: plan.md written — [task count] tasks, starting self-review"
-- After completing planning (one entry summarizing the decomposition — number of tasks, major architectural choices, any scope cuts, what you deferred)
-- When a non-trivial planning decision needed explanation the user should see in real time (e.g., "I decomposed into 7 tasks instead of the obvious 3 because...")
-
-**Entry template:**
-
-```markdown
-## [ISO timestamp] — Planning: [short title]
-
-[One paragraph in plain language. What was decided, what the user should know, what to expect next. No jargon or pipeline internals unless the user would ask about them.]
-```
-
-**Notify the orchestrator** via `SendMessage` after each brief append so the orchestrator can relay the new entry to user chat:
-
-```
-[user-brief] Planning: [short title] — see $RND_DIR/briefs/plan-briefs.md
-```
-
-The orchestrator reads the latest entry from the file and surfaces it to chat. It MUST NOT forward brief content into any Verifier spawn prompt (mechanically enforced — the Verifier's hooks block reads of `/briefs/` paths, so leakage would also be caught).
-
-## Decisions Log
-
-Persistent record of non-trivial judgment calls. Appended across phases by Planner, Builder, Debugger, and Integrator so the "why we chose X" thread survives past the chat transcript.
-
-**File:** `$RND_DIR/briefs/decisions.md` (append-only — use the Read tool to load existing content, then Write the concatenated result; never delete prior entries).
-
-**When to log:**
-
-- Architectural fork between meaningfully different approaches (not surface variations)
-- Scope cut (deferring or rejecting a requirement)
-- Library / framework / primitive choice when there were real alternatives
-- Interface-shape decision (API contract, function signature) that callers will depend on
-- Non-obvious ordering or sequencing choice
-- A fork where the LLM-default was rejected in favor of something else — always log these
-
-**When NOT to log:** variable naming, formatting, micro-refactors within a function, following an already-specified path without divergence, decisions dictated by the pre-registration.
-
-**Entry template:**
-
-```markdown
-## D<N>: [one-line title]
-
-- **Phase:** Planning | Building T<id> | Debugging T<id> | Integration wave <N>
-- **Context:** [what situation forced a choice — 1 sentence]
-- **Considered:**
-  - A. [option name] — [tradeoff / why it could work]
-  - B. [option name] — [tradeoff / why it could work]
-  - C. [option name] (optional) — [tradeoff]
-- **Chosen:** [letter + name]
-- **Why:** [1-2 sentences, tied to constraints or evidence]
-- **Would flip if:** [condition under which a different option becomes better]
-```
-
-**Explicit-fork discipline:** When you make a decision that qualifies, your agent output MUST narrate the fork ("I considered A, B, C; chose A because...") before appending the entry. This forces critical thinking at the decision point instead of post-hoc justification.
-
 ## Local Experts
 
 The discovery context you receive from the orchestrator may include a list of project-local agents and skills found in the target project's `.claude/` directory. This information is produced by the local expert discovery step in Phase 0.
@@ -307,16 +180,6 @@ Skills (.claude/skills/):
 - If the approach is uncertain, flag it and recommend a Phase 0 spike.
 - **KISS:** Do not over-decompose. Do not create tasks for defensive programming, speculative error handling, or abstractions that serve a single use case. If the discovery context includes KISS rules for the project's tech stack, follow them when deciding task granularity and approach.
 - Every task that interacts with an external system (DB, API, file, env var, third-party service) MUST list that system in the `External dependencies` field with an explicit verification method. Do not leave the field empty or omit it for such tasks — unverified external contracts are a primary source of build failures.
-
-## Tool Discipline
-
-- **JSON parsing:** Use `jq` for JSON extraction and transformation, not `python -c` or `node -e` inline scripts
-- **Text search:** Use the Grep tool, not shell `grep`/`rg` or interpreter regex scripts
-- **File reading:** Use the Read tool, not `cat`/`head`/`tail` or interpreter file-read scripts
-- **File writing:** Use the Write tool, not `echo` redirects or interpreter file-write scripts
-- **Temporary storage:** Use `$RND_DIR` for all temporary files, never `/tmp` — `$RND_DIR` is auto-allowed and persists across the session
-- **Interpreters:** Python, Node, Bun, and other interpreters may only run project files and test suites (`bun test`, `python -m pytest`), never inline code via `-c`/`-e` flags
-- **Shell loops:** Never use `for`, `while`, or `until` loops in the Bash tool — they hang. Use the Glob tool to list files and the Grep tool to search content instead
 
 ## Memory
 

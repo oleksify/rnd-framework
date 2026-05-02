@@ -30,7 +30,7 @@ When a wave contains any HIGH-criticality task, the orchestrator runs wave-batch
    - Both agree → use shared verdict for that task.
    - Judges disagree on a task → spawn a tiebreaker for that specific task only.
 4. Assemble the final per-task verdict map from agreed verdicts plus tiebreaker verdicts where applicable.
-5. Save the aggregated report to `$RND_DIR/verifications/T<id>-verification.md` for each task and the final verdict map to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
+5. For each task: on PASS write `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` (no prose). On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION write `T<id>-verification.md`. Save the final per-task verdict map to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
 The information barrier applies identically in wave-batched mode — no judge prompt includes self-assessment content for any task.
 
@@ -66,14 +66,15 @@ Read both reports. Extract the `Overall Verdict` line from each.
 | Judge A | Judge B | Final Verdict |
 |---------|---------|---------------|
 | PASS    | PASS    | PASS          |
+| PASS_QUALITY_NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION |
+| NEEDS_ITERATION | NEEDS_ITERATION | NEEDS_ITERATION |
 | FAIL    | FAIL    | FAIL          |
-| NEEDS ITERATION | NEEDS ITERATION | NEEDS ITERATION |
 
 When both judges agree, their shared verdict is the final verdict. Proceed to Step 5.
 
 **Split-verdict rule (judges disagree):**
 
-Any combination where the two verdicts differ — PASS/FAIL, PASS/NEEDS ITERATION, FAIL/NEEDS ITERATION — triggers a tiebreaker. Proceed to Step 4.
+Any combination where the two verdicts differ — PASS/FAIL, PASS/NEEDS_ITERATION, FAIL/NEEDS_ITERATION, or any mismatch involving PASS_QUALITY_NEEDS_ITERATION — triggers a tiebreaker. Proceed to Step 4.
 
 ### Step 4 — Tiebreaker Judge (on disagreement only)
 
@@ -82,15 +83,20 @@ Spawn a third verifier agent as tiebreaker:
 - Uses `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "acceptEdits"`.
 - Receives: the pre-registration document, the Builder's code and tests, AND both prior judge reports (Judge A and Judge B).
 - Does NOT receive self-assessment files. The information barrier applies to the tiebreaker identically to the initial judges.
-- The tiebreaker must issue a final verdict (PASS, FAIL, or NEEDS ITERATION) and justify it by citing specific evidence from the two prior reports — not just picking a side.
+- The tiebreaker must issue a final verdict (PASS, PASS_QUALITY_NEEDS_ITERATION, NEEDS_ITERATION, or FAIL) and justify it by citing specific evidence from the two prior reports — not just picking a side.
 
 The orchestrator saves the tiebreaker's returned report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
 
 The tiebreaker's verdict is the final verdict.
 
-### Step 5 — Produce Aggregated Report
+### Step 5 — Produce Output
 
-The orchestrator saves the aggregated report to `$RND_DIR/verifications/T<id>-verification.md`:
+**Lazy-prose contract:** Apply the same rules as single-judge verification.
+
+- **PASS:** Write `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` — no prose report.
+- **PASS_QUALITY_NEEDS_ITERATION / NEEDS_ITERATION / FAIL:** Write the aggregated prose report `T<id>-verification.md`.
+
+When a prose report is required, save to `$RND_DIR/verifications/T<id>-verification.md`:
 
 ```markdown
 # Verification Report: T<id>
@@ -124,7 +130,7 @@ Omit this section if no experiment artifacts were produced.]
 
 ---
 
-## Final Consensus Verdict: PASS | FAIL | NEEDS ITERATION
+## Final Consensus Verdict: PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
 
 **Consensus method:** Both judges agreed | Tiebreaker required — [Judge A verdict] vs [Judge B verdict]
 

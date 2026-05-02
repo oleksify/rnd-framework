@@ -20,7 +20,7 @@ Derive task status by scanning artifact directories. Read `$RND_DIR/plan.md` for
 1. `$RND_DIR/integration/wave-<N>-report.md` — if exists and contains SHIP → **integrated**
 2. `$RND_DIR/verifications/T<id>-pass-receipt.json` — if exists → **verified**
 3. `$RND_DIR/verifications/T<id>-verification.md` — if exists, read verdict:
-   - NEEDS ITERATION → **iterating**
+   - NEEDS_ITERATION → **iterating**
 4. `$RND_DIR/builds/T<id>-manifest.md` — if exists and non-empty → **built**
 5. Otherwise → **planned**
 

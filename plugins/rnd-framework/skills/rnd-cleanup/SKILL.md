@@ -70,7 +70,7 @@ Use Edit or Bash. Record every file touched.
 
 ### 4. Re-verify
 
-Spawn `rnd-verifier` via the Agent tool with the task ID and pre-registration. Wait for verdict.
+Run the project's test suite directly via Bash (read `$RND_DIR/plan.md` "Testing Strategy" for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). On all-green, write a minimal `T<id>-cleanup-pass-receipt.json` to `$RND_DIR/verifications/` with `source: "cleanup-reverify"` and an ISO 8601 timestamp. Do NOT spawn a fresh `rnd-verifier` agent — the full Verifier already PASSed this task before cleanup ran; this step only confirms the cleanup mutations did not break the existing tests.
 
 ### 5. Branch on verdict
 
@@ -119,7 +119,7 @@ Spawn `rnd-verifier` via the Agent tool with the task ID and pre-registration. W
 [list or "(none)"]
 
 ## Verification Result
-[PASS / NEEDS ITERATION / FAIL / skipped (no findings)]
+[PASS / NEEDS_ITERATION / FAIL / skipped (no findings)]
 
 ## Outcome
 [cleanup applied | cleanup skipped (broke verification) | cleanup skipped (no findings)]

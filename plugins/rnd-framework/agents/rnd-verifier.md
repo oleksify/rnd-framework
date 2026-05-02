@@ -137,7 +137,7 @@ NEVER store task-specific builder information, self-assessment content, builder 
 
 After completing verification, notify the orchestrator via `SendMessage`:
 
-1. **On completion:** `SendMessage` with: "T<id> verification: [PASS|FAIL|NEEDS ITERATION] — [one-line summary of key finding]"
+1. **On completion:** `SendMessage` with: "T<id> verification: [PASS|FAIL|NEEDS_ITERATION] — [one-line summary of key finding]"
 2. **On FAIL/NEEDS ITERATION:** Include which criteria failed and the type of failure (test inadequacy, code defect, missing implementation, etc.)
 
 **Progress Signals:** Send a `SendMessage` "[user-brief] Verification T<id> in progress: [milestone]" after two mid-run milestones: (1) after experiments are written — e.g., "[user-brief] Verification T<id> in progress: experiments written"; (2) after tests are run — e.g., "[user-brief] Verification T<id> in progress: tests run". These are SendMessage-only pings — do not write to `$RND_DIR/briefs/`.

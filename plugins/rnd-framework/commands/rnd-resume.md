@@ -47,7 +47,7 @@ Scan `$RND_DIR/verifications/` for files matching the pattern `T*-verification.m
 2. Read the file and locate the final consensus verdict line. Extract the verdict:
    - `PASS` — task passed all criteria
    - `PASS (quality: NEEDS ITERATION)` — correctness passed, quality feedback exists
-   - `NEEDS ITERATION` — correctness failure, task must be rebuilt
+   - `NEEDS_ITERATION` — correctness failure, task must be rebuilt
    - `FAIL` — unrecoverable failure, task needs re-planning
 
 Record the verdict for each verified task.
@@ -76,7 +76,7 @@ Using the data gathered in Steps 2-6, assign a status to each task:
 | Task found in plan.md only (no build artifact) | `planned` |
 | Build manifest exists, no verification report | `built` |
 | Verification verdict is PASS or PASS (quality: NEEDS ITERATION) | `verified` |
-| Verification verdict is NEEDS ITERATION, iteration log shows active cycle | `iterating` |
+| Verification verdict is NEEDS_ITERATION, iteration log shows active cycle | `iterating` |
 | Wave integration report shows SHIP | `integrated` |
 | Verification verdict is FAIL | `failed` |
 
@@ -108,7 +108,7 @@ Based on the reconstructed state, determine where the pipeline left off:
 | plan.md exists, no built tasks | Phase 2 (Build) — Wave 1 |
 | Some tasks built, none verified | Phase 3 (Verify) — current wave |
 | Some tasks verified with PASS, none integrated | Phase 5 (Integrate) — current wave |
-| Some tasks with NEEDS ITERATION verdict | Phase 4 (Iterate) — failing tasks |
+| Some tasks with NEEDS_ITERATION verdict | Phase 4 (Iterate) — failing tasks |
 | Some tasks with FAIL verdict | Re-plan — route to Planner |
 | Some waves SHIP, more waves remain | Phase 2 (Build) — next wave |
 | All waves SHIP | Pipeline complete |

@@ -11,7 +11,7 @@ effort: medium
 
 When the Verifier issues NEEDS ITERATION or FAIL, the Builder gets feedback and revises. This cycle has a budget to prevent infinite rework.
 
-**Core principle:** Feedback describes WHAT is wrong with evidence. The Builder reasons about HOW to fix. Max 3 cycles, then escalate. Repeated iteration on the same criterion is a signal the task needs re-decomposition, not more attempts.
+**Core principle:** Feedback describes WHAT is wrong with evidence. The Builder reasons about HOW to fix. Repeated iteration on the same criterion is a signal the task needs re-decomposition, not more attempts.
 
 ## When to Use
 

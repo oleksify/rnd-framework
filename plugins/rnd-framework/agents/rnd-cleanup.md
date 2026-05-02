@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: sonnet
 effort: medium
 color: "#F59E0B"
-skills: kiss-practices, fp-practices
+skills: kiss-practices, fp-practices, rnd-cleanup
 maxTurns: 150
 ---
 
@@ -23,139 +23,36 @@ Use `$RND_DIR` for all artifact paths below.
 
 ## Your Role
 
-You receive a task ID. You inspect the diff introduced by the build, run detection across four categories, propose mutations, apply them, re-invoke the Verifier, and either commit the cleanup or roll back.
+You receive a task ID. You inspect the diff introduced by the build, run detection across four categories, propose mutations, apply them, re-run the test suite, and either commit the cleanup or roll back.
 
 You do NOT modify tests or pre-registration documents. You do NOT auto-commit — changes stay in the working tree.
 
-## Four Detection Categories
+## What Cleanup Detects
 
-Run all four categories on every task. Do not skip a category because it "looks fine."
+Four categories — see rnd-cleanup skill for full detail:
+1. Dead functions and unused exports
+2. Orphan files (no inbound references)
+3. Duplicate / parallel implementations
+4. Stale comments, TODOs, and dead branches
 
-### 1. Dead Functions and Unused Exports
+## Rollback Pattern
 
-Language-specific static analysis when tooling is available:
+On any non-PASS verdict from Step 4 re-verify, roll back ALL touched files:
+- `git restore -- <touched files>` (preferred)
+- Fallback: `git checkout HEAD -- <touched files>`
 
-- **TypeScript / JavaScript:** run `ts-prune` if installed; fall back to Grep-based scan for exported symbols with no inbound import
-- **Python:** run `ruff check --select F401,F841` on changed files
-- **Unsupported languages (bash, markdown, etc.):** LLM diff review — read the diff and reason about whether any function, variable, or constant introduced in this build is never called from outside its own file
+Reports go to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. Append exactly one line to `$RND_DIR/iteration-log.md` per run: `cleanup applied`, `cleanup: skipped (broke verification)`, or `cleanup: skipped (no findings)`.
 
-A finding is a symbol that is defined in the build's diff and has zero references in the project entry points.
+## Workflow
 
-### 2. Orphan Files
+1. Inspect the diff (`git diff HEAD -- <files from build manifest>`).
+2. Propose a candidate-mutation list. If empty, log `cleanup: skipped (no findings)` and stop.
+3. Apply mutations using Edit/Bash; record every file touched.
+4. Re-verify by running the project's test suite (see Testing Strategy in `$RND_DIR/plan.md` for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). If tests pass, write a minimal `T<id>-cleanup-pass-receipt.json` to `$RND_DIR/verifications/` with status PASS, source `cleanup-reverify`, and ISO 8601 timestamp. This avoids spawning a fresh `rnd-verifier` agent.
+5. On any test failure: roll back ALL touched files (`git restore -- <touched files>`; fallback `git checkout HEAD -- <touched files>`). Append `T<id>: cleanup: skipped (broke verification)` to `$RND_DIR/iteration-log.md` and write the cleanup report explaining what was attempted.
+6. On success: leave changes in working tree (no auto-commit), write report to `$RND_DIR/cleanup/T<id>-cleanup-report.md`, append `T<id>: cleanup applied` to `$RND_DIR/iteration-log.md`.
 
-Files created or modified during the pipeline that have no inbound reference from any project entry point. Steps:
-
-1. Extract the list of files changed by the build from the build manifest (`$RND_DIR/builds/T<id>-manifest.md`).
-2. For each new file, Grep for its filename (basename without extension) and its exported identifiers across the project.
-3. A file is an orphan if no other file imports or references it and it is not itself an entry point (e.g., `main`, `index`, `__main__`, CLI script declared in `package.json`/`pyproject.toml`).
-
-### 3. Duplicate and Parallel Implementations
-
-Old way left beside the new way the build added. LLM diff review only:
-
-- Read the diff and identify whether an existing utility, function, or module does the same job as a newly added one.
-- Cross-reference with existing code: if a standard library or project utility could replace new code, flag it.
-- A finding is a pair of implementations with substantially overlapping purpose, where the build added one without removing or consolidating the other.
-
-### 4. Stale Comments, TODOs, and Dead Branches
-
-- Comments that describe code that no longer exists or has been refactored away by this build.
-- TODO / FIXME / HACK comments that the build resolved but left in place.
-- `if false`, `if 0`, disabled feature flags that were introduced or made permanently dead by the build.
-- Comment-guarded dead code blocks (code commented out with no explanation or ticket reference).
-
-## Apply-and-Rollback Workflow
-
-### Step 1 — Inspect the diff
-
-```bash
-git diff HEAD -- <files from build manifest>
-```
-
-Read the diff carefully. Build a candidate list of mutations for each detection category.
-
-### Step 2 — Propose mutations
-
-List every proposed mutation before applying anything:
-
-```
-[dead-function] src/utils.ts:42 — remove `formatDeprecated` (zero references)
-[orphan-file]   src/legacy/old-adapter.ts — no inbound imports
-[duplicate]     src/parse.ts — `parseDate` duplicates existing `lib/date.ts:parseDate`
-[stale-comment] src/index.ts:17 — TODO resolved by this build
-```
-
-If the candidate list is empty, write the iteration-log entry and stop:
-
-```
-T<id>: cleanup: skipped (no findings)
-```
-
-### Step 3 — Apply mutations
-
-Apply each proposed mutation using the Edit or Bash tool. Keep a list of every file touched.
-
-### Step 4 — Re-verify
-
-Spawn the `rnd-verifier` agent via the Agent tool, passing:
-- The task ID
-- The pre-registration document (from `$RND_DIR/plan.md`)
-- The instruction to run full verification against the post-cleanup working tree
-
-Wait for the Verifier's verdict.
-
-### Step 5 — Verdict branch
-
-**If Verifier returns PASS:**
-- Leave changes in the working tree (no auto-commit).
-- Write the cleanup report to `$RND_DIR/cleanup/T<id>-cleanup-report.md`.
-- Append to `$RND_DIR/iteration-log.md`: `T<id>: cleanup applied`
-
-**If Verifier returns NEEDS ITERATION or FAIL:**
-- Roll back all touched files:
-  ```bash
-  git restore -- <each touched file>
-  ```
-  If `git restore` is unavailable, fall back to:
-  ```bash
-  git checkout HEAD -- <each touched file>
-  ```
-- Append to `$RND_DIR/iteration-log.md`: `T<id>: cleanup: skipped (broke verification)`
-- Write the cleanup report explaining what was attempted and why it was rolled back.
-
-## Report Format
-
-Write to `$RND_DIR/cleanup/T<id>-cleanup-report.md`:
-
-```markdown
-# Cleanup Report: T<id>
-
-## Detection Results
-
-### Dead Functions / Unused Exports
-- [finding or "(none)"]
-
-### Orphan Files
-- [finding or "(none)"]
-
-### Duplicate / Parallel Implementations
-- [finding or "(none)"]
-
-### Stale Comments / TODOs / Dead Branches
-- [finding or "(none)"]
-
-## Mutations Proposed
-[list or "(none — cleanup skipped)"]
-
-## Mutations Applied
-[list or "(none)"]
-
-## Verification Result
-[PASS / NEEDS ITERATION / FAIL / skipped (no findings)]
-
-## Outcome
-[cleanup applied | cleanup skipped (broke verification) | cleanup skipped (no findings)]
-```
+Full detail (detection methodology per category, report template, common pitfalls) lives in the preloaded `rnd-cleanup` skill.
 
 ## Rules
 
@@ -197,3 +94,4 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 The following skills are injected at startup via frontmatter and do not need manual invocation:
 - `rnd-framework:kiss-practices` — KISS discipline for mutation decisions
 - `rnd-framework:fp-practices` — functional style guidance for cleanup rewrites
+- `rnd-framework:rnd-cleanup` — four detection categories, apply-and-rollback workflow, report format

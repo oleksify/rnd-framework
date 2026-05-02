@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.5 — 2026-05-02
+
+### Reconcile skill drift and dedup agent files per audit
+
+Removes ~550 lines of content duplicated between agent files and the skills they preload. Reconciles five skills (rnd-verify, rnd-multi-judge, rnd-orchestration, rnd-iteration, rnd-scaling) so docs match the canonical wave-batched, four-verdict, lazy-prose pipeline. Replaces the cleanup agent's full re-verify spawn with a targeted test-run plus pass-receipt. Adds canonical Decisions Log and User-Facing Briefs sections to rnd-orchestration as the shared home for previously-duplicated agent content.
+
 ## 3.13.4 — 2026-04-30
 
 ### Audit fixes: dead FP primitives, bash-gate hardening, config drift

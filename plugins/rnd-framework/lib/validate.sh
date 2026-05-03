@@ -512,6 +512,17 @@ validate_lib_scripts() {
       record_fail "lib/${lib_script} is not executable"
     fi
   done
+
+  # Parity check: root lib copy must match the plugin copy
+  local root_copy="${PLUGIN_ROOT}/../../lib/plugin-dir-base.sh"
+  local plugin_copy="${PLUGIN_ROOT}/lib/plugin-dir-base.sh"
+  if [[ ! -f "$root_copy" ]]; then
+    record_pass "lib/plugin-dir-base.sh root copy not present — skipping parity check"
+  elif diff -q "$root_copy" "$plugin_copy" > /dev/null 2>&1; then
+    record_pass "lib/plugin-dir-base.sh copies are identical"
+  else
+    record_fail "lib/plugin-dir-base.sh root copy differs from plugin copy — run: diff ${root_copy} ${plugin_copy}"
+  fi
 }
 
 # ---------------------------------------------------------------------------

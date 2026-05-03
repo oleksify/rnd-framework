@@ -157,6 +157,12 @@ check_segment() {
   local cmd="${first_word##*/}"
 
   case "$cmd" in
+    git)
+      if [[ "$seg" =~ ^git[[:space:]]+add[[:space:]]+.*\.rnd(/|[[:space:]]|$) ]]; then
+        printf 'blocked:BLOCKED: Plugin artifact directories (.rnd/) must never be committed.'
+        return 0
+      fi
+      ;;
     sed|awk)
       printf 'blocked:Use the Edit tool instead of %s. Edit is reviewable, diffable, and handles indentation correctly.' "$cmd"
       return 0
@@ -354,12 +360,8 @@ fi
 # 2. Git guards (from prefer-tools.sh)
 # ---------------------------------------------------------------------------
 
-if [[ "$command" =~ git[[:space:]]+add.*\.rnd(/|[[:space:]]|$) ]]; then
-  block_msg "BLOCKED: Plugin artifact directories (.rnd/) must never be committed."
-fi
-
 _branch_pattern="${_PROTECTED_BRANCHES// /|}"
-if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]]($_branch_pattern)([[:space:]]|$) ]]; then
+if [[ "$command" =~ git[[:space:]]+push[[:space:]].*[[:space:]:]($_branch_pattern)([[:space:]]|$) ]]; then
   advisory_json "WARNING: You are about to push directly to a protected branch (main/master/production). Ask the user for explicit confirmation before proceeding."
   exit 0
 fi
@@ -419,7 +421,7 @@ fi
 # ---------------------------------------------------------------------------
 # Tool discipline has already cleared every segment above; the whole-command allow is safe.
 
-if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" == *"rnd-dir.sh"* ]]; then
+if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" =~ (^|/)rnd-dir\.sh($|[[:space:]\"\']) ]]; then
   allow_json
   exit 0
 fi

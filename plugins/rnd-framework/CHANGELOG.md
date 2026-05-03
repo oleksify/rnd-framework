@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.6 — 2026-05-03
+
+### Fix bash-gate segment dispatch and align is_barrier_violation with Lean proof; add three audit follow-ups
+
+Resolves the two major and three minor findings from /rnd-framework:rnd-audit. (1) bash-gate.sh: moved the git-staging-of-.rnd-paths blocker into check_segment per-segment dispatch (was triggering on any compound command containing both substrings); tightened rnd-dir.sh auto-allow to anchored boundary regex requiring start-of-string or path-slash before the script name; extended push refspec advisory to also catch HEAD:branch form. (2) lib.sh: extended is_barrier_violation to also block agent_type containing 'proof-gate', aligning the runtime with the existing Lean theorem proofGate_cannot_access_self_assessment in proofs/InformationBarrier.lean. (3) validate.sh: added diff -q parity check between the two plugin-dir-base.sh copies. Three new test files cover the changes: bash-gate-git-add-segment.test.sh, lib-is-barrier-violation.test.sh, bash-gate-rnd-dir-boundary.test.sh. All 295 validate checks and full hook test suite pass.
+
 ## 3.13.5 — 2026-05-02
 
 ### Reconcile skill drift and dedup agent files per audit

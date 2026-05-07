@@ -92,9 +92,8 @@ Format the spec as shown in the "Design-Spec.md Artifact Format" section below. 
 Options:
   1. (Recommended) Approve — proceed to planning with recommended approach
   2. Approve with modifications — [ask what to change]
-  3. Choose a different alternative — [ask which one]
-  4. Request another alternative — [ask what direction]
-  5. Reject all — [ask for different framing]
+  3. Choose or request a different alternative — [ask which one or what direction]
+  4. Reject all — [ask for different framing]
 ```
 
 ### 6. Iterate on Feedback

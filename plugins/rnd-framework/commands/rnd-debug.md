@@ -127,8 +127,7 @@ The agent completes and returns its verdict via `SendMessage`. Wait for it befor
 - **PASS** → Mark task `completed`. **MANDATORY:** Invoke `rnd-framework:rnd-formatting` BEFORE doc-polish. Then invoke `rnd-framework:rnd-doc-polish`. Then use `AskUserQuestion`:
   - "Commit changes (Recommended)"
   - "Bump version, tag and push"
-  - "Show development narrative"
-  - "Review artifacts"
+  - "Review artifacts or narrative" — follow up with a sub-menu: "Show development narrative" or "Review artifacts"
   - "Finish session"
 
 - **PASS (quality: NEEDS ITERATION)** → Treat as PASS. Show quality feedback. Present same options.

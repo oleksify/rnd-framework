@@ -150,7 +150,7 @@ Otherwise:
 1. **Generate 2-3 architectural alternatives** from Phase 0 context.
 2. **Recommend one approach** with reasons tied to Phase 0 constraints.
 3. **Save design spec** to `$RND_DIR/design-spec.md`. Status: `STATUS: DRAFT`.
-4. **Present for approval** — `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose a different alternative", "Request another alternative", "Skip design phase".
+4. **Present for approval** — `AskUserQuestion`: "Approve design (Recommended)", "Approve with modifications", "Choose or request a different alternative", "Skip design phase".
 5. **Iterate on feedback** (max 3 rounds). After 3 rounds without approval, report blocked.
 6. **Finalize** — set `STATUS: APPROVED`.
 
@@ -372,11 +372,14 @@ Summarize: what was built, verification results, iterations, integration status,
 
 **MANDATORY — DO NOT SKIP:** Invoke `rnd-framework:rnd-doc-polish` AFTER formatting but BEFORE presenting next steps.
 
-Use `AskUserQuestion` for next steps:
+Use `AskUserQuestion` for next steps (Tier 1 — 4 options):
 - "Commit changes (Recommended)"
-- "Bump version, tag and push"
-- "Run code review first"
 - "Create PR"
+- "Run code review first"
+- "More options…"
+
+When the user picks "More options…", follow up with a second `AskUserQuestion` (Tier 2):
+- "Bump version, tag and push"
 - "Show development narrative"
 - "Review all artifacts"
 - "Finish session"
@@ -385,4 +388,4 @@ Use `AskUserQuestion` for next steps:
 
 When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
-After showing the narrative, re-present the same `AskUserQuestion` menu without the narrative option.
+After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchanged.

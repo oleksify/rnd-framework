@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.13.7 — 2026-05-07
+
+### Cap AskUserQuestion options at 4 across rnd-brainstorm, rnd-debug, rnd-design, rnd-start
+
+Five prompt sites (Phase 3 Explore in rnd-brainstorm, design-approval gate in rnd-start.md:153, design SKILL.md, rnd-debug PASS branch, rnd-start Phase 7) instructed AskUserQuestion calls with 5–7 options, exceeding the tool's hard 4-option cap and causing InputValidationError. Trimmed each to ≤4 (merging near-duplicates or using a two-tier menu) and added a global cap rule plus an explicit per-question option bound to the brainstorm Guidelines and Phase 4.
+
 ## 3.13.6 — 2026-05-03
 
 ### Fix bash-gate segment dispatch and align is_barrier_violation with Lean proof; add three audit follow-ups

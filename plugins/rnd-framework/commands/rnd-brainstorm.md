@@ -68,13 +68,13 @@ For each direction, provide:
 Present all directions and use `AskUserQuestion`:
 > "Which direction resonates most?"
 
-Options: one per direction, plus "Combine elements from multiple" and "None of these — let me describe what I want."
+Options: one per direction (max 3 directions), plus "Combine, reframe, or describe a different direction" as the final option — total ≤4 options.
 
 If the user wants to combine or reframe, adapt and re-present. Max 2 rounds of exploration before moving to Phase 4.
 
 ## Phase 4: Narrow
 
-Deep-dive on the chosen direction. Ask 4-6 targeted questions using `AskUserQuestion`:
+Deep-dive on the chosen direction. Ask 4-6 targeted questions using `AskUserQuestion` with 2–4 options per question:
 
 - **Scope:** What's the minimum viable version? What can be deferred?
 - **Priorities:** If you had to pick 2-3 things that matter most, what are they?
@@ -150,6 +150,7 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 - **No pipeline phases.** This is a conversation between you and the user. Do not run Build, Verify, Plan, or any other pipeline phase.
 - **No code.** Do not write or modify any project files during brainstorming. The output is a plan, not code.
 - **Use AskUserQuestion for every question.** Never ask questions as plain text. Every question must be structured with options.
+- **Cap options at 4 per question.** `AskUserQuestion` enforces a hard limit of ≤4 options per question and will error on any call that exceeds it. Every `AskUserQuestion` call in this command must produce at most 4 options.
 - **Never end with a plain-text message.** Every phase that requires a user decision — including the final Phase 6 output — MUST use `AskUserQuestion`. Writing "Plan saved to X. Run /rnd-framework:rnd-start ..." as the terminal response is a defect. The user must always receive selectable options, not a suggestion to run a command themselves.
 - **Be opinionated.** Offer concrete suggestions and push back constructively. A brainstorming partner who agrees with everything is useless.
 - **Diverge before you converge.** The LLM-default is to regress to the mean — the most popular framing, the most common library, the approach you've seen a hundred times in training data. In Phase 3, actively resist this. Identify the obvious answer, then find what's on the other side of it.

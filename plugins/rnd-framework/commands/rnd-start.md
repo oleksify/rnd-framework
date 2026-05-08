@@ -280,12 +280,82 @@ Do NOT verify tasks yourself. The Verifier agent independently writes experiment
 | `PASS_QUALITY_NEEDS_ITERATION` | Same as PASS. Save quality feedback. Does NOT block integration. Route to Phase 4. |
 | `NEEDS_ITERATION` | Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5 for this task. |
 | `FAIL` | Do NOT iterate — route to re-planning. |
+| `AMEND_REQUIRED` | Route to Phase 3.5: Amendment Flow. Does NOT block other tasks in the wave. The Verifier must cite a concrete spec defect in the `feedback` field; without a cited defect, treat as `NEEDS_ITERATION`. |
 
 **After Gate 3:** Summarize per-task verdicts from the verdict map. Then route:
 
 - All PASS/PASS_QUALITY: auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
 - Any NEEDS_ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
 - Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
+
+## Phase 3.5: Amendment Flow (AMEND_REQUIRED only)
+
+**Entry condition:** One or more tasks in the wave received an `AMEND_REQUIRED` verdict. This phase is conditional — it does NOT affect tasks with PASS, NEEDS_ITERATION, or FAIL verdicts.
+
+**Wave-continuation semantics:** AMEND_REQUIRED on one task does NOT block other tasks in the wave. Tasks that PASS or PASS_QUALITY_NEEDS_ITERATION proceed through Phase 4 (cleanup) and Phase 6 (integration) normally. The AMEND_REQUIRED task pauses independently for the arbiter + user gate, then re-joins the pipeline at the next available re-verification slot after amendment resolution.
+
+For each task with an `AMEND_REQUIRED` verdict, execute the following steps independently:
+
+### Step 1: Spawn the Amendment Arbiter
+
+Spawn the arbiter agent with **strictly scoped inputs** — the original task pre-registration text plus the Verifier's AMEND_REQUIRED feedback (including the cited spec defect). No build manifest, no self-assessment, no code, no briefs, no cleanup reports are passed to the arbiter.
+
+```
+Agent({
+  description: "Amendment arbiter for T<id>",
+  subagent_type: "rnd-framework:rnd-amendment-arbiter",
+  mode: "acceptEdits",
+  prompt: "Task pre-registration:\n<paste verbatim from plan.md>\n\nVerifier AMEND_REQUIRED feedback:\n<paste verbatim from verdict map 'feedback' field>"
+})
+```
+
+### Step 2: Read Arbiter Output and Branch
+
+The arbiter emits one of three structured responses:
+
+- **`AMEND { field, old, new, rationale }`** — Proceed to Step 3 (user gate). The arbiter may include multiple AMEND entries for multiple fields.
+- **`REBUILD { rationale }`** — Treat as `NEEDS_ITERATION`; skip Steps 3-5 and route directly to Phase 5 with the original Verifier feedback.
+- **`ESCALATE_REPLAN { rationale }`** — Spawn a Planner micro-spawn for this task only. The Planner receives the original pre-reg and the arbiter's rationale. After micro-replan, re-enter the pipeline at Phase 2 for the re-planned task.
+
+### Step 3: User Gate (mandatory)
+
+Present the arbiter's amendment proposal to the user. Use `AskUserQuestion` with exactly these structured options:
+
+- **"Approve amendment (Recommended)"** — Mutate `plan.md` pre-registration via Edit (update only the fields specified in the AMEND output). Then proceed to Step 4.
+- **"Reject — treat as NEEDS_ITERATION"** — Discard the arbiter proposal. Route to Phase 5 with the original Verifier feedback. The resulting NEEDS_ITERATION rebuild consumes one iteration from the task's budget; the rejection itself is not a separate debit.
+- **"Override to FAIL and re-plan"** — Route to re-planning for this task.
+
+After the user decides, append a record to `$RND_DIR/briefs/T<id>-amendments.md` (create if absent) with these required fields:
+
+```markdown
+## Amendment — <ISO timestamp>
+
+**Cited defect:** <verbatim from Verifier feedback>
+**Arbiter recommendation:** <AMEND | REBUILD | ESCALATE_REPLAN>
+**Arbiter full output:** <verbatim arbiter response>
+**User decision:** approved | rejected | overridden-to-fail
+```
+
+Then write a calibration record to `calibration.jsonl` with `verdict: "AMEND_REQUIRED"` and `amendmentData: { userDecision: "approved" | "rejected" | "overridden-to-fail", arbitersRecommendation: "AMEND" | "REBUILD" | "ESCALATE_REPLAN" }`.
+
+### Step 4: Re-Prove Check (if applicable)
+
+If the mutated task pre-registration contains `Proof: lean`, re-trigger the Proof Gate for this task before re-verification. The Lean proof is now stale — it proved properties of the old criteria. Re-prove is mandatory. If Lean is unavailable and the Proof Gate would normally skip, the existing skip behavior applies; proceed to Step 5.
+
+### Step 5: Re-Verification (clean-slate)
+
+Spawn the Verifier with the now-mutated pre-registration as if it were the original. The Verifier prompt MUST NOT mention amendments or amendment history — clean-slate re-verification only. The Verifier sees only the current (mutated) pre-reg text.
+
+```
+Agent({
+  description: "Re-verify T<id> after amendment",
+  subagent_type: "rnd-framework:rnd-verifier",
+  mode: "acceptEdits",
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id>\nAll task pre-registrations:\n<paste mutated pre-reg from plan.md>"
+})
+```
+
+Route the re-verification verdict via Gate 3 as normal. The re-verification spawn intentionally uses a single-task wave (the amended task only) — clean-slate isolation from sibling tasks in the original wave.
 
 ## Phase 4: Cleanup (per task)
 

@@ -32,6 +32,9 @@ You receive ONLY the pre-registration, Builder's code/tests/artifacts, and codeb
 | All PASS | Any FAIL | PASS_QUALITY_NEEDS_ITERATION |
 | Any FAIL (fixable) | Any | NEEDS_ITERATION |
 | Any FAIL (unfixable) | Any | FAIL |
+| Concrete spec defect cited | Any | AMEND_REQUIRED |
+
+`AMEND_REQUIRED` — emit only when the Verifier can cite a concrete spec defect in the pre-registration itself (e.g., contradictory criteria, criterion referencing nonexistent system state). When in doubt between `NEEDS_ITERATION` and `AMEND_REQUIRED`, choose `NEEDS_ITERATION`. On re-verification after amendment, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment — clean-slate re-verification.
 
 ## Batch Wave Verification
 
@@ -52,6 +55,8 @@ The information barrier applies identically to batched wave verification — the
 **On FAIL or NEEDS_ITERATION:** auto-materialize the full prose verification report (no separate Debugger invocation required). Write the report immediately when the verdict is issued.
 
 **On PASS_QUALITY_NEEDS_ITERATION:** auto-materialize the full prose report so the quality feedback is captured alongside the receipt.
+
+**On AMEND_REQUIRED:** auto-materialize the full prose verification report — NOT a pass-receipt JSON. The `feedback` field must include the cited spec defect verbatim. On clean-slate re-verification after an amendment is approved, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment that occurred.
 
 ### Pass-Receipt Schema
 

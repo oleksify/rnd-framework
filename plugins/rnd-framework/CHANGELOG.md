@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.14.0 — 2026-05-08
+
+### Amendable Pre-Registration (Amendment Flow)
+
+Introduces AMEND_REQUIRED verdict with cited-defect requirement, rnd-amendment-arbiter agent (10th specialized agent), amendment log artifact at briefs/T<id>-amendments.md (barrier-protected), re-prove rule for tasks with Proof: lean, wave-continuation semantics (AMEND_REQUIRED does not block other tasks in wave), and calibration schema extension (amendmentData field).
+
 ## 3.13.7 — 2026-05-07
 
 ### Cap AskUserQuestion options at 4 across rnd-brainstorm, rnd-debug, rnd-design, rnd-start

@@ -45,7 +45,8 @@ Each completed task appends one record to `calibration.jsonl`:
 |-------|------|-------|
 | `taskId` | string | Task identifier (e.g. `"T3"`) |
 | `sessionId` | string | Session that produced this verdict |
-| `verdict` | string | `"PASS"`, `"FAIL"`, or `"NEEDS_ITERATION"` |
+| `verdict` | string | `"PASS"`, `"FAIL"`, `"NEEDS_ITERATION"`, or `"AMEND_REQUIRED"` |
+| `amendmentData` | object or null | Optional. Only present when `verdict` is `"AMEND_REQUIRED"`. Shape: `{ "userDecision": "approved" \| "rejected", "arbitersRecommendation": "AMEND" \| "REBUILD" \| "ESCALATE_REPLAN" }`. Omit entirely for non-AMEND_REQUIRED verdicts. |
 | `criterionResults` | array | Per-criterion `{ criterion, result }` objects |
 | `iterationCount` | number | Build-verify cycles required |
 | `timestamp` | string | ISO 8601 UTC |
@@ -128,6 +129,8 @@ Calibration summary for this project (last 30 verdicts):
 ```
 
 **What the verification phase does with this:** No special action required. The summary is contextual — it raises alertness for known problem areas without overriding the information barrier or the verification phase's independent judgment.
+
+**AMEND_REQUIRED tracking:** `AMEND_REQUIRED` verdicts are counted separately from `PASS`, `FAIL`, and `NEEDS_ITERATION` in the calibration summary. A high `AMEND_REQUIRED` rate (e.g., more than 20% of verdicts) may indicate Verifier drift — the Verifier citing spec defects that are actually implementation gaps, not genuine pre-registration errors. Flag this to the orchestrator for review.
 
 **Keep it simple:** Aggregate counts only. No per-verifier breakdown, no dashboards, no trend charts. A plain read over the JSONL file is sufficient.
 

@@ -69,12 +69,19 @@ Read both reports. Extract the `Overall Verdict` line from each.
 | PASS_QUALITY_NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION |
 | NEEDS_ITERATION | NEEDS_ITERATION | NEEDS_ITERATION |
 | FAIL    | FAIL    | FAIL          |
+| AMEND_REQUIRED | AMEND_REQUIRED | AMEND_REQUIRED |
 
 When both judges agree, their shared verdict is the final verdict. Proceed to Step 5.
 
 **Split-verdict rule (judges disagree):**
 
-Any combination where the two verdicts differ — PASS/FAIL, PASS/NEEDS_ITERATION, FAIL/NEEDS_ITERATION, or any mismatch involving PASS_QUALITY_NEEDS_ITERATION — triggers a tiebreaker. Proceed to Step 4.
+Any combination where the two verdicts differ — including any case where one judge issues AMEND_REQUIRED and the other issues any different verdict — triggers a tiebreaker Verifier (not the user). Proceed to Step 4.
+
+| Judge A | Judge B | Action |
+|---------|---------|--------|
+| AMEND_REQUIRED | PASS / NEEDS_ITERATION / FAIL / PASS_QUALITY_NEEDS_ITERATION | Spawn tiebreaker Verifier |
+| PASS / NEEDS_ITERATION / FAIL / PASS_QUALITY_NEEDS_ITERATION | AMEND_REQUIRED | Spawn tiebreaker Verifier |
+| (any other mismatch) | (any other mismatch) | Spawn tiebreaker Verifier |
 
 ### Step 4 — Tiebreaker Judge (on disagreement only)
 
@@ -83,11 +90,20 @@ Spawn a third verifier agent as tiebreaker:
 - Uses `subagent_type: "rnd-framework:rnd-verifier"` and `mode: "acceptEdits"`.
 - Receives: the pre-registration document, the Builder's code and tests, AND both prior judge reports (Judge A and Judge B).
 - Does NOT receive self-assessment files. The information barrier applies to the tiebreaker identically to the initial judges.
-- The tiebreaker must issue a final verdict (PASS, PASS_QUALITY_NEEDS_ITERATION, NEEDS_ITERATION, or FAIL) and justify it by citing specific evidence from the two prior reports — not just picking a side.
+- The tiebreaker must issue a final verdict (PASS, PASS_QUALITY_NEEDS_ITERATION, NEEDS_ITERATION, FAIL, or AMEND_REQUIRED) and justify it by citing specific evidence from the two prior reports — not just picking a side.
 
 The orchestrator saves the tiebreaker's returned report to: `$RND_DIR/verifications/T<id>-tiebreaker.md`
 
-The tiebreaker's verdict is the final verdict.
+**Tiebreaker resolution for AMEND_REQUIRED splits:**
+
+| Tiebreaker Verdict | Final Verdict |
+|--------------------|---------------|
+| AMEND_REQUIRED | AMEND_REQUIRED stands |
+| Any non-AMEND_REQUIRED verdict | Majority non-AMEND_REQUIRED verdict wins |
+
+When the split is AMEND_REQUIRED vs NEEDS_ITERATION and the tiebreaker disagrees with AMEND_REQUIRED, the final verdict defaults to NEEDS_ITERATION.
+
+For all other splits (not involving AMEND_REQUIRED), the tiebreaker's verdict is the final verdict.
 
 ### Step 5 — Produce Output
 
@@ -130,7 +146,7 @@ Omit this section if no experiment artifacts were produced.]
 
 ---
 
-## Final Consensus Verdict: PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
+## Final Consensus Verdict: PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL | AMEND_REQUIRED
 
 **Consensus method:** Both judges agreed | Tiebreaker required — [Judge A verdict] vs [Judge B verdict]
 

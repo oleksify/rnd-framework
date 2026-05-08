@@ -94,6 +94,27 @@ Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"$
 - **Fix applied:** [what Builder changed]
 ```
 
+## AMEND_REQUIRED Divergence
+
+`AMEND_REQUIRED` is a distinct verdict that routes outside the normal iteration loop. It does **not** mean "try harder" — it means the Verifier believes the pre-registration itself may be wrong.
+
+### Routing
+
+- `AMEND_REQUIRED` → routes to the **rnd-amendment-arbiter** agent, not the Builder
+- `ESCALATE_REPLAN` (arbiter output) → routes to a **Planner micro-spawn**; the task is re-decomposed, not reworked in-place
+
+The Builder does **not** act on an `AMEND_REQUIRED` verdict until the arbiter + user gate has resolved.
+
+### Budget rules
+
+| Event | Iteration count |
+|-------|----------------|
+| `AMEND_REQUIRED` issued | Does **not** consume an iteration |
+| Amendment approved → re-verify | Does **not** consume an iteration (re-verifies against amended criteria as a fresh run) |
+| Amendment rejected → reverts to `NEEDS_ITERATION` | **Consumes** one iteration from the task's budget |
+
+Amendment cycles are off-budget by design. The pipeline pauses at the arbiter, not at the Builder. Only rejection — which forces the Builder back into the normal iteration loop — counts against the budget.
+
 ## Common Rationalizations
 
 | Excuse | Reality |
@@ -104,6 +125,42 @@ Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"$
 | "Just a minor tweak" | If 3 minor tweaks didn't fix it, it's not minor. |
 | "It works, the test is just wrong" | Then fix the test and prove it. Claims without evidence are not results. |
 | "I'll fix the other failures next round" | No. Address ALL failed criteria in one pass. Narrow fixes burn iteration budget and cause whack-a-mole cycles. Each round must converge, not punt. |
+| "The Verifier issued AMEND_REQUIRED" | This is not a free retry; the arbiter still evaluates whether the spec or the code is wrong. |
+
+## Amendment Log Artifact
+
+When a Verifier issues `AMEND_REQUIRED`, the amendment-arbiter writes an amendment log to `$RND_DIR/briefs/T<id>-amendments.md`. This file is barrier-protected — Verifier and proof-gate agents cannot read it.
+
+### Path pattern
+
+```
+$RND_DIR/briefs/T<id>-amendments.md
+```
+
+### Append-only protocol
+
+Each `AMEND_REQUIRED` cycle appends one entry to the file. Entries are never edited or deleted. The file grows as a chronological record of all amendment proposals for that task.
+
+### Required fields per entry
+
+```markdown
+## Amendment — <ISO 8601 timestamp>
+
+**Cited defect:** <Verifier's exact cited defect from the AMEND_REQUIRED verdict's `feedback` field>
+
+**Arbiter recommendation:** AMEND | REBUILD | ESCALATE_REPLAN
+
+**Arbiter output:**
+<full structured output from the arbiter — AMEND field patches, REBUILD rationale, or ESCALATE_REPLAN rationale>
+
+**User decision:** approved | rejected
+```
+
+### AMEND_REQUIRED vs NEEDS_ITERATION
+
+`AMEND_REQUIRED` is NOT an iteration cycle. It does NOT consume iteration budget. It routes through the arbiter + user gate, mutates the pre-reg (on approval), and re-verifies against the amended criteria as if it were a fresh verification. The iteration budget counter for the task does not increment.
+
+If the user rejects the amendment proposal, the verdict reverts to `NEEDS_ITERATION` and the normal iteration budget applies.
 
 ## Related Skills
 

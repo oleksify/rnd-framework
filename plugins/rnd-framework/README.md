@@ -168,13 +168,15 @@ The plugin provides skills that embed structured practices into every phase of c
 
 ## Agents
 
-Eight specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+Ten specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 | Agent | Model | Color | Role |
 |---|---|---|---|
 | `rnd-framework:rnd-planner` | sonnet (high effort) | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
 | `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces build manifest + self-assessment |
 | `rnd-framework:rnd-verifier` | sonnet (high effort) | amber | Independent verification against pre-registered criteria with information barrier |
+| `rnd-framework:rnd-amendment-arbiter` | sonnet (medium effort) | — | Evaluates AMEND_REQUIRED verdicts with strict input contract (pre-reg + verdict only); proposes AMEND, REBUILD, or ESCALATE_REPLAN |
+| `rnd-framework:rnd-cleanup` | sonnet (medium effort) | — | Per-task dead-code sweep after PASS; rolls back if cleanup breaks re-verification |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
 | `rnd-framework:rnd-debugger` | sonnet (high effort) | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking); only runs when task declares `Proof: lean` and Lean is on PATH |
@@ -314,7 +316,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 9 specialized agents for multi-agent mode
+├── agents/                      # 10 specialized agents for multi-agent mode
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied

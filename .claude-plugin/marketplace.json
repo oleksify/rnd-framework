@@ -1,6 +1,6 @@
 {
   "name": "oleksify-plugins",
-  "description": "Claude Code plugin: rnd-framework for multi-agent orchestration.",
+  "description": "Claude Code plugins: rnd-framework for multi-agent orchestration, tight-loop for single-agent rigor.",
   "owner": {
     "name": "Oleksii Topolianskyi",
     "url": "https://tangled.org/oleksify.me/rnd-framework"
@@ -11,6 +11,12 @@
       "description": "Multi-agent coding orchestration with structured decomposition, dependency-based scheduling, independent verification with information barriers, quality gates, and spec-first accountability.",
       "category": "development",
       "source": "./plugins/rnd-framework"
+    },
+    {
+      "name": "tight-loop",
+      "description": "Single-agent coding rigor: pre-register, implement, self-review with hook-enforced honesty. No orchestration, no subagents, no information barrier — just a tight prompt skill plus four enforcement hooks.",
+      "category": "development",
+      "source": "./plugins/tight-loop"
     }
   ]
 }

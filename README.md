@@ -4,7 +4,7 @@ A scientific-method orchestration plugin for [Claude Code](https://docs.anthropi
 
 ## Features
 
-- **Dual execution modes:** single-flow (sequential in one session) or multi-agent (9 specialized agents with structural isolation)
+- **Dual execution modes:** single-flow (sequential in one session) or multi-agent (10 specialized agents with structural isolation)
 - **Pre-registration:** testable success criteria declared before implementation begins
 - **Information barriers:** verification phase cannot read build-phase self-assessments
 - **Quality gates:** evidence-based PASS/FAIL verdicts at every phase boundary
@@ -95,7 +95,7 @@ The framework applies scientific method principles to software engineering:
 
 **Single-flow mode** runs all phases sequentially in one session. No agents are spawned. Best for smaller tasks and quick iterations.
 
-**Multi-agent mode** uses 9 specialized agents (planner, builder, verifier, cleanup, integrator, debugger, proof-gate, reality-auditor, data-scientist), each in isolated context windows with structural information barriers. Best for complex tasks requiring maximum verification rigor.
+**Multi-agent mode** uses 10 specialized agents (planner, builder, verifier, amendment-arbiter, cleanup, integrator, debugger, proof-gate, reality-auditor, data-scientist), each in isolated context windows with structural information barriers. Best for complex tasks requiring maximum verification rigor.
 
 ### Pipeline
 

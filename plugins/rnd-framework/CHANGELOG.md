@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.0 — 2026-05-09
+
+### Add builder-dismissal-gate.sh hook and found-issues.jsonl ledger for structural fix-on-sight enforcement
+
+SubagentStop hook scoped to rnd-builder blocks completion when the build manifest contains dismissal phrases (pre-existing, out of scope, etc.), acknowledges issues without a co-located ledger, or claims success despite test failures. New T<id>-found-issues.jsonl ledger is the only legal escape — entries with decision="escalated" must be acknowledged by the Verifier or the task re-fails. Replaces the failed textual 'never use pre-existing' rules with structural enforcement.
+
 ## 3.14.0 — 2026-05-08
 
 ### Amendable Pre-Registration (Amendment Flow)

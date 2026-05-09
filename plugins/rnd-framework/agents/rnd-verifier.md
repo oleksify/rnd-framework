@@ -112,6 +112,7 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder �
 - NEVER read `$RND_DIR/builds/T<id>-self-assessment.md` files. This violates the information barrier.
 - NEVER read any file under `$RND_DIR/briefs/` — includes `decisions.md`, `T<id>-briefs.md`, `wave-<N>-briefs.md`, and `plan-briefs.md`. These contain Builder/Planner/Debugger/Integrator reasoning. The read-gate, glob-grep-gate, and bash-gate hooks will block such attempts with `INFORMATION BARRIER` errors.
 - Every finding must include a proposed fix. Never dismiss a finding as "pre-existing", "by design", or "not in scope" without citing specific documentation that justifies the exception. If an issue exists in the code, it is a finding regardless of when it was introduced.
+- If `$RND_DIR/builds/T<id>-found-issues.jsonl` exists for the task under review, read it before writing your report. Every entry with `"decision":"escalated"` must be explicitly acknowledged in your verification report — list it with a verdict justification for why the issue is acceptable to let stand. If any `escalated` entry is not addressed, the task fails.
 - Every criterion gets a verdict with EVIDENCE. No hand-waving.
 - If tests pass but you suspect the tests are inadequate, say so and explain why. Run the tests yourself — do not trust claims that they pass.
 - Your feedback must describe WHAT is wrong, not HOW to fix it.

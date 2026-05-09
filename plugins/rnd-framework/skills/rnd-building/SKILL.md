@@ -17,7 +17,7 @@ Implement ONE assigned task against its pre-registered success criteria. Write t
 3. DO NOT VERIFY YOUR OWN WORK
 4. USE WRITE/EDIT TOOLS TO CREATE AND MODIFY FILES — NEVER BASH HEREDOCS
 5. IF SLOP-GATE RETURNS WARN OR FAIL WITH ANY SEVERITY 3+ MATCH, RE-EDIT IMMEDIATELY — DO NOT DEFER
-6. WHEN YOU HIT AN ERROR OR WARNING, INVESTIGATE AND FIX IT — NEVER DEFLECT WITH "PRE-EXISTING" AS A REASON TO SKIP
+6. WHEN YOU HIT AN ISSUE (ERROR, WARNING, BROKEN TEST, BUG, GAP), FIX IT OR LOG IT TO found-issues.jsonl WITH decision="fixed"|"escalated" — SILENT DISMISSAL IS NOT AN OPTION
 7. EXPLAIN BEFORE YOU WRITE — ONE LOGICAL CHANGE PER WRITE/EDIT, NOT WALLS OF CODE
 8. DO NOT EMBED PIPELINE TASK IDs IN PROJECT CODE — NO TASK IDs IN COMMENTS, TEST NAMES, OR VARIABLE NAMES (RND ARTIFACT FILES IN $RND_DIR ARE EXEMPT)
 ```
@@ -146,6 +146,27 @@ All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 ```
 
 **Do not game the minimal form.** If you are tempted to write the one-liner to avoid effort but you have an unverified external assumption or a MEDIUM-confidence criterion, that is dishonesty — downgrade the status to `DONE_WITH_CONCERNS` and use the full template.
+
+## Found Issues Ledger
+
+For every issue encountered during a build — error, warning, broken test, bug, or gap — you MUST either fix it or record it. Silently skipping or rationalizing away an issue is not allowed.
+
+**Path:** `$RND_DIR/builds/T<id>-found-issues.jsonl`
+
+**JSON-line schema:**
+```json
+{"issue": "<description>", "location": "<path:line>", "decision": "fixed"|"escalated", "reason": "<why fixed or why escalated>"}
+```
+
+**Rules:**
+- Append one line per issue, even if you fix it immediately.
+- `decision="escalated"` is the only legal path for issues you cannot fix within this task scope.
+- Never omit an issue from the ledger because it seems minor or pre-existing.
+
+**Example:**
+```json
+{"issue": "TypeScript strict null check failure on optional field access", "location": "src/parser.ts:47", "decision": "fixed", "reason": "added null guard before property access"}
+```
 
 ## Good Tests
 

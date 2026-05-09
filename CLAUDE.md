@@ -42,6 +42,7 @@ plugins/rnd-framework/
 │   ├── format-on-save.sh        # PostToolUse hook (v2.1.90+): auto-formats code files after Write/Edit using detected project formatter
 │   ├── session-title.sh         # UserPromptSubmit hook (v2.1.94+): sets session title to pipeline phase + project name
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
+│   ├── builder-dismissal-gate.sh # SubagentStop hook scoped to rnd-builder: blocks dismissal phrases, acknowledged-but-unfixed issues, and missing/empty found-issues ledger
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase + worktree indicator (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -84,6 +85,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
 - **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
 - **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
+- **Builder dismissal gate** (`builder-dismissal-gate.sh`): SubagentStop hook that fires only for the `rnd-builder` agent. Reads the most recent `T<id>-manifest.md` under the active session and runs three structural checks: (a) phrase scan blocks on `pre-existing`, `out of scope`, `not my task`, `unrelated to this task`, `won't fix here`, `outside scope`; (b) acknowledged-but-unfixed scan requires a co-located `T<id>-found-issues.jsonl` ledger when the manifest mentions a problem; (c) ledger-required check blocks DONE manifests that report failures without a ledger entry. The only legal dismissal path is appending a JSON line `{"issue", "location", "decision":"escalated", "reason"}` to the ledger; the Verifier reads the ledger and re-fails the task on any unacknowledged escalation. Replaces the textual "never use 'pre-existing' as a reason" rules in agent prompts with structural enforcement.
 - **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
 - **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
 - **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
@@ -294,6 +296,8 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
     ├── builds/T*-manifest.md              # Builder output records (terse: structured bullets, no narrative)
     ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
+    ├── builds/T*-found-issues.jsonl       # Per-task ledger of issues encountered: {"issue","location","decision":"fixed"|"escalated","reason"}; enforced by builder-dismissal-gate.sh; read by Verifier
+
     ├── verifications/wave-*-verdict-map.json  # Per-wave verdict map keyed by task_id (PASS/PASS_QUALITY_NEEDS_ITERATION/NEEDS_ITERATION/FAIL + evidence + feedback)
     ├── verifications/T*-pass-receipt.json # Lazy-prose PASS receipt (criteria_met + evidence_refs + timestamp); written instead of full prose on PASS
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts (auto-materialized only on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION)

@@ -89,6 +89,9 @@ Run experiments against the implementation. Record raw output verbatim — do no
 ### 4. Run Builder's Tests and Compare
 Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.
 
+#### 4.5. Read found-issues Ledger
+If `$RND_DIR/builds/T<id>-found-issues.jsonl` exists, read it now. Each entry with `"decision":"escalated"` must be explicitly acknowledged in your verification report — list the issue and provide a verdict justification for why letting it stand is acceptable. Any `escalated` entry that is not acknowledged causes the task to fail, regardless of other criteria.
+
 ### 5. Code Inspection, Failure Mode Analysis, and Cross-Criterion Sweep
 Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-failure-modes`).
 

@@ -167,6 +167,14 @@
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/subagent-lifecycle.sh'"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/builder-dismissal-gate.sh'"
+          }
+        ]
       }
     ],
     "PostToolUse": [

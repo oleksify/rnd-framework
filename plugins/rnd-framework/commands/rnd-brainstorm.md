@@ -156,3 +156,7 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 - **Diverge before you converge.** The LLM-default is to regress to the mean — the most popular framing, the most common library, the approach you've seen a hundred times in training data. In Phase 3, actively resist this. Identify the obvious answer, then find what's on the other side of it.
 - **Keep momentum.** Each phase should take 1-2 question rounds, not 10. The total session should be 5-8 questions, not 20.
 - **Respect the funnel.** Go broad first (Phase 2), then narrow (Phase 4). Don't jump to implementation details in Phase 2.
+
+## Output Discipline
+
+This command produces `brainstorm.md` (Phase 5/6) under `$RND_DIR/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE the Phase 6 `AskUserQuestion` — in the same turn, including in autonomous/loop mode. "Plan saved to `$RND_DIR/brainstorm.md`. Pick an option:" without printing the file verbatim is a defect.

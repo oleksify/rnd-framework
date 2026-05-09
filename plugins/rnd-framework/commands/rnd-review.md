@@ -67,3 +67,7 @@ Present findings using `AskUserQuestion`:
   - "Fix with /rnd-framework:rnd-start (Recommended)"
   - "Review report details"
   - "Dismiss"
+
+## Output Discipline
+
+This command produces a report artifact under `$RND_DIR/review/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Review complete — see review.md") without printing it verbatim is a defect.

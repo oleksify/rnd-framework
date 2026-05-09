@@ -54,3 +54,7 @@ Present findings using `AskUserQuestion`:
   - "Fix with /rnd-framework:rnd-start (Recommended)"
   - "Review audit report details"
   - "Dismiss"
+
+## Output Discipline
+
+This command produces a report artifact under `$RND_DIR/audit/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Audit complete — see audit.md") without printing it verbatim is a defect.

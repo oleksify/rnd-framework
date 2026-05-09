@@ -375,6 +375,10 @@ ln -sf path/to/rnd-framework/output-styles/pipeline.md .claude/output-styles/
 
 Then switch with `/output-style scientific`, `/output-style rigorous`, or `/output-style pipeline`.
 
+### Report Surfacing Protocol
+
+All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`plan.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`, `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `T<id>-proof-report.md`, `T<id>-amendments.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
+
 ## Customization
 
 ### Change agent models

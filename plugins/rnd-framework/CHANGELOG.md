@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.16.0 — 2026-05-09
+
+### Add mandatory Report Surfacing Protocol to all output styles
+
+All three output styles (scientific, rigorous, pipeline) now carry an identical Report Surfacing Protocol section requiring the orchestrator to print agent/skill report artifacts (plan, design spec, build manifest, verification report, verdict map, reality report, diagnosis, integration report, proof report, amendments, iteration log, audit/review reports, narratives, brainstorm) verbatim before any next-step prompt in the same turn, including autonomous/loop mode. A Forbidden Anti-Patterns subsection lists concrete defects. Pointer reminders added to using-rnd-framework SKILL, README, CLAUDE.md, and the five report-producing commands. Excluded artifacts include builder concern notes, found-issues ledgers, cleanup reports, project facts, calibration jsonl, and audit log.
+
 ## 3.15.0 — 2026-05-09
 
 ### Add builder-dismissal-gate.sh hook and found-issues.jsonl ledger for structural fix-on-sight enforcement

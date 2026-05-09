@@ -332,6 +332,7 @@ Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-
 - **Test suite** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then bash scripts, then Python as last resort
 - **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)
+- **Report surfacing** — the three rnd-framework output styles each carry a "Report Surfacing Protocol" section that requires the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verifier verdict maps, reality reports, diagnoses, integration reports, proofs, amendments, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log. The `using-rnd-framework` skill, `README.md`, and report-producing command files (`rnd-audit`, `rnd-review`, `rnd-brainstorm`, `rnd-debug`, `rnd-roadmap`) carry pointer reminders.
 
 ## Working on This Codebase
 

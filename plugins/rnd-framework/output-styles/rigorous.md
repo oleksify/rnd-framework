@@ -56,3 +56,38 @@ State these explicitly when they are non-obvious:
 - "Probably fine" — this is not risk assessment
 - "Generally speaking" — be specific or don't say it
 - Hedge words without substance — "might", "could", "possibly" are acceptable only when paired with a concrete condition ("could fail if the input exceeds 2GB")
+
+## Report Surfacing Protocol
+
+When an agent or skill produces a report artifact, you MUST print the report's full file path followed by its complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn. Surfaced report types:
+
+- `plan.md` (Planner)
+- `design-spec.md` (Phase 0.5 architectural alternatives)
+- `T<id>-manifest.md` (Builder)
+- `T<id>-verification.md` and `wave-<N>-verdict-map.json` (Verifier)
+- `T<id>-reality-report.md` (Reality Auditor)
+- `T<id>-diagnosis.md` (Debugger)
+- `wave-<N>-report.md` (Integrator)
+- `T<id>-proof-report.md` (Proof Gate)
+- `T<id>-amendments.md` (Amendment Arbiter)
+- `iteration-log.md` (every append)
+- Audit and review reports (rnd-audit, rnd-review)
+- Narratives produced by rnd-narrative
+- `brainstorm.md` produced by rnd-brainstorm
+
+Excluded (NOT subject to this rule): `T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`, `T<id>-cleanup-report.md`, `project-facts.md`, `calibration.jsonl`, `audit.jsonl`.
+
+The rule applies in autonomous/loop mode too: print the full report verbatim even when AskUserQuestion is skipped. No length cap, no truncation, no executive-summary substitution.
+
+### Forbidden Anti-Patterns
+
+These responses are defects:
+
+- "Plan saved to `$RND_DIR/plan.md`. Proceed?" — the file contents were not surfaced.
+- "Verifier returned PASS for T1 and T2, NEEDS_ITERATION for T3. What next?" — the verdict map was not surfaced.
+- "Audit complete — see `audit.md`." — the audit report was not surfaced.
+- Summarizing a report's findings without first printing the file verbatim.
+- Truncating a report because it is "too long".
+- Skipping the verbatim print because "the user can open the file themselves".
+
+The verbatim print is mandatory regardless of length, regardless of mode, regardless of whether you also summarize afterward.

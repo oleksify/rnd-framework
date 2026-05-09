@@ -138,3 +138,7 @@ The agent completes and returns its verdict via `SendMessage`. Wait for it befor
   - "Escalate to full pipeline"
   - "Iterate one more time"
   - "Abandon task"
+
+## Output Discipline
+
+This command produces report artifacts (`T<id>-diagnosis.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`). Each MUST be surfaced per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE the next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing a verdict ("Verifier returned PASS — proceed?") without first printing the report verbatim is a defect.

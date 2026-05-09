@@ -59,3 +59,7 @@ After finishing any task, always use `AskUserQuestion` to present next steps. Ne
 ## User Instructions
 
 Instructions say WHAT, not HOW. "Add X" or "Fix Y" doesn't mean skip the pipeline.
+
+## Report Surfacing
+
+When an agent or skill writes a report artifact (`plan.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`, `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `T<id>-proof-report.md`, `T<id>-amendments.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), you MUST print its full path followed by its complete contents verbatim into chat BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. The full Report Surfacing Protocol — including forbidden anti-patterns and the excluded-artifact list — is in the active output style (`scientific.md`, `rigorous.md`, or `pipeline.md`).

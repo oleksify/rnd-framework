@@ -115,3 +115,7 @@ Ask the user to describe the new milestone(s) via `AskUserQuestion`. Append them
 Display each milestone's full section from `$ROADMAP` (title, status, description,
 session, and delivered/progress/remaining fields if present). Then re-present the
 management options via `AskUserQuestion`.
+
+## Output Discipline
+
+When this command writes or updates `roadmap.md` (or shows milestone details), surface the relevant content per the **Report Surfacing Protocol** in your active output style: print the file path followed by the relevant section(s) verbatim BEFORE the next-step prompt — in the same turn, including in autonomous/loop mode.

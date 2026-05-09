@@ -1,0 +1,5 @@
+{
+  "name": "tight-loop",
+  "version": "0.1.0",
+  "description": "A focused iteration plugin for tight feedback loops in Claude Code workflows."
+}

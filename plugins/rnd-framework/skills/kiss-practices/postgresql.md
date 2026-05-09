@@ -22,3 +22,10 @@
 - Don't create migration helper functions or DSLs — the SQL is the documentation
 - Don't add rollback logic for destructive migrations in production — you'll restore from backup, not roll back
 - One concern per migration — don't combine schema changes with data migrations
+
+## Polish
+
+- Name tables and columns consistently: either `snake_case` plural nouns for tables (`user_sessions`) or singular — pick one and don't mix within a schema
+- Comment constraints and indexes that implement non-obvious business rules — `-- enforces one active subscription per account`; don't comment on what `NOT NULL` or `PRIMARY KEY` does
+- Order columns in a `CREATE TABLE` predictably: primary key first, foreign keys next, required columns, nullable columns last — makes schemas scannable across tables
+- Use consistent CTE naming within a query: either descriptive nouns (`monthly_totals`) or verb phrases (`compute_totals`) — don't mix both styles in one WITH clause

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.17.0 — 2026-05-09
+
+### Add wave-seam polisher agent (Phase 4.5)
+
+Introduces `rnd-polisher` as the 11th specialized agent. It runs at wave-level — one spawn after all per-task cleanup completes — and detects cross-task seam issues: cross-task duplication, naming and API drift across the wave, helpers that should be lifted to shared locations, and structural inconsistencies. Applies mutations in-place and rolls back automatically on any non-PASS re-verification. Output artifact: `$RND_DIR/polish/wave-<N>-polish-report.md`. Barrier extended in `lib.sh` so the polisher is subject to the same information-barrier restrictions as the verifier (cannot read self-assessments, briefs/, or cleanup/). Polish rules added to all 10 kiss-practices language files and to fp-practices/SKILL.md. Phase numbered 4.5, keeping Cleanup at 4 and Integrate at 5 for stability of existing phase references. Lean 4 proof in `InformationBarrier.lean` extended to cover the polisher agent type.
+
 ## 3.16.0 — 2026-05-09
 
 ### Add mandatory Report Surfacing Protocol to all output styles

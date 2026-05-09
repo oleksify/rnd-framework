@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 10 specialized agents with structural isolation enforce the information barrier at the context-window level.
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 11 specialized agents with structural isolation enforce the information barrier at the context-window level.
 
 The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
@@ -16,7 +16,7 @@ lib/
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── agents/                      # 10 specialized agents for multi-agent execution mode
+├── agents/                      # 11 specialized agents for multi-agent execution mode
 ├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
 ├── skills/                      # Skills, each in its own dir with SKILL.md
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
@@ -58,7 +58,7 @@ plugins/rnd-framework/
 
 ### Execution Model
 
-Ten specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
+Eleven specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|
@@ -69,6 +69,7 @@ Ten specialized agents handle each pipeline phase in isolated context windows. T
 | Verification | `rnd-verifier` (sonnet/high) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; on PASS writes `T<id>-pass-receipt.json` (lazy prose), on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes prose report; AMEND_REQUIRED (emit only with cited concrete spec defect; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge |
 | Amendment | `rnd-amendment-arbiter` (sonnet/medium) | Evaluates AMEND_REQUIRED verdicts; proposes spec corrections (AMEND), recommends rebuild (REBUILD), or routes to Planner re-plan (ESCALATE_REPLAN); inputs strictly limited to original pre-reg + Verifier verdict |
 | Cleanup | `rnd-cleanup` (sonnet/medium) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
+| Polish | `rnd-polisher` (sonnet/medium) | Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift, helpers that should be lifted to shared locations, and structural inconsistencies; runs after all per-task cleanup; rolls back if re-verification breaks; reports to `$RND_DIR/polish/wave-<N>-polish-report.md` |
 | Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
 | Debugging | `rnd-debugger` (sonnet/high) | Root cause analysis for failing tasks |
 | Data Science | `rnd-data-scientist` (sonnet) | Standalone specialist for numerical/analytical work |
@@ -307,6 +308,7 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
     ├── cleanup/T*-cleanup-report.md        # Cleanup agent per-task reports (barrier-protected from Verifier)
+    ├── polish/wave-*-polish-report.md      # Polisher wave-level seam-fix reports (Phase 4.5, one per wave)
     ├── briefs/                             # Barrier-protected Builder-reasoning artifacts (blocked from Verifier by read-gate/glob-grep-gate/bash-gate hooks)
     │   ├── decisions.md                    # Cross-phase structured judgment-call log (Planner/Builder/Debugger/Integrator append when rejecting real alternatives)
     │   ├── plan-briefs.md                  # Planner user-facing narrative briefs

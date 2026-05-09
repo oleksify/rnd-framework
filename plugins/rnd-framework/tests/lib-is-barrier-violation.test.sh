@@ -45,4 +45,32 @@ else
   assert_eq "empty agent_type blocked from self-assessment (regression)" "0" "1"
 fi
 
+# polisher agent must be blocked from self-assessment paths
+if is_barrier_violation "path/to/self-assessment.md" "rnd-polisher"; then
+  assert_eq "polisher blocked from self-assessment" "0" "0"
+else
+  assert_eq "polisher blocked from self-assessment" "0" "1"
+fi
+
+# polisher agent must be blocked from /briefs/ paths
+if is_barrier_violation "/rnd/sessions/x/briefs/decisions.md" "rnd-polisher"; then
+  assert_eq "polisher blocked from /briefs/" "0" "0"
+else
+  assert_eq "polisher blocked from /briefs/" "0" "1"
+fi
+
+# polisher agent must be blocked from /cleanup/ paths
+if is_barrier_violation "/rnd/sessions/x/cleanup/T1-cleanup-report.md" "rnd-polisher"; then
+  assert_eq "polisher blocked from /cleanup/" "0" "0"
+else
+  assert_eq "polisher blocked from /cleanup/" "0" "1"
+fi
+
+# polisher agent must NOT be blocked from benign paths
+if is_barrier_violation "/tmp/file.md" "rnd-polisher"; then
+  assert_eq "polisher NOT blocked from benign path" "1" "0"
+else
+  assert_eq "polisher NOT blocked from benign path" "1" "1"
+fi
+
 report

@@ -383,6 +383,32 @@ The Cleanup agent inspects the working tree for dead code, unused imports, unrea
 - "Proceed to integration (Recommended)"
 - "Review cleanup reports"
 
+## Phase 4.5: Polish (wave-level)
+
+After all tasks in the wave have completed cleanup (Phase 4), spawn ONE Polisher agent to detect and fix cross-task seam issues across the full wave.
+
+**Spawn a Polisher agent:**
+
+```
+Agent({
+  description: "Polish wave <N>",
+  subagent_type: "rnd-framework:rnd-polisher",
+  mode: "acceptEdits",
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ..."
+})
+```
+
+The Polisher inspects the combined wave diff for cross-task duplication, naming and API drift across task boundaries, helpers that should be lifted to a shared location, and structural inconsistencies. It applies fixes in-place and produces `$RND_DIR/polish/wave-<N>-polish-report.md`. If applied fixes break re-verification, the agent rolls back its changes and notes `polish: skipped (broke verification)` in the report.
+
+**Gate 4.5:** Verify `$RND_DIR/polish/wave-<N>-polish-report.md` exists and is non-empty.
+
+- If the report contains `polish: skipped (broke verification)` or `polish: skipped (no findings)`, proceed — this is NOT a pipeline failure.
+- If the file is missing, `AskUserQuestion`: "Re-run polish", "Skip polish for this wave".
+
+**After Gate 4.5:** If **auto-continue mode is ON**, proceed directly to Phase 5 (Wave-Level Iteration) or Phase 6 (Integrate) as appropriate. Otherwise, `AskUserQuestion`:
+- "Proceed to integration (Recommended)"
+- "Review polish report"
+
 ## Phase 5: Wave-Level Iteration (if needed)
 
 Iteration operates at the wave level — a single Builder spawn handles ALL failing tasks in the wave, and re-verification re-batches the full wave.

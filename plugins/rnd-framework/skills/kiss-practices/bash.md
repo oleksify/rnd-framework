@@ -62,3 +62,9 @@
 - Global mutable state — functions that set globals are hard to test and compose; use `local` and stdout
 - Deep nesting (3+ levels of `if`/`for`) — extract inner blocks into named functions
 - Long parameter lists — group related values or restructure the calling code
+
+## Polish
+
+- Order functions by abstraction level: the main entry point first, low-level helpers at the bottom — readers should be able to read top-to-bottom without scrolling back up for context
+- Stick to one naming pattern per script: `verb_noun` (`send_report`, `parse_args`) or `noun_verb` — don't mix conventions mid-file
+- Comment placement: one comment per non-obvious block, placed above the block — don't interleave inline comments with code when a block comment would be clearer

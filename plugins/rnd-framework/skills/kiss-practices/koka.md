@@ -25,3 +25,10 @@
 - Don't assume functional code is slow — FBIP means tree rebalancing and similar algorithms run in-place
 - Don't ignore effect types in signatures — they are the primary tool for reasoning about code behavior
 - Don't create utility modules for one-off effect handlers — inline simple handlers at the call site
+
+## Polish
+
+- Group functions by the effect they operate under — functions touching the same effect belong together; don't scatter them across the file
+- Use one naming convention for effect-producing functions: either `verb-noun` (`read-line`) or `noun-verb` — Koka's standard library favors `verb` or `verb-noun`; follow it within a module
+- Comments on effect signatures should explain the observable contract — what callers can expect from the effect, not just what the handler does internally
+- Name handler functions to match their effect type — a handler for `console` effect should read as `console-handler`, not `my-handler`

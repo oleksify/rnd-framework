@@ -231,7 +231,7 @@ is_barrier_violation() {
   fi
   [[ "$has_pattern" -eq 1 ]] || return 1
   agent_lower="$(_lower "$agent_type")"
-  [[ -z "$agent_lower" || "$agent_lower" == *"verifier"* || "$agent_lower" == *"proof-gate"* ]]
+  [[ -z "$agent_lower" || "$agent_lower" == *"verifier"* || "$agent_lower" == *"proof-gate"* || "$agent_lower" == *"polisher"* ]]
 }
 
 # ---------------------------------------------------------------------------

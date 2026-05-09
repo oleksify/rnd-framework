@@ -50,3 +50,10 @@
 - `on:click` directive → use `onclick` attribute
 - `use:action` → use `{@attach}`
 - `<svelte:component this={X}>` → use dynamic component `<X />`
+
+## Polish
+
+- Order a component's script block predictably: `$props` first, `$state` declarations next, `$derived` values, then `$effect` blocks, then event handlers — don't scatter reactive declarations throughout the script
+- Use one naming convention for event handlers within a component: either `handleX` or `onX` — don't mix `handleClick` and `onSubmit` in the same file
+- Comments in `<script>` blocks should explain non-obvious reactive dependencies or browser workarounds — don't comment on what `$derived` or `$state` does; that's self-evident
+- Keep prop names consistent with the component's domain: if sibling components use `user`, don't introduce `currentUser` or `activeUser` for the same concept

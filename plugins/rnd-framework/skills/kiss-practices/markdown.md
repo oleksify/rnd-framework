@@ -11,3 +11,10 @@
 - Don't wrap lines at 80 characters in prose — let the editor soft-wrap; hard wraps create noisy diffs
 - Don't use blockquotes (`>`) for emphasis — they're for quotations; use bold or callout syntax for emphasis
 - Keep frontmatter minimal — only fields the system actually reads; don't add metadata nobody consumes
+
+## Polish
+
+- Use one list marker style per document (`-` or `*` or `1.`) — don't mix within the same file even across sections
+- Heading hierarchy must be consistent: if top-level concepts use `##`, don't introduce a parallel `##` section that is logically a child of another `##`
+- Code fences must always name the language — ` ```bash `, ` ```json `, never a bare ` ``` ` — so syntax highlighters and linters can apply
+- If a document uses bold for key terms, apply it consistently — don't bold some terms and leave equivalent terms unbolded later in the same file

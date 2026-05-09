@@ -29,3 +29,10 @@
 - Don't add database indexes speculatively — add them when a query is measurably slow
 - Use `Ecto.Changeset` validations over custom validation modules
 - Don't create separate `Repo` functions for every possible query variation — compose queries at the call site
+
+## Polish
+
+- Order functions within a module: public interface first (`def`), private helpers last (`defp`) — keep the public contract at the top so callers don't have to scroll past implementation details
+- Within a context module, use one naming convention for the CRUD layer: `get_user` / `create_user` / `update_user` / `delete_user` — don't mix `fetch_`, `load_`, and `get_` for the same concept
+- Comments in Elixir belong in `@doc` and `@moduledoc` — don't add `# ...` comments where a doc attribute would serve; reserve inline comments for non-obvious pattern-match guards or pipeline branch rationale
+- Group related `def` clauses together — don't scatter pattern-match heads for the same function across the module interspersed with unrelated functions

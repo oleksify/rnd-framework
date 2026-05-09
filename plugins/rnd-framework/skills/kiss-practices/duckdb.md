@@ -21,3 +21,10 @@
 - Use `EXCLUDE` in `SELECT * EXCLUDE (col)` to drop columns — don't list every column you want to keep
 - Use `UNPIVOT` and `PIVOT` instead of manual `CASE WHEN` for reshaping data
 - Use `QUALIFY` to filter window function results — don't wrap in a subquery
+
+## Polish
+
+- Name CTEs and subqueries after what they represent, not how they compute — `monthly_revenue` not `summed_and_grouped`
+- Group queries in a script by logical phase: ingestion, transformation, output — separate phases with a blank line and a comment marker
+- Within a script, pick one alias style (`t1`/`t2` vs. `orders`/`items`) and stick with it throughout — mixed alias conventions make joins hard to scan
+- Comment non-obvious `WHERE` clauses and filter constants: explain the business rule, not the SQL operator

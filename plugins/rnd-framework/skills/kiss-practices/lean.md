@@ -36,3 +36,10 @@
 - Keep lines to 100 characters maximum
 - Don't orphan parentheses — keep them with their arguments
 - Use `<|` and `|>` to reduce parenthesis nesting
+
+## Polish
+
+- Order definitions by dependency: helper lemmas and definitions before the theorems that use them — never require a reader to jump forward to understand a proof
+- Name lemmas after the property they establish, not the tactic used — `list_length_positive` not `simp_length_proof`
+- Within a file, pick one naming convention for related theorems: either `noun_property` (e.g., `list_nil_length`) or `property_of_noun` — don't mix both styles
+- Use `-- ` comments to explain non-obvious tactic choices or why a particular lemma is chosen; omit comments that only name the tactic being applied

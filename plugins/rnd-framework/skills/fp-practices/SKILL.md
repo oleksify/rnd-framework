@@ -107,6 +107,17 @@ Declare bindings as immutable unless mutation is specifically needed.
 - Mutate arrays in place (`push`, `splice`) when `map`/`filter`/`concat` works
 - Reassign variables to track state through a function — restructure as a pipeline instead
 
+### 6. Polish: Consistency and Organization
+
+**Do:**
+- Use one naming convention for pure functions across modules: either `verb_noun` or `noun_verb` as the language dictates — don't mix `computeTotal`/`total_compute` styles within the same codebase
+- Extract helpers shared by two or more call sites to a single canonical location — don't let the same pure transformation live in multiple modules with slight variations
+- Group pure functions by the domain they operate on, not alphabetically — `user_*` functions together, `order_*` together; alphabetical grouping hides cohesion
+
+**Don't:**
+- Duplicate a pure transformation across modules to avoid adding a shared helper file — copy-pasted logic drifts and causes silent inconsistencies at the wave level
+- Mix domain-level functions and low-level utility functions in the same module without clear separation — readers should be able to find all business logic in one place and all plumbing in another
+
 ## When to Break These Rules
 
 These rules have legitimate exceptions:

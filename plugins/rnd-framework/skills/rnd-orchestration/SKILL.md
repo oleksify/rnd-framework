@@ -34,7 +34,7 @@ This framework applies the scientific method to structured coding:
 
 ## Agent Roles & Information Barriers
 
-The framework defines 9 specialized agent roles. Dedicated agents are spawned for each role.
+The framework defines 10 specialized agent roles. Dedicated agents are spawned for each role.
 
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets. Uses `rnd-framework:rnd-orchestration` skill.
@@ -43,6 +43,7 @@ The framework defines 9 specialized agent roles. Dedicated agents are spawned fo
 **Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
 **Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
 **Cleanup** — Post-verification per-task entropy reduction: dead code, orphan files, duplicate implementations, stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Uses `rnd-framework:rnd-cleanup` skill.
+**Polisher** — Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift across the wave, helpers that should be lifted to shared locations, and structural inconsistencies. Runs after all per-task cleanup completes. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/polish/wave-<N>-polish-report.md`.
 **Integrator** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
 **Data Scientist** — Handles numerical analysis, financial calculations, data wiring, chart generation. Uses `rnd-framework:rnd-data-science` skill. Spawned on-demand when the task requires Julia, DuckDB, or statistical analysis.
 
@@ -90,6 +91,7 @@ Agent assignments:
 - **rnd-reality-auditor** — Reality Audit phase (Sonnet model, blocking)
 - **rnd-verifier** — Verification phase (Sonnet model, Edit disallowed)
 - **rnd-cleanup** — Cleanup phase (Sonnet model, per task after PASS)
+- **rnd-polisher** — Polish phase (Sonnet model, wave-level after all per-task cleanup)
 - **rnd-integrator** — Integration phase (Sonnet model)
 - **rnd-data-scientist** — On-demand for analytical tasks (Sonnet model)
 - **rnd-debugger** — On-demand for root cause analysis (Sonnet model)
@@ -136,7 +138,8 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
    Adversarially verifies declared external references. INVALID_FOUND routes back to build.
    If no external dependencies declared → auto-SKIPPED.
 4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
-4.5. **Cleanup** (per task, after PASS) — Spawn a Cleanup agent for each task that passed verification. The agent detects and removes: dead functions/variables, orphan files, duplicate implementations, and stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. A `cleanup: rolled_back` result is not a pipeline failure.
+4. **Cleanup** (per task, after PASS) — Spawn a Cleanup agent for each task that passed verification. The agent detects and removes: dead functions/variables, orphan files, duplicate implementations, and stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. A `cleanup: rolled_back` result is not a pipeline failure.
+4.5. **Polish** (wave-level, after all per-task cleanup) — Spawn ONE Polisher agent for the entire wave. The agent detects and fixes cross-task seam issues: cross-task duplication, naming and API drift across the wave, helpers that should be lifted to a shared location, and structural inconsistencies. Applies mutations in-place and rolls back if re-verification breaks. Reports written to `$RND_DIR/polish/wave-<N>-polish-report.md`. A `polish: skipped` result is not a pipeline failure.
 5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Iteration budget is wave-scoped and tier-keyed (LOW=2, NORMAL=3, HIGH=5, by highest-criticality task in the wave); see `rnd-framework:rnd-iteration` for the table. Budget exhausted → escalate.
 6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
 

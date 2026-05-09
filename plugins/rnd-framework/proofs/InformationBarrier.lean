@@ -9,6 +9,7 @@ inductive AgentType where
   | integrator
   | dataScientist
   | amendmentArbiter
+  | polisher
   deriving DecidableEq, Repr
 
 inductive FileType where
@@ -33,6 +34,8 @@ def canAccess (agent : AgentType) (file : FileType) : Bool :=
   -- claim those properties.
   | .verifier, .amendments => false
   | .proofGate, .amendments => false
+  | .polisher, .selfAssessment => false
+  | .polisher, .amendments => false
   | _, _ => true
 
 theorem verifier_cannot_access_self_assessment :
@@ -52,3 +55,9 @@ theorem verifier_cannot_access_amendments :
 
 theorem proofGate_cannot_access_amendments :
     canAccess .proofGate .amendments = false := by native_decide
+
+theorem polisher_cannot_access_self_assessment :
+    canAccess .polisher .selfAssessment = false := by native_decide
+
+theorem polisher_cannot_access_amendments :
+    canAccess .polisher .amendments = false := by native_decide

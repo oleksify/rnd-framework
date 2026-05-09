@@ -34,3 +34,10 @@
 - Use semantic HTML elements (`nav`, `main`, `article`, `section`) over `div` soup
 - Don't add ARIA attributes that duplicate native semantics — a `<button>` doesn't need `role="button"`
 - Don't create component abstractions for simple markup — a `<Card>` component wrapping a `<div>` with a class adds indirection for no reuse benefit until it appears 3+ times
+
+## Polish
+
+- Within a module, pick one naming convention for async functions and stick to it: `fetchUser` / `loadUser` — don't mix `fetch*`, `load*`, and `get*` for the same operation type
+- Order exports by public surface first, unexported helpers at the bottom — readers should see the API before implementation details
+- Comments should explain WHY the code makes a non-obvious choice — e.g., `// Safari 16 doesn't support X, so we use Y`; remove comments that just restate what the next line does
+- Keep CSS class naming consistent within a component tree: if the project uses BEM, don't introduce utility-class-style names for one component

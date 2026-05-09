@@ -55,3 +55,10 @@
 - Use `pytest` — don't use `unittest.TestCase` classes unless the project already does
 - Don't create test base classes or fixtures for one-off setup — inline the setup in the test
 - Don't mock what you can construct — if a function takes a dict, pass a dict, don't mock a dict
+
+## Polish
+
+- Order module contents predictably: constants, then public functions, then private functions (prefixed with `_`) — don't interleave public and private at will
+- Within a module, use one naming style for related operations: `get_user` / `create_user` / `delete_user` — don't mix `fetch_`, `load_`, and `get_` for the same concept across functions in the same file
+- Comments explain WHY, not WHAT — `# S3 returns 503 during rolling deploys, so we retry` is useful; `# call the API` is not; delete comments that restate the code
+- Use docstrings for public functions that are not self-evident from their signature — skip docstrings on private helpers and one-liner utilities where the body is the documentation

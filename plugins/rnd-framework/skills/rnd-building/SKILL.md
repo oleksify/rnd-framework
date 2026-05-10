@@ -228,6 +228,23 @@ T<id> build complete — status: DONE — manifest at $RND_DIR/builds/T<id>-mani
 T<id> build complete — status: DONE_WITH_CONCERNS: [brief summary] — manifest at $RND_DIR/builds/T<id>-manifest.md
 ```
 
+## Evidence Pack (when RND_EVIDENCE_PACK=1)
+
+When the orchestrator sets `RND_EVIDENCE_PACK=1`, wrap tool invocations through `run-tool.sh` to capture a reproducible evidence artifact for each test run. This is opt-in — normal builds do not require it.
+
+**Invocation syntax:**
+
+```bash
+RND_EVIDENCE_PACK=1 RND_DIR="$RND_DIR" RND_TASK_ID="<id>" \
+  run-tool.sh [--task-id <id>] -- <command> [args...]
+```
+
+**Artifact location:** `$RND_DIR/evidence/T<id>/` — contains `stdout.txt`, `stderr.txt`, and `manifest.json` (tool name, argv, exit code, timestamps, and sha256 hashes of all tracked input files).
+
+**Validation:** Before the Verifier reads the pack, `evidence-pack-gate.sh` schema-validates `manifest.json`. Packs that fail validation are rejected; the Verifier receives an error rather than stale or malformed data.
+
+**When to use:** Only when instructed by the pre-registration or the orchestrator. Do not wrap every command — only the test runner or tool that produces the primary verification artifact.
+
 ## Related Skills
 
 - `rnd-framework:rnd-debugging` — unexpected test failures

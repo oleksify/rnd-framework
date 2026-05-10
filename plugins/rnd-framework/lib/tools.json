@@ -1,0 +1,83 @@
+{
+  "pytest": {
+    "structured_flags": [
+      "--json-report",
+      "--json-report-file={output}"
+    ],
+    "structured_ext": "json"
+  },
+  "jest": {
+    "structured_flags": [
+      "--json",
+      "--outputFile={output}"
+    ],
+    "structured_ext": "json"
+  },
+  "vitest": {
+    "structured_flags": [
+      "--reporter=json",
+      "--outputFile={output}"
+    ],
+    "structured_ext": "json"
+  },
+  "tsc": {
+    "structured_flags": [
+      "--noEmit",
+      "--pretty",
+      "false"
+    ],
+    "structured_ext": "txt"
+  },
+  "eslint": {
+    "structured_flags": [
+      "--format=json",
+      "--output-file={output}"
+    ],
+    "structured_ext": "json"
+  },
+  "dialyzer": {
+    "structured_flags": [
+      "--format",
+      "raw"
+    ],
+    "structured_ext": "txt"
+  },
+  "mypy": {
+    "structured_flags": [
+      "--json-report",
+      "{output}"
+    ],
+    "structured_ext": "json"
+  },
+  "bun": {
+    "structured_flags": [
+      "--reporter=json"
+    ],
+    "structured_ext": "json"
+  },
+  "cargo": {
+    "structured_flags": [
+      "--message-format=json"
+    ],
+    "structured_ext": "json"
+  },
+  "mix": {
+    "structured_flags": [
+      "--formatter",
+      "json"
+    ],
+    "structured_ext": "json"
+  },
+  "ruff": {
+    "structured_flags": [
+      "--output-format=json"
+    ],
+    "structured_ext": "json"
+  },
+  "biome": {
+    "structured_flags": [
+      "--reporter=json"
+    ],
+    "structured_ext": "json"
+  }
+}

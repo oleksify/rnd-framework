@@ -12,6 +12,14 @@ inductive AgentType where
   | polisher
   deriving DecidableEq, Repr
 
+-- A validated evidence-pack manifest carries a proof that no disallowed
+-- free-text fields (notes, summary, confidence, reasoning, explanation)
+-- are present. The Lean model treats schema validity as an opaque proposition
+-- rather than replicating the jq field-check logic here.
+structure Manifest where
+  isSchemaValid : Bool
+  deriving DecidableEq, Repr
+
 inductive FileType where
   | selfAssessment
   | code
@@ -21,12 +29,15 @@ inductive FileType where
   | plan
   | verification
   | amendments
+  | evidencePackManifest (m : Manifest)
   deriving DecidableEq, Repr
 
 def canAccess (agent : AgentType) (file : FileType) : Bool :=
   match agent, file with
   | .verifier, .selfAssessment => false
   | .proofGate, .selfAssessment => false
+  -- Verifier may only read an evidence-pack manifest when schema validation passes.
+  | .verifier, .evidencePackManifest m => m.isSchemaValid
   -- amendments live at $RND_DIR/briefs/T<id>-amendments.md — blocked from verifier and proofGate
   -- by the existing /briefs/ hook barrier; these clauses make that invariant explicit in Lean.
   -- amendmentArbiter access to amendments and selfAssessment is governed by orchestrator
@@ -61,3 +72,19 @@ theorem polisher_cannot_access_self_assessment :
 
 theorem polisher_cannot_access_amendments :
     canAccess .polisher .amendments = false := by native_decide
+
+-- Evidence-pack manifest theorems: the Verifier may not read an unvalidated
+-- manifest (isSchemaValid = false). A validated manifest (isSchemaValid = true)
+-- is readable, encoding that the evidence-pack-gate.sh hook must validate
+-- before allowing the read.
+theorem verifier_cannot_access_unvalidated_manifest :
+    ∀ (m : Manifest), m.isSchemaValid = false →
+      canAccess .verifier (.evidencePackManifest m) = false := by
+  intro m hm
+  simp [canAccess, hm]
+
+theorem verifier_can_access_validated_manifest :
+    ∀ (m : Manifest), m.isSchemaValid = true →
+      canAccess .verifier (.evidencePackManifest m) = true := by
+  intro m hm
+  simp [canAccess, hm]

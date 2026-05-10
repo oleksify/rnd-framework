@@ -87,6 +87,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/evidence-pack-gate.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
             "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/read-gate.sh'"
           }
         ]

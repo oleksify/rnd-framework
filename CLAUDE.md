@@ -43,13 +43,17 @@ plugins/rnd-framework/
 │   ├── session-title.sh         # UserPromptSubmit hook (v2.1.94+): sets session title to pipeline phase + project name
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   ├── builder-dismissal-gate.sh # SubagentStop hook scoped to rnd-builder: blocks dismissal phrases, acknowledged-but-unfixed issues, and missing/empty found-issues ledger
+│   ├── evidence-pack-gate.sh    # PreToolUse Read hook: blocks Verifier reads of evidence-pack manifests that contain disallowed free-text fields (notes, summary, confidence, reasoning, explanation); information barrier check runs first, schema gate second
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase + worktree indicator (v2.1.80)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage + `claude plugin tag` auto-tag (v2.1.118+)
 │   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   └── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
+│   ├── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
+│   ├── tools.json               # Plugin-default registry of heavy tools (pytest/jest/vitest/tsc/eslint/dialyzer/mypy/bun/cargo/mix/ruff/biome) with structured-output flags; project may override at $RND_DIR/tools.json
+│   ├── run-tool.sh              # Evidence-pack writer: opt-in via RND_EVIDENCE_PACK=1; wraps a heavy-tool invocation, captures stdout/stderr/structured output, hashes inputs[], writes manifest.json + tool_run_fresh audit event; passthrough exec when flag unset
+│   └── manifest-schema.json     # Declarative JSON Schema (draft-07) for the evidence-pack manifest; additionalProperties:false; runtime gate hard-codes the same disallowed-fields list inline (schema is currently documentation, not loaded at runtime)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```
@@ -89,6 +93,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Builder dismissal gate** (`builder-dismissal-gate.sh`): SubagentStop hook that fires only for the `rnd-builder` agent. Reads the most recent `T<id>-manifest.md` under the active session and runs three structural checks: (a) phrase scan blocks on `pre-existing`, `out of scope`, `not my task`, `unrelated to this task`, `won't fix here`, `outside scope`; (b) acknowledged-but-unfixed scan requires a co-located `T<id>-found-issues.jsonl` ledger when the manifest mentions a problem; (c) ledger-required check blocks DONE manifests that report failures without a ledger entry. The only legal dismissal path is appending a JSON line `{"issue", "location", "decision":"escalated", "reason"}` to the ledger; the Verifier reads the ledger and re-fails the task on any unacknowledged escalation. Replaces the textual "never use 'pre-existing' as a reason" rules in agent prompts with structural enforcement.
 - **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
 - **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
+- **Evidence pack gate** (`evidence-pack-gate.sh`): PreToolUse Read hook that runs the existing information-barrier check first (still blocks self-assessment / `/briefs/` / `/cleanup/` for the verifier and proof-gate), then — only when the agent is `rnd-verifier` and the path matches `$RND_DIR/evidence/T*/manifest.json` — validates the manifest by `jq has()` checks against an inline disallowed-fields list (`notes`, `summary`, `confidence`, `reasoning`, `explanation`). Blocks with `EVIDENCE PACK BARRIER` if any disallowed field is present; emits `allow` for clean manifests; no opinion for non-manifest paths or non-verifier agents. The corresponding declarative schema lives at `lib/manifest-schema.json` (draft-07) but is not loaded at runtime. Hook registers as a second `Read` PreToolUse entry in `hooks.json`, ordered before `read-gate.sh`.
 - **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
 
 #### Claude Code Version Check
@@ -304,6 +309,8 @@ The framework stores artifacts in a centralized directory outside the project tr
     ├── verifications/T*-verification.md   # Verifier evidence-based verdicts (auto-materialized only on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION)
     ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
     ├── verifications/T*-evidence/         # Per-VAL-assertion evidence files (raw command output)
+    ├── evidence/T<id>/                    # Evidence-pack writer output (Builder-side, opt-in via RND_EVIDENCE_PACK=1): one dir per task containing manifest.json (schema-validated by evidence-pack-gate.sh before Verifier reads), <tool>-stdout.txt, <tool>-stderr.txt, optional <tool>-structured.json
+    ├── audit.jsonl                        # Shared audit log; post-dispatch.sh emits {ts,tool,file} per Write/Edit; run-tool.sh emits {event:"tool_run_fresh",task_id,tool,timestamp} per evidence-pack run; verifier audit emits {event:"tool_pack_served",...} on hash-match (skill-side only — not implemented in any agent yet)
     ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
     ├── proofs/T*-theorems/                # Lean theorem files
     ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP

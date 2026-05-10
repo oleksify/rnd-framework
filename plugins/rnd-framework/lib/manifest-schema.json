@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rnd-framework/manifest-schema.json",
+  "title": "Evidence Pack Manifest",
+  "description": "Schema for $RND_DIR/evidence/T<id>/manifest.json. Reasoning-free by construction: free-form text fields are disallowed via additionalProperties:false. The `x-disallowed-fields` extension below is the load-bearing list — evidence-pack-gate.sh sources it at runtime so this file is the single source of truth.",
+  "x-disallowed-fields": [
+    "notes",
+    "summary",
+    "confidence",
+    "reasoning",
+    "explanation"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool",
+    "command_argv",
+    "cwd",
+    "started_at",
+    "finished_at",
+    "exit_code",
+    "stdout_path",
+    "stderr_path",
+    "inputs"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Optional task identifier the manifest belongs to (e.g., T1, T2)."
+    },
+    "tool": {
+      "type": "string",
+      "description": "Tool name (e.g., pytest, eslint, tsc)."
+    },
+    "command_argv": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Argv vector of the executed command, including the tool name and all flags."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Absolute working directory at execution time."
+    },
+    "started_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp at command start."
+    },
+    "finished_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp at command exit."
+    },
+    "exit_code": {
+      "type": "integer",
+      "description": "Exit code propagated from the wrapped command."
+    },
+    "stdout_path": {
+      "type": "string",
+      "description": "Path (relative to manifest dir or absolute) to captured stdout."
+    },
+    "stderr_path": {
+      "type": "string",
+      "description": "Path (relative to manifest dir or absolute) to captured stderr."
+    },
+    "structured_path": {
+      "type": "string",
+      "description": "Optional path to the structured-output artifact (e.g., pytest --json-report file)."
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Files the tool could plausibly have read; each has path + sha256 for stale-detection.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "description": "Optional named-section index into stdout for tools without structured-output mode.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "start_line", "end_line"],
+        "properties": {
+          "name": { "type": "string" },
+          "start_line": { "type": "integer", "minimum": 1 },
+          "end_line": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  }
+}

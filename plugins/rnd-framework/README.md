@@ -305,6 +305,8 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         ├── proofs/
         │   ├── T1-proof-report.md      # Proof Gate results for each task
         │   └── T1-theorems/            # Lean theorem files
+        ├── evidence/
+        │   └── T<id>/                  # Evidence pack: manifest.json, stdout.txt, stderr.txt (written by run-tool.sh when RND_EVIDENCE_PACK=1)
         ├── integration/
         │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
         └── iteration-log.md            # Build-verify cycle tracking

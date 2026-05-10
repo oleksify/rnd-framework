@@ -86,6 +86,46 @@ Before reading Builder code or tests, write one experiment test per criterion us
 ### 3. Run Experiments and Validation Contract Evidence Commands
 Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original. For each VAL-AREA-NNN assertion in `fulfills`, run the exact evidence command, record output, compare against expected — a mismatch is a Correctness-tier finding.
 
+#### Evidence Pack Audit (when `RND_EVIDENCE_AUDIT=1`)
+
+When the environment variable `RND_EVIDENCE_AUDIT=1` is set, the Verifier runs a trust-then-verify-via-hash protocol against the Builder's pre-collected evidence pack before re-running any tools.
+
+**Step A — Locate the manifest.**
+
+Read `$RND_DIR/evidence/T<id>/manifest.json`. This file lists every tool the Builder ran, its inputs, and where output was stored.
+
+**Step B — Recompute input hashes.**
+
+For each tool entry in the manifest that corresponds to a criterion requiring tool evidence:
+
+1. Read the `inputs[]` array from the manifest entry.
+2. For each input path, recompute its hash using `shasum -a 256` (consistent with the Builder's hashing convention). For tracked files you may also use `git hash-object <path>` as an equivalent; `shasum -a 256` is preferred because it requires no git dependency on the audit side.
+3. Skip paths under: `node_modules`, `.rnd`, `_build`, `deps`, `.venv`, `target`, `dist`. These directories are on the skip list for both Builder and Verifier.
+4. Compare the recomputed hash against the hash stored in `inputs[].hash`.
+
+**Step C — Serve from pack or re-run surgically.**
+
+| Outcome | Action |
+|---------|--------|
+| All hashes match | Read evidence from `stdout_path` or `structured_path` in the manifest entry. Emit a `tool_pack_served` audit event. |
+| Any hash mismatches | Re-run **only** the affected tool. Write a delta entry to `manifest.json` with the new hashes and output paths. Emit a `tool_run_fresh` audit event. |
+
+Do not re-run tools whose inputs all match — the pack is trusted for those entries.
+
+**Step D — Read evidence output.**
+
+- If the manifest entry has a `structured_path`: use `jq` to query the JSON for the fields relevant to your criterion. Do not grep structured output.
+- If no `structured_path`: check for a `sections[]` array in the manifest entry. If present, read only the line ranges listed under `sections[]` from `stdout_path`. If absent, read `stdout_path` directly.
+
+**Audit event schema** — append one line per tool to `$RND_DIR/audit.jsonl`:
+
+```json
+{"event": "tool_pack_served", "task_id": "T<id>", "tool": "<tool-name>", "timestamp": "<ISO 8601>"}
+{"event": "tool_run_fresh",   "task_id": "T<id>", "tool": "<tool-name>", "timestamp": "<ISO 8601>"}
+```
+
+Required fields: `event` (`tool_pack_served` or `tool_run_fresh`), `task_id` (string), `tool` (string), `timestamp` (ISO 8601 string).
+
 ### 4. Run Builder's Tests and Compare
 Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.
 

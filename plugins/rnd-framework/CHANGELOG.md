@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.18.0 — 2026-05-10
+
+### Add opt-in evidence-pack writer and Verifier-side schema gate
+
+Net-new opt-in feature behind RND_EVIDENCE_PACK=1 (Builder) and RND_EVIDENCE_AUDIT=1 (Verifier). New public surfaces: lib/run-tool.sh (pack writer with per-tool relevant_globs input scoping), lib/audit-event.sh (shared {event,task_id,tool,timestamp} emitter), lib/manifest-schema.json (load-bearing — its x-disallowed-fields extension is sourced at runtime), hooks/evidence-pack-gate.sh (PreToolUse Read hook that validates evidence-pack manifests before Verifier reads), lib/tools.json (12-tool registry with structured-output flags + relevant_globs). InformationBarrier.lean extended with evidencePackManifest FileType and verifier-cannot-access-unvalidated-manifest theorem. Builder/Verifier skills documented. Defaults preserved: both flags off.
+
 ## 3.17.0 — 2026-05-09
 
 ### Add wave-seam polisher agent (Phase 4.5)

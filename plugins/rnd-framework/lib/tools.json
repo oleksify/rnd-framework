@@ -4,21 +4,57 @@
       "--json-report",
       "--json-report-file={output}"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.py",
+      "pyproject.toml",
+      "pytest.ini",
+      "setup.cfg",
+      "conftest.py",
+      "tox.ini"
+    ]
   },
   "jest": {
     "structured_flags": [
       "--json",
       "--outputFile={output}"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.js",
+      "*.jsx",
+      "*.ts",
+      "*.tsx",
+      "*.mjs",
+      "*.cjs",
+      "jest.config.js",
+      "jest.config.ts",
+      "jest.config.mjs",
+      "jest.config.cjs",
+      "jest.config.json",
+      "package.json"
+    ]
   },
   "vitest": {
     "structured_flags": [
       "--reporter=json",
       "--outputFile={output}"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.js",
+      "*.jsx",
+      "*.ts",
+      "*.tsx",
+      "*.mjs",
+      "*.cjs",
+      "vitest.config.js",
+      "vitest.config.ts",
+      "vitest.config.mjs",
+      "vite.config.js",
+      "vite.config.ts",
+      "package.json"
+    ]
   },
   "tsc": {
     "structured_flags": [
@@ -26,58 +62,138 @@
       "--pretty",
       "false"
     ],
-    "structured_ext": "txt"
+    "structured_ext": "txt",
+    "relevant_globs": [
+      "*.ts",
+      "*.tsx",
+      "*.d.ts",
+      "tsconfig.json",
+      "tsconfig.*.json"
+    ]
   },
   "eslint": {
     "structured_flags": [
       "--format=json",
       "--output-file={output}"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.js",
+      "*.jsx",
+      "*.ts",
+      "*.tsx",
+      "*.mjs",
+      "*.cjs",
+      ".eslintrc",
+      ".eslintrc.js",
+      ".eslintrc.cjs",
+      ".eslintrc.json",
+      ".eslintrc.yml",
+      ".eslintrc.yaml",
+      "eslint.config.js",
+      "eslint.config.mjs",
+      "eslint.config.cjs",
+      "package.json"
+    ]
   },
   "dialyzer": {
     "structured_flags": [
       "--format",
       "raw"
     ],
-    "structured_ext": "txt"
+    "structured_ext": "txt",
+    "relevant_globs": [
+      "*.ex",
+      "*.exs",
+      "*.erl",
+      "*.hrl",
+      "mix.exs",
+      "mix.lock"
+    ]
   },
   "mypy": {
     "structured_flags": [
       "--json-report",
       "{output}"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.py",
+      "*.pyi",
+      "mypy.ini",
+      "pyproject.toml",
+      "setup.cfg"
+    ]
   },
   "bun": {
     "structured_flags": [
       "--reporter=json"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.js",
+      "*.jsx",
+      "*.ts",
+      "*.tsx",
+      "*.mjs",
+      "*.cjs",
+      "package.json",
+      "bun.lockb",
+      "bunfig.toml"
+    ]
   },
   "cargo": {
     "structured_flags": [
       "--message-format=json"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.rs",
+      "Cargo.toml",
+      "Cargo.lock"
+    ]
   },
   "mix": {
     "structured_flags": [
       "--formatter",
       "json"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.ex",
+      "*.exs",
+      "mix.exs",
+      "mix.lock"
+    ]
   },
   "ruff": {
     "structured_flags": [
       "--output-format=json"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.py",
+      "*.pyi",
+      "ruff.toml",
+      ".ruff.toml",
+      "pyproject.toml"
+    ]
   },
   "biome": {
     "structured_flags": [
       "--reporter=json"
     ],
-    "structured_ext": "json"
+    "structured_ext": "json",
+    "relevant_globs": [
+      "*.js",
+      "*.jsx",
+      "*.ts",
+      "*.tsx",
+      "*.mjs",
+      "*.cjs",
+      "*.json",
+      "biome.json",
+      "biome.jsonc"
+    ]
   }
 }

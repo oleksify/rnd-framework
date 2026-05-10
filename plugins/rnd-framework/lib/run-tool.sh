@@ -125,6 +125,13 @@ if [[ -n "$structured_flags_json" ]]; then
   cmd_args=("${cmd_args[@]}" "${extra_flags[@]}")
 fi
 
+# Load relevant_globs for the tool — narrows inputs[] to files the tool plausibly reads.
+# When unset/empty, falls back to all tracked files (conservative correctness over savings).
+TOOL_GLOBS=()
+while IFS= read -r glob; do
+  [[ -n "$glob" ]] && TOOL_GLOBS+=("$glob")
+done < <(printf '%s' "$merged_tools_json" | jq -r --arg t "$tool_base" '.[$t].relevant_globs // [] | .[]' 2>/dev/null || true)
+
 # Prepare evidence directory
 evidence_dir="${RND_DIR}/evidence/${task_id}"
 mkdir -p "$evidence_dir"
@@ -155,6 +162,27 @@ _is_skip_path() {
   return 1
 }
 
+# Returns 0 if the path matches any pattern in TOOL_GLOBS, 1 otherwise.
+# When TOOL_GLOBS is empty, returns 0 (no narrowing — include everything).
+# Patterns are bash glob patterns matched against either the full path or the basename.
+# A pattern with no '/' matches against the basename (e.g. '*.py' matches 'src/foo.py').
+# A pattern with '/' matches against the full relative path.
+_path_matches_globs() {
+  local path="$1"
+  if [[ ${#TOOL_GLOBS[@]} -eq 0 ]]; then
+    return 0
+  fi
+  local glob basename
+  basename="${path##*/}"
+  for glob in "${TOOL_GLOBS[@]}"; do
+    case "$glob" in
+      */*) [[ "$path" == $glob ]] && return 0 ;;
+      *)   [[ "$basename" == $glob ]] && return 0 ;;
+    esac
+  done
+  return 1
+}
+
 _hash_file() {
   local path="$1"
   local hash=""
@@ -173,6 +201,10 @@ while IFS= read -r -d '' filepath; do
   abs_path="${project_root}/${filepath}"
 
   if _is_skip_path "$filepath"; then
+    continue
+  fi
+
+  if ! _path_matches_globs "$filepath"; then
     continue
   fi
 
@@ -219,13 +251,9 @@ jq -n \
     inputs: $inputs
   }' > "$manifest_path"
 
-# Emit audit event to $RND_DIR/audit.jsonl
-jq -nc \
-  --arg ts "$finished_at" \
-  --arg task_id "$task_id" \
-  --arg tool "${cmd_args[0]}" \
-  '{event:"tool_run_fresh",task_id:$task_id,tool:$tool,timestamp:$ts}' \
-  >> "${RND_DIR}/audit.jsonl" 2>/dev/null || true
+# Emit audit event to $RND_DIR/audit.jsonl via the shared helper
+# (single source of truth for audit-event JSON format).
+RND_DIR="$RND_DIR" "${SCRIPT_DIR}/audit-event.sh" tool_run_fresh "$task_id" "${cmd_args[0]}" 2>/dev/null || true
 
 # Exit with the wrapped command's exit code
 exit "$exit_code"

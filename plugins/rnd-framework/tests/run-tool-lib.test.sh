@@ -302,6 +302,122 @@ AUDIT_HAS_TS="$(jq 'has("timestamp")' "${audit_dir}/audit.jsonl")"
 assert_eq "audit line has timestamp field" "true" "$AUDIT_HAS_TS"
 
 # ---------------------------------------------------------------------------
+# relevant_globs in tools.json (M1: per-tool input scoping)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- relevant_globs registry ---'
+
+for tool in pytest jest vitest tsc eslint mypy dialyzer bun cargo mix ruff biome; do
+  HAS_GLOBS="$(jq --arg t "$tool" '.[$t].relevant_globs | type == "array" and (length > 0)' "$TOOLS_JSON")"
+  assert_eq "tools.json[$tool].relevant_globs is non-empty array" "true" "$HAS_GLOBS"
+done
+
+# ---------------------------------------------------------------------------
+# Glob-filtered inputs[] (M1: pytest run only hashes Python-relevant files)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- glob-filtered inputs[] ---'
+
+GLOB_REPO="${WORK_DIR}/glob-repo"
+mkdir -p "$GLOB_REPO"
+( cd "$GLOB_REPO" \
+  && git init -q \
+  && git config user.email t@e \
+  && git config user.name t \
+  && printf 'print(1)\n' > a.py \
+  && printf 'print(2)\n' > b.py \
+  && printf 'console.log(3)\n' > c.js \
+  && printf 'console.log(4)\n' > d.ts \
+  && printf '[tool.pytest]\n' > pyproject.toml \
+  && printf '# readme\n' > README.md \
+  && git add -A && git commit -q -m init )
+
+# Fake pytest binary that just exits 0 without doing anything
+FAKE_PYTEST_DIR="${WORK_DIR}/fake-pytest"
+mkdir -p "$FAKE_PYTEST_DIR"
+cat > "${FAKE_PYTEST_DIR}/pytest" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "${FAKE_PYTEST_DIR}/pytest"
+
+GLOB_RND="${WORK_DIR}/glob-rnd"
+mkdir -p "$GLOB_RND"
+
+(
+  cd "$GLOB_REPO"
+  PATH="${FAKE_PYTEST_DIR}:$PATH" RND_EVIDENCE_PACK=1 RND_DIR="$GLOB_RND" \
+    bash "$RUN_TOOL" --task-id glob-test -- pytest >/dev/null 2>&1
+)
+
+GLOB_MANIFEST="${GLOB_RND}/evidence/glob-test/manifest.json"
+
+# Pytest globs include *.py and pyproject.toml — so a.py, b.py, pyproject.toml in inputs
+PY_COUNT="$(jq '[.inputs[].path | select(test("\\.py$"))] | length' "$GLOB_MANIFEST")"
+assert_eq "pytest run: a.py and b.py present in inputs" "2" "$PY_COUNT"
+
+PYPROJECT_PRESENT="$(jq '[.inputs[].path | select(. == "pyproject.toml")] | length' "$GLOB_MANIFEST")"
+assert_eq "pytest run: pyproject.toml present in inputs" "1" "$PYPROJECT_PRESENT"
+
+# *.js, *.ts, README.md must NOT be included for pytest
+JS_PRESENT="$(jq '[.inputs[].path | select(test("\\.js$|\\.ts$"))] | length' "$GLOB_MANIFEST")"
+assert_eq "pytest run: c.js and d.ts NOT in inputs" "0" "$JS_PRESENT"
+
+README_PRESENT="$(jq '[.inputs[].path | select(. == "README.md")] | length' "$GLOB_MANIFEST")"
+assert_eq "pytest run: README.md NOT in inputs" "0" "$README_PRESENT"
+
+# Unknown tool (echo) → no glob narrowing → all 5 tracked files in inputs
+UNKNOWN_RND="${WORK_DIR}/unknown-rnd"
+mkdir -p "$UNKNOWN_RND"
+(
+  cd "$GLOB_REPO"
+  RND_EVIDENCE_PACK=1 RND_DIR="$UNKNOWN_RND" \
+    bash "$RUN_TOOL" --task-id unknown-test -- echo hello >/dev/null 2>&1
+)
+UNKNOWN_MANIFEST="${UNKNOWN_RND}/evidence/unknown-test/manifest.json"
+ALL_COUNT="$(jq '.inputs | length' "$UNKNOWN_MANIFEST")"
+assert_eq "unknown tool: all 6 tracked files in inputs (no narrowing)" "6" "$ALL_COUNT"
+
+# ---------------------------------------------------------------------------
+# audit-event.sh shared helper
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- audit-event.sh helper ---'
+
+AUDIT_HELPER="${PLUGIN_DIR}/lib/audit-event.sh"
+AE_DIR="${WORK_DIR}/audit-helper"
+mkdir -p "$AE_DIR"
+
+# Missing args → exit 1
+AE_NOARGS_EXIT=0
+bash "$AUDIT_HELPER" >/dev/null 2>&1 || AE_NOARGS_EXIT=$?
+assert_eq "audit-event.sh with no args exits 1" "1" "$AE_NOARGS_EXIT"
+
+# Missing RND_DIR → exit 1
+AE_NORND_EXIT=0
+( unset RND_DIR; bash "$AUDIT_HELPER" tool_pack_served T1 pytest >/dev/null 2>&1 ) || AE_NORND_EXIT=$?
+assert_eq "audit-event.sh without RND_DIR exits 1" "1" "$AE_NORND_EXIT"
+
+# Happy path: writes a single line with all 4 fields and the given event
+RND_DIR="$AE_DIR" bash "$AUDIT_HELPER" tool_pack_served T7 pytest
+AE_LINES="$(wc -l < "${AE_DIR}/audit.jsonl" | tr -d ' ')"
+assert_eq "audit-event.sh writes one line" "1" "$AE_LINES"
+
+AE_EVENT="$(jq -r '.event' "${AE_DIR}/audit.jsonl")"
+assert_eq "audit-event.sh: event field = tool_pack_served" "tool_pack_served" "$AE_EVENT"
+
+AE_TASK="$(jq -r '.task_id' "${AE_DIR}/audit.jsonl")"
+assert_eq "audit-event.sh: task_id = T7" "T7" "$AE_TASK"
+
+AE_TOOL="$(jq -r '.tool' "${AE_DIR}/audit.jsonl")"
+assert_eq "audit-event.sh: tool = pytest" "pytest" "$AE_TOOL"
+
+AE_HAS_TS="$(jq 'has("timestamp")' "${AE_DIR}/audit.jsonl")"
+assert_eq "audit-event.sh: timestamp field present" "true" "$AE_HAS_TS"
+
+# Append behavior: second call appends, doesn't overwrite
+RND_DIR="$AE_DIR" bash "$AUDIT_HELPER" tool_run_fresh T8 jest
+AE_LINES2="$(wc -l < "${AE_DIR}/audit.jsonl" | tr -d ' ')"
+assert_eq "audit-event.sh appends (line count = 2)" "2" "$AE_LINES2"
+
+# ---------------------------------------------------------------------------
 # task-id sanitization (m2 fix)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- task-id sanitization ---'

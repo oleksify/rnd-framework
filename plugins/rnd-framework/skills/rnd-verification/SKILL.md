@@ -117,14 +117,14 @@ Do not re-run tools whose inputs all match — the pack is trusted for those ent
 - If the manifest entry has a `structured_path`: use `jq` to query the JSON for the fields relevant to your criterion. Do not grep structured output.
 - If no `structured_path`: check for a `sections[]` array in the manifest entry. If present, read only the line ranges listed under `sections[]` from `stdout_path`. If absent, read `stdout_path` directly.
 
-**Audit event schema** — append one line per tool to `$RND_DIR/audit.jsonl`:
+**Audit event emission** — use the shared helper, which is the single source of truth for audit-event JSON format:
 
-```json
-{"event": "tool_pack_served", "task_id": "T<id>", "tool": "<tool-name>", "timestamp": "<ISO 8601>"}
-{"event": "tool_run_fresh",   "task_id": "T<id>", "tool": "<tool-name>", "timestamp": "<ISO 8601>"}
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" tool_pack_served T<id> <tool-name>
+bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" tool_run_fresh   T<id> <tool-name>
 ```
 
-Required fields: `event` (`tool_pack_served` or `tool_run_fresh`), `task_id` (string), `tool` (string), `timestamp` (ISO 8601 string).
+The helper appends one JSON line to `$RND_DIR/audit.jsonl` with fields `event`, `task_id`, `tool`, and `timestamp` (ISO-8601 UTC). Do not hand-roll the JSON — use the helper so format stays in lockstep with `run-tool.sh`.
 
 ### 4. Run Builder's Tests and Compare
 Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.

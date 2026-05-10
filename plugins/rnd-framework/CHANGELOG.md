@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.19.0 — 2026-05-10
+
+### Add Bash output cache + cache-hit advisory to prevent same-command re-runs
+
+PostToolUse Bash now writes stdout (plus stderr if present) to `$session_dir/.bash-cache/<sha>.txt` with a sibling `<sha>.meta.json`, keyed by a 16-char sha-256 of the whitespace-normalized command. PreToolUse Bash detects identical re-runs within `RND_BASH_CACHE_TTL_SECONDS` (default 600s) and emits a non-blocking advisory pointing the agent to the cached file when output is ≥10 lines — addressing the observed "ran `mix test | tail -30`, then re-ran `mix test | grep failure`" pattern. Cache lives inside the session dir (auto-clears each pipeline run; no GC). Hash semantics shared between writer (`post-dispatch.sh`) and advisory (`bash-gate.sh`) via `cmd_hash` in `lib.sh`. New helpers in lib.sh: `_normalize_cmd`, `cmd_hash`, `bash_cache_dir`. Test coverage in `tests/bash-cache.test.sh` (24 assertions: hash stability, writer behavior, hit/miss/stale-TTL/small-output advisory cases, TTL override).
+
 ## 3.18.0 — 2026-05-10
 
 ### Add opt-in evidence-pack writer and Verifier-side schema gate

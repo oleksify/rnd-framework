@@ -270,6 +270,43 @@ iso_timestamp() {
 }
 
 # ---------------------------------------------------------------------------
+# Bash output cache
+# ---------------------------------------------------------------------------
+# Shared by post-dispatch.sh (writer) and bash-gate.sh (advisory). Both must
+# normalize and hash a command identically — the helpers below are the
+# single source of truth.
+
+# Collapses runs of whitespace to a single space and trims leading/trailing
+# whitespace. Stable across cosmetic command variations (extra spaces, tabs).
+_normalize_cmd() {
+  local cmd="$1"
+  cmd="$(printf '%s' "$cmd" | tr -s '[:space:]' ' ')"
+  cmd="${cmd# }"
+  cmd="${cmd% }"
+  printf '%s' "$cmd"
+}
+
+# Returns a 16-char sha-256 hex prefix of the normalized command. Empty input
+# returns empty (callers should guard).
+cmd_hash() {
+  local cmd="$1"
+  [[ -n "$cmd" ]] || return 0
+  local norm
+  norm="$(_normalize_cmd "$cmd")"
+  printf '%s' "$norm" | shasum -a 256 2>/dev/null | cut -c1-16
+}
+
+# Returns the path to the bash output cache directory under the active session.
+# Does NOT create it — the writer is responsible for mkdir -p when needed; the
+# reader (bash-gate) only checks for hits and should never create the dir.
+# Returns empty and exit 1 when no active session.
+bash_cache_dir() {
+  local session_dir
+  session_dir="$(active_session_dir 2>/dev/null)" || return 1
+  printf '%s' "${session_dir}/.bash-cache"
+}
+
+# ---------------------------------------------------------------------------
 # FP utilities
 # ---------------------------------------------------------------------------
 

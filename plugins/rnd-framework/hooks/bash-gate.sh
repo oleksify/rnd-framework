@@ -432,4 +432,37 @@ if [[ -n "$plugin_root" ]] && [[ "$command" == *"${plugin_root}/lib/"* ]]; then
   exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# 7. Bash output cache advisory
+# ---------------------------------------------------------------------------
+# When the same normalized command was run within RND_BASH_CACHE_TTL_SECONDS
+# (default 600s) and produced non-trivial output, advise the agent to Read+Grep
+# the cached file instead of re-running. Does not block — agent may still
+# proceed if fresh output is needed (e.g. after file changes that affect the
+# result). Writer is post-dispatch.sh; the two hooks share cmd_hash semantics
+# via lib.sh.
+
+cache_dir="$(bash_cache_dir 2>/dev/null || true)"
+if [[ -n "$cache_dir" ]]; then
+  cache_key="$(cmd_hash "$command")"
+  cache_file="${cache_dir}/${cache_key}.txt"
+
+  if [[ -n "$cache_key" && -f "$cache_file" ]]; then
+    cache_mtime="$(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null || printf '0')"
+    now_ts="$(date +%s)"
+    cache_age=$((now_ts - cache_mtime))
+    cache_ttl="${RND_BASH_CACHE_TTL_SECONDS:-600}"
+
+    if [[ "$cache_age" -ge 0 && "$cache_age" -le "$cache_ttl" ]]; then
+      cache_lines="$(wc -l < "$cache_file" 2>/dev/null | tr -d ' ')"
+      cache_lines="${cache_lines:-0}"
+
+      if [[ "$cache_lines" -ge 10 ]]; then
+        advisory_json "Bash output cache: this exact command ran ${cache_age}s ago; output (${cache_lines} lines) is at ${cache_file}. Use Read + Grep on the cached file to inspect different parts instead of re-running, unless you need fresh output (e.g. after file changes that would affect the result)."
+        exit 0
+      fi
+    fi
+  fi
+fi
+
 exit 0

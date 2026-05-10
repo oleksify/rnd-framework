@@ -97,161 +97,50 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 - **Evidence pack gate** (`evidence-pack-gate.sh`): PreToolUse Read hook that runs the existing information-barrier check first (still blocks self-assessment / `/briefs/` / `/cleanup/` for the verifier and proof-gate), then — only when the agent is `rnd-verifier` and the path matches `$RND_DIR/evidence/T*/manifest.json` — validates the manifest by `jq has()` checks against the disallowed-fields list sourced from `lib/manifest-schema.json`'s `x-disallowed-fields` extension (default: `notes`, `summary`, `confidence`, `reasoning`, `explanation`). The schema file is the single source of truth; the hook falls back to a hard-coded mirror only if the schema is unreadable. Blocks with `EVIDENCE PACK BARRIER` if any disallowed field is present; emits `allow` for clean manifests; no opinion for non-manifest paths or non-verifier agents. Registers as a second `Read` PreToolUse entry in `hooks.json`, ordered before `read-gate.sh`.
 - **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
 
-#### Claude Code Version Check
+#### Claude Code Version Notes
 
-The `session-start.sh` hook checks the installed Claude Code version (via `claude --version`) and emits a warning in `additionalContext` if the version is below the minimum recommended (currently v2.1.117). The warning lists features that may not work correctly on older versions. If `claude` is not in PATH or returns an error, the check degrades gracefully with no warning.
+**Min recommended:** v2.1.117 (Opus-4.7 1M-context fix). `session-start.sh` warns when below threshold via `claude --version`; degrades gracefully if `claude` not in PATH.
 
-#### Symlink Resolution for Allow Rules (v2.1.89+)
-
-As of v2.1.89, Claude Code's `allowWrite` and `allowRead` rules check the resolved symlink target, not just the requested path. The plugin's `settings.json` rule `allowWrite: ["~/.claude*/.rnd/**"]` will correctly match even if the `.claude` or `.rnd` directories are symlinks, as long as the resolved target matches the pattern.
-
-#### Hook Output Size Limit (v2.1.89+)
-
-Hook output exceeding 50K characters is saved to disk with a file path + preview instead of being injected directly into context. The `session-start.sh` output (skill content + warnings) is well below this threshold (~5-10K chars). If a future change increases hook output significantly, the 50K behavior ensures context is not bloated.
-
-#### Format-on-Save Hook (v2.1.90+)
-
-The `format-on-save.sh` hook fires as a PostToolUse handler for Write and Edit events. It auto-detects the project's code formatter by scanning for config files (biome, prettier, deno, mix, cargo, ruff, black, gofmt, clang-format, or a `format`/`fmt` script in package.json) and runs the detected formatter on the changed file. Formatter detection is cached at session level in `$RND_DIR/.formatter-cache` to avoid re-scanning on every write. The hook skips non-code files and `.rnd/` artifact paths, and is non-blocking — formatting errors do not affect the pipeline. This hook requires v2.1.90+ because earlier versions had a bug where `Edit`/`Write` would fail with "File content has changed" when a PostToolUse hook rewrote the file.
-
-#### Auto-Mode Boundary Respect (v2.1.90+)
-
-As of v2.1.90, Claude Code's auto mode respects explicit user boundaries (e.g., "don't push", "wait for X before Y") even when the action would otherwise be allowed by the auto-mode classifier. Pipeline agents are now spawned with `mode: "acceptEdits"` (empirically `mode: "auto"` denied project-file Edit/Write on 2.1.112 team-spawned subagents), but Bash still routes through the classifier — so the boundary-respect behavior still applies to agent shell commands.
-
-#### Offline Plugin Resilience (v2.1.90+)
-
-The `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` environment variable (v2.1.90+) preserves the existing marketplace plugin cache when a `git pull` fails during plugin refresh. This is useful for offline environments, CI pipelines, or unreliable networks — the plugin continues to work from its last cached version rather than failing entirely.
-
-#### Exit-Code-2 Hook Fix (v2.1.90+)
-
-v2.1.90 fixed a bug where PreToolUse hooks that emitted JSON to stdout and exited with code 2 did not correctly block the tool call. **This bug did not affect rnd-framework hooks** because `block_msg` in `lib.sh` writes plain text to stderr (not JSON to stdout) when blocking. The information barrier (`read-gate.sh`) and tool discipline (`bash-gate.sh`) were working correctly on versions below v2.1.90.
-
-#### Subagent Spawning Fix (v2.1.92+)
-
-v2.1.92 fixed subagent spawning permanently failing with "Could not determine pane count" after tmux windows are killed or renumbered during a long-running session. This directly improves multi-agent mode reliability — prior to this fix, killing or rearranging tmux panes mid-pipeline could permanently break agent spawning for the rest of the session.
-
-#### Stop Hook Semantics Fix (v2.1.92+)
-
-v2.1.92 restored `preventContinuation:true` semantics for non-Stop prompt-type hooks and fixed prompt-type Stop hooks incorrectly failing when the small fast model returns `ok:false`. This ensures hook-driven control flow works correctly in pipeline contexts.
-
-#### Tool Input Validation Fix (v2.1.92+)
-
-v2.1.92 fixed tool input validation failures when streaming emits array/object fields as JSON-encoded strings. This prevents spurious validation errors in hooks that parse `tool_input` from stdin during streaming responses.
-
-#### Write Tool Performance (v2.1.92+)
-
-Write tool diff computation is 60% faster for files containing tabs, `&`, or `$` characters. This benefits pipeline builds that write to files with these characters (common in bash scripts and shell tests).
-
-#### Default Effort Level Change (v2.1.94+)
-
-v2.1.94 changed the default effort level from medium to high for API-key, Bedrock/Vertex/Foundry, Team, and Enterprise users. This affects pipeline agents spawned without an explicit effort level — they now reason more deeply by default. Users can control this with `/effort`.
-
-#### keep-coding-instructions Output Style Frontmatter (v2.1.94+)
-
-v2.1.94 added `keep-coding-instructions` frontmatter field support for plugin output styles. When set to `true`, the coding instructions section of the output style is preserved across context compaction rather than being discarded. All three rnd-framework output styles (scientific, rigorous, pipeline) have this field set to `true`.
-
-#### Skill Invocation Name from Frontmatter (v2.1.94+)
-
-v2.1.94 changed plugin skills declared via `"skills": ["./"]` to use the skill's frontmatter `name` field for the invocation name instead of the directory basename. This gives a stable name across install methods (marketplace vs local). rnd-framework skills already use explicit directory names matching their frontmatter names, so this change has no practical impact on the plugin.
-
-#### UserPromptSubmit Session Title (v2.1.94+)
-
-v2.1.94 added `hookSpecificOutput.sessionTitle` support for `UserPromptSubmit` hooks. The hook can return `{hookSpecificOutput:{sessionTitle:"..."}}` to set the session title dynamically. The rnd-framework `session-title.sh` hook uses this to display the current pipeline phase and project name in the `/resume` picker.
-
-#### Plugin Skill Hooks Fix (v2.1.94+)
-
-v2.1.94 fixed plugin skill hooks defined in YAML frontmatter being silently ignored. Skills that declare hooks in their frontmatter now have those hooks correctly registered. rnd-framework skills do not currently use frontmatter-defined hooks, but this fix unblocks future use.
-
-#### CLAUDE_PLUGIN_ROOT Resolution Fix (v2.1.94+)
-
-v2.1.94 fixed `${CLAUDE_PLUGIN_ROOT}` resolving to the marketplace source directory instead of the installed cache for local-marketplace plugins on startup. This ensures hooks and lib scripts receive the correct plugin root path regardless of install method.
-
-#### Statusline refreshInterval and git_worktree (v2.1.97+)
-
-v2.1.97 added `refreshInterval` as a per-status-line setting — an integer specifying seconds between automatic statusline re-runs. The rnd-framework `settings.json` sets `refreshInterval: 5` so the statusline auto-refreshes every 5 seconds during pipeline execution.
-
-v2.1.97 also added `workspace.git_worktree` to the statusline JSON input, set when the current directory is inside a linked git worktree. The rnd-framework `statusline.sh` extracts this and appends `[wt: <name>]` to the status text when present.
-
-#### Subagent Working Directory Isolation Fix (v2.1.97+)
-
-v2.1.97 fixed subagents with worktree isolation or `cwd:` override leaking their working directory back to the parent session's Bash tool. This directly improves multi-agent mode — prior to this fix, an agent spawned with a different cwd could corrupt the orchestrator's working directory state.
-
-#### Compaction Transcript Dedup Fix (v2.1.97+)
-
-v2.1.97 fixed compaction writing duplicate multi-MB subagent transcript files on prompt-too-long retries. This reduces transcript bloat in multi-agent pipelines where context compaction triggers mid-run.
-
-#### Stop/SubagentStop Hook Reliability Fix (v2.1.97+)
-
-v2.1.97 fixed prompt-type Stop/SubagentStop hooks failing on long sessions, and hook evaluator API errors displaying "JSON validation failed" instead of the actual message. This improves hook reliability in long-running pipeline sessions.
-
-#### 429 Retry Exponential Backoff Fix (v2.1.97+)
-
-v2.1.97 fixed 429 retries burning all attempts in ~13 seconds when the server returns a small Retry-After. Exponential backoff now applies as a minimum. This prevents pipeline agents from exhausting retry budget on transient rate limits.
-
-#### Accept Edits Mode Env-Var Improvement (v2.1.97+)
-
-v2.1.97 improved Accept Edits mode to auto-approve filesystem commands prefixed with safe env vars or process wrappers (e.g., `LANG=C rm foo`, `timeout 5 mkdir out`). This is orthogonal to the rnd-framework `bash-gate.sh` `strip_env_prefix()` function, which strips env-var prefixes for tool discipline enforcement (determining which tool to use), not for permission decisions.
-
-#### Plugin Update Fix (v2.1.97+)
-
-v2.1.97 fixed `claude plugin update` reporting "already at the latest version" for git-based marketplace plugins when the remote had newer commits.
-
-#### Bash find -exec/-delete Security Tightening (v2.1.113+)
-
-v2.1.113 stopped auto-approving destructive `find` invocations (`-exec`, `-delete`) under `Bash(find:*)` allow rules. The plugin's `bash-gate.sh` already blocks `find` unconditionally in favor of the `Glob` tool, so this upstream change has no impact on rnd-framework users — the blanket block remains load-bearing for non-destructive `find` patterns too.
-
-#### Subagent Stall Timeout (v2.1.113+)
-
-v2.1.113 added a 10-minute stall timeout for subagents stuck mid-stream; prior to this, they could hang silently. This surfaces a concrete error when an agent wedges, improving pipeline observability. It does **not**, on its own, resolve the `rnd-integrator` hang documented in project memory — the integrator still requires a live re-test before any decision to re-enable spawned integration.
-
-#### Native CLI Binary (v2.1.113+)
-
-v2.1.113 shipped Claude Code as a native per-platform binary (via optional dependencies) rather than bundled JavaScript. This reduces cold-start latency for `claude` invocations, including the `claude --version` check in `session-start.sh`.
-
-#### sandbox.network.deniedDomains (v2.1.113+)
-
-v2.1.113 added `sandbox.network.deniedDomains` to `settings.json` — a blocklist that overrides broader `allowedDomains` wildcards. The plugin now ships a conservative default denylist (`pastebin.com`, `hastebin.com`, `0x0.st`, `transfer.sh`) as defense-in-depth against accidental exfiltration of evidence or self-assessments by Builder / Reality-Auditor agents using `WebFetch` or `Bash`. Users can prune or extend the list in their local settings.
-
-#### Opus-4.7 1M-Context Fix (v2.1.117+)
-
-v2.1.117 fixed Opus-4.7 failing to use its full 1M-token context window in Claude Code sessions. This is the primary driver for raising the minimum recommended version to v2.1.117 — pipelines using Opus-4.7 as the orchestrator or a high-reasoning agent could silently truncate context on earlier versions. Update via `claude update`.
-
-#### Agent-Type Hooks for Non-Stop Events (v2.1.118+)
-
-v2.1.118 fixed agent-type hooks failing with "Messages are required for agent hooks" when configured for events other than Stop or SubagentStop. This unblocks attaching hooks to specific named agents — for example, a PreToolUse hook that only fires for the `rnd-verifier` agent. Prior to this fix, any attempt to scope a hook to a specific agent on a non-Stop event would error silently.
-
-#### Prompt Hook Re-Fire Fix (v2.1.118+)
-
-v2.1.118 fixed prompt hooks re-firing on tool calls made by an agent-hook verifier subagent. This is relevant if multi-judge verification adopts agent-hook verifiers — without this fix, prompt hooks (e.g., UserPromptSubmit) would incorrectly re-trigger on each tool call the verifier subagent made, polluting context and potentially double-counting session events.
-
-#### SendMessage Subagent cwd Restore Fix (v2.1.118+)
-
-v2.1.118 fixed subagents resumed via SendMessage not restoring the explicit `cwd` they were spawned with. This directly addresses a class of orchestrator bugs — the pipeline uses SendMessage to wake sleeping agents, and prior to this fix those agents could silently operate in the wrong working directory after resumption, corrupting relative path assumptions.
-
-#### /fork Pointer-Only Writes (v2.1.118+)
-
-v2.1.118 changed `/fork` to write a pointer file instead of copying the full conversation per fork. This improves multi-agent performance when forking agents during long-running pipeline sessions — fork overhead scales with conversation length, so large pipelines benefit most.
-
-#### file_path Handling
-
-Tool schemas require absolute paths and the model typically complies. However, hooks receive raw `tool_input` without mechanical path normalization — relative paths could theoretically reach hooks. The regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) guard against this by rejecting paths that don't start with `/`. If a relative path reaches a hook, the conservative behavior is to not auto-allow (falls through to the default permission prompt).
-
-#### Plugin Settings Defaults
-
-The plugin ships `settings.json` with pipeline-optimized defaults: `showThinkingSummaries: true` (v2.1.88 disabled this by default), `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines` with `refreshInterval: 5` (v2.1.97+), and `autoMode.allow` with the v2.1.118 `$defaults` keyword plus a curated list of safe pipeline Bash invocations (`bun test:*`, `python -m pytest:*`, read-only `git` subcommands, `jq:*`, `ls:*`) to reduce permission prompts during pipeline execution. The `$defaults` keyword extends rather than replaces the built-in auto-mode allow list. These are defaults — user settings take precedence.
-
-#### Hook Allow/Deny Precedence (v2.1.77+)
-
-As of Claude Code v2.1.77, a PreToolUse hook returning `allow` no longer bypasses explicit deny rules. The effective precedence is:
-
-**deny rules > hook allow > default permission prompt**
-
-This affects the two hooks that auto-allow `.rnd/` operations: `read-gate.sh` and `bash-gate.sh`. If a user or enterprise policy has a deny rule covering `.rnd/` paths, those hooks' auto-allows will be silently overridden and permission prompts will reappear.
-
-**Workaround:** Use the `allowRead` and `allowWrite` sandbox settings to explicitly re-allow `.rnd/` paths. These settings take precedence over deny rules and restore the intended auto-allow behavior:
-
+**Hook Allow/Deny Precedence (v2.1.77+):** `deny rules > hook allow > default prompt`. A deny rule covering `.rnd/` silently overrides auto-allows. **Workaround:** add `allowRead`/`allowWrite` sandbox settings (these take precedence over deny rules):
 ```json
 { "allowRead": ["~/.claude/.rnd/**"], "allowWrite": ["~/.claude/.rnd/**"] }
 ```
+
+**Symlink Resolution (v2.1.89+):** `allowWrite`/`allowRead` check resolved targets, so `["~/.claude*/.rnd/**"]` matches symlinked `.claude` or `.rnd`.
+
+**Hook Output Size (v2.1.89+):** Output exceeding 50K chars saves to disk with preview. `session-start.sh` is ~5-10K, well under threshold.
+
+**Auto-Mode Boundary Respect (v2.1.90+):** Auto mode honors explicit user boundaries even when the classifier would allow. Pipeline agents spawn with `mode: "acceptEdits"` (empirically `mode: "auto"` denied project-file Edit/Write on 2.1.112 team-spawned subagents); Bash still routes through the classifier.
+
+**Format-on-Save (v2.1.90+):** Required minimum — earlier versions failed Write/Edit with "File content has changed" when a PostToolUse hook rewrote the file.
+
+**Default Effort (v2.1.94+):** Default raised from medium to high for API-key/Bedrock/Vertex/Foundry/Team/Enterprise users; affects agents spawned without explicit `effort`.
+
+**keep-coding-instructions (v2.1.94+):** All three rnd-framework output styles set this `true` to preserve coding instructions across compaction.
+
+**Statusline (v2.1.97+):** `refreshInterval: 5` in `settings.json`; `workspace.git_worktree` extracted by `statusline.sh` as `[wt: <name>]`.
+
+**Subagent cwd Isolation (v2.1.97+):** Fixed agents leaking cwd to parent — improves multi-agent mode.
+
+**429 Backoff (v2.1.97+):** Exponential backoff applied as minimum, preventing retry budget burn on small `Retry-After`.
+
+**sandbox.network.deniedDomains (v2.1.113+):** Plugin ships conservative default denylist (`pastebin.com`, `hastebin.com`, `0x0.st`, `transfer.sh`) as defense-in-depth against exfiltration via `WebFetch`/`Bash`.
+
+**Subagent Stall Timeout (v2.1.113+):** 10-min timeout surfaces concrete error on hangs; does not on its own resolve the `rnd-integrator` hang documented in project memory.
+
+**Bash find -exec/-delete (v2.1.113+):** Stopped auto-approving destructive `find`. `bash-gate.sh` already blocks `find` unconditionally so no user impact.
+
+**Agent-Type Hooks (v2.1.118+):** Fixed agent-scoped hooks failing on non-Stop events; unblocks per-agent PreToolUse hooks.
+
+**SendMessage cwd Restore (v2.1.118+):** Fixed resumed agents not restoring spawn-time `cwd`; pipeline uses SendMessage to wake sleeping agents.
+
+#### file_path Handling
+
+Tool schemas require absolute paths but hooks receive raw `tool_input`. Regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) reject paths not starting with `/` — relative paths fall through to the default permission prompt rather than auto-allowing.
+
+#### Plugin Settings Defaults
+
+`settings.json` ships pipeline-optimized defaults: `showThinkingSummaries: true`, `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines.refreshInterval: 5`, and `autoMode.allow` with the v2.1.118 `$defaults` keyword plus safe pipeline Bash invocations (`bun test:*`, `python -m pytest:*`, read-only `git`, `jq:*`, `ls:*`). User settings take precedence.
 
 ### --bare Mode (v2.1.81+)
 

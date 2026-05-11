@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.0 — 2026-05-11
+
+### Add verdict-based escalation gate to multi-judge and trim heavy skill bodies
+
+Multi-judge HIGH-criticality verification now runs a cheap Sonnet/medium first-pass verifier; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION escalates to full dual-judge with tiebreaker. Set RND_MULTI_JUDGE_ALWAYS=1 to restore pre-gate always-dual-judge behavior. Adds escalationGate object to calibration.jsonl schema (firstPassVerdict, escalated, overturned) so verdict accuracy can be tracked before/after. Trims rnd-multi-judge, code-review, and rnd-doc-polish skill bodies by 20-30% (no rule deletions) to reduce skill-loading overhead in every relevant agent context.
+
 ## 3.19.0 — 2026-05-10
 
 ### Add Bash output cache + cache-hit advisory to prevent same-command re-runs

@@ -8,11 +8,9 @@ effort: low
 
 ## Overview
 
-A structured code review framework with six categories, four severity levels, and three verdicts. Use this as the shared specification when performing code reviews or interpreting review output.
+Six categories, four severity levels, three verdicts.
 
 ## Review Categories
-
-Reviews must address exactly these six categories:
 
 | Category | What to examine |
 |----------|----------------|
@@ -25,8 +23,6 @@ Reviews must address exactly these six categories:
 
 ## Severity Levels
 
-Each finding is tagged with exactly one severity level:
-
 | Severity | When to use | Effect on verdict |
 |----------|-------------|-------------------|
 | **Critical** | Must fix before merge — bugs, security holes, data loss risk | Triggers CRITICAL_ISSUES |
@@ -36,15 +32,11 @@ Each finding is tagged with exactly one severity level:
 
 ## Verdicts
 
-Exactly three possible verdicts for the overall review:
-
 | Verdict | Condition |
 |---------|-----------|
 | **CLEAN** | No critical or major findings across all categories |
 | **ISSUES_FOUND** | At least one major finding; no critical findings |
 | **CRITICAL_ISSUES** | At least one critical finding |
-
-Verdict is determined by the highest severity finding: critical beats major, major beats minor/info.
 
 ## Review Report Template
 
@@ -75,17 +67,6 @@ Verdict is determined by the highest severity finding: critical beats major, maj
 ### Style
 - [severity] [finding] — [file:line if applicable]
 
-## Summary
-
-| Category | Critical | Major | Minor | Info |
-|----------|----------|-------|-------|------|
-| Architecture | 0 | 0 | 0 | 0 |
-| Security | 0 | 0 | 0 | 0 |
-| Correctness | 0 | 0 | 0 | 0 |
-| Testing | 0 | 0 | 0 | 0 |
-| KISS Compliance | 0 | 0 | 0 | 0 |
-| Style | 0 | 0 | 0 | 0 |
-
 ## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES
 
 [One sentence justifying the verdict, referencing the highest-severity finding.]
@@ -97,4 +78,4 @@ Verdict is determined by the highest severity finding: critical beats major, maj
 
 ## Related Skills
 
-- `rnd-framework:rnd-verification` — Evidence-based verification process; code review applies the same evidence standards
+- `rnd-framework:rnd-verification` — Evidence-based verification process

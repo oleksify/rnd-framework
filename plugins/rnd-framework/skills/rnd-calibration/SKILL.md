@@ -51,6 +51,7 @@ Each completed task appends one record to `calibration.jsonl`:
 | `iterationCount` | number | Build-verify cycles required |
 | `timestamp` | string | ISO 8601 UTC |
 | `falseVerdictFlag` | string or null | Set by detection or manual correction |
+| `escalationGate` | object or null | Optional. Present when a first-pass escalation gate was run. Shape: `{ "firstPassVerdict": "PASS" \| "FAIL" \| "NEEDS_ITERATION" \| "PASS_QUALITY_NEEDS_ITERATION" \| "AMEND_REQUIRED", "escalated": boolean, "overturned": boolean }`. `escalated` is true when the first-pass verdict was not PASS. `overturned` is true when the final consensus verdict differs from the first-pass verdict (i.e., the gate decision was wrong). Omit entirely when `rnd-multi-judge` was not used or `RND_MULTI_JUDGE_ALWAYS=1` bypassed the gate. |
 
 ## Storage Location
 
@@ -126,6 +127,8 @@ Calibration summary for this project (last 30 verdicts):
 - False PASS rate: 2/15 (13%)
 - False FAIL rate: 1/15 (7%)
 - Most-failed criterion: "YAML frontmatter valid" (3 failures)
+- Escalation rate (first-pass non-PASS): 4/10 (40%)
+- First-pass overturned rate: 1/4 (25%)
 ```
 
 **What the verification phase does with this:** No special action required. The summary is contextual — it raises alertness for known problem areas without overriding the information barrier or the verification phase's independent judgment.

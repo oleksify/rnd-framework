@@ -264,7 +264,9 @@ Agent({
 })
 ```
 
-- **Wave contains any HIGH-criticality task:** Invoke the `rnd-framework:rnd-multi-judge` protocol for the whole wave. Both judges each receive all wave task pre-registrations and each returns a per-task verdict map. Tiebreaker is triggered per-task — only for tasks where Judge A and Judge B disagree. See that skill for the full wave-batched protocol.
+- **Wave contains any HIGH-criticality task:** Invoke the `rnd-framework:rnd-multi-judge` protocol for the whole wave. The skill runs a first-pass escalation gate: a single Sonnet/medium verifier runs first; if it returns PASS the full dual-judge protocol is skipped and PASS is the final verdict; if it returns FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or AMEND_REQUIRED it is promoted to Judge A and a second judge (Judge B) is spawned. Set `RND_MULTI_JUDGE_ALWAYS=1` to bypass the gate and restore exact pre-gate behavior (both judges always spawn in parallel). Both judges each receive all wave task pre-registrations and each returns a per-task verdict map. Tiebreaker is triggered per-task — only for tasks where Judge A and Judge B disagree. See that skill for the full wave-batched protocol.
+
+  After the first-pass verdict is known, write the `escalationGate` object to the calibration record for each task: `{ "firstPassVerdict": "<verdict>", "escalated": <true|false>, "overturned": <true|false> }`. Write silently as a graceful no-op if `calibration.jsonl` does not yet exist.
 
 The Verifier writes per-task traceability artifacts for every task in the wave: a `T<id>-pass-receipt.json` for PASS tasks, or a full `T<id>-verification.md` prose report for FAIL/NEEDS_ITERATION tasks (auto-materialized). PASS_QUALITY_NEEDS_ITERATION tasks get both. Plus the aggregate verdict map.
 

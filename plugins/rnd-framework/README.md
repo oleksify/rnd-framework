@@ -146,7 +146,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `committing` | Commit message style, length limits, and user confirmation before committing |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
 | `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
-| `rnd-multi-judge` | Wave-batched multi-judge consensus — 2 independent verifiers each receive the full wave; per-task tiebreaker on disagreement |
+| `rnd-multi-judge` | Wave-batched multi-judge consensus with verdict-based escalation gate — single first-pass verifier runs first; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION escalates to dual judges + per-task tiebreaker; `RND_MULTI_JUDGE_ALWAYS=1` bypasses the gate |
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |

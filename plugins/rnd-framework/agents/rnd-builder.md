@@ -3,7 +3,7 @@ name: rnd-builder
 description: "Implements a single task from the RND plan. Writes code, tests, and verification artifacts against the pre-registered success criteria. Produces an honest self-assessment. Does NOT verify its own work — that is the Verifier's job."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
-effort: low
+effort: medium
 memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-iteration

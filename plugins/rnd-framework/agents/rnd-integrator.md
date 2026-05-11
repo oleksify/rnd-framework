@@ -2,7 +2,7 @@
 name: rnd-integrator
 description: "Merges verified task outputs from a wave, runs integration tests, and performs system-level validation against the original requirements. Issues SHIP/NO-SHIP decisions."
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: sonnet
+model: haiku
 effort: low
 memory: user
 color: "#8B5CF6"

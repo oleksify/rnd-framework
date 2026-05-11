@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.2 — 2026-05-11
+
+### Add criticality-driven model dispatch policy
+
+Adaptive per-spawn model override for planner/builder/verifier/debugger keyed on per-task Criticality (LOW=haiku, MEDIUM=sonnet, HIGH=opus); fallback to agent frontmatter when Criticality is absent. Static rebalance: rnd-integrator to haiku, rnd-builder effort to medium. Documented in rnd-orchestration skill and CLAUDE.md.
+
 ## 3.20.1 — 2026-05-11
 
 ### Add branch-keyed RND artifact partitioning

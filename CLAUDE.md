@@ -67,17 +67,19 @@ Eleven specialized agents handle each pipeline phase in isolated context windows
 
 | Phase | Agent | Purpose |
 |---|---|---|
-| Planning | `rnd-planner` (sonnet/high) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing |
-| Building | `rnd-builder` (sonnet) | Implements tasks using TDD; produces terse build manifest (structured bullets, no narrative) + self-assessment |
-| Reality Audit | `rnd-reality-auditor` (sonnet) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies` |
-| Proof Gate | `rnd-proof-gate` (sonnet) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH; amendments to proven criteria force a re-prove before re-verification |
-| Verification | `rnd-verifier` (sonnet/high) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; on PASS writes `T<id>-pass-receipt.json` (lazy prose), on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes prose report; AMEND_REQUIRED (emit only with cited concrete spec defect; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge with verdict-based escalation gate (single first-pass verifier; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION/AMEND_REQUIRED escalates to full dual-judge; set `RND_MULTI_JUDGE_ALWAYS=1` to bypass gate and restore exact pre-gate always-dual-judge behavior) |
+| Planning | `rnd-planner` (sonnet/high, adaptive) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing |
+| Building | `rnd-builder` (sonnet/medium, adaptive) | Implements tasks using TDD; produces terse build manifest (structured bullets, no narrative) + self-assessment |
+| Reality Audit | `rnd-reality-auditor` (sonnet/low) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies` |
+| Proof Gate | `rnd-proof-gate` (sonnet/low) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH; amendments to proven criteria force a re-prove before re-verification |
+| Verification | `rnd-verifier` (sonnet/high, adaptive) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; on PASS writes `T<id>-pass-receipt.json` (lazy prose), on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes prose report; AMEND_REQUIRED (emit only with cited concrete spec defect; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge with verdict-based escalation gate (single first-pass verifier; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION/AMEND_REQUIRED escalates to full dual-judge; set `RND_MULTI_JUDGE_ALWAYS=1` to bypass gate and restore exact pre-gate always-dual-judge behavior) |
 | Amendment | `rnd-amendment-arbiter` (sonnet/medium) | Evaluates AMEND_REQUIRED verdicts; proposes spec corrections (AMEND), recommends rebuild (REBUILD), or routes to Planner re-plan (ESCALATE_REPLAN); inputs strictly limited to original pre-reg + Verifier verdict |
 | Cleanup | `rnd-cleanup` (sonnet/medium) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
 | Polish | `rnd-polisher` (sonnet/medium) | Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift, helpers that should be lifted to shared locations, and structural inconsistencies; runs after all per-task cleanup; rolls back if re-verification breaks; reports to `$RND_DIR/polish/wave-<N>-polish-report.md` |
-| Integration | `rnd-integrator` (sonnet) | Merges verified outputs, runs integration/system tests |
-| Debugging | `rnd-debugger` (sonnet/high) | Root cause analysis for failing tasks |
-| Data Science | `rnd-data-scientist` (sonnet) | Standalone specialist for numerical/analytical work |
+| Integration | `rnd-integrator` (haiku/low) | Merges verified outputs, runs integration/system tests |
+| Debugging | `rnd-debugger` (sonnet/high, adaptive) | Root cause analysis for failing tasks |
+| Data Science | `rnd-data-scientist` (sonnet/medium) | Standalone specialist for numerical/analytical work |
+
+**Dispatch Policy (criticality-driven, adaptive agents only):** the orchestrator overrides the spawned agent's model based on the per-task `Criticality` field in the pre-registration — `LOW` → `haiku`, `MEDIUM` → `sonnet`, `HIGH` → `opus`. If `Criticality` is absent (or no pre-reg exists), the orchestrator does NOT override and the agent's frontmatter `model:` is used as the fallback. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value. Non-adaptive agents always use their frontmatter `model:`. Full policy lives in `rnd-framework:rnd-orchestration` skill under "Dispatch Policy".
 
 ### Information Barrier and Permission Hooks
 

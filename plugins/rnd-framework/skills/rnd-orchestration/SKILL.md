@@ -84,17 +84,52 @@ fulfills: [VAL-AREA-NNN, ...]
 
 Dedicated agents are spawned for each pipeline role. The orchestrator session coordinates them, enforcing information barriers and gate criteria.
 
-Agent assignments:
-- **rnd-planner** — Planning phase (Sonnet model)
-- **rnd-builder** — Build phase (Sonnet model)
-- **rnd-proof-gate** — Proof Gate phase (Sonnet model, advisory)
-- **rnd-reality-auditor** — Reality Audit phase (Sonnet model, blocking)
-- **rnd-verifier** — Verification phase (Sonnet model, Edit disallowed)
-- **rnd-cleanup** — Cleanup phase (Sonnet model, per task after PASS)
-- **rnd-polisher** — Polish phase (Sonnet model, wave-level after all per-task cleanup)
-- **rnd-integrator** — Integration phase (Sonnet model)
-- **rnd-data-scientist** — On-demand for analytical tasks (Sonnet model)
-- **rnd-debugger** — On-demand for root cause analysis (Sonnet model)
+### Dispatch Policy: Criticality-Driven Model Selection
+
+Four agents support **per-spawn model override** based on the per-task `Criticality` field in the pre-registration. The remaining agents use their frontmatter `model:` as-is.
+
+**Adaptive agents:** `rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-debugger`.
+
+**Criticality → model mapping (default policy):**
+
+| Criticality | Model     |
+|-------------|-----------|
+| `LOW`       | `haiku`   |
+| `MEDIUM`    | `sonnet`  |
+| `HIGH`      | `opus`    |
+
+**Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Adaptive dispatch is opt-in via the `Criticality` field. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
+
+**Granularity.** Builder/Verifier/Debugger spawns read the criticality of the specific task they are working on (per-task). Planner uses the overall task tree's max-criticality at plan time (or the user-stated complexity at `/rnd-start`).
+
+**Dispatch example:**
+
+```
+// Task T7 has `Criticality: HIGH` in plan.md → spawn Builder with model="opus"
+Agent({
+  description: "Build task T7",
+  subagent_type: "rnd-framework:rnd-builder",
+  model: "opus",
+  mode: "acceptEdits",
+  prompt: "Task: T7\nRND_DIR: ...\n..."
+})
+```
+
+**Frontmatter defaults (used when criticality is absent OR for non-adaptive agents):**
+
+| Agent | Default model | Effort | Adaptive? |
+|---|---|---|---|
+| `rnd-planner` | sonnet | high | yes |
+| `rnd-builder` | sonnet | medium | yes |
+| `rnd-verifier` | sonnet | high | yes |
+| `rnd-debugger` | sonnet | high | yes |
+| `rnd-proof-gate` | sonnet | low | no (advisory) |
+| `rnd-reality-auditor` | sonnet | low | no |
+| `rnd-amendment-arbiter` | sonnet | medium | no |
+| `rnd-cleanup` | sonnet | medium | no |
+| `rnd-polisher` | sonnet | medium | no |
+| `rnd-integrator` | haiku | low | no |
+| `rnd-data-scientist` | sonnet | medium | no |
 
 > **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 

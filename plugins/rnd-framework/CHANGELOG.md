@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.1 — 2026-05-11
+
+### Add branch-keyed RND artifact partitioning
+
+rnd-dir.sh partitions project-facts.md, roadmap.md, sessions/, .current-session, and .session-git-root under branches/<branch>/ inside the project slug. New --calibration flag returns the un-partitioned calibration.jsonl path. --facts and --roadmap lazily inherit from the default branch on first access. Branch resolved via git symbolic-ref --short HEAD with detached-<sha7> / no-git fallbacks; branch names with .. are rejected.
+
 ## 3.20.0 — 2026-05-11
 
 ### Add verdict-based escalation gate to multi-judge and trim heavy skill bodies

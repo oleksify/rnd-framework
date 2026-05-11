@@ -273,22 +273,29 @@ The framework stores pipeline artifacts in a centralized directory outside the p
 
 **Helper script:** `lib/rnd-dir.sh`
 - Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
-- Outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>`
+- Outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/branches/<branch>/sessions/<YYYYMMDD-HHMMSS-XXXX>`
 - Use `-c` flag to create the directory structure on first use
 - Use `--finish` to clear the session ID after a pipeline run
-- Use `--base` to get the project base dir (without session path)
+- Use `--base` to get the branch-scoped project base dir (without session path)
+- Use `--roadmap` / `--facts` for branch-scoped roadmap.md / project-facts.md paths (lazy-inherit from default branch on first access)
+- Use `--calibration` for the un-partitioned calibration.jsonl path at the slug root
+- Branch is resolved at each invocation via `git symbolic-ref --short HEAD`; detached HEAD → `detached-<sha7>`; non-git → `no-git`; slashes preserve as nested dirs; `..` traversal is rejected
 
 Each pipeline run gets a unique session ID. Previous sessions remain on disk and can be browsed with `/rnd-framework:rnd-history`.
 
 **Artifact layout** (`$RND_DIR`):
 
 ```
-~/.claude/.rnd/<dirname>-<hash>/         # Project base (dirname + 8-char hash of path)
-├── .current-session                    # Active session ID
-├── project-facts.md                    # Persistent project environment scan (created by /rnd-scan)
-├── calibration.jsonl                   # Verdict accuracy tracking (cross-session); stored in CLAUDE_PLUGIN_DATA when set
-└── sessions/
-    └── <YYYYMMDD-HHMMSS-XXXX>/         # One session per pipeline run
+~/.claude/.rnd/<dirname>-<hash>/         # Project slug (un-partitioned at top)
+├── .active-base-dir                    # Cache: path to active branch-scoped base
+├── calibration.jsonl                   # Verdict accuracy tracking (project-wide, un-partitioned); stored in CLAUDE_PLUGIN_DATA when set
+└── branches/<branch>/                  # Branch-scoped partition (resolved from HEAD; detached-<sha7> / no-git fallbacks; nested for slash-names)
+    ├── .current-session                # Active session ID
+    ├── .session-git-root               # Git root of the project that started the session
+    ├── project-facts.md                # Persistent project environment scan (lazy-inherits from default branch)
+    ├── roadmap.md                      # Multi-session roadmap (lazy-inherits from default branch)
+    └── sessions/
+        └── <YYYYMMDD-HHMMSS-XXXX>/     # One session per pipeline run
         ├── plan.md                     # Enriched plan: environment, testing strategy, worker guidelines, validation contract, pre-registrations, schedule
         ├── design-spec.md              # Approved architectural design spec (Design phase output)
         ├── diagnosis/

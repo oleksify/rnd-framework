@@ -179,16 +179,18 @@ The `SessionEnd` hook fires when a session closes or switches (including via `/r
 
 The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path. Each pipeline run gets a unique session ID, preserving history across runs.
 
-**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create), `--finish` (clear session), `--base` (project base dir), `--roadmap` (path to roadmap.md at project base), `--facts` (path to project-facts.md at project base).
+**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create session under current branch), `--finish` (clear session), `--base` (branch-scoped project base dir), `--roadmap` (path to roadmap.md; branch-scoped; lazy-inherits from default branch on first access), `--facts` (path to project-facts.md; branch-scoped; lazy-inherits from default branch on first access), `--calibration` (path to calibration.jsonl at the un-partitioned slug root). Branch is resolved at each invocation via `git symbolic-ref --short HEAD`; detached HEAD becomes `detached-<sha7>`; non-git directories become `no-git`; slashes preserve as nested dirs; `..` traversal is rejected.
 
 ```
-~/.claude/.rnd/<basename>-<hash>/          # Project base; slug = git-common-dir basename + 8-char sha256 of canonicalized git-common-dir; falls back to pwd basename + hash when not in a git repo
-├── .current-session                       # Active session ID
-├── .session-git-root                      # Git root of the project that started the session (written by session-start.sh, read by cwd-changed.sh)
-├── roadmap.md                             # Multi-session roadmap (optional, created by /roadmap)
-├── project-facts.md                       # Persistent project environment scan (created by /rnd-scan)
-├── calibration.jsonl                      # Verdict accuracy tracking (legacy; new installs use $CLAUDE_PLUGIN_DATA); AMEND_REQUIRED verdicts include optional amendmentData field: { userDecision: "approved"|"rejected", arbitersRecommendation: "AMEND"|"REBUILD"|"ESCALATE_REPLAN" }
-└── sessions/<YYYYMMDD-HHMMSS-XXXX>/      # $RND_DIR (one per pipeline run)
+~/.claude/.rnd/<basename>-<hash>/          # Project slug; un-partitioned at the top
+├── .active-base-dir                       # Cache: path to the currently active branch-scoped base dir (read by lib.sh::active_session_dir fast-path)
+├── calibration.jsonl                      # Verdict accuracy tracking (project-wide, un-partitioned; legacy — new installs use $CLAUDE_PLUGIN_DATA); AMEND_REQUIRED verdicts include optional amendmentData field: { userDecision: "approved"|"rejected", arbitersRecommendation: "AMEND"|"REBUILD"|"ESCALATE_REPLAN" }
+└── branches/<branch>/                     # Branch-scoped partition (branch resolved from HEAD; detached-<sha7> / no-git fallbacks; nested dirs for slash-names like feature/foo)
+    ├── .current-session                   # Active session ID
+    ├── .session-git-root                  # Git root of the project that started the session (written by session-start.sh, read by cwd-changed.sh)
+    ├── roadmap.md                         # Multi-session roadmap (optional, created by /roadmap); lazily copied from default branch on first access
+    ├── project-facts.md                   # Persistent project environment scan (created by /rnd-scan); lazily copied from default branch on first access
+    └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   # $RND_DIR (one per pipeline run)
     ├── plan.md                            # Task tree, environment, testing strategy, worker guidelines, validation contract, pre-registrations (with preconditions), schedule
     ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
     ├── builds/T*-manifest.md              # Builder output records (terse: structured bullets, no narrative)
@@ -218,7 +220,7 @@ The framework stores artifacts in a centralized directory outside the project tr
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
-**Worktree support:** All worktrees of the same repository share the same `.rnd/` base directory. The project slug is derived from `git rev-parse --git-common-dir` (canonicalized to an absolute path via the POSIX `cd + pwd` idiom), so linked worktrees and the main checkout produce identical slugs even though their `pwd` values differ.
+**Worktree support:** All worktrees of the same repository share the same `.rnd/<slug>/` base directory. Worktrees on different branches partition into distinct `branches/<branch>/` buckets — each branch's facts, roadmap, and sessions stay isolated. Worktrees on the same branch share the same branch bucket. The project slug is derived from `git rev-parse --git-common-dir` (canonicalized to an absolute path via the POSIX `cd + pwd` idiom), so linked worktrees and the main checkout produce identical slugs even though their `pwd` values differ.
 
 ## Commands
 

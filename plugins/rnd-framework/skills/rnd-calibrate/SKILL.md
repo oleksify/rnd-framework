@@ -31,6 +31,8 @@ BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)
 VERDICT_FILE="${BASE_DIR}/sessions/<session-id>/verifications/<task-id>-verification.md"
 ```
 
+Note: `--base` returns the branch-scoped base dir. Sessions are always located inside the branch-scoped dir.
+
 Read `$VERDICT_FILE`. If it does not exist, display an error:
 
 > "No verification report found at `$VERDICT_FILE`. Check the session-id and task-id."
@@ -39,11 +41,13 @@ Extract the verdict line (e.g. `## Verdict: PASS`) from the report to show the o
 
 ## Step 3: Append Correction Record
 
-Determine the calibration file path. Use `CLAUDE_PLUGIN_DATA` if set; fall back to `$BASE_DIR` (computed from `rnd-dir.sh --base`) otherwise:
+Determine the calibration file path. Use `CLAUDE_PLUGIN_DATA` if set; fall back to the slug-root path via `--calibration` otherwise:
 
 ```bash
-CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$BASE_DIR}/calibration.jsonl"
+CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --calibration)}"
 ```
+
+`--calibration` returns the un-partitioned slug-root `calibration.jsonl` (above the `branches/` tree), so calibration data accumulates across all branches.
 
 Build a correction record and append it to `$CALIB_FILE`:
 

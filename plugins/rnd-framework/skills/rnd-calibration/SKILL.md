@@ -59,22 +59,28 @@ Each completed task appends one record to `calibration.jsonl`:
 
 `CLAUDE_PLUGIN_DATA` is set by Claude Code for persistent plugin data that survives plugin updates. Use it when available.
 
-**Fallback ($BASE_DIR):** If `CLAUDE_PLUGIN_DATA` is not set, fall back to the project base directory:
+**Fallback:** If `CLAUDE_PLUGIN_DATA` is not set, use `--calibration` to get the slug-root path:
 
+Calibration lives at the slug root — above the `branches/` partition — so it accumulates across all branches:
+
+```
+~/.claude/.rnd/<dirname>-<hash>/       # Slug root (calibration lives here)
+├── calibration.jsonl                  # Append-only verdict log (cross-branch)
+└── branches/
+    └── main/                          # Branch-scoped base ($BASE_DIR from --base)
+        ├── roadmap.md
+        ├── project-facts.md
+        └── sessions/
+            └── 20260316-154145-1227/  # $RND_DIR (per pipeline run)
+```
+
+`rnd-dir.sh --calibration` returns `<slug-root>/calibration.jsonl` directly (no `/branches/` component), regardless of the current branch.
+
+Append a record:
 ```bash
-BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)
+CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --calibration)}"
+echo '{"taskId":...}' >> "$CALIB_FILE"
 ```
-
-The project base sits alongside the `sessions/` directory — not inside any session:
-
-```
-~/.claude/.rnd/<dirname>-<hash>/       # Project base ($BASE_DIR fallback)
-├── calibration.jsonl                  # Append-only verdict log
-└── sessions/
-    └── 20260316-154145-1227/          # $RND_DIR (per pipeline run)
-```
-
-Append a record: `echo '{"taskId":...}' >> "${CLAUDE_PLUGIN_DATA:-$BASE_DIR}/calibration.jsonl"`
 
 **Why cross-session?** Calibration data accumulates across sessions. Storing it inside a session would isolate it to one run, defeating the purpose.
 

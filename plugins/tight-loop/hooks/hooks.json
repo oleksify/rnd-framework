@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/bash-gate.sh'"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/bash-gate.sh"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/prereg-gate.sh'"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/prereg-gate.sh"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/format-on-save.sh'"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/format-on-save.sh"
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/dismissal-gate.sh'"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dismissal-gate.sh"
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/permission-denied.sh'"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/permission-denied.sh"
           }
         ]
       }

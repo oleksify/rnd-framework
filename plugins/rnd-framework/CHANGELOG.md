@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.4 — 2026-05-12
+
+### Quote CLAUDE_PLUGIN_ROOT in hooks.json to match docs canonical form
+
+Wrap every "${CLAUDE_PLUGIN_ROOT}" path placeholder in hooks/hooks.json with double quotes per the documented shell-form (docs.claude.com/en/docs/claude-code/plugins-reference). Resolves intermittent PreToolUse:Bash hook errors of the form '/bin/sh: ${CLAUDE_PLUGIN_ROOT}/hooks/bash-gate.sh: No such file or directory' observed on Claude Code 2.1.139 when a session is started during cache rotation. Sticks with shell form (not the new v2.1.139 exec form) to preserve compatibility with Claude Code 2.1.117+, the plugin's stated minimum.
+
 ## 3.20.3 — 2026-05-12
 
 ### Fix hooks.json variable expansion by stripping single quotes around ${CLAUDE_PLUGIN_ROOT}

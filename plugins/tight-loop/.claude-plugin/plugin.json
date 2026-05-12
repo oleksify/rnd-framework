@@ -1,5 +1,5 @@
 {
   "name": "tight-loop",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Single-agent coding rigor: pre-register, implement, self-review with hook-enforced honesty (no orchestration, no subagents, no information barrier)."
 }

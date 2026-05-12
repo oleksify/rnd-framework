@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.20.6 — 2026-05-12
+
+### Broaden builder/cleanup prohibition to cover all pipeline-context leaks (task IDs, planner phase labels, session artifact paths)
+
 ## 3.20.5 — 2026-05-12
 
 ### Migrate hooks.json to v2.1.139 exec form (args: [])

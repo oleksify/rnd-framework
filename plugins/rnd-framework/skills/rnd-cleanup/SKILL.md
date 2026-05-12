@@ -44,12 +44,17 @@ A finding: symbol defined in the diff with zero references from project entry po
 
 LLM diff review only. Read the diff; identify whether an existing utility does the same job as a newly added one. Cross-reference with the `simplify` skill (preloaded). A finding: two implementations with substantially overlapping purpose, where the build added one without removing the other.
 
-### 4. Stale Comments / TODOs / Dead Branches
+### 4. Stale Comments / TODOs / Dead Branches / Pipeline-Context Leaks
 
 - Comments describing code removed or refactored by this build.
 - TODO / FIXME / HACK comments resolved by this build but left in place.
 - `if false`, `if 0`, permanently-dead feature flags introduced or made dead by this build.
 - Comment-guarded dead code with no ticket or decision reference.
+- **Pipeline-context leaks** — any reference in project code (comments, docstrings, test names, variable names) to RND-internal concepts that will rot when the session ends:
+  - Task / wave identifiers: `T1`, `T01`, `T14`, `M2`, `wave-3`.
+  - Planner phase or disposition labels: `Q4 disposition`, "compatibility audit", "decided during planning".
+  - Session artifact paths or meta-references: `research/*.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
+  Rewrite the comment to ground its rationale in the project's own concepts, or delete it if it doesn't help a future reader who never saw the pipeline run.
 
 ## Workflow
 

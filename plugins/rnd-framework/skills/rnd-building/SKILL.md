@@ -202,7 +202,7 @@ Prefer property-based tests for invariants, roundtrips, ordering guarantees. Use
 - [ ] Every external dependency verified against the actual system, evidence in manifest
 - [ ] Build manifest `### Evidence Gathered` contains file:line citations for each external contract
 - [ ] All external references (URLs, APIs, packages, addresses) declared in the manifest's `## External References` section with type and provenance
-- [ ] No pipeline task IDs in project code (comments, test names, variable names)
+- [ ] No pipeline-internal context in project code — comments, docstrings, test names, or variable names. Covers task/wave IDs (`T1`, `T01`, `wave-3`), planner phase or disposition labels (`Q4 disposition`, "compatibility audit"), and session artifact paths or meta-references (`research/*.md`, "the R&D session", "the pipeline"). Carve-out applies to RND artifact files only.
 
 ## Convergent Iteration
 

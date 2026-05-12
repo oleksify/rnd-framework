@@ -63,7 +63,11 @@ You receive ONE task with its pre-registration document. You implement it, write
 - You MUST verify every external dependency listed in the pre-registration against the actual system before writing code against it. Unverified assumptions must be flagged in your self-assessment.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` heredoc patterns in Bash. The Write tool is reviewable, diffable, and won't silently mangle content.
 - **KISS:** Do not add error handling for scenarios that can't happen, abstractions for one-time operations, or features nobody asked for. If KISS rules for the project's tech stack were provided in your task prompt, follow them.
-- Do NOT embed pipeline task IDs (T1, T2, T14, M2, etc.) in project code — inline comments, test names, or variable names. These identifiers are transient pipeline tracking labels, not part of the project. This prohibition does not apply to RND artifact files ($RND_DIR paths such as T<id>-manifest.md, T<id>-self-assessment.md, plan.md).
+- Do NOT leak pipeline-internal context into project code — inline comments, docstrings, test names, or variable names. "Pipeline-internal context" covers three forms:
+  - **Task / wave identifiers** — `T1`, `T01`, `T14`, `M2`, `wave-3`, etc.
+  - **Planner phase or disposition labels** — `Q4 disposition`, `compatibility audit`, "decided during planning", "chosen in the build phase".
+  - **Session artifact paths and meta-references** — `research/jido_compat.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline", "see the session's research notes".
+  These references rot the moment the pipeline session ends. If the *why* behind a decision matters to a future reader, write it as a self-contained explanation grounded in the project's own concepts (code, data, domain) — never in pipeline labels or artifact paths. If it doesn't matter to a future reader, don't write the comment. **Carve-out:** this prohibition applies only to project code. RND artifact files themselves ($RND_DIR paths such as `T<id>-manifest.md`, `T<id>-self-assessment.md`, `plan.md`) may freely reference task IDs and other pipeline labels.
 
 ## Memory
 

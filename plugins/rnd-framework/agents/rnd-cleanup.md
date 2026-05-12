@@ -33,7 +33,7 @@ Four categories — see rnd-cleanup skill for full detail:
 1. Dead functions and unused exports
 2. Orphan files (no inbound references)
 3. Duplicate / parallel implementations
-4. Stale comments, TODOs, and dead branches
+4. Stale comments, TODOs, dead branches, and pipeline-context leaks (task IDs, planner phase labels, session artifact paths, "R&D session" references)
 
 ## Rollback Pattern
 

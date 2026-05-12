@@ -102,7 +102,7 @@ The `hooks.json` routes each PreToolUse event to an external script. Policies en
 
 #### Claude Code Version Notes
 
-**Min recommended:** v2.1.117 (Opus-4.7 1M-context fix). `session-start.sh` warns when below threshold via `claude --version`; degrades gracefully if `claude` not in PATH.
+**Min recommended:** v2.1.139 (`hooks.json` exec form for `args: string[]`; bumped from v2.1.117 in 3.20.5). `session-start.sh` warns when below threshold via `claude --version`; degrades gracefully if `claude` not in PATH.
 
 **Hook Allow/Deny Precedence (v2.1.77+):** `deny rules > hook allow > default prompt`. A deny rule covering `.rnd/` silently overrides auto-allows. **Workaround:** add `allowRead`/`allowWrite` sandbox settings (these take precedence over deny rules):
 ```json
@@ -171,7 +171,7 @@ The `rnd-formatting` skill detects the project's code formatter and runs it on p
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.117) and emits a warning if below threshold.
+The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.139) and emits a warning if below threshold.
 
 The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
 

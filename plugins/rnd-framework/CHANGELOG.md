@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.5 — 2026-05-12
+
+### Migrate hooks.json to v2.1.139 exec form (args: [])
+
+Every entry in hooks/hooks.json switches from the documented shell-form `"command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/X.sh"` to the v2.1.139 exec-form `"command": "${CLAUDE_PLUGIN_ROOT}/hooks/X.sh", "args": []`. With `args` present, Claude Code spawns the script directly without a shell, so the `${CLAUDE_PLUGIN_ROOT}` placeholder is substituted as a plain string and never needs quoting. Obsoletes the quoting workaround in 3.20.4 and the single-quote-strip fix in 3.20.3, eliminating that class of bug. Raises the minimum Claude Code version dependency to 2.1.139.
+
 ## 3.20.4 — 2026-05-12
 
 ### Quote CLAUDE_PLUGIN_ROOT in hooks.json to match docs canonical form

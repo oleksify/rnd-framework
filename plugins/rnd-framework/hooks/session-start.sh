@@ -114,7 +114,7 @@ fi
 # Claude Code version check
 # ---------------------------------------------------------------------------
 
-readonly MIN_CLAUDE_VERSION="2.1.118"
+readonly MIN_CLAUDE_VERSION="2.1.139"
 
 cc_version_warning=""
 cc_version="$(claude --version 2>/dev/null | awk '{print $1}' || true)"

@@ -84,6 +84,26 @@ After configuring, start a Claude Code session in the project and check:
 - The session should show `rnd-framework` in the startup context
 - `/rnd-framework:rnd-status` should work
 
+### Permission rules
+
+Claude Code v2.1.139+ supports wildcard prefix matching on `Skill(...)` permission rules. To whitelist every skill the plugin provides without enumerating them, add to `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Skill(rnd-framework:*)"
+    ]
+  }
+}
+```
+
+This matches `rnd-framework:rnd-start`, `rnd-framework:rnd-orchestration`, and every other namespaced skill in one rule.
+
+### Token cost
+
+Run `claude plugin details rnd-framework` to see per-component token estimates. Current always-on context cost (skills with frontmatter only, before any are invoked): **~4,577 tokens per session**. On-invoke costs are paid only when a skill or agent actually runs.
+
 ## Execution Model
 
 The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
@@ -412,7 +432,7 @@ Use the `writing-skills` skill for guidance on creating new skills that plug int
 
 - **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
 - **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) is expensive. Use the pipeline scaling tiers to right-size the number of agents for the task complexity.
+- **Token cost.** Plugin always-on overhead is ~4,577 tokens per session. The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) adds substantially more on top via on-invoke skills and per-agent context. Use the pipeline scaling tiers to right-size the number of agents for the task complexity.
 - **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
 
 ## Acknowledgements

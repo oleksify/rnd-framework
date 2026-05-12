@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session-end.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
+            "args": []
           }
         ]
       }
@@ -15,7 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/stop-failure.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-failure.sh",
+            "args": []
           }
         ]
       }
@@ -25,7 +27,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/post-compact.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.sh",
+            "args": []
           }
         ]
       }
@@ -35,7 +38,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/pre-compact.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.sh",
+            "args": []
           }
         ]
       }
@@ -45,7 +49,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/instructions-loaded.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/instructions-loaded.sh",
+            "args": []
           }
         ]
       }
@@ -55,7 +60,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/setup.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/setup.sh",
+            "args": []
           }
         ]
       }
@@ -66,7 +72,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session-start.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+            "args": [],
             "async": false
           }
         ]
@@ -78,7 +85,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/bash-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/bash-gate.sh",
+            "args": []
           }
         ]
       },
@@ -87,7 +95,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/evidence-pack-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/evidence-pack-gate.sh",
+            "args": []
           }
         ]
       },
@@ -96,7 +105,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/read-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/read-gate.sh",
+            "args": []
           }
         ]
       },
@@ -105,7 +115,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/write-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/write-gate.sh",
+            "args": []
           }
         ]
       },
@@ -114,7 +125,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/glob-grep-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/glob-grep-gate.sh",
+            "args": []
           }
         ]
       },
@@ -123,7 +135,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/glob-grep-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/glob-grep-gate.sh",
+            "args": []
           }
         ]
       }
@@ -133,7 +146,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/cwd-changed.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/cwd-changed.sh",
+            "args": []
           }
         ]
       }
@@ -143,7 +157,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/file-changed.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/file-changed.sh",
+            "args": []
           }
         ]
       }
@@ -153,7 +168,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/task-created.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/task-created.sh",
+            "args": []
           }
         ]
       }
@@ -163,7 +179,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/subagent-lifecycle.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/subagent-lifecycle.sh",
+            "args": []
           }
         ]
       }
@@ -173,7 +190,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/subagent-lifecycle.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/subagent-lifecycle.sh",
+            "args": []
           }
         ]
       },
@@ -181,7 +199,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/builder-dismissal-gate.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/builder-dismissal-gate.sh",
+            "args": []
           }
         ]
       }
@@ -192,7 +211,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/post-dispatch.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-dispatch.sh",
+            "args": []
           }
         ]
       },
@@ -201,7 +221,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/format-on-save.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-on-save.sh",
+            "args": []
           }
         ]
       }
@@ -211,7 +232,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session-title.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-title.sh",
+            "args": []
           }
         ]
       }
@@ -221,7 +243,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/permission-denied.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/permission-denied.sh",
+            "args": []
           }
         ]
       }

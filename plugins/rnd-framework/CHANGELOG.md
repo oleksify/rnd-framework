@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.3 — 2026-05-12
+
+### Fix hooks.json variable expansion by stripping single quotes around ${CLAUDE_PLUGIN_ROOT}
+
+Removed literal single quotes wrapping ${CLAUDE_PLUGIN_ROOT}/hooks/<name>.sh in all 23 hook command entries. /bin/sh treated the single-quoted parameter expression as a literal path component, causing every hook (SessionStart, PreToolUse:Bash, PostToolUse:Bash, UserPromptSubmit, etc.) to fail with 'No such file or directory'. The shell now expands the variable as intended.
+
 ## 3.20.2 — 2026-05-11
 
 ### Add criticality-driven model dispatch policy

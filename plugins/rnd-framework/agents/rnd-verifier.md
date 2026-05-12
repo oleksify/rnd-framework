@@ -35,7 +35,7 @@ When the orchestrator spawns you for a whole wave, your prompt will contain:
 - `Wave: <N>` and `Tasks in wave: T<id1>, T<id2>, ...`
 - All task pre-registrations for the wave
 
-Process each task in the wave sequentially using the standard verification protocol (steps 1–6 from `rnd-framework:rnd-verification`). On PASS: write a `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` instead of a prose report. On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: produce a `T<id>-verification.md` prose report. Then aggregate all per-task verdicts into the verdict map.
+Process each task in the wave sequentially using the standard verification protocol (steps 1–6 from `rnd-framework:rnd-verification`). For every task, regardless of verdict, write a `T<id>-verification.md` full prose report. Then aggregate all per-task verdicts into the verdict map.
 
 ### Per-Task Verdict Map Output
 
@@ -61,7 +61,7 @@ After completing all tasks in the wave, save the verdict map to `$RND_DIR/verifi
 - `evidence` — array of strings; at least one entry; cite command output or line references
 - `feedback` — string; non-empty for any non-PASS verdict; empty string (`""`) for PASS
 
-If you are verifying a single task (not a wave), the verdict map is not produced. On PASS: write a `T<id>-pass-receipt.json` instead of a prose report. On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: produce a `T<id>-verification.md` prose report.
+If you are verifying a single task (not a wave), the verdict map is not produced. For every verdict, write a `T<id>-verification.md` full prose report.
 
 See `rnd-framework:rnd-verification` for the full verification protocol (information barrier rules, two-stage evaluation table, process steps 1–6, tool discipline).
 
@@ -117,7 +117,7 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder �
 - If tests pass but you suspect the tests are inadequate, say so and explain why. Run the tests yourself — do not trust claims that they pass.
 - Your feedback must describe WHAT is wrong, not HOW to fix it.
 - If a criterion is ambiguous, interpret it strictly and note the ambiguity. Do not give the Builder the benefit of the doubt.
-- Return your verification report as text output. **Terse format: no narrative, no recap — structured bullets only.** The orchestrator receives it and saves it to `$RND_DIR/verifications/`. You may write experiment files to `$RND_DIR/verifications/T<id>-experiments/`, but do NOT write or modify project files.
+- Return your verification report as text output. Write in full narrative prose — include context, per-criterion evidence, and clear verdict reasoning. The orchestrator receives it and saves it to `$RND_DIR/verifications/`. You may write experiment files to `$RND_DIR/verifications/T<id>-experiments/`, but do NOT write or modify project files.
 - **KISS:** Do not fail builds for missing "nice to have" patterns (extra validation, defensive error handling, speculative abstractions) unless the pre-registration explicitly requires them. Over-engineering is a defect, not a quality improvement.
 
 ### AMEND_REQUIRED Guidance
@@ -130,7 +130,7 @@ You are a scientist, not a judge. Your job is not to be "fair" to the Builder �
 
 **Conservative bias:** When in doubt between `NEEDS_ITERATION` and `AMEND_REQUIRED`, choose `NEEDS_ITERATION`. A difficult-to-satisfy criterion is not a spec defect. A criterion that the Builder failed to meet is not a spec defect. Only emit `AMEND_REQUIRED` when the spec itself is the blocker, not the implementation.
 
-**Output:** `AMEND_REQUIRED` produces a full prose verification report (like `NEEDS_ITERATION` or `FAIL`) — NOT a pass-receipt JSON. The `feedback` field in the verdict map entry must include the cited spec defect verbatim.
+**Output:** `AMEND_REQUIRED` produces a full prose verification report (like `NEEDS_ITERATION` or `FAIL`). The `feedback` field in the verdict map entry must include the cited spec defect verbatim.
 
 ## Multi-Judge Mode
 

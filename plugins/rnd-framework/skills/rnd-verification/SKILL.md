@@ -43,37 +43,16 @@ When the orchestrator spawns the Verifier for an entire wave (all task pre-regs 
 **Batch flow:**
 1. Receive all task pre-registrations for the wave in a single prompt.
 2. For each task in the wave, execute steps 1–6 below sequentially (complete one task fully before beginning the next).
-3. For each task: on PASS write a `T<id>-pass-receipt.json` to `$RND_DIR/verifications/`; on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION write a `T<id>-verification.md` prose report.
+3. For each task: write a `T<id>-verification.md` full prose report for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED.
 4. After completing all tasks in the wave, aggregate per-task verdicts into `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
 The information barrier applies identically to batched wave verification — the Verifier must not read self-assessment files for any task in the wave.
 
-## Lazy Prose: Pass-Receipt vs Full Report
+## Full Prose Report: Every Verdict
 
-**On PASS:** write a pass-receipt.json INSTEAD OF a full prose report. Prose reports are not generated for passing tasks — the inline per-criterion evidence in the receipt is sufficient.
+**On every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED):** write a full `T<id>-verification.md` prose report. No shortcuts — all verdicts produce the same prose format.
 
-**On FAIL or NEEDS_ITERATION:** auto-materialize the full prose verification report (no separate Debugger invocation required). Write the report immediately when the verdict is issued.
-
-**On PASS_QUALITY_NEEDS_ITERATION:** auto-materialize the full prose report so the quality feedback is captured alongside the receipt.
-
-**On AMEND_REQUIRED:** auto-materialize the full prose verification report — NOT a pass-receipt JSON. The `feedback` field must include the cited spec defect verbatim. On clean-slate re-verification after an amendment is approved, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment that occurred.
-
-### Pass-Receipt Schema
-
-Location: `$RND_DIR/verifications/T<id>-pass-receipt.json`
-
-```json
-{
-  "task_id": "T<id>",
-  "criteria_met": ["<exact criterion text>", "..."],
-  "evidence_refs": ["<evidence citation or file path>", "..."],
-  "timestamp": "<ISO 8601>"
-}
-```
-
-Required fields: `task_id` (string), `criteria_met` (list of criterion texts), `evidence_refs` (list of evidence citations), `timestamp` (ISO 8601 string).
-
-The pass-receipt replaces the `T<id>-verification.md` prose file on PASS. The `wave-<N>-verdict-map.json` (keyed by task_id with `{verdict, evidence, feedback}`) still drives the FAIL → prose materialization decision — a `FAIL` or `NEEDS_ITERATION` verdict in the map triggers immediate full prose report generation.
+**On AMEND_REQUIRED:** the `feedback` field must include the cited spec defect verbatim. On clean-slate re-verification after an amendment is approved, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment that occurred.
 
 ## Process
 
@@ -144,7 +123,7 @@ Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-fail
 ### 6. Produce Verification Report
 > If `$RND_DIR` not set, compute via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
-**Terse format: no narrative, no recap — structured bullets only. Each criterion is a pass receipt or a failure citation, nothing more.**
+Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED. Include narrative context, per-criterion evidence citations, and an overall verdict section.
 
 ```markdown
 # Verification Report: T<id>
@@ -169,7 +148,7 @@ Evidence files exist to support re-verification after iteration — **only write
 - Overall verdict is `PASS_QUALITY_NEEDS_ITERATION` AND a Correctness-tier VAL assertion produced output the Builder would need for the quality iteration
 
 **Skip evidence files when:**
-- Overall verdict is plain `PASS` (the inline per-criterion evidence in the report is sufficient; nobody re-reads the raw dumps)
+- Overall verdict is plain `PASS` (the prose report's inline per-criterion evidence is sufficient; nobody re-reads the raw dumps)
 - No `fulfills` field exists on the task
 
 When you do write them, for each VAL-AREA-NNN assertion in the `fulfills` field, write `$RND_DIR/verifications/T<id>-evidence/VAL-AREA-NNN.txt`:
@@ -179,7 +158,7 @@ Command: [exact command run]
 Output:
 [raw output verbatim — do not paraphrase or truncate]
 ```
-Note evidence file paths in the verification report. If you skipped evidence files because the verdict was PASS, note "Evidence files: skipped (PASS — inline citations sufficient)" in the report.
+Note evidence file paths in the verification report. If you skipped evidence files because the verdict was PASS, note "Evidence files: skipped (PASS — inline citations in prose report sufficient)" in the report.
 
 A criterion is binary. **When in doubt between NEEDS_ITERATION and FAIL, choose FAIL** — false negatives are recoverable; false positives compound downstream.
 

@@ -69,8 +69,9 @@ assert_effort "$AGENTS_DIR/rnd-verifier.md"        "high"
 assert_effort "$AGENTS_DIR/rnd-debugger.md"        "high"
 assert_effort "$AGENTS_DIR/rnd-data-scientist.md"  "medium"
 
-# sonnet agents → low
-assert_effort "$AGENTS_DIR/rnd-builder.md"         "low"
+# rnd-builder high (v3.20.7 raised from medium per the rigor-restoration dispatch policy);
+# auxiliary agents low (integrator/proof-gate/reality-auditor stay on minimal effort).
+assert_effort "$AGENTS_DIR/rnd-builder.md"         "high"
 assert_effort "$AGENTS_DIR/rnd-integrator.md"      "low"
 assert_effort "$AGENTS_DIR/rnd-proof-gate.md"      "low"
 assert_effort "$AGENTS_DIR/rnd-reality-auditor.md" "low"

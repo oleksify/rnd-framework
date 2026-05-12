@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.20.7 — 2026-05-12
+
+### Restore pipeline rigor after token-saving regression (effort high on Builder/Arbiter; LOW→sonnet for core roles; full prose verification reports; dismissal-gate Check D for premature DONE)
+
+Four changes that reverse quality regressions introduced by earlier token-savings: (1) rnd-builder and rnd-amendment-arbiter agent effort bumped from `medium` to `high` (the other adaptive core agents — rnd-planner, rnd-verifier, rnd-debugger — were already at `high`); (2) adaptive dispatch policy: LOW criticality now maps to `sonnet` instead of `haiku` for the core roles (Builder, Verifier, Planner, Debugger) — only `rnd-integrator` remains on a lighter model and it is non-adaptive; (3) terse-manifest and lazy-prose pass-receipt paths retired — Builder writes full narrative manifests and Verifier writes a full `T<id>-verification.md` prose report for every verdict including PASS (the `T<id>-pass-receipt.json` artifact is gone); (4) builder-dismissal-gate.sh gains Check D: when a DONE/DONE_WITH_CONCERNS manifest is submitted and the Verifier evidence directory `verifications/T<id>-evidence/` already exists (i.e., a prior verification cycle ran), the gate now requires at least one non-empty `VAL-*.txt` evidence file — blocking premature DONE re-submissions that ignore Verifier feedback. Empty files do not satisfy the gate (a `touch VAL-bypass.txt` would otherwise defeat the check). Also: `tests/agent-effort-frontmatter.test.sh` updated to assert `high` for rnd-builder (was asserting `low` against the prior `medium` baseline — a stale assertion from a previous policy update); `lib/validate-xrefs.sh` PARITY_TABLE no longer requires the retired `pass-receipt.json` term in both verification skill and verifier agent; `CLAUDE.md` Runtime Artifacts section updated to describe verification.md as the only Verifier output.
+
 ## 3.20.6 — 2026-05-12
 
 ### Broaden builder/cleanup prohibition to cover all pipeline-context leaks (task IDs, planner phase labels, session artifact paths)

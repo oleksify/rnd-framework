@@ -145,4 +145,110 @@ assert_exit_code "problem term with ledger → exit 0" 0
 rm -f "$MANIFEST_D" "$LEDGER_D"
 
 # ---------------------------------------------------------------------------
+# Test D1: Check D — DONE manifest + evidence dir exists but empty → exit 2
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE + empty evidence dir → exit 2 ---'
+
+MANIFEST_E="${TMP_SESSION}/builds/T1-manifest.md"
+EVIDENCE_DIR_E="${TMP_SESSION}/verifications/T1-evidence"
+printf '# Build Manifest: T1\n\nStatus: DONE\n\nAll criteria addressed cleanly.\n' \
+  > "$MANIFEST_E"
+mkdir -p "$EVIDENCE_DIR_E"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "DONE + empty evidence dir → exit 2" 2
+assert_contains "stderr names evidence dir" "T1-evidence" "$HOOK_STDERR"
+
+rm -f "$MANIFEST_E"
+rm -rf "$EVIDENCE_DIR_E"
+
+# ---------------------------------------------------------------------------
+# Test D2: Check D — DONE manifest + evidence dir with VAL-*.txt → exit 0
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE + evidence VAL file → exit 0 ---'
+
+MANIFEST_F="${TMP_SESSION}/builds/T1-manifest.md"
+EVIDENCE_DIR_F="${TMP_SESSION}/verifications/T1-evidence"
+printf '# Build Manifest: T1\n\nStatus: DONE\n\nAll criteria addressed cleanly.\n' \
+  > "$MANIFEST_F"
+mkdir -p "$EVIDENCE_DIR_F"
+printf 'evidence content\n' > "${EVIDENCE_DIR_F}/VAL-001.txt"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "DONE + evidence VAL file → exit 0" 0
+
+rm -f "$MANIFEST_F"
+rm -rf "$EVIDENCE_DIR_F"
+
+# ---------------------------------------------------------------------------
+# Test D3: Check D — DONE manifest + no evidence dir → exit 0 (first build)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE + no evidence dir → exit 0 (first build) ---'
+
+MANIFEST_G="${TMP_SESSION}/builds/T1-manifest.md"
+printf '# Build Manifest: T1\n\nStatus: DONE\n\nAll criteria addressed cleanly.\n' \
+  > "$MANIFEST_G"
+# Deliberately do NOT create the evidence dir — simulates a first build.
+rm -rf "${TMP_SESSION}/verifications/T1-evidence"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "DONE + no evidence dir → exit 0" 0
+
+rm -f "$MANIFEST_G"
+
+# ---------------------------------------------------------------------------
+# Test D4: Check D — non-DONE manifest + empty evidence dir → exit 0 (gate skipped)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — non-DONE manifest → gate skipped ---'
+
+MANIFEST_H="${TMP_SESSION}/builds/T1-manifest.md"
+EVIDENCE_DIR_H="${TMP_SESSION}/verifications/T1-evidence"
+printf '# Build Manifest: T1\n\nStatus: NEEDS_CONTEXT\n\nAwaiting clarification.\n' \
+  > "$MANIFEST_H"
+mkdir -p "$EVIDENCE_DIR_H"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "non-DONE manifest → exit 0" 0
+
+rm -f "$MANIFEST_H"
+rm -rf "$EVIDENCE_DIR_H"
+
+# ---------------------------------------------------------------------------
+# Test D5: Check D — DONE_WITH_CONCERNS + empty evidence dir → exit 2
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE_WITH_CONCERNS + empty evidence dir → exit 2 ---'
+
+MANIFEST_I="${TMP_SESSION}/builds/T1-manifest.md"
+EVIDENCE_DIR_I="${TMP_SESSION}/verifications/T1-evidence"
+printf '# Build Manifest: T1\n\nStatus: DONE_WITH_CONCERNS\n\nAll criteria addressed but with one concern noted.\n' \
+  > "$MANIFEST_I"
+mkdir -p "$EVIDENCE_DIR_I"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "DONE_WITH_CONCERNS + empty evidence dir → exit 2" 2
+assert_contains "stderr names evidence dir for DONE_WITH_CONCERNS" "T1-evidence" "$HOOK_STDERR"
+
+rm -f "$MANIFEST_I"
+rm -rf "$EVIDENCE_DIR_I"
+
+# ---------------------------------------------------------------------------
+# Test D6: Check D — DONE + evidence dir with only a 0-byte VAL file → exit 2
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE + 0-byte VAL file → exit 2 ---'
+
+MANIFEST_J="${TMP_SESSION}/builds/T1-manifest.md"
+EVIDENCE_DIR_J="${TMP_SESSION}/verifications/T1-evidence"
+printf '# Build Manifest: T1\n\nStatus: DONE\n\nAll criteria addressed cleanly.\n' \
+  > "$MANIFEST_J"
+mkdir -p "$EVIDENCE_DIR_J"
+touch "${EVIDENCE_DIR_J}/VAL-bypass.txt"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "DONE + 0-byte VAL file → exit 2" 2
+assert_contains "stderr explains empty-files-do-not-satisfy" "non-empty" "$HOOK_STDERR"
+
+rm -f "$MANIFEST_J"
+rm -rf "$EVIDENCE_DIR_J"
+
+# ---------------------------------------------------------------------------
 report

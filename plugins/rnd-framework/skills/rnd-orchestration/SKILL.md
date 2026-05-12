@@ -94,9 +94,11 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 
 | Criticality | Model     |
 |-------------|-----------|
-| `LOW`       | `haiku`   |
+| `LOW`       | `sonnet`  |
 | `MEDIUM`    | `sonnet`  |
 | `HIGH`      | `opus`    |
+
+> **Note:** `LOW` maps to `sonnet` (not `haiku`) for all adaptive core agents (planner, builder, verifier, debugger). Auxiliary agents (integrator, cleanup, polisher, reality-auditor, proof-gate, amendment-arbiter, data-scientist) are not adaptive and always use their frontmatter `model:`, regardless of criticality.
 
 **Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Adaptive dispatch is opt-in via the `Criticality` field. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
@@ -120,12 +122,12 @@ Agent({
 | Agent | Default model | Effort | Adaptive? |
 |---|---|---|---|
 | `rnd-planner` | sonnet | high | yes |
-| `rnd-builder` | sonnet | medium | yes |
+| `rnd-builder` | sonnet | high | yes |
 | `rnd-verifier` | sonnet | high | yes |
 | `rnd-debugger` | sonnet | high | yes |
 | `rnd-proof-gate` | sonnet | low | no (advisory) |
 | `rnd-reality-auditor` | sonnet | low | no |
-| `rnd-amendment-arbiter` | sonnet | medium | no |
+| `rnd-amendment-arbiter` | sonnet | high | no |
 | `rnd-cleanup` | sonnet | medium | no |
 | `rnd-polisher` | sonnet | medium | no |
 | `rnd-integrator` | haiku | low | no |
@@ -193,7 +195,7 @@ Task status is derived from artifact files — no separate state file is needed.
 | Artifact exists? | Status |
 |-----------------|--------|
 | `$RND_DIR/integration/wave-<N>-report.md` contains SHIP | integrated |
-| `$RND_DIR/verifications/T<id>-pass-receipt.json` exists | verified |
+| `$RND_DIR/verifications/T<id>-verification.md` contains `Overall Verdict: PASS` | verified |
 | `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS_ITERATION | iterating |
 | `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty | built |
 | Task in plan.md but no build artifact | planned |

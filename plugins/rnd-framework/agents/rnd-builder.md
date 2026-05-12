@@ -3,7 +3,7 @@ name: rnd-builder
 description: "Implements a single task from the RND plan. Writes code, tests, and verification artifacts against the pre-registered success criteria. Produces an honest self-assessment. Does NOT verify its own work — that is the Verifier's job."
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
-effort: medium
+effort: high
 memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-iteration
@@ -50,7 +50,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 5. **Write an honest self-assessment** and save to `$RND_DIR/builds/T<id>-self-assessment.md`. See rnd-building skill for the format (minimal one-line form for plain DONE; full template otherwise).
 
-6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. **Terse format: no narrative, no recap — structured bullets only.**
+6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose.
 
 ## Rules
 

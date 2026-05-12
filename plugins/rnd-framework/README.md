@@ -152,7 +152,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
 | `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
 | `rnd-building` | Builder methodology with TDD discipline baked in |
-| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; PASS writes pass-receipt.json (lazy prose), FAIL/NEEDS_ITERATION auto-materializes prose; information barrier intact |
+| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED); information barrier intact |
 | `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |
 | `rnd-scheduling` | Dependency-based wave scheduling, parallel agent dispatch |
 | `rnd-scaling` | Pipeline scaling rules: trivial → small → medium → large → high-stakes |
@@ -325,8 +325,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
         ├── verifications/
         │   ├── wave-1-verdict-map.json # Per-wave verdict map keyed by task_id (one Verifier spawn per wave)
-        │   ├── T1-pass-receipt.json    # Lazy-prose PASS receipt; written instead of full prose on PASS
-        │   ├── T1-verification.md      # Full prose report (auto-materialized only on FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION)
+        │   ├── T1-verification.md      # Full prose report written for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED)
         │   ├── T1-experiments/         # Verifier-written independent experiment tests
         │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
         ├── proofs/

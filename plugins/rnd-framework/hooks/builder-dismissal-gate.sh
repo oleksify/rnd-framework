@@ -142,4 +142,46 @@ Append at least one entry documenting each acknowledged failure before completin
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# Check D: DONE re-submission must carry non-empty Verifier evidence
+#
+# Rationale: the evidence directory only exists after the Verifier has run at
+# least one cycle (it writes per-VAL evidence files on FAIL / NEEDS_ITERATION).
+# On a first build the directory does not exist and Check D is a no-op. On
+# re-submission the directory exists, and we require at least one non-empty
+# VAL-*.txt file as a structural witness that the Builder addressed Verifier
+# feedback rather than re-declaring DONE with placeholder/empty files.
+#
+# A bare existence check (compgen -G) would let a Builder bypass the gate
+# with `touch evidence_dir/VAL-bypass.txt`. The `-s` check forces the file
+# to carry content.
+# ---------------------------------------------------------------------------
+
+if [[ "$has_done_status" -eq 1 ]]; then
+  evidence_dir="${session_dir}/verifications/${task_id}-evidence"
+
+  if [[ -d "$evidence_dir" ]]; then
+    has_non_empty_val=0
+    shopt -s nullglob
+    for val_file in "${evidence_dir}"/VAL-*.txt; do
+      if [[ -s "$val_file" ]]; then
+        has_non_empty_val=1
+        break
+      fi
+    done
+    shopt -u nullglob
+
+    if [[ "$has_non_empty_val" -eq 0 ]]; then
+      block_msg "builder-dismissal-gate: manifest is DONE/DONE_WITH_CONCERNS but the evidence directory has no non-empty VAL-*.txt files:
+  ${evidence_dir}
+
+A prior verification cycle created this directory; re-submitting DONE without producing at least one non-empty VAL-*.txt evidence file is not permitted (empty files do not satisfy the gate).
+
+Either:
+  1. Run verification first and let the Verifier write evidence files, then re-submit.
+  2. Produce at least one non-empty VAL-*.txt file in the evidence directory documenting the criterion that was addressed before re-submitting DONE."
+    fi
+  fi
+fi
+
 exit 0

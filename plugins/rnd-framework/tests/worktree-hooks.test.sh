@@ -55,13 +55,25 @@ export RND_DIR="${repo}/.rnd/session-test"
 mkdir -p "$RND_DIR"
 
 # ---------------------------------------------------------------------------
-# Test 1 — worktree-create.sh emits worktree_created
+# Test 1 — worktree-create.sh echoes a path and emits worktree_created
+#
+# Mirrors the real Claude Code stdin contract (v2.1.83+): the harness sends
+# {session_id, transcript_path, cwd, hook_event_name, name}. The hook must
+# echo the chosen worktree path to stdout — absence of a path on stdout
+# aborts the agent spawn.
 # ---------------------------------------------------------------------------
 
-create_json='{"tool_input":{"path":"/tmp/wt/x"},"session_id":"sid1"}'
+create_json="$(printf '{"session_id":"sid1","transcript_path":"/tmp/t.jsonl","cwd":"%s","hook_event_name":"WorktreeCreate","name":"agent-deadbeef"}' "$repo")"
 run_hook "$CREATE_HOOK" "$create_json"
 
 assert_exit_code "worktree-create.sh exits 0" 0
+
+expected_session="$(basename "$RND_DIR")"
+expected_wt="${repo}/.rnd-worktrees/${expected_session}/agent-deadbeef"
+
+assert_eq "worktree-create.sh echoes computed path to stdout" \
+  "$expected_wt" \
+  "$HOOK_STDOUT"
 
 audit_log="${RND_DIR}/audit.jsonl"
 
@@ -79,7 +91,7 @@ assert_contains "audit.jsonl gains worktree_created event" \
 # Test 2 — worktree-remove.sh emits worktree_removed
 # ---------------------------------------------------------------------------
 
-remove_json='{"tool_input":{"path":"/tmp/wt/x"},"session_id":"sid1"}'
+remove_json="$(printf '{"session_id":"sid1","transcript_path":"/tmp/t.jsonl","cwd":"%s","hook_event_name":"WorktreeRemove","name":"agent-deadbeef","tool_input":{"path":"%s"}}' "$repo" "$expected_wt")"
 run_hook "$REMOVE_HOOK" "$remove_json"
 
 assert_exit_code "worktree-remove.sh exits 0" 0

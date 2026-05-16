@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.21.1 — 2026-05-16
+
+### Fix WorktreeCreate hook to echo worktree path to stdout
+
+rnd-framework 3.21.0 added isolation="worktree" to five agent frontmatters but worktree-create.sh only emitted an audit event and exited silently. Claude Code v2.1.83+ requires the WorktreeCreate hook to echo a worktree path on stdout (or return hookSpecificOutput.worktreePath); absence of a path aborts the agent spawn with 'WorktreeCreate hook failed: hook succeeded but returned no worktree path'. This blocked every rnd-builder/rnd-verifier/rnd-cleanup/rnd-polisher/rnd-debugger spawn in 3.21.0. Hook now parses {name, cwd} from the real harness stdin payload (no tool_input.path), resolves the active RND session via active_session_dir(), computes <cwd>/.rnd-worktrees/<rnd-session-id>/<agent-name>, mkdir -p's the parent, emits the audit event, and echoes the path. Test fixture updated to mirror the real stdin contract and lock in the stdout-path assertion.
+
 ## 3.21.0 — 2026-05-16
 
 ### Add worktree isolation, destructive-git denylist, and closed-loop calibration

@@ -162,6 +162,60 @@ check_segment() {
         printf 'blocked:BLOCKED: Plugin artifact directories (.rnd/) must never be committed.'
         return 0
       fi
+
+      local _undo_hint="Use \${CLAUDE_PLUGIN_ROOT}/lib/rnd-undo.sh <task_id> for surgical task-scoped reverts."
+
+      if [[ "$seg" =~ ^git[[:space:]]+reset[[:space:]]+--hard($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git reset --hard destroys working-tree state. %s' "$_undo_hint"
+        return 0
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+checkout[[:space:]]+\.($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git checkout . discards all working-tree changes. %s' "$_undo_hint"
+        return 0
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+checkout[[:space:]]+--($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git checkout -- <path> discards working-tree changes. %s' "$_undo_hint"
+        return 0
+      fi
+
+      # git clean: block when the flag argument contains 'f' (or 'F') AND 'd'/'D'/'x'/'X'.
+      # A dry-run flag (-n) is not destructive and is allowed.
+      if [[ "$seg" =~ ^git[[:space:]]+clean[[:space:]]+ ]]; then
+        local _clean_args="${seg#*clean }"
+        local _clean_flags=""
+        for _a in $_clean_args; do
+          if [[ "$_a" == -* ]]; then _clean_flags+="$_a"; fi
+        done
+        local _has_f=0 _has_fdx=0
+        [[ "$_clean_flags" =~ [fF] ]] && _has_f=1
+        [[ "$_clean_flags" =~ [dDxX] ]] && _has_fdx=1
+        if [[ "$_has_f" -eq 1 && "$_has_fdx" -eq 1 ]]; then
+          printf 'blocked:BLOCKED: git clean with -f and -d/-x permanently deletes untracked files. %s' "$_undo_hint"
+          return 0
+        fi
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+stash[[:space:]]+(drop|clear)($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git stash drop/clear permanently removes stashed changes. %s' "$_undo_hint"
+        return 0
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+reflog[[:space:]]+expire($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git reflog expire permanently prunes reachability history. %s' "$_undo_hint"
+        return 0
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+branch[[:space:]]+-D($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git branch -D force-deletes a branch without merge check. %s' "$_undo_hint"
+        return 0
+      fi
+
+      if [[ "$seg" =~ ^git[[:space:]]+worktree[[:space:]]+remove[[:space:]]+--force($|[[:space:]]) ]]; then
+        printf 'blocked:BLOCKED: git worktree remove --force deletes a worktree without safety checks. %s' "$_undo_hint"
+        return 0
+      fi
       ;;
     sed|awk)
       printf 'blocked:Use the Edit tool instead of %s. Edit is reviewable, diffable, and handles indentation correctly.' "$cmd"

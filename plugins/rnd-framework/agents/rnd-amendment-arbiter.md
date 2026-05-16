@@ -2,8 +2,8 @@
 name: rnd-amendment-arbiter
 description: "Evaluates AMEND_REQUIRED verdicts from the Verifier. Given only the original pre-registration and the cited spec defect, proposes AMEND (field patches), REBUILD (reimplement against unchanged criteria), or ESCALATE_REPLAN (task needs re-decomposition). Returns structured output; does NOT write files — the orchestrator owns the amendment log."
 tools: Read
-model: sonnet
-effort: high
+model: opus
+effort: xhigh
 memory: user
 ---
 

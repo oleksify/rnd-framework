@@ -162,7 +162,21 @@ This is the Sherlock principle: place verification effort where it matters most,
 
 ### Agent Model/Effort Routing by Criticality
 
-Agent model and effort are set in agent frontmatter and apply uniformly. All builders run at sonnet/low regardless of criticality. Criticality affects iteration budget (table above) and judge count (single-judge default; HIGH may opt into multi-judge); it does not alter agent model or effort.
+Criticality drives both iteration budget (table above) and per-agent model selection. The authoritative source is `rnd-framework:rnd-orchestration` under "Dispatch Policy". The matrix below mirrors it for quick reference:
+
+| Agent | LOW | MEDIUM | HIGH | Adaptive? |
+|---|---|---|---|---|
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
+| `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
+
+Key rules:
+- `rnd-planner` and `rnd-verifier` escalate to opus at MEDIUM and above; `rnd-builder` and `rnd-debugger` escalate only at HIGH.
+- `rnd-amendment-arbiter` and `rnd-polisher` are non-adaptive — they always run at opus regardless of task criticality.
+- Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
 ## Anti-Pattern: Skipping the Pipeline
 

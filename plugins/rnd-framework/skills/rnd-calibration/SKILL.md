@@ -46,11 +46,13 @@ Each completed task appends one record to `calibration.jsonl`:
 | `taskId` | string | Task identifier (e.g. `"T3"`) |
 | `sessionId` | string | Session that produced this verdict |
 | `verdict` | string | `"PASS"`, `"FAIL"`, `"NEEDS_ITERATION"`, or `"AMEND_REQUIRED"` |
+| `criticality` | string | `"LOW"`, `"MEDIUM"`, or `"HIGH"` — the task's criticality tier at the time of the verdict. Used by `lib/calibration.sh` to compute per-tier rolling false-PASS rates for auto-escalation. |
 | `amendmentData` | object or null | Optional. Only present when `verdict` is `"AMEND_REQUIRED"`. Shape: `{ "userDecision": "approved" \| "rejected", "arbitersRecommendation": "AMEND" \| "REBUILD" \| "ESCALATE_REPLAN" }`. Omit entirely for non-AMEND_REQUIRED verdicts. |
 | `criterionResults` | array | Per-criterion `{ criterion, result }` objects |
 | `iterationCount` | number | Build-verify cycles required |
 | `timestamp` | string | ISO 8601 UTC |
-| `falseVerdictFlag` | string or null | Set by detection or manual correction |
+| `falseVerdictFlag` | string or null | Set by detection or manual correction. Values: `"FALSE_PASS"`, `"FALSE_FAIL"`, `"FALSE_PASS_PROXY"`, or `null`. |
+| `proxyFor` | string or null | Present only when `falseVerdictFlag` is `"FALSE_PASS_PROXY"`. The `timestamp` value of the original PASS record this proxy links to. |
 | `escalationGate` | object or null | Optional. Present when a first-pass escalation gate was run. Shape: `{ "firstPassVerdict": "PASS" \| "FAIL" \| "NEEDS_ITERATION" \| "PASS_QUALITY_NEEDS_ITERATION" \| "AMEND_REQUIRED", "escalated": boolean, "overturned": boolean }`. `escalated` is true when the first-pass verdict was not PASS. `overturned` is true when the final consensus verdict differs from the first-pass verdict (i.e., the gate decision was wrong). Omit entirely when `rnd-multi-judge` was not used or `RND_MULTI_JUDGE_ALWAYS=1` bypassed the gate. |
 
 ## Storage Location
@@ -100,6 +102,26 @@ Set `falseVerdictFlag: "FALSE_PASS"` on the record.
 - A task received FAIL or NEEDS_ITERATION, the builder made a trivial one-line fix (diff shows ≤3 lines changed), and the next round produced PASS — indicates the verifier rejected correct work.
 
 Set `falseVerdictFlag: "FALSE_FAIL"` on the record.
+
+### FALSE_PASS_PROXY Recording Rule
+
+When a task with a previous PASS verdict in the same session receives a subsequent FAIL or NEEDS_ITERATION verdict on the same `taskId`, the orchestrator appends a new record with `falseVerdictFlag: "FALSE_PASS_PROXY"` linking to the original PASS via `proxyFor: <originalRecordTimestamp>`. This is a pragmatic measurable signal for closed-loop calibration: it captures the observable evidence that an earlier PASS verdict was incorrect without requiring a post-ship bug or integration failure to confirm it.
+
+The proxy record carries the same `taskId` and `criticality` as the original, so `lib/calibration.sh false_pass_rate <tier>` counts it alongside confirmed `FALSE_PASS` records when computing the rolling rate. T12 wires the orchestrator to follow this rule when iterating tasks.
+
+Example proxy record:
+
+```json
+{
+  "taskId": "T5",
+  "sessionId": "20260516-122648-8c7c8d3c",
+  "verdict": "NEEDS_ITERATION",
+  "criticality": "MEDIUM",
+  "timestamp": "2026-05-16T14:00:00Z",
+  "falseVerdictFlag": "FALSE_PASS_PROXY",
+  "proxyFor": "2026-05-16T13:30:00Z"
+}
+```
 
 ## Manual Ground-Truth Recording
 

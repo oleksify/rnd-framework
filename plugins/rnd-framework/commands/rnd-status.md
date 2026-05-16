@@ -63,3 +63,52 @@ After displaying the status, use `AskUserQuestion` to suggest the logical next a
 - If tasks are built but not verified: "Verify built tasks (Recommended)", "Review build artifacts"
 - If tasks are verified and ready for integration: "Integrate wave (Recommended)", "Review verification reports"
 - If tasks are stuck in iteration: "Continue iteration (Recommended)", "Re-plan failing tasks", "Skip and proceed"
+
+## Calibration trends (flag: --calibration-trends)
+
+When invoked with `--calibration-trends`, skip the task-status table and instead print the rolling false-PASS rate for each criticality tier, followed by any tier-escalation events from the current session.
+
+### Per-tier rate output
+
+For each tier in order LOW, MEDIUM, HIGH, print one line:
+
+```
+LOW: false-PASS X% (over N records)
+MEDIUM: false-PASS X% (over N records)
+HIGH: false-PASS X% (over N records)
+```
+
+Where:
+- `X%` is `false_pass_rate <tier>` multiplied by 100, formatted as an integer percentage (e.g. `0.30` → `30%`).
+- `N` is the count of records in the rolling window for that tier (last 10 records by default).
+- The rate is obtained by calling `lib/calibration.sh false_pass_rate <tier>` via the plugin root:
+  ```bash
+  rate=$("${CLAUDE_PLUGIN_ROOT}/lib/calibration.sh" false_pass_rate LOW)
+  ```
+
+### Tier-escalation events
+
+After the rate lines, scan the active session's `$RND_DIR/audit.jsonl` for lines where `.event == "tier_escalated"`. For each match, print one line:
+
+```
+  <task_id>: <tool>
+```
+
+where `task_id` and `tool` are the fields from the audit event (the `tool` field carries the tier-transition string such as `MEDIUM->HIGH`).
+
+If `audit.jsonl` is absent, empty, or contains no `tier_escalated` records, print:
+
+```
+No tier escalations in this session.
+```
+
+### Example output
+
+```
+LOW: false-PASS 0% (over 0 records)
+MEDIUM: false-PASS 30% (over 10 records)
+HIGH: false-PASS 10% (over 10 records)
+
+Tier escalations this session:
+  T7: MEDIUM->HIGH
+```

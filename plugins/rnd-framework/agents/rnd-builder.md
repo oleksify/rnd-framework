@@ -4,6 +4,7 @@ description: "Implements a single task from the RND plan. Writes code, tests, an
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: high
+isolation: "worktree"
 memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-iteration
@@ -50,7 +51,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 5. **Write an honest self-assessment** and save to `$RND_DIR/builds/T<id>-self-assessment.md`. See rnd-building skill for the format (minimal one-line form for plain DONE; full template otherwise).
 
-6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose.
+6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose. Every manifest **must** include a `## Files written` section listing each modified or created file at one path per line (no bullets, no backticks) — this section is machine-parsed by the surgical-revert helper.
 
 ## Rules
 

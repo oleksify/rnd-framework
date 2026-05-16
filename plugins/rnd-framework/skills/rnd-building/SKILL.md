@@ -77,6 +77,10 @@ Save the build manifest to `$RND_DIR/builds/T<id>-manifest.md`. Write in full na
 ## Files Created/Modified
 - [list with paths]
 
+## Files written
+path/to/file-a.ext
+path/to/file-b.ext
+
 ## Tests Written
 - [test name]: Tests [criterion text]
 ```
@@ -91,6 +95,10 @@ Omit Evidence Gathered, Edge Cases Covered, and External References entirely —
 ## Files Created/Modified
 - [list with paths]
 
+## Files written
+path/to/file-a.ext
+path/to/file-b.ext
+
 ## Evidence Gathered
 - `path/to/file.ext:NN-MM` — [what was learned]
 
@@ -104,7 +112,7 @@ Omit Evidence Gathered, Edge Cases Covered, and External References entirely —
 - `[reference value]` — type: [URL | email | address | API endpoint | package name | …] — provenance: [verified from user input | from existing codebase file X:line Y | generated from training data]
 ```
 
-Sections with genuinely no content may be written as `(none)` on a single line. Do NOT omit section headers entirely from the full-manifest form — Verifier scans for presence.
+The `## Files written` section is **required** in every manifest. List one file path per line (relative to the repo root), no bullets or backticks. This section is parsed by the surgical-revert helper; omitting or misspelling it makes reverting impossible. Sections with genuinely no content may be written as `(none)` on a single line. Do NOT omit section headers entirely from the full-manifest form — Verifier scans for presence.
 
 **Do not game the skinny form.** If a task is tagged LOW but you discover during implementation that it touches an external system (API call, schema assumption, env var contract), upgrade to the full manifest and flag the misclassification to the orchestrator.
 

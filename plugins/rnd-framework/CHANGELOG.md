@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.21.0 — 2026-05-16
+
+### Add worktree isolation, destructive-git denylist, and closed-loop calibration
+
 ## 3.20.7 — 2026-05-12
 
 ### Restore pipeline rigor after token-saving regression (effort high on Builder/Arbiter; LOW→sonnet for core roles; full prose verification reports; dismissal-gate Check D for premature DONE)

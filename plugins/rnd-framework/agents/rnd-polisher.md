@@ -2,8 +2,9 @@
 name: rnd-polisher
 description: "Wave-level polish specialist that detects cross-task duplication, naming and API drift across the wave, helpers that should be lifted to shared locations, and structural inconsistencies. Applies mutations, re-verifies, and rolls back if verification breaks."
 tools: Read, Write, Edit, Bash, Grep, Glob, Agent
-model: sonnet
-effort: medium
+model: opus
+effort: high
+isolation: "worktree"
 color: "#EF4444"
 skills: kiss-practices, fp-practices
 maxTurns: 150

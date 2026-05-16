@@ -86,21 +86,22 @@ Dedicated agents are spawned for each pipeline role. The orchestrator session co
 
 ### Dispatch Policy: Criticality-Driven Model Selection
 
-Four agents support **per-spawn model override** based on the per-task `Criticality` field in the pre-registration. The remaining agents use their frontmatter `model:` as-is.
+Four agents support **per-spawn model override** based on the per-task `Criticality` field in the pre-registration. Non-adaptive agents always run at their fixed model/effort regardless of criticality.
 
-**Adaptive agents:** `rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-debugger`.
+**Per-agent criticality matrix:**
 
-**Criticality → model mapping (default policy):**
+| Agent | LOW | MEDIUM | HIGH | Adaptive? |
+|---|---|---|---|---|
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
+| `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
-| Criticality | Model     |
-|-------------|-----------|
-| `LOW`       | `sonnet`  |
-| `MEDIUM`    | `sonnet`  |
-| `HIGH`      | `opus`    |
+> **Note on non-adaptive agents:** `rnd-amendment-arbiter` and `rnd-polisher` always run at their listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, proof-gate, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
 
-> **Note:** `LOW` maps to `sonnet` (not `haiku`) for all adaptive core agents (planner, builder, verifier, debugger). Auxiliary agents (integrator, cleanup, polisher, reality-auditor, proof-gate, amendment-arbiter, data-scientist) are not adaptive and always use their frontmatter `model:`, regardless of criticality.
-
-**Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Adaptive dispatch is opt-in via the `Criticality` field. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
+**Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
 **Granularity.** Builder/Verifier/Debugger spawns read the criticality of the specific task they are working on (per-task). Planner uses the overall task tree's max-criticality at plan time (or the user-stated complexity at `/rnd-start`).
 
@@ -121,19 +122,36 @@ Agent({
 
 | Agent | Default model | Effort | Adaptive? |
 |---|---|---|---|
-| `rnd-planner` | sonnet | high | yes |
+| `rnd-planner` | opus | high | yes |
 | `rnd-builder` | sonnet | high | yes |
 | `rnd-verifier` | sonnet | high | yes |
 | `rnd-debugger` | sonnet | high | yes |
 | `rnd-proof-gate` | sonnet | low | no (advisory) |
 | `rnd-reality-auditor` | sonnet | low | no |
-| `rnd-amendment-arbiter` | sonnet | high | no |
+| `rnd-amendment-arbiter` | opus | xhigh | no |
 | `rnd-cleanup` | sonnet | medium | no |
-| `rnd-polisher` | sonnet | medium | no |
+| `rnd-polisher` | opus | high | no |
 | `rnd-integrator` | haiku | low | no |
 | `rnd-data-scientist` | sonnet | medium | no |
 
 > **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
+
+### Calibration Auto-Escalation
+
+Before spawning any adaptive agent (planner, builder, verifier, debugger), the orchestrator MUST run:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/calibration.sh" should_promote <original_tier>
+```
+
+- **Exit 0 (promotion warranted):** set the effective tier to the output of `calibration.sh promote_tier <original_tier>`, use the effective tier for model selection in the dispatch table, and emit:
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" tier_escalated <task_id> <orig>-><new>
+  ```
+- **Exit non-zero (no promotion):** use the original tier as the effective tier; emit no audit event.
+- **`RND_DISABLE_AUTO_ESCALATION=1`:** disables the entire mechanism — `should_promote` always exits non-zero when this variable is set.
+
+Rationale: auto-escalation closes the calibration loop on model-quality drift. `FALSE_PASS_PROXY` records (see `rnd-framework:rnd-calibration` skill) feed the false-pass rate; when the rolling rate reaches 20%, the next spawn upgrades one tier automatically.
 
 ## Subagent Coordination
 

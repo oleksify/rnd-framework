@@ -3,8 +3,9 @@ name: rnd-verifier
 description: "Independently verifies a Builder's output against the pre-registered success criteria. Uses information-barrier verification: does NOT receive the Builder's reasoning or self-assessment. Issues PASS/FAIL/ITERATE verdicts with evidence."
 tools: Read, Write, Bash, Grep, Glob
 disallowedTools: Edit
-model: sonnet
+model: opus
 effort: high
+isolation: "worktree"
 memory: user
 color: "#F59E0B"
 skills: rnd-verification

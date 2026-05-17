@@ -19,6 +19,7 @@ plugins/rnd-framework/
 ├── agents/                      # 11 specialized agents for multi-agent execution mode
 ├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
 ├── skills/                      # Skills, each in its own dir with SKILL.md
+├── cards/                       # Flash-card priming corpus: cards/<role>/<lang>/CARD-<ID>.md with YAML frontmatter (id, role, language, tags, applicable_task_types, scope); 17 seed cards at v1; consumed by lib/card-retrieve.sh and injected by the orchestrator before card-receiving agent spawns
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied, WorktreeCreate/Remove
@@ -65,6 +66,9 @@ plugins/rnd-framework/
 │   ├── audit-event.sh           # Shared audit-event emitter: writes a single {event,task_id,tool,timestamp} line to $RND_DIR/audit.jsonl; called by run-tool.sh for tool_run_fresh and by the Verifier (per rnd-verification skill) for tool_pack_served
 │   ├── audit-scan.sh            # audit.jsonl scanner: subcommand `revisions <task_id> <file_path>` returns count of Write/Edit events; subcommand `verdict_history <task_id>` returns the verdict sequence parsed from verifications/, printing FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL; consumed by stop-condition-revisions.sh and by orchestration's Stop Conditions section
 │   ├── rnd-undo.sh              # Surgical task-scoped revert: reads `## Files written` section from $RND_DIR/builds/T<id>-manifest.md and reverts only those files (git checkout HEAD or rm); blocking destructive git ops in bash-gate.sh redirect agents here
+│   ├── card-retrieve.sh         # Deterministic tag-overlap card retrieval: flag-driven (--role, --task-type, --tags, --max, --cards-root); scores cards in plugins/rnd-framework/cards/<role>/ by tag intersection + task-type bonus; sorts score DESC then card id ASC; output is card file paths one per line; default --max = ${RND_CARDS_MAX_PER_SPAWN:-3}; consumed by the orchestrator at spawn-time and by rnd-cards-impact for impact measurement
+│   ├── rnd-cards-propose.sh     # Clusters recurring FAIL / NEEDS_ITERATION verdict-feedback in calibration.jsonl via 4-gram Jaccard similarity (single-link agglomeration, default threshold 0.4, min-cluster 3); emits draft card scaffolds to stdout for human review; never writes to cards/ tree; invoked via /rnd-framework:rnd-cards-propose
+│   ├── rnd-cards-impact.sh      # Compares iterations-to-PASS distributions in calibration.jsonl pre/post a --since rollout date, broken down per task_type (refactor|new-feature|bugfix|docs|config|infra); emits a markdown table with median+p75 per side and a verdict (improved|no-change|regressed|insufficient-data); 0.5-median delta threshold; invoked via /rnd-framework:rnd-cards-impact
 │   └── calibration.sh           # Calibration auto-escalation helpers: window/false_pass_rate/should_promote/promote_tier/task_type_window subcommands; orchestrator invokes should_promote before each adaptive-agent spawn to react to model-quality drift; task_type_window prints the last N records filtered by the task_type enum (refactor|new-feature|bugfix|docs|config|infra) for per-task-type reliability reporting; RND_DISABLE_AUTO_ESCALATION=1 disables
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
 └── README.md
@@ -195,6 +199,8 @@ The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to 
 
 The `rnd-formatting` skill detects the project's code formatter and runs it on pipeline-changed files before doc-polish and committing.
 
+The `rnd-cards` skill (non-user-invocable) documents the flash-card priming system: the card authoring format under `cards/<role>/<lang>/CARD-<ID>.md`, the `lib/card-retrieve.sh` retrieval contract, the orchestrator's injection convention (cards are prepended to a card-receiving agent's task spec under a `# Reference examples for tasks like this one` header, immediately before `Task: T<id>`), and the v1 tag taxonomy. Five agent roles receive cards: Planner, Builder, Reality-auditor, Verifier, Cleanup. The pre-registration template carries an optional `Card tags: [tag1, tag2]` field; absence triggers role-only filtering. The orchestrator emits a `card_injection` audit event per spawn (`<role>:<comma-joined card ids>` packed into the audit-event tool field). Loop closure: `/rnd-framework:rnd-cards-propose` surfaces draft cards from recurring FAIL feedback; `/rnd-framework:rnd-cards-impact` measures iterations-to-PASS pre/post a rollout date. Both commands are human-in-the-loop — nothing is auto-inserted into the corpus.
+
 **Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
 **Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.sh`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
@@ -255,7 +261,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-plan`, `/rnd-framework:rnd-build`, `/rnd-framework:rnd-verify`, `/rnd-framework:rnd-integrate`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-validate`, `/rnd-framework:rnd-doctor`, `/rnd-framework:rnd-bump`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-narrative`, `/rnd-framework:rnd-calibrate`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`.
+Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-plan`, `/rnd-framework:rnd-build`, `/rnd-framework:rnd-verify`, `/rnd-framework:rnd-integrate`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-validate`, `/rnd-framework:rnd-doctor`, `/rnd-framework:rnd-bump`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-narrative`, `/rnd-framework:rnd-calibrate`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`, `/rnd-framework:rnd-cards-propose`, `/rnd-framework:rnd-cards-impact`.
 
 ## Key Conventions
 

@@ -80,6 +80,7 @@ You do NOT modify project source files. All writes go to `$RND_DIR/reality/`.
 - Every VALID or INVALID verdict MUST include the command actually executed, the raw output received, and the comparison between expected (from code) and actual (from service). No hallucinated confirmations.
 - UNCHECKED is used only when the service is unreachable or the experiment cannot be run — include the reason.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` patterns in Bash.
+- Every `T<id>-reality-report.md` MUST include EITHER a `## Anomalies` section with at least one bullet entry containing a `Source: <file/line/URL>` subfield, OR a `## No-Finding Rationale` section with ≥200 characters of substantive prose explaining why no anomalies were found. The anomaly-gate.sh hook enforces this on SubagentStop.
 
 ## Memory
 

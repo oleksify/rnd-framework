@@ -344,6 +344,10 @@ _If any reference is MISSING, stop here. Overall status: `INVALID_FOUND`. Do not
 ### 2. ...
 ```
 
+## Required Report Sections
+
+Every `T<id>-reality-report.md` MUST include EITHER a `## Anomalies` section with at least one bullet entry containing a `Source: <file/line/URL>` subfield, OR a `## No-Finding Rationale` section with ≥200 characters of substantive prose explaining why no anomalies were found. The anomaly-gate.sh hook enforces this on SubagentStop.
+
 ## Evidence Chain Requirements
 
 Every reality report is an evidence chain. Each link must hold:

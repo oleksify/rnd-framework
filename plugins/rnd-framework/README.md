@@ -203,6 +203,7 @@ Eleven specialized agents for the multi-agent execution mode. All have persisten
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking); only runs when task declares `Proof: lean` and Lean is on PATH |
 | `rnd-framework:rnd-reality-auditor` | sonnet | teal | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when task declares `External dependencies` |
 | `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
+| `rnd-framework:rnd-drift-detector` | sonnet (medium effort) | violet | Per-wave drift analysis between Builder and Verifier; detects scope or requirement drift; writes `wave-<N>-drift-report.md` to `$RND_DIR/drift/`; report schema enforced by `drift-report-gate.sh` |
 
 The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 

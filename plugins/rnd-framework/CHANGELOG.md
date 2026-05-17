@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.22.1 — 2026-05-17
+
+### Add four SubagentStop gates, rnd-drift-detector agent, and schema-layer cognitive-style enforcement
+
+Four new SubagentStop gates enforce role-appropriate behaviour at artifact boundaries rather than prompts. anomaly-gate.sh (Reality Auditor) blocks completion when the audit report lacks expected anomaly-detection signals. verifier-case-gate.sh (Verifier) enforces symmetric case sections — every positive test case must be accompanied by a corresponding negative case — preventing coverage asymmetry. cleanup-bloat-gate.sh (Cleanup) is advisory: it fires a gateFired / bloat_aversion_underperform calibration record when the cleanup report shows no net line-count reduction across its changes, surfacing bloat-aversion underperformance without blocking the agent. drift-report-gate.sh (Drift Detector) enforces the drift-report schema — blocks when the report is missing required sections or carries disallowed free-text fields. New rnd-drift-detector agent (sonnet/medium, per-wave) runs between the Builder and Verifier waves and produces $RND_DIR/drift/wave-<N>-drift-report.md, flagging semantic drift between the pre-registration intent and the built implementation before the Verifier evaluates it. Audit observability extended with four new gateFired event names: anomaly_gate, verifier_case_symmetry, bloat_aversion_underperform, drift_detector. Together these changes move cognitive-style enforcement out of prose prompts and into the artifact-gate layer, so deviations are measured rather than just requested.
+
 ## 3.22.0 — 2026-05-17
 
 ### Add Tier-1 reliability bundle: existence pre-pass, stop conditions, calibration telemetry, Coverage Gaps and Assumptions enforcement

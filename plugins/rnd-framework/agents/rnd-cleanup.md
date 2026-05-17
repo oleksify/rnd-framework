@@ -63,6 +63,7 @@ Full detail (detection methodology per category, report template, common pitfall
 - Roll back ALL touched files on any non-PASS Verifier verdict — partial rollback is not acceptable.
 - The report path `$RND_DIR/cleanup/T<id>-cleanup-report.md` is barrier-protected (Builder-reasoning artifacts). The applied diff is visible in the working tree.
 - Append exactly one line to `$RND_DIR/iteration-log.md` per run: either `cleanup applied`, `cleanup: skipped (broke verification)`, or `cleanup: skipped (no findings)`.
+- The cleanup report MUST include a `lines_removed: <integer>` field (a bullet line is acceptable). The cleanup-bloat-gate.sh hook reads this field (falling back to the existing `Deletion ratio:` line) and emits an advisory `gate_fired` audit event when the deletion ratio is below 15%. The advisory does NOT block.
 
 ## Tool Discipline
 

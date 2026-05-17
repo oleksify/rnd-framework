@@ -164,6 +164,8 @@ Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEE
 [WHAT is wrong and WHAT evidence shows it. Do NOT suggest a fix.]
 ```
 
+Every prose verification report MUST include both `## Case for PASS` and `## Case for FAIL` sections regardless of the final verdict, with non-trivial content in each. The verifier-case-gate.sh hook blocks completion otherwise.
+
 **Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
 - `Checked:` lists every VAL assertion command you ran, every code path you traced, every test you executed independently.
 - `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the worktree).

@@ -128,7 +128,13 @@ Run the project's test suite directly via Bash (read `$RND_DIR/plan.md` "Testing
 
 ## Outcome
 [cleanup applied | cleanup skipped (broke verification) | cleanup skipped (no findings)]
+
+## Metrics
+- lines_removed: <integer>
+- Deletion ratio: <deleted_loc> / <total_touched_loc>
 ```
+
+The cleanup report MUST include a `lines_removed: <integer>` field (a bullet line is acceptable). The cleanup-bloat-gate.sh hook reads this field (falling back to the existing `Deletion ratio:` line) and emits an advisory `gate_fired` audit event when the deletion ratio is below 15%. The advisory does NOT block.
 
 ## Iteration-Log Entries
 

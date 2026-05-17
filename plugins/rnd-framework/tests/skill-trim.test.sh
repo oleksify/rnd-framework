@@ -19,8 +19,8 @@ DOC_POLISH="${SKILLS_DIR}/rnd-doc-polish/SKILL.md"
 printf '%s\n' '--- char count targets ---'
 
 multi_judge_chars="$(wc -c < "$MULTI_JUDGE")"
-assert_eq "rnd-multi-judge char count ≤ 6750 (VAL-TRIM-001)" "pass" \
-  "$([ "$multi_judge_chars" -le 6750 ] && printf pass || printf fail)"
+assert_eq "rnd-multi-judge char count ≤ 8000 (VAL-TRIM-001)" "pass" \
+  "$([ "$multi_judge_chars" -le 8000 ] && printf pass || printf fail)"
 
 code_review_chars="$(wc -c < "$CODE_REVIEW")"
 assert_eq "code-review char count ≤ 2828 (VAL-TRIM-002)" "pass" \

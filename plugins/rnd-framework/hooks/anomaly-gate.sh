@@ -53,26 +53,10 @@ report_content="$(< "$report_path")"
 
 check_a_passed=0
 
-if printf '%s' "$report_content" | grep -qE "^## Anomalies($|[[:space:]])"; then
-  in_section=0
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^##[[:space:]]Anomalies ]]; then
-      in_section=1
-      continue
-    fi
+anomalies_section="$(extract_section "Anomalies" "$report_content")"
 
-    if [[ "$in_section" -eq 1 ]]; then
-      if [[ "$line" =~ ^## ]]; then
-        break
-      fi
-
-      # Case-sensitive: schema requires "Source:" (structured field)
-      if [[ "$line" == *"Source:"* ]]; then
-        check_a_passed=1
-        break
-      fi
-    fi
-  done <<< "$report_content"
+if [[ -n "$anomalies_section" ]] && printf '%s' "$anomalies_section" | grep -q "Source:"; then
+  check_a_passed=1
 fi
 
 # ---------------------------------------------------------------------------
@@ -85,70 +69,12 @@ fi
 
 check_b_passed=0
 
-if printf '%s' "$report_content" | grep -qE "^## No-Finding Rationale($|[[:space:]])"; then
-  section_content=""
-  in_section=0
+rationale_section="$(extract_section "No-Finding Rationale" "$report_content")"
 
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^##[[:space:]]No-Finding[[:space:]]Rationale ]]; then
-      in_section=1
-      continue
-    fi
-
-    if [[ "$in_section" -eq 1 ]]; then
-      if [[ "$line" =~ ^## ]]; then
-        break
-      fi
-
-      section_content="${section_content}${line}
-"
-    fi
-  done <<< "$report_content"
-
-  # Must be at least 200 chars of total content
-  content_length="${#section_content}"
-
-  if [[ "$content_length" -ge 200 ]]; then
-    # Check whether all non-empty lines are trivially-empty
-    trivial_only=1
-    has_any_content=0
-
-    while IFS= read -r line; do
-      # Skip blank lines
-      line_stripped="${line#"${line%%[! ]*}"}"
-      if [[ -z "$line_stripped" ]]; then
-        continue
-      fi
-
-      has_any_content=1
-
-      # Strip leading bullet markers before matching
-      stripped="${line_stripped#-}"
-      stripped="${stripped#\*}"
-      stripped="${stripped# }"
-
-      line_lower="$(_lower "$stripped")"
-
-      # Strip any sub-bullet label prefix (e.g. "label: ") before testing
-      if [[ "$line_lower" == *": "* ]]; then
-        sub_value="${line_lower#*: }"
-      else
-        sub_value="$line_lower"
-      fi
-
-      if [[ "$sub_value" != "everything checks out" ]] && \
-         [[ "$sub_value" != "all valid" ]] && \
-         [[ "$sub_value" != "nothing unusual" ]] && \
-         [[ "$sub_value" != "looks good" ]] && \
-         [[ "$sub_value" != "no issues found" ]]; then
-        trivial_only=0
-        break
-      fi
-    done <<< "$section_content"
-
-    if [[ "$has_any_content" -eq 0 ]] || [[ "$trivial_only" -eq 0 ]]; then
-      check_b_passed=1
-    fi
+if [[ "${#rationale_section}" -ge 200 ]]; then
+  if ! is_trivial_section "$rationale_section" \
+       "everything checks out" "all valid" "nothing unusual" "looks good" "no issues found"; then
+    check_b_passed=1
   fi
 fi
 

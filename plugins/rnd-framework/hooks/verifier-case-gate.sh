@@ -46,95 +46,10 @@ task_id="${report_base%-verification.md}"
 
 report_content="$(< "$report_path")"
 
-# ---------------------------------------------------------------------------
-# Section content extractor: reads lines after the given heading until the
-# next ## heading. Prints the extracted content block.
-# ---------------------------------------------------------------------------
-extract_section() {
-  local heading="$1"
-  local content="$2"
-  local section_content=""
-  local in_section=0
-
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^##[[:space:]] ]] && [[ "$line" == *"$heading"* ]]; then
-      in_section=1
-      continue
-    fi
-
-    if [[ "$in_section" -eq 1 ]]; then
-      if [[ "$line" =~ ^## ]]; then
-        break
-      fi
-
-      section_content="${section_content}${line}
-"
-    fi
-  done <<< "$content"
-
-  printf '%s' "$section_content"
-}
-
-# ---------------------------------------------------------------------------
-# Trivial-content checker: returns 0 (trivial) or 1 (substantive).
-#
-# Trivial-content denylist (whole-line anchored to avoid false positives):
-#   nothing | none | n/a | no case
-#
-# Whole-line matching prevents triggering on legitimate content such as:
-#   "Couldn't check: none of the upstream APIs were reachable"
-# because that line contains additional words beyond the bare trivial term.
-# ---------------------------------------------------------------------------
-is_trivial_section() {
-  local section_content="$1"
-  local trivial_only=1
-  local has_any_content=0
-
-  while IFS= read -r line; do
-    # Skip blank lines
-    local line_stripped="${line#"${line%%[! ]*}"}"
-    if [[ -z "$line_stripped" ]]; then
-      continue
-    fi
-
-    has_any_content=1
-
-    # Strip leading bullet markers before matching
-    local stripped="${line_stripped#-}"
-    stripped="${stripped#\*}"
-    stripped="${stripped# }"
-
-    local line_lower
-    line_lower="$(_lower "$stripped")"
-
-    # Strip any sub-bullet label prefix up to and including the first colon+space
-    # (e.g. "Evidence: " or "Reasoning: ") before testing, so both
-    # "- Evidence: nothing" and "- nothing" match the trivial denylist.
-    local sub_value
-    if [[ "$line_lower" == *": "* ]]; then
-      sub_value="${line_lower#*: }"
-    else
-      sub_value="$line_lower"
-    fi
-
-    if [[ "$sub_value" == "nothing" ]] || \
-       [[ "$sub_value" == "none" ]] || \
-       [[ "$sub_value" == "n/a" ]] || \
-       [[ "$sub_value" == "no case" ]]; then
-      # This line is trivial — continue checking the rest
-      true
-    else
-      # Found a non-trivial line — section is meaningful
-      trivial_only=0
-      break
-    fi
-  done <<< "$section_content"
-
-  if [[ "$has_any_content" -eq 1 && "$trivial_only" -eq 1 ]]; then
-    return 0
-  fi
-  return 1
-}
+# Section helpers (extract_section, is_trivial_section) are provided by lib.sh.
+# Trivial-content denylist for both case sections: nothing | none | n/a | no case
+# Whole-line anchored after stripping bullet markers and `label: ` prefixes, so
+# legitimate content like "none of the upstream APIs were called" is NOT flagged.
 
 # ---------------------------------------------------------------------------
 # Check A: ## Case for PASS heading must be present
@@ -203,7 +118,7 @@ fi
 
 pass_section="$(extract_section "Case for PASS" "$report_content")"
 
-if is_trivial_section "$pass_section"; then
+if is_trivial_section "$pass_section" "nothing" "none" "n/a" "no case"; then
   _emit_event
 
   block_msg "VERIFIER CASE GATE: verification report for ${task_id} contains only trivially-empty content in the ## Case for PASS section.
@@ -227,7 +142,7 @@ fi
 
 fail_section="$(extract_section "Case for FAIL" "$report_content")"
 
-if is_trivial_section "$fail_section"; then
+if is_trivial_section "$fail_section" "nothing" "none" "n/a" "no case"; then
   _emit_event
 
   block_msg "VERIFIER CASE GATE: verification report for ${task_id} contains only trivially-empty content in the ## Case for FAIL section.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.22.2 — 2026-05-17
+
+### Lift shared section-parsing helpers to lib.sh; tighten heading-match anchoring across gate hooks
+
+Post-review cleanups for the four cognitive-role gates added in 3.22.1. Two shared helpers — extract_section and is_trivial_section — moved from inline duplication into hooks/lib.sh as a single source of truth; both anomaly-gate.sh and verifier-case-gate.sh now source them, removing ~110 lines of near-duplicate parsing code. extract_section's heading match is anchored to require either end-of-line or a trailing whitespace boundary, so `## Verdict` no longer falsely matches `## Verdicts` — applied across anomaly-gate.sh, verifier-case-gate.sh, and drift-report-gate.sh grep calls. verifier-case-gate.sh further factors its repeated 3-line audit-event emission into a local _emit_event helper. anomaly-gate.sh's trivial-content conditional is inverted to drop a no-op `true` branch. No behavior change — all 108 hook-level tests and the full 18-file suite remain green.
+
 ## 3.22.1 — 2026-05-17
 
 ### Add four SubagentStop gates, rnd-drift-detector agent, and schema-layer cognitive-style enforcement

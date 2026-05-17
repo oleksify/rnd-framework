@@ -270,6 +270,88 @@ iso_timestamp() {
 }
 
 # ---------------------------------------------------------------------------
+# Markdown section parsing — shared by SubagentStop gate hooks.
+# ---------------------------------------------------------------------------
+
+# Extracts content between `## <heading>` and the next `##` heading.
+# Heading match is anchored: matches `## <heading>` followed by either end-of-line
+# or whitespace — `## Verdict` does not match `## Verdicts`.
+# Args: heading, content.
+extract_section() {
+  local heading="$1"
+  local content="$2"
+  local section_content=""
+  local in_section=0
+  local heading_re="^##[[:space:]]+${heading}([[:space:]]|\$)"
+
+  while IFS= read -r line; do
+    if [[ "$line" =~ $heading_re ]]; then
+      in_section=1
+      continue
+    fi
+
+    if [[ "$in_section" -eq 1 ]]; then
+      if [[ "$line" =~ ^## ]]; then
+        break
+      fi
+      section_content="${section_content}${line}
+"
+    fi
+  done <<< "$content"
+
+  printf '%s' "$section_content"
+}
+
+# Returns 0 (trivial) when every non-blank line in section_content matches one of
+# the lowercase denylist terms after bullet-marker and `label: ` prefix stripping.
+# Returns 1 when substantive content is found, when section is empty, or when no
+# denylist terms are given.
+# Args: section_content, then one or more lowercase denylist terms.
+is_trivial_section() {
+  local section_content="$1"
+  shift
+  local trivial_only=1
+  local has_any_content=0
+  local line line_stripped stripped sub_value term matched
+
+  while IFS= read -r line; do
+    line_stripped="${line#"${line%%[! ]*}"}"
+    if [[ -z "$line_stripped" ]]; then
+      continue
+    fi
+
+    has_any_content=1
+
+    stripped="${line_stripped#-}"
+    stripped="${stripped#\*}"
+    stripped="${stripped# }"
+
+    sub_value="$(_lower "$stripped")"
+    if [[ "$sub_value" == *": "* ]]; then
+      sub_value="${sub_value#*: }"
+    fi
+
+    matched=0
+    for term in "$@"; do
+      if [[ "$sub_value" == "$term" ]]; then
+        matched=1
+        break
+      fi
+    done
+
+    if [[ "$matched" -eq 0 ]]; then
+      trivial_only=0
+      break
+    fi
+  done <<< "$section_content"
+
+  if [[ "$has_any_content" -eq 1 && "$trivial_only" -eq 1 ]]; then
+    return 0
+  fi
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Bash output cache
 # ---------------------------------------------------------------------------
 # Shared by post-dispatch.sh (writer) and bash-gate.sh (advisory). Both must

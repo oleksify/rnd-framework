@@ -5,6 +5,7 @@ language: generic
 tags: [anomaly, skepticism]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-EFFECTS-EDGE-01]
 ---
 
 ### Card R2: Resistance to "everything is fine"

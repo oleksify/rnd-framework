@@ -5,6 +5,7 @@ language: python
 tags: [error-handling, defensive-programming]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-EFFECTS-EDGE-01]
 ---
 
 ### Card B1: Error handling at the right layer

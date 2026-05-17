@@ -5,6 +5,7 @@ language: python
 tags: [naming]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card B4: Naming that describes vs naming that decorates

@@ -5,6 +5,7 @@ language: generic
 tags: [anomaly, tedium-delegation, tooling]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-EFFECTS-EDGE-01]
 ---
 
 ### Card R3: Tedium aversion routed to delegation

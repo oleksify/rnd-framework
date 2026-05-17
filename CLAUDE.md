@@ -19,7 +19,7 @@ plugins/rnd-framework/
 ├── agents/                      # 11 specialized agents for multi-agent execution mode
 ├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
 ├── skills/                      # Skills, each in its own dir with SKILL.md
-├── cards/                       # Flash-card priming corpus: cards/<role>/<lang>/CARD-<ID>.md with YAML frontmatter (id, role, language, tags, applicable_task_types, scope); 17 seed cards at v1; consumed by lib/card-retrieve.sh and injected by the orchestrator before card-receiving agent spawns
+├── cards/                       # Flash-card priming corpus: cards/<role>/<lang>/CARD-<ID>.md with YAML frontmatter (id, role, language, tags, applicable_task_types, scope, plus optional `specializes:` array referencing a parent canon/language card); v2 corpus (~91 cards) structured as a principle ladder: four canon principles (`P-IMPOSSIBLE-01`, `P-EFFECTS-EDGE-01`, `P-SMALL-MODULES-01`, `P-PURE-RENDER-01`) under `<role>/generic/`, language tiers (python, elixir, typescript, sql) specializing canon, library tiers (Phoenix/Ecto/Bandit/Oban/Sentry-Elixir under `elixir/`; Svelte/SvelteKit/Supabase/Sentry-js under `typescript/`) specializing canon or language IDs; consumed by lib/card-retrieve.sh and injected by the orchestrator before card-receiving agent spawns
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied, WorktreeCreate/Remove

@@ -5,6 +5,7 @@ language: python
 tags: [dead-code, defensive-programming]
 applicable_task_types: [refactor]
 scope: small
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card D1: Dead defensive code

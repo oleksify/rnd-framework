@@ -20,28 +20,44 @@ Each card file begins with a YAML frontmatter block followed by a body:
 
 ```
 ---
-id: <CARD-ID>                          # e.g. CARD-B1
+id: <CARD-ID>                          # e.g. B1 (role-prefix + local number); see naming convention below
 role: <role>                           # matches the directory role
 language: <language>                   # matches the directory language
 tags: [tag1, tag2]                     # flow-style list; values from the taxonomy below
 applicable_task_types: [new-feature, bugfix, refactor, docs, config, infra]
 scope: <one sentence — what pattern this card teaches>
+specializes: [P-TOPIC-01]             # optional — flow-style array of canon principle IDs this card refines
 ---
 
-## Good
+**Good:**
 
 <code or prose showing the preferred pattern>
 
-## Worse
+**Worse:**
 
 <code or prose showing the anti-pattern>
 
-## Why good is better
-
-<explanation — 2-4 sentences>
+**Why good is better:** <explanation — 2-4 sentences>
 ```
 
-All six frontmatter fields are required. Tags must use flow-style (`[a, b, c]`), not block-style (`- a`). Card IDs are globally unique across all roles and languages.
+Six frontmatter fields are required (`id`, `role`, `language`, `tags`, `applicable_task_types`, `scope`). The seventh field, `specializes:`, is optional. Canon cards omit it; specialization cards include it.
+
+`specializes:` accepts a flow-style array of canon principle card IDs (e.g., `[P-IMPOSSIBLE-01]` or `[P-EFFECTS-EDGE-01, B7]`). `card-retrieve.sh` currently ignores this field at retrieval time — v2 lands the data, v3 will light up retrieval behavior.
+
+When a card carries `specializes:`, its body should mention the parent principle in the first sentence so the linkage is visible without tooling (e.g., "specializes the impossible-states principle by…").
+
+Tags must use flow-style (`[a, b, c]`), not block-style (`- a`).
+
+**Card naming convention:** Canon principle cards use the pattern `P-<TOPIC>-<NN>` (e.g., `P-IMPOSSIBLE-01`, `P-EFFECTS-EDGE-01`). Role-specific cards use a role prefix and a local number: `B<N>` (builder), `V<N>` (verifier), `D<N>` (cleanup), `R<N>` (reality-auditor), `P<N>` (planner). Library-specific cards use a lib prefix (e.g., `PHX1`, `ECT2`). The `id:` frontmatter field omits the `CARD-` file prefix — `id: B1`, not `id: CARD-B1`. IDs are globally unique across all roles and languages.
+
+## Agent-optimized style
+
+Cards are read by agents inside a token-constrained context window, not by humans in a documentation browser. Write accordingly:
+
+- **≤40 lines** per card body (soft budget). One sharp example is better than two diluted ones.
+- Use **inline bold labels** — `**Good:**`, `**Worse:**`, `**Why good is better:**` — not Markdown headings. This keeps the body scannable without vertical whitespace overhead.
+- No warm-up prose. Open with the example or the rule, not a preamble.
+- Rationale is 2-4 sentences. State the mechanism, not just the conclusion.
 
 ## Retrieval contract
 

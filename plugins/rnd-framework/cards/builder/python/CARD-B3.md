@@ -5,6 +5,7 @@ language: python
 tags: [defensive-programming, validation, boundaries]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card B3: Defensive validation at the wrong boundary

@@ -5,6 +5,7 @@ language: python
 tags: [dead-code, comments]
 applicable_task_types: [refactor]
 scope: small
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card D2: Comments that restate the code

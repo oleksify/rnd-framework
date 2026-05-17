@@ -5,6 +5,7 @@ language: python
 tags: [critique-evidence, error-handling]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card V1: Critique with evidence, not vibes

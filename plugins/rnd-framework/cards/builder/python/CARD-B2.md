@@ -5,6 +5,7 @@ language: python
 tags: [abstraction, premature-abstraction]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: medium
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card B2: Premature abstraction

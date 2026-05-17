@@ -5,6 +5,7 @@ language: python
 tags: [dead-code, wrappers, abstraction]
 applicable_task_types: [refactor]
 scope: small
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card D3: Wrappers around standard library

@@ -5,6 +5,7 @@ language: python
 tags: [critique-evidence, fail-case]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card V3: Strongest-case-for-FAIL before any PASS

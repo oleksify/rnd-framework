@@ -5,6 +5,7 @@ language: python
 tags: [control-flow, early-return]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-PURE-RENDER-01]
 ---
 
 ### Card B5: Early return over sentinel tracking

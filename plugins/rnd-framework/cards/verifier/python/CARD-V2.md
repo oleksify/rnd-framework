@@ -5,6 +5,7 @@ language: python
 tags: [abstraction, critique-evidence]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card V2: Disagree-and-articulate over polite-and-pass

@@ -5,6 +5,7 @@ language: generic
 tags: [anomaly, inconsistency, cross-check]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: small
+specializes: [P-EFFECTS-EDGE-01]
 ---
 
 ### Card R1: Anomaly hooking on inconsistency

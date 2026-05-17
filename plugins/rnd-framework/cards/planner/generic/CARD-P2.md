@@ -5,6 +5,7 @@ language: generic
 tags: [decomposition, verifiability]
 applicable_task_types: [new-feature, infra]
 scope: medium
+specializes: [P-IMPOSSIBLE-01]
 ---
 
 ### Card P2: Decomposition that produces verifiable units

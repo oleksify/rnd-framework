@@ -5,6 +5,7 @@ language: generic
 tags: [spec-shape, scope, decomposition]
 applicable_task_types: [new-feature, infra]
 scope: medium
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card P1: Spec that constrains size and shape

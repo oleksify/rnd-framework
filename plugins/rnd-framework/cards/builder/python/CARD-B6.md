@@ -5,6 +5,7 @@ language: python
 tags: [configuration, premature-abstraction]
 applicable_task_types: [new-feature, bugfix, refactor]
 scope: medium
+specializes: [P-SMALL-MODULES-01]
 ---
 
 ### Card B6: Configuration when it isn't needed

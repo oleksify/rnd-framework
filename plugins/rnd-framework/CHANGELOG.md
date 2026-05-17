@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.23.0 — 2026-05-17
+
+### Add flash-card priming system: seed corpus, deterministic retrieval, and orchestrator-level injection at card-receiving spawn points
+
+New plugins/rnd-framework/cards directory ships a 17-card seed library organised by role and language (builder, verifier, cleanup-role, reality-auditor, planner; Python and generic). Each card pairs a good example against a plausibly-worse alternative with a brief rationale — material the model can sample from at generation time. lib/card-retrieve.sh is a deterministic tag-overlap retrieval helper: score = #shared-tags + task-type bonus, sort score DESC then card-id ASC, --max default ${RND_CARDS_MAX_PER_SPAWN:-3}. commands/rnd-start.md, commands/rnd-debug.md, and skills/rnd-multi-judge/SKILL.md gain pre-spawn bash blocks at every card-receiving spawn point (9 total). Cards are concatenated under a Reference examples header and prepended to the agent prompt; when retrieval returns empty the prompt is bytewise identical to today. Per-spawn card_injection audit events go through the existing lib/audit-event.sh. skills/rnd-cards/SKILL.md documents the card authoring format, retrieval contract, and injection convention. rnd-decomposition gains an optional Card tags pre-reg field (role + task_type filtering applies when absent). commands/rnd-cards-propose.md scans calibration.jsonl for recurring FAIL or NEEDS_ITERATION feedback via 4-gram Jaccard clustering and surfaces draft card scaffolds for human review — never auto-inserts. commands/rnd-cards-impact.md measures iterations-to-PASS pre and post a --since rollout date per task_type and emits an improved or no-change or regressed or insufficient-data verdict. None of the five card-receiving agent .md files were modified — injection is orchestrator-level. Five new test suites add roughly 250 assertions. Skill-trim cap for rnd-multi-judge raised from 6750 to 8000 chars to accommodate the legitimate card-injection content.
+
 ## 3.22.2 — 2026-05-17
 
 ### Lift shared section-parsing helpers to lib.sh; tighten heading-match anchoring across gate hooks

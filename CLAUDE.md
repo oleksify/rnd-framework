@@ -11,66 +11,44 @@ The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/market
 ## Repository Layout
 
 ```
-lib/
-└── plugin-dir-base.sh              # Canonical copy of shared artifact directory logic (each plugin has its own copy for cache compatibility)
+lib/plugin-dir-base.sh                  # Canonical shared artifact-dir logic (each plugin keeps its own copy for cache compat)
 
 plugins/rnd-framework/
-├── .claude-plugin/plugin.json   # Plugin manifest (name, version, description)
-├── agents/                      # 11 specialized agents for multi-agent execution mode
-├── commands/                    # Slash commands (/rnd-framework:rnd-start, etc.)
-├── skills/                      # Skills, each in its own dir with SKILL.md
-├── cards/                       # Flash-card priming corpus: cards/<role>/<lang>/CARD-<ID>.md with YAML frontmatter (id, role, language, tags, applicable_task_types, scope, plus optional `specializes:` array referencing a parent canon/language card); v2 corpus (~91 cards) structured as a principle ladder: four canon principles (`P-IMPOSSIBLE-01`, `P-EFFECTS-EDGE-01`, `P-SMALL-MODULES-01`, `P-PURE-RENDER-01`) under `<role>/generic/`, language tiers (python, elixir, typescript, sql) specializing canon, library tiers (Phoenix/Ecto/Bandit/Oban/Sentry-Elixir under `elixir/`; Svelte/SvelteKit/Supabase/Sentry-js under `typescript/`) specializing canon or language IDs; consumed by lib/card-retrieve.sh and injected by the orchestrator before card-receiving agent spawns
-├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
+├── .claude-plugin/plugin.json          # Plugin manifest
+├── agents/                             # 11 specialized pipeline agents
+├── commands/                           # /rnd-framework:* slash commands
+├── skills/                             # One dir per skill, each with SKILL.md
+├── cards/<role>/<lang>/CARD-<ID>.md    # Flash-card priming corpus (~91 cards, v2): canon principles → language tiers → library tiers, with optional `specializes:` parent refs. Roles: planner, builder, reality-auditor, verifier, cleanup
+├── output-styles/                      # scientific, rigorous, pipeline
 ├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied, WorktreeCreate/Remove
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer)
-│   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters/for-while-until loops//tmp redirects (including after env-var prefixes), auto-allows .rnd/ paths only; also handles commit protection (git add .rnd/ block, git push advisory)
-│   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
-│   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit operations + advises when output exceeds 50 lines
-│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
-│   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
-│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to extract project standards
-│   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
-│   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
-│   ├── cwd-changed.sh           # CwdChanged hook (v2.1.83+): warns on cross-repo directory change
-│   ├── file-changed.sh          # FileChanged hook (v2.1.83+): advises on external .rnd/ artifact edits
-│   ├── task-created.sh          # TaskCreated hook (v2.1.84+): logs task creation to audit.jsonl
-│   ├── permission-denied.sh     # PermissionDenied hook (v2.1.89+): logs auto-mode denials to audit.jsonl, returns {retry: true}
-│   ├── write-gate.sh             # Write/Edit hook: auto-allows .rnd/ path operations
-│   ├── glob-grep-gate.sh        # Glob/Grep hook: information barrier + .rnd/ auto-allow
-│   ├── format-on-save.sh        # PostToolUse hook (v2.1.90+): auto-formats code files after Write/Edit using detected project formatter
-│   ├── session-title.sh         # UserPromptSubmit hook (v2.1.94+): sets session title to pipeline phase + project name
-│   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
-│   ├── builder-dismissal-gate.sh # SubagentStop hook scoped to rnd-builder: blocks dismissal phrases, acknowledged-but-unfixed issues, and missing/empty found-issues ledger
-│   ├── coverage-gaps-gate.sh    # SubagentStop hook scoped to rnd-verifier: blocks completion when the most recent T<id>-verification.md lacks a `## Coverage Gaps` section, or its content matches the trivial-content denylist (nothing|none|n/a|all checks ran|no gaps); emits gateFired audit event on every block
-│   ├── anomaly-gate.sh          # SubagentStop hook scoped to rnd-reality-auditor: blocks completion when the most recent T<id>-reality-report.md lacks either a sourced `## Anomalies` section (≥1 bullet with `Source:`) or a substantive `## No-Finding Rationale` section (≥200 chars, non-trivial); emits gate_fired audit event on every block
-│   ├── verifier-case-gate.sh    # SubagentStop hook scoped to rnd-verifier: blocks completion when the most recent T<id>-verification.md lacks a `## Case for PASS` or `## Case for FAIL` section, or either section contains only trivial content (nothing|none|n/a|no case); emits gate_fired audit event with tool name `verifier_case_symmetry` on every block
-│   ├── cleanup-bloat-gate.sh    # SubagentStop hook scoped to rnd-cleanup: advisory-only; emits a `bloat_aversion_underperform` audit event when the cleanup report's derived deletion ratio is below 15%; never blocks (always exits 0)
-│   ├── drift-report-gate.sh     # SubagentStop hook scoped to rnd-drift-detector: blocks completion when the wave drift report is missing any of the three required sections (`## Drift Hypothesis`, `## Counter-evidence`, `## Verdict`) or when the Verdict value is not one of `NO_DRIFT|MINOR_DRIFT|MAJOR_DRIFT|RESET_RECOMMENDED`; emits gate_fired audit event with tool name `drift_detector:<verdict>` on pass, `drift_detector` on block
-│   ├── stop-condition-revisions.sh # PreToolUse Write|Edit hook: counts prior Write/Edit events to the same path for the active task via lib/audit-scan.sh; blocks with STOP CONDITION when count >= RND_STOP_FILE_REVISIONS (default 5); emits gateFired audit event on halt
-│   ├── evidence-pack-gate.sh    # PreToolUse Read hook: blocks Verifier reads of evidence-pack manifests that contain disallowed free-text fields (notes, summary, confidence, reasoning, explanation); information barrier check runs first, schema gate second
-│   ├── worktree-create.sh      # WorktreeCreate hook (v2.1.83+): emits worktree_created audit event when an agent worktree is created
-│   ├── worktree-remove.sh      # WorktreeRemove hook (v2.1.83+): emits worktree_removed audit event when an agent worktree is removed
-│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase + worktree indicator (v2.1.80)
+│   ├── hooks.json                      # Routes Session/Setup/InstructionsLoaded/Pre+PostToolUse/Pre+PostCompact/StopFailure/Cwd+FileChanged/TaskCreated/Subagent*/PermissionDenied/Worktree*
+│   ├── lib.sh                          # Shared bash utils: input parsing, path predicates, decision output (incl. defer), cmd_hash
+│   ├── read-gate.sh / write-gate.sh / glob-grep-gate.sh / bash-gate.sh   # Info barrier + tool discipline + .rnd/ auto-allow
+│   ├── session-start.sh / session-end.sh / pre-compact.sh / post-compact.sh
+│   ├── post-dispatch.sh                # Write/Edit audit + Bash output cache writer + ≥50-line advisory
+│   ├── stop-failure.sh / setup.sh / instructions-loaded.sh / permission-denied.sh
+│   ├── cwd-changed.sh / file-changed.sh / task-created.sh / subagent-lifecycle.sh
+│   ├── format-on-save.sh / session-title.sh
+│   ├── builder-dismissal-gate.sh / coverage-gaps-gate.sh / anomaly-gate.sh / verifier-case-gate.sh / cleanup-bloat-gate.sh / drift-report-gate.sh   # SubagentStop quality gates (agent-scoped)
+│   ├── stop-condition-revisions.sh     # PreToolUse Write|Edit: halts when same path is rewritten ≥ RND_STOP_FILE_REVISIONS times (default 5)
+│   ├── evidence-pack-gate.sh           # PreToolUse Read: validates evidence-pack manifest schema for verifier
+│   ├── worktree-create.sh / worktree-remove.sh
+│   └── statusline.sh                   # Rate-limit % + pipeline phase + worktree indicator
 ├── lib/
-│   ├── rnd-dir.sh               # Artifact directory path computation + session management
-│   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
-│   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage + `claude plugin tag` auto-tag (v2.1.118+)
-│   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   ├── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
-│   ├── tools.json               # Plugin-default registry of heavy tools (pytest/jest/vitest/tsc/eslint/dialyzer/mypy/bun/cargo/mix/ruff/biome) with structured-output flags AND relevant_globs (per-tool input scoping — pytest hashes only *.py + Python config files, etc.); project may override at $RND_DIR/tools.json
-│   ├── run-tool.sh              # Evidence-pack writer: opt-in via RND_EVIDENCE_PACK=1; wraps a heavy-tool invocation, captures stdout/stderr/structured output, hashes inputs[] filtered by tool's relevant_globs, writes manifest.json + tool_run_fresh audit event; passthrough exec when flag unset
-│   ├── manifest-schema.json     # JSON Schema (draft-07) for the evidence-pack manifest; load-bearing — its `x-disallowed-fields` extension is sourced at runtime by evidence-pack-gate.sh (single source of truth for the disallowed-fields list)
-│   ├── audit-event.sh           # Shared audit-event emitter: writes a single {event,task_id,tool,timestamp} line to $RND_DIR/audit.jsonl; called by run-tool.sh for tool_run_fresh and by the Verifier (per rnd-verification skill) for tool_pack_served
-│   ├── audit-scan.sh            # audit.jsonl scanner: subcommand `revisions <task_id> <file_path>` returns count of Write/Edit events; subcommand `verdict_history <task_id>` returns the verdict sequence parsed from verifications/, printing FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL; consumed by stop-condition-revisions.sh and by orchestration's Stop Conditions section
-│   ├── rnd-undo.sh              # Surgical task-scoped revert: reads `## Files written` section from $RND_DIR/builds/T<id>-manifest.md and reverts only those files (git checkout HEAD or rm); blocking destructive git ops in bash-gate.sh redirect agents here
-│   ├── card-retrieve.sh         # Deterministic tag-overlap card retrieval: flag-driven (--role, --task-type, --tags, --max, --cards-root); scores cards in plugins/rnd-framework/cards/<role>/ by tag intersection + task-type bonus; sorts score DESC then card id ASC; output is card file paths one per line; default --max = ${RND_CARDS_MAX_PER_SPAWN:-3}; consumed by the orchestrator at spawn-time and by rnd-cards-impact for impact measurement
-│   ├── rnd-cards-propose.sh     # Clusters recurring FAIL / NEEDS_ITERATION verdict-feedback in calibration.jsonl via 4-gram Jaccard similarity (single-link agglomeration, default threshold 0.4, min-cluster 3); emits draft card scaffolds to stdout for human review; never writes to cards/ tree; invoked via /rnd-framework:rnd-cards-propose
-│   ├── rnd-cards-impact.sh      # Compares iterations-to-PASS distributions in calibration.jsonl pre/post a --since rollout date, broken down per task_type (refactor|new-feature|bugfix|docs|config|infra); emits a markdown table with median+p75 per side and a verdict (improved|no-change|regressed|insufficient-data); 0.5-median delta threshold; invoked via /rnd-framework:rnd-cards-impact
-│   └── calibration.sh           # Calibration auto-escalation helpers: window/false_pass_rate/should_promote/promote_tier/task_type_window subcommands; orchestrator invokes should_promote before each adaptive-agent spawn to react to model-quality drift; task_type_window prints the last N records filtered by the task_type enum (refactor|new-feature|bugfix|docs|config|infra) for per-task-type reliability reporting; RND_DISABLE_AUTO_ESCALATION=1 disables
-├── proofs/                      # Lean 4 formal verification of pipeline invariants
+│   ├── rnd-dir.sh                      # $RND_DIR resolver and session manager (flags: -c, --finish, --base, --roadmap, --facts, --calibration)
+│   ├── plugin-dir-base.sh              # Local copy of shared artifact-dir logic
+│   ├── bump.sh / validate.sh / validate-xrefs.sh
+│   ├── tools.json                      # Heavy-tool registry (pytest/jest/vitest/tsc/eslint/dialyzer/mypy/bun/cargo/mix/ruff/biome) with relevant_globs for input scoping; project override at $RND_DIR/tools.json
+│   ├── run-tool.sh                     # Evidence-pack writer (opt-in: RND_EVIDENCE_PACK=1)
+│   ├── manifest-schema.json            # JSON Schema for evidence-pack manifest; `x-disallowed-fields` is the SSOT consumed by evidence-pack-gate.sh
+│   ├── audit-event.sh                  # Single-line {event,task_id,tool,timestamp} emitter to $RND_DIR/audit.jsonl
+│   ├── audit-scan.sh                   # Subcommands: `revisions <task> <path>`, `verdict_history <task>` (prints FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL)
+│   ├── rnd-undo.sh                     # Surgical task-scoped revert (reads `## Files written` from build manifest)
+│   ├── card-retrieve.sh                # Deterministic tag-overlap card retrieval (--role, --task-type, --tags, --max)
+│   ├── rnd-cards-propose.sh            # Cluster FAIL feedback in calibration.jsonl → draft card scaffolds (4-gram Jaccard)
+│   ├── rnd-cards-impact.sh             # Compare iterations-to-PASS pre/post a --since rollout date per task_type
+│   └── calibration.sh                  # Auto-escalation helpers; subcommands: window, false_pass_rate, should_promote, promote_tier, task_type_window
+├── proofs/                             # Lean 4 formal verification of pipeline invariants
 └── README.md
 ```
 
@@ -82,18 +60,18 @@ Eleven specialized agents handle each pipeline phase in isolated context windows
 
 | Phase | Agent | Purpose |
 |---|---|---|
-| Planning | `rnd-planner` (opus/high, adaptive) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing; emits `Heuristic ceiling: <integer>` as a meta-field in plan.md (consumed by the orchestration plan-size stop condition: halt when actual `task_count > RND_STOP_PLAN_RATIO * ceiling`, default ratio 1.5); pre-registrations include a required `## Assumptions` section with `Assumption: ... Refuted by: ...` form (placeholder `- None` when no assumptions exist) — the Verifier downgrades a verdict by one tier and emits a `gateFired: {gate: "assumption_unchecked"}` calibration record when an Assumption's Refuted-by action was declared but not executed |
+| Planning | `rnd-planner` (opus/high, adaptive) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing; emits `Heuristic ceiling: <integer>` meta-field in plan.md (consumed by the plan-size stop condition: halt when `task_count > RND_STOP_PLAN_RATIO * ceiling`, default ratio 1.5); pre-registrations include a required `## Assumptions` section (`Assumption: ... Refuted by: ...`, placeholder `- None` when none) — the Verifier downgrades a verdict by one tier and emits `gateFired: {gate: "assumption_unchecked"}` when an Assumption's Refuted-by action was declared but not executed |
 | Building | `rnd-builder` (sonnet/high, adaptive, worktree) | Implements tasks using TDD; produces build manifest + self-assessment |
 | Reality Audit | `rnd-reality-auditor` (sonnet/low) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies`; runs an "Existence Pre-Pass" Step 0 (mechanical probes — file-execution only, no `python -c`/`node -e`/`bun -e`) that verifies every imported module / third-party method call / RFC or error-code citation / env-var name actually exists in the form claimed, before adversarial experiments; MISSING short-circuits to `INVALID_FOUND` and emits a `FALSE_PASS_PROXY` calibration record if a prior Builder PASS exists for the task |
 | Proof Gate | `rnd-proof-gate` (sonnet/low) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH; amendments to proven criteria force a re-prove before re-verification |
-| Verification | `rnd-verifier` (sonnet/high, adaptive, worktree) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; writes `T<id>-verification.md` full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED) with a required `## Coverage Gaps` section (`Checked:` + `Couldn't check:` sub-bullets — enforced structurally by `coverage-gaps-gate.sh` SubagentStop hook, which also rejects trivial content); AMEND_REQUIRED (emit only with cited concrete spec defect; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge with verdict-based escalation gate (single first-pass verifier; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION/AMEND_REQUIRED escalates to full dual-judge; set `RND_MULTI_JUDGE_ALWAYS=1` to bypass gate and restore exact pre-gate always-dual-judge behavior) |
+| Verification | `rnd-verifier` (sonnet/high, adaptive, worktree) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; writes `T<id>-verification.md` full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED) with a required `## Coverage Gaps` section (`Checked:` + `Couldn't check:` sub-bullets — enforced by `coverage-gaps-gate.sh`); AMEND_REQUIRED (cited concrete spec defect required; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge with verdict-based escalation gate (only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION/AMEND_REQUIRED escalates to full dual-judge; `RND_MULTI_JUDGE_ALWAYS=1` restores always-dual-judge) |
 | Amendment | `rnd-amendment-arbiter` (opus/xhigh, non-adaptive) | Evaluates AMEND_REQUIRED verdicts; proposes spec corrections (AMEND), recommends rebuild (REBUILD), or routes to Planner re-plan (ESCALATE_REPLAN); inputs strictly limited to original pre-reg + Verifier verdict |
 | Cleanup | `rnd-cleanup` (sonnet/medium, worktree) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
 | Polish | `rnd-polisher` (opus/high, non-adaptive, per-wave, worktree) | Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift, helpers that should be lifted to shared locations, and structural inconsistencies; runs after all per-task cleanup; rolls back if re-verification breaks; reports to `$RND_DIR/polish/wave-<N>-polish-report.md` |
 | Integration | `rnd-integrator` (haiku/low) | Merges verified outputs, runs integration/system tests |
 | Debugging | `rnd-debugger` (sonnet/high, adaptive, worktree) | Root cause analysis for failing tasks |
 | Data Science | `rnd-data-scientist` (sonnet/medium) | Standalone specialist for numerical/analytical work |
-| Drift detection | `rnd-drift-detector` (sonnet/medium) | Per-wave drift analysis between Builder and Verifier; reads plan.md, Builder manifests, and audit.jsonl to detect scope or requirement drift; emits a structured drift report to `$RND_DIR/drift/`; report schema enforced by `drift-report-gate.sh` |
+| Drift detection | `rnd-drift-detector` (sonnet/medium) | Per-wave drift analysis between Builder and Verifier; reads plan.md, Builder manifests, and audit.jsonl; emits a structured drift report to `$RND_DIR/drift/`; report schema enforced by `drift-report-gate.sh` |
 
 **Dispatch Policy (criticality-driven, per-agent):** the orchestrator overrides the spawned agent's model based on the per-task `Criticality` field. The mapping is per-agent, not a single global table:
 
@@ -106,177 +84,126 @@ Eleven specialized agents handle each pipeline phase in isolated context windows
 | `rnd-amendment-arbiter` (non-adaptive) | opus/xhigh | opus/xhigh | opus/xhigh |
 | `rnd-polisher` (non-adaptive, per-wave) | opus/high | opus/high | opus/xhigh |
 
-If `Criticality` is absent (or no pre-reg exists), the orchestrator does NOT override and the agent's frontmatter `model:` is used as the fallback. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value. Non-adaptive agents (`rnd-amendment-arbiter`, `rnd-polisher`) always run at their listed model regardless of criticality. Full policy lives in `rnd-framework:rnd-orchestration` skill under "Dispatch Policy".
+If `Criticality` is absent (or no pre-reg exists), the orchestrator does NOT override and the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value. Non-adaptive agents always run at their listed model regardless of criticality. Full policy lives in the `rnd-framework:rnd-orchestration` skill.
 
 ### Information Barrier and Permission Hooks
 
-The `hooks.json` routes each PreToolUse event to an external script. Policies enforced:
-- **Information barrier** (`read-gate.sh`, `glob-grep-gate.sh`, `bash-gate.sh`): Blocks any tool call where the file path or command string contains `self-assessment`, the path segment `/briefs/`, or the path segment `/cleanup/` when the agent is a verifier, the proof-gate, or has no agent_type, preventing the verification and proof phases from anchoring on build-phase or cleanup-phase reasoning. The proof-gate is included so the runtime matches the Lean theorem `proofGate_cannot_access_self_assessment` in `proofs/InformationBarrier.lean`. All three barrier-protected patterns share the same semantics. The `/briefs/` and `/cleanup/` segments (with slashes) are matched so the bare words "brief" or "cleanup" in a grep pattern are not flagged. Enforced across all file-reading tools: `Read` (path check), `Grep`/`Glob` (path and pattern check), `Bash` (command string check). The `/briefs/` protection covers the Planner/Builder/Debugger/Integrator user-facing brief artifacts under `$RND_DIR/briefs/` and the cross-phase `decisions.md` log located there. The `/cleanup/` protection covers the cleanup agent's per-task reports under `$RND_DIR/cleanup/`.
-- **Auto-allow plugin artifact paths and cache operations** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`, `settings.json`): `Read` operations on `.rnd/` artifact paths are auto-allowed via hook. `Write` and `Edit` operations on `.rnd/` paths are auto-allowed via hook (`write-gate.sh`) with `settings.json` `allowWrite` as belt-and-suspenders. `Glob` and `Grep` operations targeting these paths are auto-allowed via hook. For `Bash`, `.rnd/` auto-allow fires at the command level after tool-discipline segment checks have all passed — so sed and inline interpreters are still blocked even when a `.rnd/` path appears in the command. `read-gate.sh` additionally auto-allows reads from the plugin cache (`plugins/cache/`) for skill and agent files, and from the learnings directory (`$CLAUDE_CONFIG_DIR/learnings/`) for cross-session knowledge
-- **Worktree topology** (write-side agents only): The five write-side adaptive agents — `rnd-builder`, `rnd-verifier`, `rnd-cleanup`, `rnd-polisher`, `rnd-debugger` — declare `isolation: "worktree"` in their frontmatter and spawn into per-task git worktrees at `.rnd-worktrees/<session_id>/T<id>/` checked out from ephemeral branches `rnd/<session_id>/T<id>`. Read-side agents (`rnd-planner`, `rnd-integrator`) run in the main checkout and are NOT worktree-isolated. The `$RND_DIR` artifact tree lives under `~/.claude/.rnd/` — entirely OUTSIDE any worktree — so build manifests, evidence packs, verification reports, briefs, and `audit.jsonl` remain readable across all agents regardless of worktree boundary; the information barrier is enforced by hooks, not by filesystem topology. Only the project source tree is scoped per agent, which bounds destructive operations to the per-task worktree. The `rnd-integrator` is the sole merge path back to main: it fetches each verified task's worktree branch and merges with `git merge --no-ff` in pre-registration dependency order, then prunes branches and worktrees.
-- **Tool discipline** (`bash-gate.sh`): Blocks `sed`, `awk`, `echo/printf` with file redirects, inline interpreter execution (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), shell loops (`for`/`while`/`until`), and `/tmp/` redirects — enforces use of dedicated Claude Code tools and `$RND_DIR` for temp storage. Read-side commands (`cat`, `head`, `tail`, `grep`, `rg`, `find`) pass through without opinion. Splits compound commands (`&&`, `||`, `;`, `|`) and checks each segment, including `$()` and backtick substitutions. Strips environment-variable prefixes (`FOO=bar command`) before checking each segment, ensuring tool discipline applies regardless of env-var assignments. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` artifact directories and emits an advisory warning on `git push` to main/master/production branches. **Note on Edit-without-Read (v2.1.89+):** Claude Code v2.1.89 allows Edit on files viewed via `sed -n` or `cat` without a separate Read call. Since bash-gate blocks `sed`, this upstream feature does not affect rnd-framework users — the model must still use Read → Edit.
-- **Audit logging** (`post-dispatch.sh`): PostToolUse hook logs all Write and Edit operations to `$RND_DIR/audit.jsonl` and advises when command output exceeds 50 lines
-- **Bash output cache** (`post-dispatch.sh` writer + `bash-gate.sh` advisory): PostToolUse Bash writes stdout (plus stderr if present) to `$session_dir/.bash-cache/<sha>.txt` and a sibling `<sha>.meta.json` keyed by a 16-char sha-256 of the whitespace-normalized command. PreToolUse Bash detects identical re-runs within `RND_BASH_CACHE_TTL_SECONDS` (default 600) and emits an advisory pointing the agent to the cached file when output is ≥10 lines — solving the "ran `mix test | tail -30`, then re-ran `mix test | grep failure`" pattern. Non-blocking: agent may still re-run when fresh output is needed (e.g. after file changes). Cache lives inside the session dir so it auto-clears with each pipeline run; no GC required. Hash semantics are shared between writer and advisory via `cmd_hash` in `lib.sh` (single source of truth).
-- **Stop failure logging** (`stop-failure.sh`): StopFailure hook logs API errors (rate limits, auth failures) to `$RND_DIR/stop-failures.jsonl` and emits advisory context
-- **Directory change detection** (`cwd-changed.sh`): CwdChanged hook (v2.1.83+) warns when the working directory moves to a different git repository while an RND session is active
-- **Artifact change detection** (`file-changed.sh`): FileChanged hook (v2.1.83+) emits advisory context when `.rnd/` artifact files (plan.md, iteration-log.md) are modified externally
-- **Task creation logging** (`task-created.sh`): TaskCreated hook (v2.1.84+) logs task creation events to `$RND_DIR/audit.jsonl`
-- **Agent lifecycle logging** (`subagent-lifecycle.sh`): SubagentStart and SubagentStop hooks log agent spawn/completion events to `$RND_DIR/audit.jsonl` for pipeline observability. No-opinion — does not affect permission flow.
-- **Builder dismissal gate** (`builder-dismissal-gate.sh`): SubagentStop hook that fires only for the `rnd-builder` agent. Reads the most recent `T<id>-manifest.md` under the active session and runs three structural checks: (a) phrase scan blocks on `pre-existing`, `out of scope`, `not my task`, `unrelated to this task`, `won't fix here`, `outside scope`; (b) acknowledged-but-unfixed scan requires a co-located `T<id>-found-issues.jsonl` ledger when the manifest mentions a problem; (c) ledger-required check blocks DONE manifests that report failures without a ledger entry. The only legal dismissal path is appending a JSON line `{"issue", "location", "decision":"escalated", "reason"}` to the ledger; the Verifier reads the ledger and re-fails the task on any unacknowledged escalation. Replaces the textual "never use 'pre-existing' as a reason" rules in agent prompts with structural enforcement.
-- **Coverage Gaps gate** (`coverage-gaps-gate.sh`): SubagentStop hook that fires only for the `rnd-verifier` agent. Reads the most recent `T<id>-verification.md` and blocks completion with exit 2 when (a) the `## Coverage Gaps` heading is absent OR (b) the section's content matches the trivial-content denylist regex (`nothing|none|n/a|all checks ran|no gaps`, case-insensitive, whole-bullet anchored to avoid substring false-positives like "Couldn't check: none of the upstream APIs were reachable"). Emits a `gateFired` audit event with gate name `coverage_gaps_gate` on every block. Mirrors the builder-dismissal-gate's fast-path + lib.sh-sourcing pattern.
-- **Anomaly gate** (`anomaly-gate.sh`): SubagentStop hook that fires only for the `rnd-reality-auditor` agent. Reads the most recent `T<id>-reality-report.md` and blocks completion with exit 2 when BOTH checks fail: Check A — `## Anomalies` heading is absent OR has no bullet line containing `Source:` (case-sensitive); Check B — `## No-Finding Rationale` heading is absent OR its content is under 200 chars OR its content is solely trivial-denylist (`everything checks out|all valid|nothing unusual|looks good|no issues found`, whole-bullet anchored). Report passes if either check A or check B succeeds. Emits a `gate_fired` audit event with tool name `anomaly_gate` on every block.
-- **Verifier case gate** (`verifier-case-gate.sh`): SubagentStop hook that fires only for the `rnd-verifier` agent. Reads the most recent `T<id>-verification.md` and blocks completion with exit 2 when (a) `## Case for PASS` heading is absent, (b) `## Case for FAIL` heading is absent, (c) either section contains only trivial content (denylist: `nothing|none|n/a|no case`, whole-line anchored). Both sections are required regardless of verdict — symmetry forces articulation of the strongest opposing argument. Emits a `gate_fired` audit event with tool name `verifier_case_symmetry` on every block.
-- **Cleanup bloat gate** (`cleanup-bloat-gate.sh`): SubagentStop hook scoped to `rnd-cleanup`. Advisory-only — always exits 0, never blocks. Derives the cleanup report's deletion ratio via a three-step fallback chain: (1) `lines_removed:` + `total_touched:` fields, (2) `Deletion ratio: <int> / <int>` line, (3) silent exit when ratio is not derivable. Emits a `bloat_aversion_underperform` audit event when the derived ratio is below 15%.
-- **Drift report gate** (`drift-report-gate.sh`): SubagentStop hook that fires only for the `rnd-drift-detector` agent. Reads the most recent `wave-<N>-drift-report.md` and blocks completion with exit 2 when any of the three required sections is absent (`## Drift Hypothesis`, `## Counter-evidence`, `## Verdict`) or when the first non-blank line under `## Verdict` is not one of `NO_DRIFT|MINOR_DRIFT|MAJOR_DRIFT|RESET_RECOMMENDED` (case-sensitive). Emits a `gate_fired` audit event with tool name `drift_detector:<verdict>` on pass, `drift_detector` on block.
-- **File-revision stop condition** (`stop-condition-revisions.sh`): PreToolUse Write|Edit hook that counts prior Write/Edit events to the same path for the active task by querying `lib/audit-scan.sh revisions`. Blocks with exit 2 and a "STOP CONDITION" message when the count meets the threshold (default 5; overridable via `RND_STOP_FILE_REVISIONS`). Tolerates `task_id` absence in older `audit.jsonl` records by falling back to the active-session marker. Emits a `gateFired` audit event with gate name `stop_condition_revisions` on every halt. The matching post-hoc verdict-flip and plan-size stop conditions are enforced at the orchestration-prompt level (see `rnd-framework:rnd-orchestration` § Stop Conditions), not by hook; both invoke `AskUserQuestion` and emit gate names `stop_condition_verdict_flip` and `stop_condition_plan_size`.
-- **Permission denial handling** (`permission-denied.sh`): PermissionDenied hook (v2.1.89+) fires after auto-mode classifier denials. Logs the denied tool name and timestamp to `$RND_DIR/audit.jsonl` and returns `{retry: true}` so the model can retry the tool call with adjusted parameters. This prevents auto-mode denials from silently breaking pipeline execution.
-- **Format-on-save** (`format-on-save.sh`): PostToolUse hook (v2.1.90+) for Write and Edit events. Auto-detects the project's code formatter and runs it on changed code files. Detection is cached at session level. Skips non-code files and `.rnd/` artifacts. Non-blocking — formatting errors do not affect the pipeline.
-- **Evidence pack gate** (`evidence-pack-gate.sh`): PreToolUse Read hook that runs the existing information-barrier check first (still blocks self-assessment / `/briefs/` / `/cleanup/` for the verifier and proof-gate), then — only when the agent is `rnd-verifier` and the path matches `$RND_DIR/evidence/T*/manifest.json` — validates the manifest by `jq has()` checks against the disallowed-fields list sourced from `lib/manifest-schema.json`'s `x-disallowed-fields` extension (default: `notes`, `summary`, `confidence`, `reasoning`, `explanation`). The schema file is the single source of truth; the hook falls back to a hard-coded mirror only if the schema is unreadable. Blocks with `EVIDENCE PACK BARRIER` if any disallowed field is present; emits `allow` for clean manifests; no opinion for non-manifest paths or non-verifier agents. Registers as a second `Read` PreToolUse entry in `hooks.json`, ordered before `read-gate.sh`.
-- **Session title** (`session-title.sh`): UserPromptSubmit hook (v2.1.94+) that dynamically sets the session title to reflect the current pipeline phase and project name. When no active RND session exists, the title is `RND: <project>`. During pipeline execution, it becomes `RND: <phase> | <project>` (e.g., `RND: Building | my-project`). This makes sessions identifiable in the `/resume` picker. Always exits 0 — does not block prompt submission.
+The `hooks.json` routes each event to an external script under `hooks/`. The load-bearing policies:
+
+- **Information barrier** (`read-gate.sh`, `glob-grep-gate.sh`, `bash-gate.sh`): blocks any tool call where the path or command string contains `self-assessment`, path segment `/briefs/`, or path segment `/cleanup/` — when the agent is `rnd-verifier`, `rnd-proof-gate`, or has no agent_type. Prevents verification/proof phases from anchoring on build- or cleanup-phase reasoning. Segments include slashes so bare words "brief"/"cleanup" in a grep pattern are not flagged. The proof-gate inclusion matches the Lean theorem `proofGate_cannot_access_self_assessment` in `proofs/InformationBarrier.lean`.
+- **Auto-allow `.rnd/` and plugin cache** (`read-gate.sh`, `write-gate.sh`, `bash-gate.sh`, `glob-grep-gate.sh`, `settings.json`): Read/Write/Edit/Glob/Grep on `.rnd/` artifact paths auto-allowed. For Bash, `.rnd/` auto-allow fires only AFTER tool-discipline segment checks pass (so sed and inline interpreters are still blocked even when a `.rnd/` path appears). `read-gate.sh` also auto-allows `plugins/cache/` (skills, agents) and `$CLAUDE_CONFIG_DIR/learnings/` (cross-session knowledge).
+- **Worktree topology** (write-side agents only): the five write-side adaptive agents — `rnd-builder`, `rnd-verifier`, `rnd-cleanup`, `rnd-polisher`, `rnd-debugger` — declare `isolation: "worktree"` and spawn into per-task git worktrees at `.rnd-worktrees/<session>/T<id>/` on ephemeral branches `rnd/<session>/T<id>`. Read-side agents (`rnd-planner`, `rnd-integrator`) run in the main checkout. `$RND_DIR` lives under `~/.claude/.rnd/` — entirely OUTSIDE any worktree — so manifests, evidence packs, verifications, briefs, and `audit.jsonl` remain readable across all agents; the information barrier is enforced by hooks, not filesystem topology. Only the project source tree is per-agent scoped. The `rnd-integrator` is the sole merge path back to main: fetch each verified task's branch, `git merge --no-ff` in pre-reg dependency order, then prune branches and worktrees.
+- **Tool discipline** (`bash-gate.sh`): blocks `sed`, `awk`, `echo`/`printf` with file redirects, inline interpreters (`python -c`, `node -e`, `bun -e`, bare interpreter as pipe target), shell loops (`for`/`while`/`until`), and `/tmp/` redirects — enforces dedicated Claude Code tools and `$RND_DIR` for temp storage. Read-side commands (`cat`, `head`, `tail`, `grep`, `rg`, `find`) pass through. Splits compound commands (`&&`/`||`/`;`/`|`/`$(...)`/backticks) and strips env-var prefixes (`FOO=bar cmd`) before checking each segment. File execution (`python file.py`, `bun test`, `python -m pytest`) is allowed. Also handles commit protection: blocks `git add` of `.rnd/` and emits an advisory on `git push` to main/master/production.
+- **Audit + Bash output cache** (`post-dispatch.sh`): logs Write/Edit ops to `$RND_DIR/audit.jsonl`, advises when output >50 lines, and writes Bash stdout/stderr to `$session/.bash-cache/<sha>.txt` keyed by `cmd_hash` from `lib.sh`. PreToolUse Bash detects identical re-runs within `RND_BASH_CACHE_TTL_SECONDS` (default 600) and points at the cached file when the prior output was ≥10 lines. Non-blocking; cache auto-clears with session.
+- **Stop conditions** (`stop-condition-revisions.sh`): PreToolUse Write|Edit halts when the same path has been rewritten `RND_STOP_FILE_REVISIONS` times (default 5) for the active task — via `lib/audit-scan.sh revisions`. The verdict-flip and plan-size stop conditions are enforced at the orchestration-prompt level (gate names `stop_condition_verdict_flip`, `stop_condition_plan_size`), invoke `AskUserQuestion`, and emit `gateFired` audit events.
+- **SubagentStop quality gates** (agent-scoped): blocking — `builder-dismissal-gate.sh` (phrases like `pre-existing`/`out of scope` blocked; the only legal dismissal path is a `T<id>-found-issues.jsonl` ledger entry with `decision:"escalated"`); `coverage-gaps-gate.sh` (verification.md must have substantive `## Coverage Gaps`); `verifier-case-gate.sh` (must have substantive `## Case for PASS` and `## Case for FAIL` — symmetry forces opposing-side articulation); `anomaly-gate.sh` (reality-report must have sourced `## Anomalies` OR substantive `## No-Finding Rationale` ≥200 chars); `drift-report-gate.sh` (drift report must have `## Drift Hypothesis` + `## Counter-evidence` + `## Verdict` with value in `NO_DRIFT|MINOR_DRIFT|MAJOR_DRIFT|RESET_RECOMMENDED`). Advisory-only — `cleanup-bloat-gate.sh` emits `bloat_aversion_underperform` when cleanup deletion ratio <15%. Every block emits a `gate_fired` (or `gateFired`) audit event.
+- **Evidence pack gate** (`evidence-pack-gate.sh`): PreToolUse Read; runs the info-barrier check first, then — only for `rnd-verifier` reading `$RND_DIR/evidence/T*/manifest.json` — validates the manifest by `jq has()` against `lib/manifest-schema.json`'s `x-disallowed-fields` (default: `notes`, `summary`, `confidence`, `reasoning`, `explanation`). Blocks with `EVIDENCE PACK BARRIER` on any disallowed field.
+- **Other** observability/UX hooks: `stop-failure.sh` (API-error logging), `permission-denied.sh` (auto-mode denial → `{retry: true}`), `cwd-changed.sh` (cross-repo warning), `file-changed.sh` (external `.rnd/` edit advisory), `task-created.sh`, `subagent-lifecycle.sh`, `worktree-create.sh`/`worktree-remove.sh`, `format-on-save.sh` (auto-format code on Write/Edit; cached detection; skips `.rnd/`), `session-title.sh` (dynamic `RND: <phase> | <project>` title for `/resume`).
 
 #### Claude Code Version Notes
 
-**Min recommended:** v2.1.139 (`hooks.json` exec form for `args: string[]`; bumped from v2.1.117 in 3.20.5). `session-start.sh` warns when below threshold via `claude --version`; degrades gracefully if `claude` not in PATH.
+**Min recommended:** v2.1.139 (`hooks.json` exec form for `args: string[]`). `session-start.sh` warns via `claude --version` when below threshold.
 
-**Hook Allow/Deny Precedence (v2.1.77+):** `deny rules > hook allow > default prompt`. A deny rule covering `.rnd/` silently overrides auto-allows. **Workaround:** add `allowRead`/`allowWrite` sandbox settings (these take precedence over deny rules):
-```json
-{ "allowRead": ["~/.claude/.rnd/**"], "allowWrite": ["~/.claude/.rnd/**"] }
-```
+**Key version-gated behaviors:**
+- v2.1.77+: deny rules > hook allow > default prompt. **Workaround for deny rules covering `.rnd/`:** set `allowRead`/`allowWrite` sandbox settings (e.g. `["~/.claude/.rnd/**"]`) — these override deny.
+- v2.1.89+: `allowRead`/`allowWrite` resolve symlinks; hook output >50K saves to disk with preview; `permission-denied.sh` works (auto-mode denial retry).
+- v2.1.90+: required minimum for format-on-save (earlier failed Write/Edit with "File content has changed" when a PostToolUse hook rewrote the file); auto mode respects explicit user boundaries.
+- v2.1.94+: default effort raised to `high`; output styles set `keep-coding-instructions: true` to preserve coding instructions across compaction.
+- v2.1.97+: statusline `refreshInterval: 5` works; subagent cwd no longer leaks to parent; 429 backoff applied as minimum.
+- v2.1.113+: `sandbox.network.deniedDomains` honored (plugin ships denylist for pastebin-style exfil hosts); 10-min subagent stall timeout; `find -exec`/`-delete` no longer auto-approved (bash-gate already blocks `find`).
+- v2.1.118+: agent-scoped hooks fire on non-Stop events; `SendMessage` restores spawn-time cwd; `autoMode.allow` supports `$defaults` keyword.
 
-**Symlink Resolution (v2.1.89+):** `allowWrite`/`allowRead` check resolved targets, so `["~/.claude*/.rnd/**"]` matches symlinked `.claude` or `.rnd`.
+**Spawn mode:** pipeline agents spawn with `mode: "acceptEdits"`. Empirically `mode: "auto"` denied project-file Edit/Write on 2.1.112 team-spawned subagents; Bash still routes through the auto-mode classifier.
 
-**Hook Output Size (v2.1.89+):** Output exceeding 50K chars saves to disk with preview. `session-start.sh` is ~5-10K, well under threshold.
+**`file_path` handling:** tool schemas require absolute paths but hooks receive raw `tool_input`. `lib.sh` path-predicate matchers (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) reject paths not starting with `/` — relative paths fall through to default permission prompt.
 
-**Auto-Mode Boundary Respect (v2.1.90+):** Auto mode honors explicit user boundaries even when the classifier would allow. Pipeline agents spawn with `mode: "acceptEdits"` (empirically `mode: "auto"` denied project-file Edit/Write on 2.1.112 team-spawned subagents); Bash still routes through the classifier.
+**Plugin settings defaults:** `settings.json` ships `showThinkingSummaries: true`, `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines.refreshInterval: 5`, and `autoMode.allow` with `$defaults` plus safe pipeline Bash invocations (`bun test:*`, `python -m pytest:*`, read-only `git`, `jq:*`, `ls:*`). User settings take precedence.
 
-**Format-on-Save (v2.1.90+):** Required minimum — earlier versions failed Write/Edit with "File content has changed" when a PostToolUse hook rewrote the file.
+### `--bare` Mode
 
-**Default Effort (v2.1.94+):** Default raised from medium to high for API-key/Bedrock/Vertex/Foundry/Team/Enterprise users; affects agents spawned without explicit `effort`.
-
-**keep-coding-instructions (v2.1.94+):** All three rnd-framework output styles set this `true` to preserve coding instructions across compaction.
-
-**Statusline (v2.1.97+):** `refreshInterval: 5` in `settings.json`; `workspace.git_worktree` extracted by `statusline.sh` as `[wt: <name>]`.
-
-**Subagent cwd Isolation (v2.1.97+):** Fixed agents leaking cwd to parent — improves multi-agent mode.
-
-**429 Backoff (v2.1.97+):** Exponential backoff applied as minimum, preventing retry budget burn on small `Retry-After`.
-
-**sandbox.network.deniedDomains (v2.1.113+):** Plugin ships conservative default denylist (`pastebin.com`, `hastebin.com`, `0x0.st`, `transfer.sh`) as defense-in-depth against exfiltration via `WebFetch`/`Bash`.
-
-**Subagent Stall Timeout (v2.1.113+):** 10-min timeout surfaces concrete error on hangs; does not on its own resolve the `rnd-integrator` hang documented in project memory.
-
-**Bash find -exec/-delete (v2.1.113+):** Stopped auto-approving destructive `find`. `bash-gate.sh` already blocks `find` unconditionally so no user impact.
-
-**Agent-Type Hooks (v2.1.118+):** Fixed agent-scoped hooks failing on non-Stop events; unblocks per-agent PreToolUse hooks.
-
-**SendMessage cwd Restore (v2.1.118+):** Fixed resumed agents not restoring spawn-time `cwd`; pipeline uses SendMessage to wake sleeping agents.
-
-#### file_path Handling
-
-Tool schemas require absolute paths but hooks receive raw `tool_input`. Regex matchers in `lib.sh` (`is_plugin_artifact_path`, `is_plugin_cache_path`, `is_learnings_path`) reject paths not starting with `/` — relative paths fall through to the default permission prompt rather than auto-allowing.
-
-#### Plugin Settings Defaults
-
-`settings.json` ships pipeline-optimized defaults: `showThinkingSummaries: true`, `showTurnDuration: true`, `spinnerTipsEnabled: false`, `statusLines.refreshInterval: 5`, and `autoMode.allow` with the v2.1.118 `$defaults` keyword plus safe pipeline Bash invocations (`bun test:*`, `python -m pytest:*`, read-only `git`, `jq:*`, `ls:*`). User settings take precedence.
-
-### --bare Mode (v2.1.81+)
-
-When Claude Code is launched with `--bare`, all hooks are skipped — SessionStart, read-gate.sh, bash-gate.sh, post-dispatch.sh, and all others. Practical consequences:
-
-- The information barrier is not enforced: verification phase can read build-phase self-assessments
-- Tool discipline is not enforced: sed/cat/grep/find/inline interpreters bypass is possible
-- Session bootstrap does not run: skills are not injected into context
-
-Bottom line: rnd-framework effectively does not work in `--bare` mode. This is expected — `--bare` is designed for scripted `-p` invocations, not interactive pipeline orchestration.
+`claude --bare` skips all hooks. Consequences: information barrier not enforced, tool discipline not enforced, skills not injected. rnd-framework effectively does not work in `--bare` mode — that flag is for scripted `-p` invocations, not interactive pipelines.
 
 ### Skill System
 
-Skills are directories under `skills/` containing a `SKILL.md` with YAML frontmatter (`name`, `description`, `effort`). Claude Code's native plugin system discovers skills by directory convention. The `effort` field (added in v2.1.80) overrides the model's reasoning effort when the skill is invoked: `low` for reference/guidance skills, `medium` for procedural workflows. Commands also support `effort` frontmatter: `low` for read-only operations, `medium` for moderate reasoning, `high` for deep pipeline orchestration.
+Skills are directories under `skills/` with a `SKILL.md` carrying YAML frontmatter (`name`, `description`, `effort`). Claude Code's plugin system discovers skills by directory convention. The `effort` field overrides reasoning effort when invoked: `low` for reference/guidance, `medium` for procedural workflows. Commands also support `effort` frontmatter: `low` (read-only), `medium` (moderate), `high` (deep pipeline orchestration).
 
-The `rnd-roadmapping` skill defines the roadmap.md format, milestone statuses, and how to create and update roadmaps across sessions.
+Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rnd-learning` (auto-capture pipeline gotchas to `$CLAUDE_CONFIG_DIR/learnings/`), `rnd-formatting` (detect+run project formatter pre-commit), `rnd-cards` (flash-card priming system: cards prepended to a card-receiving agent's task spec under `# Reference examples for tasks like this one` immediately before `Task: T<id>`; five card-receiving roles: planner, builder, reality-auditor, verifier, cleanup; pre-reg may carry optional `Card tags: [tag1, tag2]`; orchestrator emits a `card_injection` audit event per spawn; `/rnd-framework:rnd-cards-propose` and `/rnd-framework:rnd-cards-impact` close the loop — human-in-the-loop, nothing auto-inserted).
 
-The `rnd-learning` skill enables auto-capture of pipeline-discovered gotchas to the user's Learning Library during iteration cycles.
+**Shadowing:** Personal skills in user's `.claude/skills/` override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
-The `rnd-formatting` skill detects the project's code formatter and runs it on pipeline-changed files before doc-polish and committing.
-
-The `rnd-cards` skill (non-user-invocable) documents the flash-card priming system: the card authoring format under `cards/<role>/<lang>/CARD-<ID>.md`, the `lib/card-retrieve.sh` retrieval contract, the orchestrator's injection convention (cards are prepended to a card-receiving agent's task spec under a `# Reference examples for tasks like this one` header, immediately before `Task: T<id>`), and the v1 tag taxonomy. Five agent roles receive cards: Planner, Builder, Reality-auditor, Verifier, Cleanup. The pre-registration template carries an optional `Card tags: [tag1, tag2]` field; absence triggers role-only filtering. The orchestrator emits a `card_injection` audit event per spawn (`<role>:<comma-joined card ids>` packed into the audit-event tool field). Loop closure: `/rnd-framework:rnd-cards-propose` surfaces draft cards from recurring FAIL feedback; `/rnd-framework:rnd-cards-impact` measures iterations-to-PASS pre/post a rollout date. Both commands are human-in-the-loop — nothing is auto-inserted into the corpus.
-
-**Shadowing rule:** Personal skills (in user's `.claude/skills/`) override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
-
-**Plugin freshness (v2.1.81+):** Ref-tracked plugins re-clone on every load, so the cached plugin version is always current. Version mismatch warnings (from `hooks/session-start.sh`) should be rare in v2.1.81+ setups; if they appear, it likely indicates a bug rather than a stale install.
+**Plugin freshness (v2.1.81+):** ref-tracked plugins re-clone on every load, so the cached version is always current. The mismatch warning from `session-start.sh` should be rare in modern setups.
 
 ### Session Bootstrap
 
-The `SessionStart` hook fires on `startup|resume|clear|compact` and runs `hooks/session-start.sh`, which reads and injects the `using-rnd-framework` skill content into session context as a system reminder. It also checks the installed Claude Code version against the minimum recommended (v2.1.139) and emits a warning if below threshold.
+`SessionStart` fires on `startup|resume|clear|compact` → `hooks/session-start.sh` injects the `using-rnd-framework` skill as a system reminder and emits a version warning if below v2.1.139.
 
-The `SessionEnd` hook fires when a session closes or switches (including via `/resume`) and runs `hooks/session-end.sh`, which calls `rnd-dir.sh --finish` to clear the active session marker. This prevents stale `.current-session` files from persisting across sessions.
+`SessionEnd` fires on close/switch (including `/resume`) → `hooks/session-end.sh` calls `rnd-dir.sh --finish` to clear `.current-session`.
 
-**Remote pipelines with `--channels` (v2.1.81+):** The `--channels` flag enables permission-relay mode, forwarding tool approval prompts to the Claude mobile app. This is useful when running rnd-framework pipelines on remote or headless machines where interactive terminal input is unavailable.
+**Remote pipelines:** `--channels` (v2.1.81+) forwards permission prompts to the Claude mobile app — useful for headless pipeline runs.
 
 ### Runtime Artifacts
 
-The framework stores artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated artifact space based on a hash of its path. Each pipeline run gets a unique session ID, preserving history across runs.
+Artifacts live in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. Each project gets an isolated slug; each pipeline run gets a unique session ID.
 
-**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR` path. Flags: `-c` (create session under current branch), `--finish` (clear session), `--base` (branch-scoped project base dir), `--roadmap` (path to roadmap.md; branch-scoped; lazy-inherits from default branch on first access), `--facts` (path to project-facts.md; branch-scoped; lazy-inherits from default branch on first access), `--calibration` (path to calibration.jsonl at the un-partitioned slug root). Branch is resolved at each invocation via `git symbolic-ref --short HEAD`; detached HEAD becomes `detached-<sha7>`; non-git directories become `no-git`; slashes preserve as nested dirs; `..` traversal is rejected.
+**Helper:** `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` — outputs absolute `$RND_DIR`. Flags: `-c` (create session under current branch), `--finish` (clear session), `--base` (branch-scoped project base), `--roadmap` / `--facts` (branch-scoped, lazy-inherit from default branch on first access), `--calibration` (slug-root, un-partitioned). Branch is resolved at each invocation via `git symbolic-ref --short HEAD`; detached HEAD → `detached-<sha7>`; non-git → `no-git`; slashes preserved as nested dirs; `..` rejected.
 
 ```
 ~/.claude/.rnd/<basename>-<hash>/          # Project slug; un-partitioned at the top
-├── .active-base-dir                       # Cache: path to the currently active branch-scoped base dir (read by lib.sh::active_session_dir fast-path)
-├── calibration.jsonl                      # Verdict accuracy tracking (project-wide, un-partitioned; legacy — new installs use $CLAUDE_PLUGIN_DATA); AMEND_REQUIRED verdicts include optional amendmentData field: { userDecision: "approved"|"rejected", arbitersRecommendation: "AMEND"|"REBUILD"|"ESCALATE_REPLAN" }; additional optional nested objects: multiJudge ({judgeA, judgeB, agreed, resolution, tiebreaker} — written by the rnd-multi-judge skill Step 5 to record pre-resolution disagreement); task_type (enum: refactor|new-feature|bugfix|docs|config|infra — rule-based keyword inference from pre-reg Intent + title, default infra; surfaced via `lib/calibration.sh task_type_window <type>`); gateFired ({gate, outcome, task_id} — emitted by every new pipeline gate: existence_prepass, stop_condition_revisions, stop_condition_verdict_flip, stop_condition_plan_size, coverage_gaps_gate, assumption_unchecked)
-└── branches/<branch>/                     # Branch-scoped partition (branch resolved from HEAD; detached-<sha7> / no-git fallbacks; nested dirs for slash-names like feature/foo)
+├── .active-base-dir                       # Cache: active branch-scoped base dir (fast-path in lib.sh::active_session_dir)
+├── calibration.jsonl                      # Verdict-accuracy tracking, project-wide. Records may include: amendmentData {userDecision, arbitersRecommendation}; multiJudge {judgeA, judgeB, agreed, resolution, tiebreaker}; task_type (refactor|new-feature|bugfix|docs|config|infra); gateFired {gate, outcome, task_id}
+└── branches/<branch>/                     # Branch-scoped partition (slashes → nested dirs)
     ├── .current-session                   # Active session ID
-    ├── .session-git-root                  # Git root of the project that started the session (written by session-start.sh, read by cwd-changed.sh)
-    ├── roadmap.md                         # Multi-session roadmap (optional, created by /roadmap); lazily copied from default branch on first access
-    ├── project-facts.md                   # Persistent project environment scan (created by /rnd-scan); lazily copied from default branch on first access
+    ├── .session-git-root                  # Git root that started the session (written by session-start, read by cwd-changed)
+    ├── roadmap.md                         # Multi-session roadmap (lazy-inherited from default branch)
+    ├── project-facts.md                   # Persistent project scan (lazy-inherited from default branch)
     └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   # $RND_DIR (one per pipeline run)
-    ├── plan.md                            # Task tree, environment, testing strategy, worker guidelines, validation contract, pre-registrations (with preconditions), schedule
-    ├── diagnosis/T*-diagnosis.md          # Debugger root cause analysis (debug pipeline only)
-    ├── builds/T*-manifest.md              # Builder output records (terse: structured bullets, no narrative)
-    ├── builds/T*-self-assessment.md       # Builder uncertainties (blocked from Verifier)
-    ├── builds/T*-found-issues.jsonl       # Per-task ledger of issues encountered: {"issue","location","decision":"fixed"|"escalated","reason"}; enforced by builder-dismissal-gate.sh; read by Verifier
-
-    ├── verifications/wave-*-verdict-map.json  # Per-wave verdict map keyed by task_id (PASS/PASS_QUALITY_NEEDS_ITERATION/NEEDS_ITERATION/FAIL + evidence + feedback)
-    ├── verifications/T*-verification.md   # Verifier evidence-based verdicts (full prose report written for every verdict: PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED — replaces the retired T*-pass-receipt.json lazy-prose path)
-    ├── verifications/T*-experiments/      # Verifier-written independent experiment tests
-    ├── verifications/T*-evidence/         # Per-VAL-assertion evidence files (raw command output)
-    ├── evidence/T<id>/                    # Evidence-pack writer output (Builder-side, opt-in via RND_EVIDENCE_PACK=1): one dir per task containing manifest.json (schema-validated by evidence-pack-gate.sh before Verifier reads), <tool>-stdout.txt, <tool>-stderr.txt, optional <tool>-structured.json
-    ├── audit.jsonl                        # Shared audit log; post-dispatch.sh emits {ts,tool,file} per Write/Edit; run-tool.sh emits {event:"tool_run_fresh",task_id,tool,timestamp} per evidence-pack run via lib/audit-event.sh; Verifier emits {event:"tool_pack_served",...} on hash-match by calling the same helper (per rnd-verification skill)
-    ├── proofs/T*-proof-report.md          # Proof Gate results (Lean 4 formal verification)
-    ├── proofs/T*-theorems/                # Lean theorem files
-    ├── integration/wave-*-report.md       # Integration results, SHIP/NO-SHIP
-    ├── cleanup/T*-cleanup-report.md        # Cleanup agent per-task reports (barrier-protected from Verifier)
-    ├── polish/wave-*-polish-report.md      # Polisher wave-level seam-fix reports (Phase 4.5, one per wave)
-    ├── briefs/                             # Barrier-protected Builder-reasoning artifacts (blocked from Verifier by read-gate/glob-grep-gate/bash-gate hooks)
-    │   ├── decisions.md                    # Cross-phase structured judgment-call log (Planner/Builder/Debugger/Integrator append when rejecting real alternatives)
-    │   ├── plan-briefs.md                  # Planner user-facing narrative briefs
-    │   ├── T<id>-briefs.md                 # Per-task user-facing narrative briefs (Builder/Debugger)
-    │   ├── wave-<N>-briefs.md              # Per-wave user-facing integration briefs
-    │   └── T<id>-amendments.md             # Amendment arbiter proposals (barrier-protected from Verifier and Proof Gate; orchestrator-owned write)
-    └── iteration-log.md                   # Build-verify cycle tracking
+        ├── plan.md                        # Task tree, env, testing strategy, pre-registrations, schedule
+        ├── diagnosis/T*-diagnosis.md      # Debugger root cause (debug pipeline only)
+        ├── builds/T*-manifest.md          # Terse build records (structured bullets, no narrative)
+        ├── builds/T*-self-assessment.md   # Builder uncertainties (blocked from Verifier)
+        ├── builds/T*-found-issues.jsonl   # Per-task issue ledger ({issue, location, decision:"fixed"|"escalated", reason}) — enforced by builder-dismissal-gate
+        ├── verifications/wave-*-verdict-map.json   # Per-wave verdicts keyed by task_id
+        ├── verifications/T*-verification.md        # Full prose verdict report (for every verdict)
+        ├── verifications/T*-experiments/  # Verifier-written independent tests
+        ├── verifications/T*-evidence/     # Per-VAL-assertion raw output
+        ├── evidence/T<id>/                # Builder-side evidence packs (opt-in: RND_EVIDENCE_PACK=1) — manifest.json + tool stdout/stderr/structured.json
+        ├── audit.jsonl                    # Shared audit log: Write/Edit events from post-dispatch; tool_run_fresh from run-tool.sh; tool_pack_served from Verifier; lifecycle events; gateFired records
+        ├── proofs/T*-proof-report.md      # Proof Gate results (Lean 4)
+        ├── proofs/T*-theorems/            # Lean theorem files
+        ├── integration/wave-*-report.md   # Integration results, SHIP/NO-SHIP
+        ├── cleanup/T*-cleanup-report.md   # Cleanup reports (barrier-protected from Verifier)
+        ├── polish/wave-*-polish-report.md # Polisher wave-level seam-fix reports
+        ├── briefs/                        # Barrier-protected Builder-reasoning artifacts (blocked from Verifier by hooks)
+        │   ├── decisions.md               # Cross-phase judgment-call log (rejected alternatives)
+        │   ├── plan-briefs.md             # Planner user-facing narrative
+        │   ├── T<id>-briefs.md            # Per-task user-facing narrative (Builder/Debugger)
+        │   ├── wave-<N>-briefs.md         # Per-wave integration narrative
+        │   └── T<id>-amendments.md        # Amendment-arbiter proposals (barrier-protected; orchestrator-owned write)
+        └── iteration-log.md               # Build-verify cycle tracking
 ```
 
 Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
-**Worktree support:** All worktrees of the same repository share the same `.rnd/<slug>/` base directory. Worktrees on different branches partition into distinct `branches/<branch>/` buckets — each branch's facts, roadmap, and sessions stay isolated. Worktrees on the same branch share the same branch bucket. The project slug is derived from `git rev-parse --git-common-dir` (canonicalized to an absolute path via the POSIX `cd + pwd` idiom), so linked worktrees and the main checkout produce identical slugs even though their `pwd` values differ.
+**Worktree support:** all worktrees of the same repo share `.rnd/<slug>/` because the slug is derived from `git rev-parse --git-common-dir` (canonicalized via the POSIX `cd + pwd` idiom). Worktrees on different branches partition into distinct `branches/<branch>/` buckets — each branch's facts/roadmap/sessions stay isolated. Same-branch worktrees share the bucket.
 
 ## Commands
 
-Slash commands use the full plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-plan`, `/rnd-framework:rnd-build`, `/rnd-framework:rnd-verify`, `/rnd-framework:rnd-integrate`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-validate`, `/rnd-framework:rnd-doctor`, `/rnd-framework:rnd-bump`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-narrative`, `/rnd-framework:rnd-calibrate`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`, `/rnd-framework:rnd-cards-propose`, `/rnd-framework:rnd-cards-impact`.
+Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`, `rnd-cards-propose`, `rnd-cards-impact`.
 
 ## Key Conventions
 
-- **Skills use YAML frontmatter** — `name`, `description`, and `effort` fields between `---` delimiters
-- **Commands are Markdown files** in `commands/` — filename becomes the command name
-- **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`
-- **Test suite** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`
-- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools`), then bash scripts, then Python as last resort
-- **File creation** — always use `Write`/`Edit` tools, never bash heredocs (`cat > file << 'EOF'`)
-- **Report surfacing** — the three rnd-framework output styles each carry a "Report Surfacing Protocol" section that requires the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verifier verdict maps, reality reports, diagnoses, integration reports, proofs, amendments, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log. The `using-rnd-framework` skill, `README.md`, and report-producing command files (`rnd-audit`, `rnd-review`, `rnd-brainstorm`, `rnd-debug`, `rnd-roadmap`) carry pointer reminders.
+- **Skills use YAML frontmatter** — `name`, `description`, `effort` between `---` delimiters.
+- **Commands are Markdown files** in `commands/` — filename becomes the command name.
+- **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`.
+- **Tests** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`.
+- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools` skill), then bash scripts, then Python as last resort.
+- **File creation** — always use `Write`/`Edit`, never bash heredocs (`cat > file << 'EOF'`).
+- **Report surfacing** — the three output styles each carry a "Report Surfacing Protocol" requiring the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verdict maps, reality reports, diagnoses, integration reports, proofs, amendments, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log.
 
 ## Working on This Codebase
 
-When modifying skills or commands, the content is Markdown processed by Claude Code's plugin system. Changes take effect in new sessions.
+Skills and commands are Markdown processed by Claude Code's plugin system. Changes take effect in new sessions.
 
-To test a hook change, start a new Claude Code session in a project with this plugin enabled.
+To test a hook change, start a new session in a project with this plugin enabled.
 
 To verify plugin registration: check that `.claude-plugin/marketplace.json` lists the plugin and the source path resolves to a valid `plugin.json`.

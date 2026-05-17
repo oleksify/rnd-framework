@@ -1,7 +1,7 @@
 {
   "name": "rnd-framework",
   "description": "Scientific-method orchestration for coding: pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.",
-  "version": "3.23.0",
+  "version": "3.24.0",
   "author": {
     "name": "Oleksii Topolianskyi",
     "email": "mail@oleksify.me",

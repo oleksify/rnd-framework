@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.24.0 — 2026-05-17
+
+### Expand flash-card corpus to v2 with canon principles and language/library tiers
+
+Adds the v2 principle-ladder corpus to plugins/rnd-framework/cards/: four canon principle cards (P-IMPOSSIBLE-01 unrepresentable-states, P-EFFECTS-EDGE-01 functional-core/imperative-shell, P-SMALL-MODULES-01 stable-boundaries, P-PURE-RENDER-01 pure-data-to-UI) anchor a three-tier ladder. Language tier adds 27 cards across Elixir/TypeScript/SQL under builder, reality-auditor, and verifier roles. Library tier adds 43 cards under host-language directories: Elixir-stack Phoenix/Ecto/Bandit/Oban/Sentry-Elixir (cards/<role>/elixir/) and JS/TS-stack Svelte/SvelteKit/Supabase/Sentry-js (cards/<role>/typescript/). All v1 cards retagged with new optional specializes: frontmatter array referencing canon IDs; field is silently ignored by the existing card-retrieve.sh (verified by new tests/card-retrieve-specializes.sh regression test). skills/rnd-cards/SKILL.md documents the field, the ≤40-line soft body budget, the inline-bold label convention, and the canon naming convention P-<TOPIC>-<NN>. Dropped from initial seed scope: Bash and shadcn-svelte. All TS examples use arrow functions and braced if blocks per the project author's JS/TS style preferences. card-retrieve.sh source is byte-identical.
+
 ## 3.23.0 — 2026-05-17
 
 ### Add flash-card priming system: seed corpus, deterministic retrieval, and orchestrator-level injection at card-receiving spawn points

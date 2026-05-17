@@ -54,6 +54,43 @@ Each completed task appends one record to `calibration.jsonl`:
 | `falseVerdictFlag` | string or null | Set by detection or manual correction. Values: `"FALSE_PASS"`, `"FALSE_FAIL"`, `"FALSE_PASS_PROXY"`, or `null`. |
 | `proxyFor` | string or null | Present only when `falseVerdictFlag` is `"FALSE_PASS_PROXY"`. The `timestamp` value of the original PASS record this proxy links to. |
 | `escalationGate` | object or null | Optional. Present when a first-pass escalation gate was run. Shape: `{ "firstPassVerdict": "PASS" \| "FAIL" \| "NEEDS_ITERATION" \| "PASS_QUALITY_NEEDS_ITERATION" \| "AMEND_REQUIRED", "escalated": boolean, "overturned": boolean }`. `escalated` is true when the first-pass verdict was not PASS. `overturned` is true when the final consensus verdict differs from the first-pass verdict (i.e., the gate decision was wrong). Omit entirely when `rnd-multi-judge` was not used or `RND_MULTI_JUDGE_ALWAYS=1` bypassed the gate. |
+| `multiJudge` | object or null | Optional. Present when multi-judge verification ran and a disagreement occurred (tiebreaker was invoked). Shape: `{ "judgeA": string, "judgeB": string, "agreed": boolean, "resolution": string, "tiebreaker": string \| null }`. `judgeA`/`judgeB` are the verdict strings each judge returned. `agreed` is false whenever a tiebreaker was invoked. `resolution` is the final verdict after tiebreaker. `tiebreaker` is the tiebreaker verdict string, or null when judges agreed. Omit entirely when both judges agreed on the first pass. |
+| `task_type` | string or null | Optional. Rule-based taxonomy tag inferred by the orchestrator from the pre-registration `Intent` and task title. Values: `refactor \| new-feature \| bugfix \| docs \| config \| infra`. Defaults to `infra` on no keyword match. See "task_type Inference Policy" sub-section below. |
+| `gateFired` | object or null | Optional. Present when a new reliability gate fired for this task. Shape: `{ "gate": string, "outcome": string, "task_id": string }`. `gate` is one of the four producer gate names (see "gateFired Producer Registry" sub-section). `outcome` is the gate result (e.g., `INVALID_FOUND`, `CLEAN`, `FLAGGED`, `BLOCKED`). `task_id` is the task this gate firing applies to. Append one `gateFired` record per gate firing; multiple gates may fire for a single task. |
+
+### task_type Inference Policy
+
+The orchestrator infers `task_type` from the pre-registration `Intent` field and task title using a keyword-priority list. Match the first rule that fires; default to `infra` on no match.
+
+| task_type | Trigger keywords (match any, case-insensitive) |
+|-----------|------------------------------------------------|
+| `refactor` | refactor, restructure, rename, reorganize, cleanup, extract, move, split |
+| `new-feature` | feature, add, introduce, implement, new, build, create, support |
+| `bugfix` | fix, bug, defect, broken, wrong, incorrect, regression, patch |
+| `docs` | docs, documentation, readme, changelog, comment, annotate, describe |
+| `config` | config, setting, env, environment, flag, toggle, threshold, parameter |
+| `infra` | (default — no keyword match, or keywords: infra, scaffold, pipeline, hook, gate, schema, telemetry) |
+
+Rules:
+- Match against the concatenation of task title + `Intent` field value.
+- First match wins — order in the table above is the evaluation order.
+- `infra` is the explicit last-resort default; it also matches on its own keywords for tasks that clearly fall in that category.
+- Keyword matching is word-boundary agnostic (substring match is sufficient).
+
+### gateFired Producer Registry
+
+The following gates append `gateFired` records to `calibration.jsonl`. Future gates register here.
+
+| Gate name | Producer | What it records |
+|-----------|----------|-----------------|
+| `existence_prepass` | `rnd-reality-auditor` | Pre-pass existence check result for a declared external reference |
+| `stop_condition_revisions` | orchestrator stop-condition hook | Detects file revision counts exceeding threshold; outcome `FLAGGED` or `CLEAN` |
+| `stop_condition_verdict_flip` | orchestrator post-wave check | Detects PASS→FAIL→PASS or FAIL→PASS→FAIL verdict sequences via `audit-scan.sh verdict_history`; outcome `halted` |
+| `stop_condition_plan_size` | orchestrator post-plan check | Detects task count exceeding `RND_STOP_PLAN_RATIO × Heuristic ceiling`; outcome `halted` |
+| `coverage_gaps_gate` | verifier / SubagentStop enforcement | Records when a pre-reg is missing required coverage sections; outcome `BLOCKED` or `CLEAN` |
+| `assumption_unchecked` | verifier / pre-reg discipline check | Records when assumptions lack `Refuted by` evidence; outcome `FLAGGED` or `CLEAN` |
+
+Each gate fires at most once per task per pipeline run. Multiple firings for different tasks produce separate records with distinct `task_id` values.
 
 ## Storage Location
 

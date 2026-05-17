@@ -115,6 +115,107 @@ For each changed file:
 
 Record every discovered reference, whether declared or undeclared. Undeclared references are higher-priority audit targets — the Builder may not have considered whether they are correct.
 
+## Existence Pre-Pass
+
+Before writing adversarial experiments, run a mechanical existence check on every reference the Builder claims. LLM fabrication — invented module names, nonexistent methods, made-up RFC numbers, phantom env vars — is a worse failure than a contract mismatch. Catch it first.
+
+**When to run:** Always, as Step 0, before the Adversarial Experiment Design phase. A single MISSING verdict short-circuits the entire audit: return status `INVALID_FOUND` immediately without running adversarial experiments.
+
+**Probe execution constraint:** Write each probe as a file to `$RND_DIR/reality/T<id>-experiments/existence-probe-<n>.{py,js,sh}` and execute it by path. Never use `python -c`, `node -e`, or `bun -e` — these inline-interpreter flags are blocked by `bash-gate.sh`. See that file for the rationale.
+
+### Reference Categories
+
+Check four categories of references declared in the Builder's manifest and source files:
+
+#### 1. Imports
+
+Module imports that the Builder claims resolve at runtime.
+
+Patterns: `import x`, `require('x')`, `from x import y`, `use x::y`
+
+Probe: write a minimal import-and-exit file, execute it, confirm exit 0.
+
+Example Python probe (`existence-probe-1.py`):
+```python
+import json  # replace with the claimed module name
+```
+
+Example Node probe (`existence-probe-1.js`):
+```javascript
+require('fs')  // replace with the claimed package name
+```
+
+#### 2. Third-Party Method Calls
+
+Methods or attributes the Builder accesses on external libraries, SDKs, or APIs — where the module exists but the specific symbol might not.
+
+Patterns: `library.method(`, `obj.attribute`, `SomeClass.staticMethod(`
+
+Probe: write a file that imports the module and accesses the symbol, confirm no `AttributeError` / `TypeError`.
+
+Example (`existence-probe-2.py`):
+```python
+import boto3
+getattr(boto3, 'client')  # replace with the claimed attribute
+```
+
+#### 3. RFC / Error-Code Citations
+
+RFC numbers, HTTP status codes, error code constants, or specification references the Builder cites as authoritative.
+
+Patterns: `RFC 7234`, `HTTP 418`, `errno.ENOENT`, `POSIX.1-2017`
+
+Probe: for stdlib constants, write a file that imports the module and reads the constant; for RFC numbers and external specs, mark UNCHECKED (unreachable citation — note the claimed text in the report).
+
+Example (`existence-probe-3.py`):
+```python
+import errno
+val = errno.ENOENT  # replace with the claimed constant
+print(val)
+```
+
+#### 4. Environment Variable Names
+
+Env var names the Builder reads that must exist in the execution environment or be declared in the project's documented config.
+
+Patterns: `os.environ['VAR']`, `process.env.VAR`, `Bun.env.VAR`, `${VAR}`
+
+Probe: write a shell file that checks the var is documented (grep the project's `.env.example`, `README`, or config file) OR confirm the var is set in the current environment.
+
+Example (`existence-probe-4.sh`):
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# Check that the claimed env var is declared in the project's documented config.
+grep -r "MY_VAR" . --include="*.env.example" --include="*.md" | head -1
+```
+
+### Probe Execution
+
+Execute each probe by file path using Bash:
+
+```bash
+python3 "$RND_DIR/reality/T<id>-experiments/existence-probe-1.py"
+node "$RND_DIR/reality/T<id>-experiments/existence-probe-1.js"
+bash "$RND_DIR/reality/T<id>-experiments/existence-probe-4.sh"
+```
+
+### Verdicts
+
+| Verdict | Meaning |
+|---------|---------|
+| `EXISTS` | Probe ran and exited 0; the reference resolves |
+| `MISSING` | Probe ran and exited non-zero; the reference does not exist |
+| `UNCHECKED` | Probe could not be constructed or run (e.g., unreachable spec, missing runtime) |
+
+A single `MISSING` verdict halts the audit. Return status `INVALID_FOUND` and do not proceed to adversarial experiments.
+
+### Calibration Hook
+
+When the pre-pass finds a MISSING reference AND the task has a prior Builder PASS record for the same `taskId` in the same session, the orchestrator must append a `FALSE_PASS_PROXY` calibration record to `calibration.jsonl` linking to the original PASS via `proxyFor`. This surfaces the earlier incorrect PASS in closed-loop calibration metrics.
+
+See `rnd-framework:rnd-calibration` for the `FALSE_PASS_PROXY` record schema and the `proxyFor` field specification.
+
 ## Adversarial Experiment Design
 
 For each interaction found, frame the experiment as a falsification attempt:
@@ -211,6 +312,19 @@ Save to `$RND_DIR/reality/T<id>-reality-report.md`.
 - VALID: X
 - INVALID: Y
 - UNCHECKED: Z
+
+## Existence Pre-Pass
+
+| Reference | Category | Verdict |
+|-----------|----------|---------|
+| `module_name` | import | EXISTS \| MISSING \| UNCHECKED |
+| `library.method` | third-party method | EXISTS \| MISSING \| UNCHECKED |
+| `RFC 7234` | RFC/error-code citation | EXISTS \| MISSING \| UNCHECKED |
+| `MY_ENV_VAR` | env-var name | EXISTS \| MISSING \| UNCHECKED |
+
+**Pre-pass status:** EXISTS (all resolved) | MISSING (short-circuited to INVALID_FOUND) | UNCHECKED (runtime unavailable)
+
+_If any reference is MISSING, stop here. Overall status: `INVALID_FOUND`. Do not proceed to adversarial experiments._
 
 ## Interactions
 

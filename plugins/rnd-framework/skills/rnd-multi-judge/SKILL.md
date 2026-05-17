@@ -97,6 +97,8 @@ When split is AMEND_REQUIRED vs NEEDS_ITERATION and tiebreaker rejects AMEND_REQ
 
 - **PASS:** Write `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` — no prose report.
 - **PASS_QUALITY_NEEDS_ITERATION / NEEDS_ITERATION / FAIL:** Write the aggregated prose report `T<id>-verification.md`.
+
+**Calibration write (multiJudge field):** After the final verdict is determined, append a `multiJudge` object to the calibration record (see `rnd-framework:rnd-calibration` for the shape: `judgeA`, `judgeB`, `agreed`, `resolution`, `tiebreaker`). Only write this field when a tiebreaker was invoked (judges disagreed). Omit entirely when both judges agreed. No-op if `calibration.jsonl` does not exist.
 - Judge A: `$RND_DIR/verifications/T<id>-experiments/judge-a/`
 - Judge B: `$RND_DIR/verifications/T<id>-experiments/judge-b/`
 - Tiebreaker (if applicable): `$RND_DIR/verifications/T<id>-experiments/tiebreaker/`

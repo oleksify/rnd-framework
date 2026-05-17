@@ -84,10 +84,20 @@ External Dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
+Assumptions:
+  - Assumption: [What is assumed to be true — a property of an external system, codebase, or environment]
+    Refuted by: [What the Builder will do to verify or disprove this assumption — e.g., read a file, grep a pattern, query an endpoint]
+  - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
 fulfills: [VAL-AREA-NNN, ...]
 ```
 
 The `fulfills` field creates bidirectional traceability between tasks and Validation Contract assertions.
+
+**The `Assumptions` section is REQUIRED in every pre-registration.** When no assumptions exist, the section must contain the literal placeholder `- None`. Omitting the section entirely is not permitted — it signals the Planner did not consider whether the task rests on unverified beliefs about the environment.
+
+Each assumption has two sub-fields:
+- `Assumption:` — a falsifiable claim about an external system, file, API shape, or codebase property that the task relies on.
+- `Refuted by:` — the concrete action the Builder takes (Glob, Grep, Read, query) to confirm or disprove the assumption before writing code. If the assumption proves false, the Builder must STOP and report to the orchestrator.
 
 `Preconditions` declares file/content assertions the Builder verifies before writing code — if any fail, task is immediately BLOCKED. Use concrete, tool-checkable assertions (Glob for file existence, Grep for function presence, Read for dependency key). Omit if the task creates new files from scratch.
 

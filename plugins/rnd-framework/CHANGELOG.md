@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.22.0 — 2026-05-17
+
+### Add Tier-1 reliability bundle: existence pre-pass, stop conditions, calibration telemetry, Coverage Gaps and Assumptions enforcement
+
+Six new pipeline features. Reality-auditor gains a mechanical existence pre-pass (Step 0) that verifies imports / third-party method calls / RFC + error-code citations / env-var names exist in the form claimed before adversarial experiments; MISSING short-circuits to INVALID_FOUND and emits FALSE_PASS_PROXY on prior PASS. New PreToolUse Write|Edit hook stop-condition-revisions.sh halts on the Nth Write to the same file per task (default 5, RND_STOP_FILE_REVISIONS). New orchestration-level stop conditions: verdict-flip and plan-size halts (RND_STOP_VERDICT_FLIPS, RND_STOP_PLAN_RATIO) using new lib/audit-scan.sh and a required Heuristic ceiling planner meta-field. Pre-registration template now requires an Assumptions / Refuted-by section in both rnd-decomposition and rnd-orchestration skills; Verifier downgrades verdict by one tier when refutation evidence is missing. Calibration schema extended with three optional fields: multiJudge (pre-resolution judge disagreement), task_type (6-value enum with rule-based inference), gateFired (records every new pipeline gate firing). New lib/calibration.sh task_type_window subcommand. New SubagentStop hook coverage-gaps-gate.sh requires a non-trivial Coverage Gaps section in every T<id>-verification.md. Plus: cleanup deletion-ratio one-liner. Every new gate emits gateFired calibration records so false-positive/false-negative rates can be measured post-deployment.
+
 ## 3.21.1 — 2026-05-16
 
 ### Fix WorktreeCreate hook to echo worktree path to stdout

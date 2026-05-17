@@ -59,6 +59,28 @@ The information barrier applies identically to batched wave verification — the
 ### 1. Read the Pre-Registration and Validation Contract
 Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding VAL-AREA-NNN assertions in the Validation Contract section of plan.md. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
 
+If the pre-registration contains an `Assumptions` section, list each assumption and its declared `Refuted by` action. You will verify Builder compliance with these in the Assumption Checks step below.
+
+#### Assumption Checks
+
+For each assumption declared in the pre-registration's `Assumptions` section:
+
+1. Read the Builder's manifest (`$RND_DIR/builds/T<id>-manifest.md`). Locate evidence that the declared `Refuted by` action was executed — look in the "Evidence Gathered" section or anywhere the manifest describes exploration steps taken before writing code.
+
+2. If the manifest cites execution of the `Refuted by` action (or equivalent evidence that the assumption was verified): mark the assumption **checked**.
+
+3. If the manifest omits any mention of the `Refuted by` action and there is no equivalent evidence the assumption was verified: mark the assumption **unchecked** and apply the following downgrade rule:
+
+   **Downgrade rule (NEEDS_ITERATION trigger, not hard FAIL):**
+   - A missing refutation is recoverable — the Builder can execute the verification step in the next iteration. This is never a hard FAIL by itself.
+   - Downgrade the overall verdict by one tier: `PASS → PASS_QUALITY_NEEDS_ITERATION`; `PASS_QUALITY_NEEDS_ITERATION → NEEDS_ITERATION`. Do not downgrade below `NEEDS_ITERATION`.
+   - Record a `gateFired` calibration record: `{ "gate": "assumption_unchecked", "outcome": "FLAGGED", "task_id": "<id>" }`. See `rnd-framework:rnd-calibration` for the `gateFired` schema.
+   - Include the affected assumption text in your feedback so the Builder knows which refutation was missing.
+
+4. If the pre-registration has no `Assumptions` section at all (omitted rather than `- None`): flag this as a quality violation — the section is required. Apply the `PASS → PASS_QUALITY_NEEDS_ITERATION` downgrade if all other criteria pass.
+
+**Enforcement decision:** unchecked assumptions are a NEEDS_ITERATION trigger, not a hard FAIL, because a missing refutation step is recoverable. Only a concrete spec defect (contradictory or impossible criteria) warrants AMEND_REQUIRED or FAIL.
+
 ### 2. Write Independent Experiment Tests
 Before reading Builder code or tests, write one experiment test per criterion using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<criterion-slug>.test.<ext>`.
 
@@ -135,9 +157,18 @@ Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEE
 - [PASS] [exact criterion text] — [evidence]
 - [FAIL] [exact criterion text] — [evidence]
 ## Overall Verdict: PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
+## Coverage Gaps
+- Checked: [list of VAL assertions and code paths you ran yourself]
+- Couldn't check: [specific item] — [specific reason, e.g., no live API, no fixture data, requires runtime state]
 ## Feedback (if not PASS)
 [WHAT is wrong and WHAT evidence shows it. Do NOT suggest a fix.]
 ```
+
+**Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
+- `Checked:` lists every VAL assertion command you ran, every code path you traced, every test you executed independently.
+- `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the worktree).
+
+If everything was checked, write: `Couldn't check: none — all VAL assertions and experiment tests ran successfully against the implementation.` — never just "nothing" or "none" alone as the entire content of the section.
 
 ### 6.5. Save Evidence Files (conditional)
 

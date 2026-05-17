@@ -17,6 +17,10 @@
 #       Print the promoted tier: LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH.
 #       Exit non-zero for unknown tiers.
 #
+#   calibration.sh task_type_window <type> [N=10]
+#       Print last N calibration.jsonl records filtered by task_type == <type>.
+#       task_type values: refactor | new-feature | bugfix | docs | config | infra
+#
 #   calibration.sh --help
 #       Print this usage and exit 0.
 #
@@ -40,10 +44,11 @@ _calib_file() {
 _usage() {
   printf 'Usage: calibration.sh <subcommand> [args]\n\n'
   printf 'Subcommands:\n'
-  printf '  window <tier> [N=10]          Print last N records for <tier> (LOW|MEDIUM|HIGH)\n'
-  printf '  false_pass_rate <tier> [N=10] Print false-PASS rate (0.00-1.00) for <tier>\n'
-  printf '  should_promote <tier> [N=10]  Exit 0 if rate >= 0.20 and escalation not disabled\n'
-  printf '  promote_tier <tier>           Print promoted tier (LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH)\n'
+  printf '  window <tier> [N=10]               Print last N records for <tier> (LOW|MEDIUM|HIGH)\n'
+  printf '  false_pass_rate <tier> [N=10]      Print false-PASS rate (0.00-1.00) for <tier>\n'
+  printf '  should_promote <tier> [N=10]       Exit 0 if rate >= 0.20 and escalation not disabled\n'
+  printf '  promote_tier <tier>                Print promoted tier (LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH)\n'
+  printf '  task_type_window <type> [N=10]     Print last N records filtered by task_type\n'
 }
 
 _window() {
@@ -127,6 +132,19 @@ _promote_tier() {
   esac
 }
 
+_task_type_window() {
+  local type="${1:?task_type required}"
+  local n="${2:-10}"
+  local calib
+  calib="$(_calib_file)"
+
+  if [[ ! -f "$calib" ]]; then
+    printf '' ; return 0
+  fi
+
+  jq -c --arg type "$type" 'select(.task_type == $type)' "$calib" | tail -n "$n"
+}
+
 subcommand="${1:-}"
 
 case "$subcommand" in
@@ -148,6 +166,10 @@ case "$subcommand" in
   promote_tier)
     shift
     _promote_tier "$@"
+    ;;
+  task_type_window)
+    shift
+    _task_type_window "$@"
     ;;
   *)
     _usage >&2

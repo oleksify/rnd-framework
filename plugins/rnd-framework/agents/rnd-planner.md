@@ -98,8 +98,18 @@ Present findings to the orchestrator for confirmation and gap-filling.
 
 Save your plan to `$RND_DIR/plan.md`. Structure:
 
+**Required meta-field (first line after the `# Plan:` heading):**
+
+```
+Heuristic ceiling: <integer>
+```
+
+Set this to the number of declared top-level deliverables × 1.5, rounded up to the nearest integer. The orchestrator halts and prompts for user input when the actual task count exceeds `RND_STOP_PLAN_RATIO` (default 1.5) times this ceiling. Example: three user-stated deliverables → `Heuristic ceiling: 5`. Use your judgment; the point is a greppable single-integer anchor the orchestrator can compare against `task_count`.
+
 ```markdown
 # Plan: [Feature Name]
+
+Heuristic ceiling: <integer>
 
 ## Task Tree
 [Hierarchical list of tasks with IDs]

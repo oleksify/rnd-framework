@@ -77,8 +77,18 @@ External dependencies:
   - system: [DB | API | file | env | service]
     contract: [What is assumed about this system — schema, response shape, format, presence]
     verification: [How this will be confirmed — e.g., Read actual schema, query endpoint, inspect file sample]
+Assumptions:
+  - Assumption: [What is assumed to be true — a property of an external system, codebase, or environment]
+    Refuted by: [What the Builder will do to verify or disprove this assumption — e.g., read a file, grep a pattern, query an endpoint]
+  - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
 fulfills: [VAL-AREA-NNN, ...]
 ```
+
+**The `Assumptions` section is REQUIRED in every pre-registration.** When no assumptions exist, the section must contain the literal placeholder `- None`. Omitting the section entirely is not permitted — it signals the Planner did not consider whether the task rests on unverified beliefs about the environment.
+
+Each assumption has two sub-fields:
+- `Assumption:` — a falsifiable claim about an external system, file, API shape, or codebase property that the task relies on.
+- `Refuted by:` — the concrete action the Builder takes (Glob, Grep, Read, query) to confirm or disprove the assumption before writing code. If the assumption proves false, the Builder must STOP and report to the orchestrator.
 
 ## Execution Mode
 
@@ -136,6 +146,21 @@ Agent({
 
 > **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 
+### task_type Inference Policy
+
+When recording a calibration entry for a completed task, the orchestrator infers `task_type` from the task's title and pre-registration `Intent` field. Match the first rule that fires; default to `infra` on no match.
+
+| task_type | Trigger keywords (substring match, case-insensitive) |
+|-----------|------------------------------------------------------|
+| `refactor` | refactor, restructure, rename, reorganize, cleanup, extract, move, split |
+| `new-feature` | feature, add, introduce, implement, new, build, create, support |
+| `bugfix` | fix, bug, defect, broken, wrong, incorrect, regression, patch |
+| `docs` | docs, documentation, readme, changelog, comment, annotate, describe |
+| `config` | config, setting, env, environment, flag, toggle, threshold, parameter |
+| `infra` | (default — no keyword match; also explicit: infra, scaffold, pipeline, hook, gate, schema, telemetry) |
+
+Evaluation order matches the table above — first match wins. Concatenate title + Intent value, then scan. Write the matched tag as `task_type` in the calibration record.
+
 ### Calibration Auto-Escalation
 
 Before spawning any adaptive agent (planner, builder, verifier, debugger), the orchestrator MUST run:
@@ -152,6 +177,74 @@ Before spawning any adaptive agent (planner, builder, verifier, debugger), the o
 - **`RND_DISABLE_AUTO_ESCALATION=1`:** disables the entire mechanism — `should_promote` always exits non-zero when this variable is set.
 
 Rationale: auto-escalation closes the calibration loop on model-quality drift. `FALSE_PASS_PROXY` records (see `rnd-framework:rnd-calibration` skill) feed the false-pass rate; when the rolling rate reaches 20%, the next spawn upgrades one tier automatically.
+
+## Stop Conditions
+
+Two post-hoc checks guard against pathological pipeline trajectories. Both fire after a Verifier wave completes or after the Planner writes `plan.md` — not in PreToolUse hooks, because they require LLM interpretation of context.
+
+### Verdict-Flip Detection
+
+After every Verifier wave, run:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/audit-scan.sh" verdict_history <task_id>
+```
+
+The `verdict_history` subcommand (see `lib/audit-scan.sh`) reads all `verifications/T<id>-verification*.md` files for the given task and returns the space-separated verdict sequence. When it detects a PASS→FAIL→PASS or FAIL→PASS→FAIL pattern, it prints `FLIP_DETECTED` and exits 0.
+
+**When `FLIP_DETECTED` is received:** halt the pipeline and use `AskUserQuestion` with these options:
+
+```
+AskUserQuestion(
+  question: "Task T<id> has a verdict-flip (PASS→FAIL→PASS or FAIL→PASS→FAIL), indicating non-determinism in the Verifier or instability in the implementation. How should we proceed?",
+  options: [
+    { label: "Pause and inspect (Recommended)",   description: "Review T<id>-verification*.md files to find the root cause before continuing." },
+    { label: "Force a fresh re-verification",      description: "Run one more Verifier pass treating prior verdicts as noise." },
+    { label: "Accept current verdict and continue", description: "Treat the latest verdict as authoritative and proceed to the next phase." }
+  ]
+)
+```
+
+**Tuning:** set `RND_STOP_VERDICT_FLIPS=0` to disable the check entirely. Future: the env var may accept a count threshold (default: 1 flip triggers the halt).
+
+**Emit `gateFired` on halt:** append to `calibration.jsonl` with:
+
+```json
+{ "gateFired": { "gate": "stop_condition_verdict_flip", "outcome": "halted", "task_id": "<task_id>" } }
+```
+
+See `rnd-framework:rnd-calibration` for the full `gateFired` schema and producer registry.
+
+### Plan-Size Check
+
+After the Planner writes `plan.md`, the orchestrator reads the `Heuristic ceiling: N` meta-field from the top of `plan.md` (see planner agent for format) and compares it to the actual task count:
+
+```
+task_count > RND_STOP_PLAN_RATIO * Heuristic ceiling   →   halt
+```
+
+**Default:** `RND_STOP_PLAN_RATIO=1.5`. A plan with ceiling 4 halts when task count exceeds 6.
+
+**When the check fires:** halt and use `AskUserQuestion` with these options:
+
+```
+AskUserQuestion(
+  question: "The plan has <task_count> tasks but the Heuristic ceiling is <N> (ratio <actual> vs allowed <RND_STOP_PLAN_RATIO>). An oversized plan risks runaway builds. How should we proceed?",
+  options: [
+    { label: "Trim the plan (Recommended)", description: "Go back to the Planner and coalesce or drop low-priority tasks until task_count ≤ ceiling × ratio." },
+    { label: "Raise the ceiling",           description: "Accept the larger plan; update Heuristic ceiling in plan.md." },
+    { label: "Proceed anyway",              description: "Continue with the oversized plan and accept the higher build risk." }
+  ]
+)
+```
+
+**Tuning:** `RND_STOP_PLAN_RATIO=0` disables the check. Increase the value to tolerate larger plans (e.g., `RND_STOP_PLAN_RATIO=2.0`).
+
+**Emit `gateFired` on halt:** append to `calibration.jsonl` with:
+
+```json
+{ "gateFired": { "gate": "stop_condition_plan_size", "outcome": "halted", "task_id": null } }
+```
 
 ## Subagent Coordination
 

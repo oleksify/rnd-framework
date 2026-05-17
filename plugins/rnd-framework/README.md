@@ -367,6 +367,8 @@ rnd-framework/
 │   ├── permission-denied.sh     # PermissionDenied hook: logs auto-mode denials to audit.jsonl, returns {retry: true}
 │   ├── format-on-save.sh        # PostToolUse hook: auto-formats code files after Write/Edit using detected project formatter
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
+│   ├── coverage-gaps-gate.sh    # SubagentStop hook scoped to rnd-verifier: blocks missing/trivial ## Coverage Gaps section in T<id>-verification.md
+│   ├── stop-condition-revisions.sh # PreToolUse Write|Edit hook: halts when same file rewritten >= RND_STOP_FILE_REVISIONS times in active task (default 5)
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── proofs/                      # Lean 4 formal verification of pipeline invariants
@@ -376,7 +378,8 @@ rnd-framework/
 │   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 │   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   └── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
+│   ├── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
+│   └── audit-scan.sh            # audit.jsonl scanner: `revisions <task_id> <path>` counts Write/Edit events; `verdict_history <task_id>` returns verdict sequence with FLIP_DETECTED on pathological flips
 ├── tests/                       # Bash test suite for hooks and lib scripts
 └── README.md
 ```

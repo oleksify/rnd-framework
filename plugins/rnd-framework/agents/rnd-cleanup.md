@@ -51,7 +51,7 @@ Reports go to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. Append exactly one lin
 3. Apply mutations using Edit/Bash; record every file touched.
 4. Re-verify by running the project's test suite (see Testing Strategy in `$RND_DIR/plan.md` for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). If tests pass, write a minimal `T<id>-cleanup-pass-receipt.json` to `$RND_DIR/verifications/` with status PASS, source `cleanup-reverify`, and ISO 8601 timestamp. This avoids spawning a fresh `rnd-verifier` agent.
 5. On any test failure: roll back ALL touched files (`git restore -- <touched files>`; fallback `git checkout HEAD -- <touched files>`). Append `T<id>: cleanup: skipped (broke verification)` to `$RND_DIR/iteration-log.md` and write the cleanup report explaining what was attempted.
-6. On success: leave changes in working tree (no auto-commit), write report to `$RND_DIR/cleanup/T<id>-cleanup-report.md`, append `T<id>: cleanup applied` to `$RND_DIR/iteration-log.md`.
+6. On success: leave changes in working tree (no auto-commit), write report to `$RND_DIR/cleanup/T<id>-cleanup-report.md`, append `T<id>: cleanup applied` to `$RND_DIR/iteration-log.md`. The cleanup report MUST include a one-line `Deletion ratio: <deleted_loc> / <total_touched_loc>` metric (lines-of-code deleted vs total lines touched, e.g. `Deletion ratio: 42 / 180`). Report-only — never gating.
 
 Full detail (detection methodology per category, report template, common pitfalls) lives in the preloaded `rnd-cleanup` skill.
 

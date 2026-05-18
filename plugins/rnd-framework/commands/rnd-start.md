@@ -617,10 +617,14 @@ Before spawning, retrieve relevant flash cards for the cleanup role using the ta
 
 ```bash
 # Cards: Phase 4 Cleanup
-CARD_PATHS=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
+CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
   --role=cleanup \
   --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}")
+  --tags="${CARD_TAGS:-}" \
+  --count-parents)
+
+PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
+CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
 
 if [[ -n "$CARD_PATHS" ]]; then
   CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
@@ -630,6 +634,7 @@ if [[ -n "$CARD_PATHS" ]]; then
 else
   CARDS_HEADER_PREPEND=""
   CARD_IDS="none"
+  PARENT_CARDS_COUNT=0
 fi
 ```
 
@@ -645,7 +650,7 @@ Agent({
 After the spawn returns, emit a card-injection audit event:
 
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "cleanup:${CARD_IDS}"
+bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "cleanup:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 The Cleanup agent inspects the working tree for dead code, unused imports, unreachable exports, and leftover scaffolding. It applies fixes in-place and produces `$RND_DIR/cleanup/T<id>-cleanup-report.md`. If applied fixes break re-verification, the agent rolls back its changes and notes `cleanup: rolled_back` in the report.

@@ -85,20 +85,18 @@ assert_stderr_contains() {
 # Test cases
 # ---------------------------------------------------------------------------
 
-# self-assessment with no agent_type → block (exit 2, INFORMATION BARRIER)
+# self-assessment with no agent_type → allow (exit 0) — orchestrator is the legitimate consumer
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/builds/T3-self-assessment.md"},"agent_type":""}'
-assert_exit   "self-assessment + empty agent_type → exit 2" 2
-assert_stderr_contains "self-assessment + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # self-assessment with verifier agent_type → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-verifier"}'
 assert_exit   "self-assessment + verifier → exit 2" 2
 assert_stderr_contains "self-assessment + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# self-assessment with missing agent_type key (null) → block
+# self-assessment with missing agent_type key (null) → allow (exit 0) — treated as orchestrator
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"}}'
-assert_exit   "self-assessment + null agent_type → exit 2" 2
-assert_stderr_contains "self-assessment + null agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "self-assessment + null agent_type → exit 0 (orchestrator allowed)" 0
 
 # self-assessment with non-verifier agent_type → exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-builder"}'
@@ -109,10 +107,9 @@ assert_stdout_empty "self-assessment + rnd-builder → empty stdout"
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-self-assessment.md"},"agent_type":"rnd-planner"}'
 assert_exit   "self-assessment + rnd-planner → exit 0" 0
 
-# case-insensitive (SELF-ASSESSMENT uppercase) with no agent_type → block
+# case-insensitive (SELF-ASSESSMENT uppercase) with no agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-SELF-ASSESSMENT.md"},"agent_type":""}'
-assert_exit   "SELF-ASSESSMENT uppercase + empty agent_type → exit 2" 2
-assert_stderr_contains "SELF-ASSESSMENT uppercase + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "SELF-ASSESSMENT uppercase + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # case-insensitive (Self-Assessment mixed case) with verifier → block
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-Self-Assessment.md"},"agent_type":"rnd-verifier"}'
@@ -128,15 +125,13 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-
 assert_exit   "plugin cache path → exit 0" 0
 assert_stdout_contains "plugin cache path → allow JSON" '"permissionDecision":"allow"'
 
-# plugin cache path containing self-assessment → block (self-assessment takes priority)
+# plugin cache path containing self-assessment + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/plugins/cache/oleksify-plugins/rnd-framework/0.12.5/builds/T3-self-assessment.md"},"agent_type":""}'
-assert_exit   "plugin cache + self-assessment → exit 2 (barrier first)" 2
-assert_stderr_contains "plugin cache + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "plugin cache + self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
-# path with both .rnd/ and self-assessment → block (self-assessment takes priority)
+# path with both .rnd/ and self-assessment + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/sessions/20260101/builds/T3-self-assessment.md"},"agent_type":""}'
-assert_exit   ".rnd/ + self-assessment → exit 2 (barrier first)" 2
-assert_stderr_contains ".rnd/ + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   ".rnd/ + self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # .rnd/ + self-assessment, but non-verifier agent → exit 0 (builder is allowed)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/sessions/20260101/builds/T3-self-assessment.md"},"agent_type":"rnd-builder"}'
@@ -172,10 +167,9 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/
 assert_exit   "learnings path under .claude/ → exit 0" 0
 assert_stdout_contains "learnings path under .claude/ → allow JSON" '"permissionDecision":"allow"'
 
-# learnings path containing self-assessment → block (self-assessment takes priority)
+# learnings path containing self-assessment + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/learnings/self-assessment-notes.md"},"agent_type":""}'
-assert_exit   "learnings + self-assessment in path → exit 2 (barrier first)" 2
-assert_stderr_contains "learnings + self-assessment in path → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "learnings + self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # ---------------------------------------------------------------------------
 # Briefs barrier tests
@@ -186,9 +180,9 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd
 assert_exit   "/briefs/ + verifier → exit 2" 2
 assert_stderr_contains "/briefs/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# /briefs/ path with no agent_type → block
+# /briefs/ path with no agent_type → allow (exit 0) — orchestrator is the legitimate consumer
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":""}'
-assert_exit   "/briefs/ + empty agent_type → exit 2" 2
+assert_exit   "/briefs/ + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # /briefs/ path with rnd-builder → exit 0 (builder writes its own briefs)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-briefs.md"},"agent_type":"rnd-builder"}'
@@ -202,7 +196,7 @@ assert_exit   "/briefs/ + rnd-planner → exit 0" 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/Developer/myproject/src/debrief.ts"},"agent_type":"rnd-verifier"}'
 assert_exit   "debrief.ts (word 'brief' but no /briefs/ segment) + verifier → exit 0" 0
 
-# /briefs/ + self-assessment → block (both patterns present, block still fires)
+# /briefs/ + self-assessment → block (both patterns present, block still fires for verifier)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.rnd/briefs/T3-self-assessment.md"},"agent_type":"rnd-verifier"}'
 assert_exit   "/briefs/ + self-assessment + verifier → exit 2" 2
 
@@ -215,9 +209,9 @@ run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd
 assert_exit   "/cleanup/ + verifier → exit 2" 2
 assert_stderr_contains "/cleanup/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# /cleanup/ path with empty agent_type → block
+# /cleanup/ path with empty agent_type → allow (exit 0) — orchestrator is the legitimate consumer
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md"},"agent_type":""}'
-assert_exit   "/cleanup/ + empty agent_type → exit 2" 2
+assert_exit   "/cleanup/ + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # /cleanup/ path with rnd-builder → exit 0, empty stdout (not auto-allowed)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md"},"agent_type":"rnd-builder"}'

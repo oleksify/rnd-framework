@@ -103,11 +103,10 @@ run_hook "$READ_GATE" \
   '{"tool_name":"Read","tool_input":{"file_path":"'"$CLEANUP_PATH"'"},"agent_type":"rnd-integrator"}'
 assert_exit   "read-gate: /cleanup/ + rnd-integrator → exit 0" 0
 
-# 3. absent agent_type triggers barrier (same semantics as verifier)
+# 3. absent agent_type (orchestrator) is allowed — it relays cleanup artifacts to the user
 run_hook "$READ_GATE" \
   '{"tool_name":"Read","tool_input":{"file_path":"'"$CLEANUP_PATH"'"},"agent_type":""}'
-assert_exit   "read-gate: /cleanup/ + empty agent_type → exit 2" 2
-assert_stderr_contains "read-gate: /cleanup/ + empty agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
+assert_exit   "read-gate: /cleanup/ + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # ---------------------------------------------------------------------------
 # bash-gate.sh — /cleanup/ barrier

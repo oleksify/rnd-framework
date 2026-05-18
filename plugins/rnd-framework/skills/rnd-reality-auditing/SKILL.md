@@ -374,6 +374,43 @@ $RND_DIR/reality/
 
 Never write to the project source tree.
 
+## Schema-as-Property Checks
+
+When an `External dependencies` entry in the pre-registration carries a `schema:` sub-field, the declared JSON Schema acts as a degenerate property: "for all response samples, required fields match this schema." This check runs inside the existing Reality-Auditor flow — no new agent is spawned.
+
+### Dispatch
+
+Detect the `schema:` sub-field in the `External dependencies` block → invoke `lib/run-properties.sh` in schema mode → record the verdict in the reality report.
+
+```
+bash "${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh" schema <schema-fixture-path> <project-dir>
+```
+
+### Schema Fixture Format
+
+The schema fixture is a JSON file with two top-level keys:
+
+```json
+{
+  "required": ["field1", "field2"],
+  "sample":   { "field1": "value", "field2": "value" }
+}
+```
+
+- `required` — list of top-level field names that must be present in the sample.
+- `sample` — the captured response or data object to validate.
+
+**v1 scope: presence-of-keys only.** The runner checks whether every field in `required` exists as a key in `sample`. Type checking, nested schemas, and full JSON Schema semantics are deferred to v2.
+
+### Outcomes
+
+| Runner output | Meaning | Reality-report verdict |
+|---|---|---|
+| `PROPERTY_PASS` | All required keys present | VALID |
+| `PROPERTY_COUNTER_EXAMPLE` | At least one required key absent; missing key in stderr JSON `shrunk_input` | INVALID |
+
+On `PROPERTY_COUNTER_EXAMPLE`, stderr carries a JSON object with `property`, `shrunk_input` (the first missing field name), and `seed: 0`. Embed this JSON in the `## Interactions` entry for the failing dependency.
+
 ## Related Skills
 
 - `rnd-framework:rnd-verification` — Full verification process; reality reports are supplementary evidence for the Verifier

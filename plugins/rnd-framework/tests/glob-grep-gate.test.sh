@@ -54,45 +54,39 @@ run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/bu
 assert_exit "Grep self-assessment + verifier → exit 2" 2
 assert_stderr_contains "Grep self-assessment + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# Grep + self-assessment + empty agent_type → block
+# Grep + self-assessment + empty agent_type → allow (orchestrator is the legitimate consumer)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":""}'
-assert_exit "Grep self-assessment + empty agent_type → exit 2" 2
-assert_stderr_contains "Grep self-assessment + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "Grep self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
-# Grep + self-assessment + null/missing agent_type key → block
+# Grep + self-assessment + null/missing agent_type key → allow (treated as orchestrator)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"}}'
-assert_exit "Grep self-assessment + null agent_type → exit 2" 2
-assert_stderr_contains "Grep self-assessment + null agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "Grep self-assessment + null agent_type → exit 0 (orchestrator allowed)" 0
 
-# Glob + self-assessment + empty agent_type → block
+# Glob + self-assessment + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.rnd/builds","pattern":"*self-assessment*"},"agent_type":""}'
-assert_exit "Glob self-assessment (in pattern) + empty agent_type → exit 2" 2
-assert_stderr_contains "Glob self-assessment (in pattern) + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "Glob self-assessment (in pattern) + empty agent_type → exit 0 (orchestrator allowed)" 0
 
-# Glob + self-assessment in path + empty agent_type → block
+# Glob + self-assessment in path + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"*.md"},"agent_type":""}'
-assert_exit "Glob self-assessment (in path) + empty agent_type → exit 2" 2
-assert_stderr_contains "Glob self-assessment (in path) → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "Glob self-assessment (in path) + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # Grep + self-assessment + rnd-builder → allowed (exit 0, empty stdout)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":"rnd-builder"}'
 assert_exit "Grep self-assessment + rnd-builder → exit 0" 0
 assert_stdout_empty "Grep self-assessment + rnd-builder → empty stdout"
 
-# Case-insensitive: SELF-ASSESSMENT uppercase + empty agent_type → block
+# Case-insensitive: SELF-ASSESSMENT uppercase + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-SELF-ASSESSMENT.md","pattern":"HIGH"},"agent_type":""}'
-assert_exit "Grep SELF-ASSESSMENT uppercase + empty agent_type → exit 2" 2
-assert_stderr_contains "Grep SELF-ASSESSMENT uppercase → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "Grep SELF-ASSESSMENT uppercase + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # .rnd/ path WITHOUT self-assessment → auto-allow (barrier does not interfere)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-manifest.md","pattern":"PASS"},"agent_type":""}'
 assert_exit ".rnd/ path without self-assessment → exit 0" 0
 assert_stdout_contains ".rnd/ path without self-assessment → allow JSON" '"permissionDecision":"allow"'
 
-# .rnd/ path WITH self-assessment → barrier takes priority over auto-allow
+# .rnd/ path WITH self-assessment + empty agent_type → allow (orchestrator)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-self-assessment.md","pattern":"HIGH"},"agent_type":""}'
-assert_exit ".rnd/ + self-assessment → exit 2 (barrier beats auto-allow)" 2
-assert_stderr_contains ".rnd/ + self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit ".rnd/ + self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # regular non-.rnd/ path → no opinion (exit 0, empty stdout)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/project/src","pattern":"foo"},"agent_type":""}'
@@ -160,9 +154,9 @@ run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sess
 assert_exit   "/cleanup/ + verifier → exit 2" 2
 assert_stderr_contains "/cleanup/ + verifier → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# /cleanup/ path with empty agent_type → block
+# /cleanup/ path with empty agent_type → allow (orchestrator is the legitimate consumer)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":""}'
-assert_exit   "/cleanup/ + empty agent_type → exit 2" 2
+assert_exit   "/cleanup/ + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # /cleanup/ path with rnd-builder → exit 0, empty stdout (not auto-allowed)
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":"rnd-builder"}'

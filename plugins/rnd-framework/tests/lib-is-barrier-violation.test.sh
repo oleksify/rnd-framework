@@ -38,11 +38,12 @@ else
   assert_eq "builder NOT blocked from self-assessment" "1" "1"
 fi
 
-# Regression: empty agent_type must be blocked
+# Orchestrator (empty agent_type) must NOT be blocked — it relays self-assessment
+# content to the user per the orchestration protocol.
 if is_barrier_violation "$TEXT" ""; then
-  assert_eq "empty agent_type blocked from self-assessment (regression)" "0" "0"
+  assert_eq "empty agent_type NOT blocked from self-assessment (orchestrator)" "1" "0"
 else
-  assert_eq "empty agent_type blocked from self-assessment (regression)" "0" "1"
+  assert_eq "empty agent_type NOT blocked from self-assessment (orchestrator)" "1" "1"
 fi
 
 # polisher agent must be blocked from self-assessment paths
@@ -91,9 +92,9 @@ fi
 # Realistic .rnd/ artifact tree cleanup-report IS a barrier violation.
 RND_CLEANUP="/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/cleanup/T1-cleanup-report.md"
 if is_barrier_violation "$RND_CLEANUP" ""; then
-  assert_eq ".rnd/.../cleanup/ IS a barrier violation (empty agent)" "0" "0"
+  assert_eq ".rnd/.../cleanup/ NOT a barrier violation for empty agent (orchestrator)" "1" "0"
 else
-  assert_eq ".rnd/.../cleanup/ IS a barrier violation (empty agent)" "0" "1"
+  assert_eq ".rnd/.../cleanup/ NOT a barrier violation for empty agent (orchestrator)" "1" "1"
 fi
 
 if is_barrier_violation "$RND_CLEANUP" "rnd-verifier"; then
@@ -105,16 +106,16 @@ fi
 # Realistic .rnd/ artifact tree briefs path IS a barrier violation.
 RND_BRIEFS="/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/briefs/T1-briefs.md"
 if is_barrier_violation "$RND_BRIEFS" ""; then
-  assert_eq ".rnd/.../briefs/ IS a barrier violation (empty agent)" "0" "0"
+  assert_eq ".rnd/.../briefs/ NOT a barrier violation for empty agent (orchestrator)" "1" "0"
 else
-  assert_eq ".rnd/.../briefs/ IS a barrier violation (empty agent)" "0" "1"
+  assert_eq ".rnd/.../briefs/ NOT a barrier violation for empty agent (orchestrator)" "1" "1"
 fi
 
-# Self-assessment regression: still blocked regardless of .rnd/ context.
+# Self-assessment: orchestrator (empty agent_type) is allowed — it relays these to the user.
 if is_barrier_violation "path/to/self-assessment.md" ""; then
-  assert_eq "self-assessment still blocked without .rnd/ context (regression)" "0" "0"
+  assert_eq "self-assessment NOT a barrier violation for empty agent (orchestrator)" "1" "0"
 else
-  assert_eq "self-assessment still blocked without .rnd/ context (regression)" "0" "1"
+  assert_eq "self-assessment NOT a barrier violation for empty agent (orchestrator)" "1" "1"
 fi
 
 report

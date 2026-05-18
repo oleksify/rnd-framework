@@ -81,6 +81,8 @@ Assumptions:
   - Assumption: [What is assumed to be true — a property of an external system, codebase, or environment]
     Refuted by: [What the Builder will do to verify or disprove this assumption — e.g., read a file, grep a pattern, query an endpoint]
   - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
+Properties:  # optional — omit when no invariants are expressible
+  - prop_name: forall input matching X, output satisfies Y
 fulfills: [VAL-AREA-NNN, ...]
 ```
 
@@ -89,6 +91,50 @@ fulfills: [VAL-AREA-NNN, ...]
 Each assumption has two sub-fields:
 - `Assumption:` — a falsifiable claim about an external system, file, API shape, or codebase property that the task relies on.
 - `Refuted by:` — the concrete action the Builder takes (Glob, Grep, Read, query) to confirm or disprove the assumption before writing code. If the assumption proves false, the Builder must STOP and report to the orchestrator.
+
+## Properties (optional)
+
+When a task has expressible invariants, the Planner adds a `Properties` block to the pre-registration. Absence means prose-mode verification (the current default) — do not require it on every pre-reg.
+
+Three shapes are available; the Verifier dispatches based on which is present:
+
+| Shape | When to use |
+|---|---|
+| markdown bullets | `docs`, `config` tasks — simple claims, no runner needed |
+| YAML block | `refactor`, `bugfix` — structured claims, machine-parseable |
+| sibling file | `new-feature`, `infra` — executable from day one |
+
+**Shape 1 — markdown bullets:** Prose-shaped claims written directly in the pre-reg body.
+
+```
+Properties:
+  - encode_decode_roundtrip: forall input matching valid_utf8, decode(encode(input)) == input
+```
+
+**Shape 2 — YAML block:** Structured claims parsed and executed by the Verifier's property runner (StreamData for Elixir, fast-check for TypeScript).
+
+```
+Properties:
+  runner: elixir
+  properties:
+    - name: encode_decode_roundtrip
+      generator: StreamData.binary()
+      invariant: "Codec.decode(Codec.encode(x)) == x"
+```
+
+**Shape 3 — sibling file `T<id>-properties.{exs,ts}`:** Executable code the Planner sketches and the Verifier runs in its own worktree. The Builder never executes it.
+
+```typescript
+// T7-properties.ts
+import * as fc from "fast-check"
+import { encode, decode } from "./codec"
+
+fc.assert(fc.property(fc.string(), (input) => decode(encode(input)) === input))
+```
+
+**Execution is verifier-only.** Properties run exclusively in the Verifier's worktree. Counter-examples appear in `T<id>-verification.md` as shrunk reproducers.
+
+**Calibration write — `verification_mode`.** When a pre-registration contains any of the three Properties shapes, the orchestrator MUST set `verification_mode: property` in the per-verdict calibration record it writes to `calibration.jsonl`. Pre-regs without a `## Properties` section default to `verification_mode: prose`. Reality-audit schema checks use `verification_mode: schema`. Property runs that are skipped due to a missing runtime use `verification_mode: skipped`.
 
 ## Execution Mode
 

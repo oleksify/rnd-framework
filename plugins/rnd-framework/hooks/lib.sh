@@ -204,9 +204,15 @@ active_session_dir() {
 # ---------------------------------------------------------------------------
 
 # Returns 0 iff the lowered <text> contains a barrier-protected pattern AND
-# the caller has no agent_type OR has one that names a verifier. Pure; no
-# side effects. Shared by read-gate.sh, glob-grep-gate.sh, and bash-gate.sh —
-# the three hooks must agree exactly on the barrier semantics.
+# the caller is a named barrier-restricted agent (rnd-verifier, rnd-proof-gate,
+# rnd-polisher). Pure; no side effects. Shared by read-gate.sh,
+# glob-grep-gate.sh, and bash-gate.sh — the three hooks must agree exactly on
+# the barrier semantics.
+#
+# The orchestrator runs with an empty agent_type and is the LEGITIMATE consumer
+# of briefs/, cleanup/, and self-assessment artifacts (it relays them to the
+# user per the orchestration protocol). Empty agent_type is therefore NOT
+# barrier-restricted.
 #
 # Barrier-protected patterns:
 #   - "self-assessment" — Builder uncertainty records (blocked from Verifier)
@@ -236,7 +242,7 @@ is_barrier_violation() {
   fi
   [[ "$has_pattern" -eq 1 ]] || return 1
   agent_lower="$(_lower "$agent_type")"
-  [[ -z "$agent_lower" || "$agent_lower" == *"verifier"* || "$agent_lower" == *"proof-gate"* || "$agent_lower" == *"polisher"* ]]
+  [[ "$agent_lower" == *"verifier"* || "$agent_lower" == *"proof-gate"* || "$agent_lower" == *"polisher"* ]]
 }
 
 # ---------------------------------------------------------------------------

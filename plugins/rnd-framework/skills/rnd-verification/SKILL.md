@@ -127,6 +127,82 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" tool_run_fresh   T<id> <tool-nam
 
 The helper appends one JSON line to `$RND_DIR/audit.jsonl` with fields `event`, `task_id`, `tool`, and `timestamp` (ISO-8601 UTC). Do not hand-roll the JSON — use the helper so format stays in lockstep with `run-tool.sh`.
 
+### 3.5. Property Execution
+
+If the task pre-registration (in `$RND_DIR/plan.md`) contains a `## Properties` section, execute property-based tests before running the Builder's test suite.
+
+**Detection:** Grep the task's pre-registration block in `$RND_DIR/plan.md` for `## Properties`. If absent, skip this step entirely and proceed to Step 4.
+
+**Language detection:** Determine `<lang>` from the `## Properties` block — look for a `runner:` key (`runner: elixir` or `runner: typescript`), or infer from the file extension of sibling spec files (`.exs` → `elixir`, `.ts` → `typescript`).
+
+**Runner invocation:**
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh" <lang> <spec-path> <project-dir>
+```
+
+**Three-way outcome handling:**
+
+| Stdout | Exit | Action |
+|--------|------|--------|
+| `PROPERTY_PASS` | 0 | Record as positive evidence in the verdict map; continue with prose criteria. |
+| `PROPERTY_SKIPPED missing-runtime: <t>` | 0 | Tag the verdict with `verification_mode: skipped`; proceed using prose criteria only. No criterion is failed due to skipped execution. |
+| `PROPERTY_COUNTER_EXAMPLE` | 1 | FAIL the affected Correctness criterion. Capture the stderr JSON (`{ "property": "...", "shrunk_input": "...", "seed": <int> }`) and embed it verbatim under the `## Feedback` section of `T<id>-verification.md`. |
+
+**Audit events:** Emit on every runner invocation (regardless of outcome):
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" property_run <task-id> run-properties.sh
+```
+
+On `PROPERTY_COUNTER_EXAMPLE`, also emit:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" property_counterexample <task-id> run-properties.sh
+```
+
+**Counter-example pin-promotion (on `PROPERTY_COUNTER_EXAMPLE` only):**
+
+Promote the shrunk reproducer to the project's regression corpus so every FAIL grows the test suite.
+
+1. Determine the file extension from `<lang>`: `.exs` for `elixir`, `.ts` for `typescript`.
+2. Create the target directory if it does not exist — use `Bash mkdir -p <project>/test/properties/` before writing. The directory is created inside the verifier worktree so the file commits to the worktree branch and merges to main via the Integrator.
+3. Write a small regression-test stub at `<project>/test/properties/T<id>-counterexample.<ext>` using the **Write tool** (not Edit). Write must target a new file path — `disallowedTools: Edit` in the verifier frontmatter remains unchanged; pin-promotion does NOT relax that invariant. Write to a fresh path is permitted.
+4. The stub contains the shrunk input from the stderr JSON and a one-line regression assertion.
+
+Elixir stub example (`T<id>-counterexample.exs`):
+
+```elixir
+# Shrunk counter-example — input that falsified the property.
+# Seed: <seed>
+ExUnit.start()
+defmodule CounterExampleTest do
+  use ExUnit.Case
+  test "regression: shrunk input does not falsify property" do
+    input = <shrunk_input>
+    assert run_property(input) == :ok
+  end
+end
+```
+
+TypeScript stub example (`T<id>-counterexample.ts`):
+
+```typescript
+// Shrunk counter-example — input that falsified the property.
+// Seed: <seed>
+import { test, expect } from "bun:test"
+test("regression: shrunk input does not falsify property", () => {
+  const input = <shrunk_input>
+  expect(runProperty(input)).toBe(true)
+})
+```
+
+5. Emit `property_pinned` after the Write succeeds:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" property_pinned <task-id> <lang>
+```
+
 ### 4. Run Builder's Tests and Compare
 Read Builder code and tests. Run the full test suite and record verbatim. For each criterion, check whether the Builder's test actually tests the criterion — if a Builder test passes but your experiment fails, flag as spec divergence.
 

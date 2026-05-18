@@ -103,11 +103,10 @@ run_hook "$READ_GATE" \
 assert_exit   "/briefs/T3-amendments.md + rnd-proof-gate → exit 2" 2
 assert_stderr_contains "/briefs/T3-amendments.md + rnd-proof-gate → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
-# /briefs/T3-amendments.md + empty agent_type → block (exit 2)
+# /briefs/T3-amendments.md + empty agent_type → allow (exit 0) — orchestrator is the legitimate consumer
 run_hook "$READ_GATE" \
   '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/T3-amendments.md"},"agent_type":""}'
-assert_exit   "/briefs/T3-amendments.md + empty agent_type → exit 2" 2
-assert_stderr_contains "/briefs/T3-amendments.md + empty agent_type → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit   "/briefs/T3-amendments.md + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # /briefs/T3-amendments.md + rnd-builder → allow (exit 0, builder writes the log)
 run_hook "$READ_GATE" \

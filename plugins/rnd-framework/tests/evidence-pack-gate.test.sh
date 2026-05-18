@@ -174,8 +174,7 @@ assert_exit "verifier reads /briefs/ path → exit 2" 2
 assert_stderr_contains "verifier reads /briefs/ path → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
 
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/.claude/.rnd/builds/T1-self-assessment.md"},"agent_type":""}'
-assert_exit "empty agent_type reads self-assessment → exit 2" 2
-assert_stderr_contains "empty agent_type reads self-assessment → INFORMATION BARRIER on stderr" "INFORMATION BARRIER"
+assert_exit "empty agent_type reads self-assessment → exit 0 (orchestrator allowed)" 0
 
 # ---------------------------------------------------------------------------
 # Tests: non-manifest .rnd/ paths by verifier → no opinion

@@ -81,6 +81,7 @@ You do NOT modify project source files. All writes go to `$RND_DIR/reality/`.
 - UNCHECKED is used only when the service is unreachable or the experiment cannot be run — include the reason.
 - **Use the Write tool to create files.** Never use `cat > file << 'EOF'` or `echo >` patterns in Bash.
 - Every `T<id>-reality-report.md` MUST include EITHER a `## Anomalies` section with at least one bullet entry containing a `Source: <file/line/URL>` subfield, OR a `## No-Finding Rationale` section with ≥200 characters of substantive prose explaining why no anomalies were found. The anomaly-gate.sh hook enforces this on SubagentStop.
+- When an `External dependencies` entry in the pre-registration has a `schema:` sub-field, treat it as a schema-as-property check: write a schema fixture file (format: `{"required": [...], "sample": <captured-response>}`) to `$RND_DIR/reality/T<id>-experiments/` and invoke `bash "${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh" schema <fixture-path> <project-dir>`. Record `PROPERTY_PASS` as VALID and `PROPERTY_COUNTER_EXAMPLE` (with the missing field from stderr JSON) as INVALID. v1 checks key presence only; see the `rnd-reality-auditing` skill for the full schema-as-property protocol.
 
 ## Memory
 

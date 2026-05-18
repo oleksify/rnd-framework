@@ -88,11 +88,86 @@ Assumptions:
   - Assumption: [What is assumed to be true — a property of an external system, codebase, or environment]
     Refuted by: [What the Builder will do to verify or disprove this assumption — e.g., read a file, grep a pattern, query an endpoint]
   - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
+Properties:  # optional — omit when no invariants are expressible
+  - prop_name: forall input matching X, output satisfies Y
 fulfills: [VAL-AREA-NNN, ...]
 Card tags: [tag1, tag2]  # optional, v1 — orchestrator falls back to role + task_type if absent
 ```
 
 The `fulfills` field creates bidirectional traceability between tasks and Validation Contract assertions.
+
+## Properties (optional)
+
+When a task has expressible invariants, the Planner adds a `Properties` block to the pre-registration. Absence means prose-mode verification (the current default) — do not require it on every pre-reg.
+
+Three shapes are available. Choose based on task type:
+
+| Task type | Recommended shape |
+|---|---|
+| `docs`, `config` | markdown bullets |
+| `refactor`, `bugfix` | YAML block |
+| `new-feature`, `infra` | sibling file |
+
+### Shape 1 — markdown bullets
+
+Prose-shaped claims written directly in the pre-reg. Use for documentation tasks, config changes, or simple invariants that don't need a runner.
+
+```
+Properties:
+  - encode_decode_roundtrip: forall input matching valid_utf8, decode(encode(input)) == input
+  - empty_input_returns_empty: forall input matching empty_string, encode(input) == ""
+```
+
+### Shape 2 — YAML block under `## Verification`
+
+Structured, machine-parseable claims. The Verifier parses these and runs them via its property runner (StreamData for Elixir, fast-check for TypeScript).
+
+```
+Properties:
+  runner: elixir
+  properties:
+    - name: encode_decode_roundtrip
+      generator: StreamData.binary()
+      invariant: "Codec.decode(Codec.encode(x)) == x"
+    - name: encode_never_raises
+      generator: StreamData.term()
+      invariant: "is_binary(Codec.encode(x))"
+```
+
+### Shape 3 — sibling file `T<id>-properties.{exs,ts}`
+
+Executable property test code living alongside the pre-registration as a build artifact. The Planner writes a skeleton; the Verifier executes it in its worktree. The Builder never runs it.
+
+For Elixir (StreamData):
+
+```elixir
+# T7-properties.exs
+defmodule T7Properties do
+  use ExUnitProperties
+
+  property "encode/decode roundtrip" do
+    check all input <- StreamData.binary() do
+      assert Codec.decode(Codec.encode(input)) == input
+    end
+  end
+end
+```
+
+For TypeScript (fast-check):
+
+```typescript
+// T7-properties.ts
+import * as fc from "fast-check"
+import { encode, decode } from "./codec"
+
+fc.assert(
+  fc.property(fc.string(), (input) => {
+    return decode(encode(input)) === input
+  })
+)
+```
+
+**Execution is verifier-only.** Properties run exclusively in the Verifier's worktree. The Builder never executes them and never sees the runner output. Counter-examples, when found, appear in `T<id>-verification.md` as shrunk reproducers.
 
 The `Card tags:` field is optional in v1. When absent, the orchestrator filters cards by role and task_type only. When present, tags narrow retrieval to cards whose `tags` overlap with the query — pick 0-3 tags from the taxonomy in `rnd-framework:rnd-cards` that match the task's predominant theme.
 

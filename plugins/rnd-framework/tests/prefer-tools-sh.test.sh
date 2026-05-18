@@ -612,15 +612,13 @@ run_hook "$(payload_with_agent 'diff /rnd/builds/T3-self-assessment.md /tmp/x' '
 assert_exit   "diff self-assessment + verifier → exit 2" 2
 assert_stderr_contains "diff self-assessment + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
 
-# empty agent_type running jq on self-assessment → blocked
+# empty agent_type running jq on self-assessment → allowed (orchestrator is the legitimate consumer)
 run_hook "$(payload_with_agent 'jq . /rnd/builds/T3-self-assessment.md' '')"
-assert_exit   "jq self-assessment + empty agent_type → exit 2" 2
-assert_stderr_contains "jq self-assessment + empty agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
+assert_exit   "jq self-assessment + empty agent_type → exit 0 (orchestrator allowed)" 0
 
-# missing agent_type key (null from jq) → blocked
+# missing agent_type key (null from jq) → allowed (treated as orchestrator)
 run_hook "$(jq -n --arg cmd 'less /rnd/builds/T3-self-assessment.md' '{"tool_name":"Bash","tool_input":{"command":$cmd}}')"
-assert_exit   "less self-assessment + null agent_type → exit 2" 2
-assert_stderr_contains "less self-assessment + null agent_type → INFORMATION BARRIER" "INFORMATION BARRIER"
+assert_exit   "less self-assessment + null agent_type → exit 0 (orchestrator allowed)" 0
 
 # builder running self-assessment command → allowed (exit 0)
 run_hook "$(payload_with_agent 'wc -l /rnd/builds/T3-self-assessment.md' 'rnd-builder')"
@@ -631,10 +629,9 @@ run_hook "$(payload_with_agent 'strings /rnd/builds/T3-SELF-ASSESSMENT.md' 'rnd-
 assert_exit   "SELF-ASSESSMENT uppercase + verifier → exit 2" 2
 assert_stderr_contains "SELF-ASSESSMENT uppercase + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
 
-# case-insensitive: Self-Assessment mixed case + empty agent → blocked
+# case-insensitive: Self-Assessment mixed case + empty agent → allowed (orchestrator)
 run_hook "$(payload_with_agent 'ls /rnd/builds/T3-Self-Assessment.md' '')"
-assert_exit   "Self-Assessment mixed case + empty agent → exit 2" 2
-assert_stderr_contains "Self-Assessment mixed case + empty agent → INFORMATION BARRIER" "INFORMATION BARRIER"
+assert_exit   "Self-Assessment mixed case + empty agent → exit 0 (orchestrator allowed)" 0
 
 # barrier fires before tool discipline: diff is not blocked by tool discipline, but barrier catches it
 run_hook "$(payload_with_agent 'diff T3-self-assessment.md other.md' 'rnd-verifier')"

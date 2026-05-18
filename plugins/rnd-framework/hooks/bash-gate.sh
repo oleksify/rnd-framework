@@ -164,18 +164,29 @@ check_segment() {
       fi
 
       local _undo_hint="Use \${CLAUDE_PLUGIN_ROOT}/lib/rnd-undo.sh <task_id> for surgical task-scoped reverts."
+      local _audit_event_sh="$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh"
+
+      # Emit one gate_fired audit event with the specific op name in the tool slot
+      # so downstream analytics can discriminate which destructive op was blocked.
+      _emit_destructive_git_block() {
+        local _op_name="$1"
+        bash "$_audit_event_sh" "gate_fired" "" "destructive_git_blocked:${_op_name}" 2>/dev/null || true
+      }
 
       if [[ "$seg" =~ ^git[[:space:]]+reset[[:space:]]+--hard($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "reset_hard"
         printf 'blocked:BLOCKED: git reset --hard destroys working-tree state. %s' "$_undo_hint"
         return 0
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+checkout[[:space:]]+\.($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "checkout_dot"
         printf 'blocked:BLOCKED: git checkout . discards all working-tree changes. %s' "$_undo_hint"
         return 0
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+checkout[[:space:]]+--($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "checkout_path"
         printf 'blocked:BLOCKED: git checkout -- <path> discards working-tree changes. %s' "$_undo_hint"
         return 0
       fi
@@ -192,27 +203,32 @@ check_segment() {
         [[ "$_clean_flags" =~ [fF] ]] && _has_f=1
         [[ "$_clean_flags" =~ [dDxX] ]] && _has_fdx=1
         if [[ "$_has_f" -eq 1 && "$_has_fdx" -eq 1 ]]; then
+          _emit_destructive_git_block "clean_force"
           printf 'blocked:BLOCKED: git clean with -f and -d/-x permanently deletes untracked files. %s' "$_undo_hint"
           return 0
         fi
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+stash[[:space:]]+(drop|clear)($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "stash_drop_or_clear"
         printf 'blocked:BLOCKED: git stash drop/clear permanently removes stashed changes. %s' "$_undo_hint"
         return 0
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+reflog[[:space:]]+expire($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "reflog_expire"
         printf 'blocked:BLOCKED: git reflog expire permanently prunes reachability history. %s' "$_undo_hint"
         return 0
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+branch[[:space:]]+-D($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "branch_force_delete"
         printf 'blocked:BLOCKED: git branch -D force-deletes a branch without merge check. %s' "$_undo_hint"
         return 0
       fi
 
       if [[ "$seg" =~ ^git[[:space:]]+worktree[[:space:]]+remove[[:space:]]+--force($|[[:space:]]) ]]; then
+        _emit_destructive_git_block "worktree_remove_force"
         printf 'blocked:BLOCKED: git worktree remove --force deletes a worktree without safety checks. %s' "$_undo_hint"
         return 0
       fi

@@ -14,7 +14,7 @@
 #       Exit non-zero otherwise.
 #
 #   calibration.sh promote_tier <tier>
-#       Print the promoted tier: LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH.
+#       Print the promoted tier: LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH, HIGH-PII->HIGH-PII.
 #       Exit non-zero for unknown tiers.
 #
 #   calibration.sh task_type_window <type> [N=10]
@@ -44,10 +44,10 @@ _calib_file() {
 _usage() {
   printf 'Usage: calibration.sh <subcommand> [args]\n\n'
   printf 'Subcommands:\n'
-  printf '  window <tier> [N=10]               Print last N records for <tier> (LOW|MEDIUM|HIGH)\n'
+  printf '  window <tier> [N=10]               Print last N records for <tier> (LOW|MEDIUM|HIGH|HIGH-PII)\n'
   printf '  false_pass_rate <tier> [N=10]      Print false-PASS rate (0.00-1.00) for <tier>\n'
   printf '  should_promote <tier> [N=10]       Exit 0 if rate >= 0.20 and escalation not disabled\n'
-  printf '  promote_tier <tier>                Print promoted tier (LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH)\n'
+  printf '  promote_tier <tier>                Print promoted tier (LOW->MEDIUM, MEDIUM->HIGH, HIGH->HIGH, HIGH-PII->HIGH-PII)\n'
   printf '  task_type_window <type> [N=10]     Print last N records filtered by task_type\n'
 }
 
@@ -122,9 +122,10 @@ _promote_tier() {
   local tier="${1:?tier required}"
 
   case "$tier" in
-    LOW)    printf 'MEDIUM\n' ;;
-    MEDIUM) printf 'HIGH\n' ;;
-    HIGH)   printf 'HIGH\n' ;;
+    LOW)      printf 'MEDIUM\n' ;;
+    MEDIUM)   printf 'HIGH\n' ;;
+    HIGH)     printf 'HIGH\n' ;;
+    HIGH-PII) printf 'HIGH-PII\n' ;;
     *)
       printf 'calibration.sh: unknown tier: %s\n' "$tier" >&2
       return 1

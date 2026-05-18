@@ -67,14 +67,14 @@ Task ID: T<number>
 Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
-Criticality: LOW | NORMAL | HIGH
+Criticality: LOW | NORMAL | HIGH | HIGH-PII
 Success criteria:
   Correctness:
   - [ ] [Functional requirement, test passing, or contract conformance condition]
   - [ ] [Another must-pass condition]
   Quality:
   - [ ] [Code quality, naming, patterns, or documentation condition]
-Verification level: unit | integration | system
+Verification level: inline | unit | system
 Dependencies: [Task IDs this depends on]
 Preconditions:
   - [File/content assertion verified before build starts]
@@ -95,6 +95,17 @@ Card tags: [tag1, tag2]  # optional, v1 — orchestrator falls back to role + ta
 ```
 
 The `fulfills` field creates bidirectional traceability between tasks and Validation Contract assertions.
+
+**Criticality field values:**
+
+| Value | When to use | Verifier cost |
+|---|---|---|
+| `LOW` | Trivial config, doc edits, renaming | 1× (single sonnet pass) |
+| `NORMAL` | Standard feature/refactor work | 1× (single sonnet pass) |
+| `HIGH` | Security-relevant, data-integrity, or architectural changes | 1× with multi-judge escalation gate |
+| `HIGH-PII` | Auth, payment processing, PII handling, or other portal-to-hell scopes | **2×** (dual-spawn: one sonnet + one opus verifier in parallel; unanimous PASS required) |
+
+Use `HIGH-PII` sparingly. The 2× verifier cost is intentional — cross-lineage consensus trades token spend for a stronger correctness guarantee on the highest-stakes code. When in doubt between `HIGH` and `HIGH-PII`, ask: "Would a false PASS here expose user data, allow unauthorized access, or result in financial loss?" If yes, use `HIGH-PII`.
 
 ## Properties (optional)
 

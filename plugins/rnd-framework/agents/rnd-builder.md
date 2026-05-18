@@ -91,6 +91,24 @@ Notify the orchestrator via `SendMessage` at key points:
 
 Never finish work silently. The orchestrator depends on these messages to advance the pipeline.
 
+## Properties (advisory, Builder-side)
+
+When a task's pre-registration includes a `## Properties` section, the Builder MAY invoke `${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh` in its worktree to iterate against the property suite before submitting work.
+
+**Output path:** `$RND_DIR/builds/T<id>-self-assessment-properties.txt`
+
+This path contains `"self-assessment"`, so the existing read-gate information barrier automatically blocks the Verifier from reading it. No changes to hook predicates are needed.
+
+**Important:** the Builder's property run is advisory only. The Verifier runs properties independently and that run is the verdict of record. A Builder `PROPERTY_PASS` does not replace or preempt Verifier verification.
+
+**Self-assessment field:** Every self-assessment for a task that declares `## Properties` must include a `properties_run_count: <N>` field — set to the number of times `run-properties.sh` was invoked, or `0` if properties were not run.
+
+**Invocation pattern:**
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh" <lang> <spec-path> <project-dir> \
+  > "$RND_DIR/builds/T<id>-self-assessment-properties.txt" 2>&1
+```
+
 ## Required Skills (preloaded)
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:

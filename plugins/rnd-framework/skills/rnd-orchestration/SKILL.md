@@ -69,7 +69,7 @@ Success criteria:
   - [ ] Specific, testable condition 1
   Quality:
   - [ ] Specific, testable condition 2
-Verification level: unit | integration | system
+Verification level: inline | unit | system
 Dependencies: [list of task IDs]
 Preconditions:
   - [File/content assertion verified before build starts — omit if none]
@@ -146,16 +146,18 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 
 **Per-agent criticality matrix:**
 
-| Agent | LOW | MEDIUM | HIGH | Adaptive? |
-|---|---|---|---|---|
-| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
-| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
-| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
-| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
-| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
-| `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
+| Agent | LOW | MEDIUM | HIGH | HIGH-PII | Adaptive? |
+|---|---|---|---|---|---|
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | dual-spawn (sonnet + opus) | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | opus/high | yes |
+| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
+| `rnd-polisher` | opus/high | opus/high | opus/xhigh | opus/xhigh | no (per-wave, fixed) |
 
 > **Note on non-adaptive agents:** `rnd-amendment-arbiter` and `rnd-polisher` always run at their listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, proof-gate, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
+
+> **Note on HIGH-PII verifier dispatch:** When `Criticality: HIGH-PII`, the `rnd-verifier` row specifies `dual-spawn (sonnet + opus)` — two independent Verifier instances run in parallel on different model lineages. Unanimous PASS is required for a final PASS verdict; any disagreement routes to the existing tiebreaker protocol (see Phase 3 in `rnd-start.md`). Cost implication: HIGH-PII tasks incur 2× the standard Verifier token spend. Use this tier sparingly — only for auth, payment processing, PII handling, or other portal-to-hell scopes where cross-lineage consensus is worth the cost.
 
 **Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 

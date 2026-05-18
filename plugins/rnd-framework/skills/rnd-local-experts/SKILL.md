@@ -87,7 +87,7 @@ Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
 Success criteria:
   - [ ] [Specific, testable condition 1]
-Verification level: unit | integration | system
+Verification level: inline | unit | system
 Dependencies: [Task IDs this depends on]
 Local expert: security-reviewer  # optional — name of local agent/skill to invoke
 ```

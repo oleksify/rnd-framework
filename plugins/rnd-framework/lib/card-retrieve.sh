@@ -3,10 +3,15 @@
 #
 # Usage:
 #   card-retrieve.sh --role=<role> [--task-type=<type>] [--tags=<t1,t2>]
-#                    [--max=<N>] [--cards-root=<dir>] [--help]
+#                    [--max=<N>] [--cards-root=<dir>] [--count-parents] [--help]
 #
 #   Returns the top-N matching card paths for a (role, task_type, tags) query,
-#   one per line.
+#   one per line. Cards whose specializes: field references a canon card id
+#   cause that canon card's path to be appended after the scored set (deduped).
+#
+#   When --count-parents is set, a trailing line "__parents=<N>" is appended
+#   reporting how many paths were added via specializes: resolution. Useful for
+#   audit logging. Strip it before passing paths to xargs or cat.
 #
 # Scoring:
 #   score = (# shared tags between query and card)
@@ -30,6 +35,7 @@ _usage() {
   printf '  --tags=<t1,t2,...>     Comma-separated query tags (optional)\n'
   printf '  --max=<N>              Maximum cards to return (default: RND_CARDS_MAX_PER_SPAWN or 3)\n'
   printf '  --cards-root=<dir>     Root directory for cards (default: <script-dir>/../cards)\n'
+  printf '  --count-parents        Append a "__parents=<N>" trailer line with the specializes: parent count\n'
   printf '  --help                 Print this usage and exit 0\n'
 }
 
@@ -41,6 +47,12 @@ _usage() {
 if printf '%s\n' "$@" | grep -qx -- '--help'; then
   _usage
   exit 0
+fi
+
+# Detect the boolean --count-parents flag before jq parsing (jq only handles key=value).
+_COUNT_PARENTS=0
+if printf '%s\n' "$@" | grep -qx -- '--count-parents'; then
+  _COUNT_PARENTS=1
 fi
 
 # Parse all --key=value flags at once using jq.
@@ -81,11 +93,12 @@ if [[ ${#_ALL_CARDS[@]} -eq 0 ]]; then
 fi
 
 # Score every card in a single awk pass. Awk parses each file's frontmatter
-# (role, id, tags, applicable_task_types), computes shared-tag count + task-type
-# bonus, and emits "<score>\t<card_id>\t<path>" for each role-matching card.
-# This replaces the previous per-card xargs+jq loop (5 subprocesses × N cards →
-# ~600 forks on the live corpus) with a single awk invocation.
-awk \
+# (role, id, tags, applicable_task_types, specializes), computes shared-tag
+# count + task-type bonus, and emits two line types per role-matching card:
+#   S:<score>\t<card_id>\t<path>\t<specializes>   — for scoring/sorting
+#   M:<card_id>\t<path>                            — id→path map for parent lookup
+# Both types are captured together so parent resolution requires no extra forks.
+_AWK_OUT="$(awk \
   -v q_role="$_QUERY_ROLE" \
   -v q_type="$_QUERY_TASK_TYPE" \
   -v q_tags="$_QUERY_TAGS" \
@@ -104,7 +117,7 @@ awk \
     current_file = FILENAME
     in_fm = 0; fm_done = 0
     card_role = ""; card_id = ""
-    card_tags = ""; card_types = ""
+    card_tags = ""; card_types = ""; card_specializes = ""
   }
 
   fm_done { next }
@@ -125,6 +138,9 @@ awk \
     } else if (match($0, /^applicable_task_types:[ \t]*/)) {
       card_types = substr($0, RLENGTH + 1)
       sub(/^\[/, "", card_types); sub(/\][ \t]*$/, "", card_types)
+    } else if (match($0, /^specializes:[ \t]*/)) {
+      card_specializes = substr($0, RLENGTH + 1)
+      sub(/^\[/, "", card_specializes); sub(/\][ \t]*$/, "", card_specializes)
     }
   }
 
@@ -149,10 +165,79 @@ awk \
     }
 
     score = shared + type_bonus
-    printf "%s\t%s\t%s\n", score, card_id, current_file
+    printf "S:%s\t%s\t%s\t%s\n", score, card_id, current_file, card_specializes
+    printf "M:%s\t%s\n",          card_id, current_file
   }
   ' \
-  "${_ALL_CARDS[@]}" \
-  | sort -t $'\t' -k1,1nr -k2,2 \
-  | head -n "$_MAX" \
-  | cut -f3
+  "${_ALL_CARDS[@]}"
+)"
+
+# Post-process awk output in a second awk pass:
+#   Phase 1 (M: lines): build the id→path map for parent resolution.
+#   Phase 2 (S: lines): sort scored rows, select top-N, emit scored paths,
+#                        then resolve and emit parent paths (deduped).
+# Passing all data via stdin avoids temp files and per-card subprocess forks.
+printf '%s\n' "$_AWK_OUT" \
+  | awk \
+      -v max="$_MAX" \
+      -v count_parents="$_COUNT_PARENTS" \
+      '
+      /^M:/ {
+        line = substr($0, 3)
+        n = split(line, parts, /\t/)
+        if (n >= 2 && parts[1] != "") id_to_path[parts[1]] = parts[2]
+        next
+      }
+
+      /^S:/ {
+        scored[++n_scored] = substr($0, 3)
+        next
+      }
+
+      END {
+        # Sort scored rows: score DESC (numeric), id ASC (lexicographic).
+        # Bubble sort is fine — corpus is small (< 200 cards).
+        for (i = 1; i <= n_scored; i++) {
+          for (j = i + 1; j <= n_scored; j++) {
+            split(scored[i], ai, /\t/)
+            split(scored[j], aj, /\t/)
+            if (ai[1] + 0 < aj[1] + 0 ||
+                (ai[1] == aj[1] && ai[2] > aj[2])) {
+              tmp = scored[i]; scored[i] = scored[j]; scored[j] = tmp
+            }
+          }
+        }
+
+        # Emit top-N scored paths; record them as the dedup set.
+        emitted_count = 0
+        for (i = 1; i <= n_scored && emitted_count < max; i++) {
+          split(scored[i], parts, /\t/)
+          path = parts[3]
+          print path
+          scored_set[path] = 1
+          specializes_col[i] = parts[4]
+          emitted_count++
+        }
+
+        # Append parent paths for each emitted scored card.
+        parent_count = 0
+        for (i = 1; i <= emitted_count; i++) {
+          sp = specializes_col[i]
+          if (sp == "") continue
+          n_ids = split(sp, ids, /[ \t]*,[ \t]*/)
+          for (k = 1; k <= n_ids; k++) {
+            parent_id = ids[k]
+            if (parent_id == "") continue
+            if (!(parent_id in id_to_path)) continue
+            p = id_to_path[parent_id]
+            if (p in scored_set) continue
+            if (p in parent_emitted) continue
+            parent_emitted[p] = 1
+            parent_count++
+            print p
+          }
+        }
+
+        if (count_parents) printf "__parents=%d\n", parent_count
+      }
+      '

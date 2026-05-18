@@ -68,6 +68,28 @@ After displaying the status, use `AskUserQuestion` to suggest the logical next a
 
 When invoked with `--calibration-trends`, skip the task-status table and instead print the rolling false-PASS rate for each criticality tier, followed by any tier-escalation events from the current session.
 
+### Data source: slug-root calibration.jsonl
+
+`calibration.jsonl` lives at the un-partitioned slug root — above the `branches/` tree — so it accumulates records across every session and branch. Resolve it via the canonical resolver:
+
+```bash
+calib_file=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --calibration)
+```
+
+To verify the file exists before reading, use `find`:
+
+```bash
+found=$(find "$(dirname "$calib_file")" -maxdepth 1 -name "calibration.jsonl" 2>/dev/null | head -1)
+```
+
+**If `calibration.jsonl` is absent** (no records have been written yet), print:
+
+```
+No calibration data yet. Run a full pipeline wave to populate trends.
+```
+
+and exit 0. Do not print per-tier rate lines when there is no data.
+
 ### Per-tier rate output
 
 For each tier in order LOW, MEDIUM, HIGH, print one line:
@@ -85,6 +107,7 @@ Where:
   ```bash
   rate=$("${CLAUDE_PLUGIN_ROOT}/lib/calibration.sh" false_pass_rate LOW)
   ```
+  `calibration.sh` reads from the slug-root file automatically — no per-session scoping is applied.
 
 ### Tier-escalation events
 

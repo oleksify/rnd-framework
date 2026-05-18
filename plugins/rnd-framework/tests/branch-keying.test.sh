@@ -35,7 +35,7 @@ REPO1="${TMPBASE}/repo1"
 CFG1="${TMPBASE}/cfg1"
 make_git_repo "$REPO1" "main"
 
-BASE_OUT="$(CLAUDE_CONFIG_DIR="$CFG1" bash "$RND_DIR_SCRIPT" --base 2>/dev/null)" || true
+BASE_OUT="$(cd "$REPO1" && CLAUDE_CONFIG_DIR="$CFG1" bash "$RND_DIR_SCRIPT" --base 2>/dev/null)" || true
 
 if [[ "$BASE_OUT" == */branches/main/* || "$BASE_OUT" == */branches/main ]]; then
   assert_eq "VAL-BSCOPE-001: --base contains /branches/main/" "yes" "yes"

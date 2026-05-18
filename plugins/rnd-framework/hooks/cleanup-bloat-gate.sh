@@ -2,12 +2,27 @@
 # hooks/cleanup-bloat-gate.sh — SubagentStop hook.
 # Advisory-only gate scoped to rnd-cleanup: observes the cleanup report's deletion
 # ratio and emits a bloat_aversion_underperform audit event when the ratio is
-# derivable and under 15%, without blocking the agent.
+# derivable and under the per-task_type threshold, without blocking the agent.
 # ALWAYS exits 0 — this gate never blocks.
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Per-task_type advisory thresholds (percent).
+# Special value "skip" suppresses the advisory entirely for that type.
+# Absent or unrecognised task_type falls back to the default (15).
+# ---------------------------------------------------------------------------
+declare -A BLOAT_THRESHOLDS=(
+  [docs]=skip
+  [config]=5
+  [refactor]=20
+  [new-feature]=15
+  [bugfix]=15
+  [infra]=15
+)
+readonly BLOAT_THRESHOLD_DEFAULT=15
 
 raw="$(cat)"
 
@@ -40,6 +55,30 @@ report_base="${report_path##*/}"
 task_id="${report_base%-cleanup-report.md}"
 
 report_content="$(< "$report_path")"
+
+# ---------------------------------------------------------------------------
+# task_type lookup — read from report, then resolve threshold.
+# ---------------------------------------------------------------------------
+
+task_type=""
+
+while IFS= read -r line; do
+  if [[ "$line" =~ ^task_type:[[:space:]]*([a-z-]+) ]]; then
+    task_type="${BASH_REMATCH[1]}"
+    break
+  fi
+done <<< "$report_content"
+
+# Resolve threshold for this task type.
+threshold="$BLOAT_THRESHOLD_DEFAULT"
+if [[ -n "$task_type" && -v "BLOAT_THRESHOLDS[$task_type]" ]]; then
+  threshold="${BLOAT_THRESHOLDS[$task_type]}"
+fi
+
+# docs (or any "skip") → suppress advisory entirely.
+if [[ "$threshold" == "skip" ]]; then
+  exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # Ratio derivation — three-step fallback chain
@@ -143,17 +182,17 @@ if [[ -z "$ratio_pct" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Advisory: emit when ratio < 15%
+# Advisory: emit when ratio < per-task_type threshold
 # ---------------------------------------------------------------------------
 
-if [[ "$ratio_pct" -lt 15 ]]; then
+if [[ "$ratio_pct" -lt "$threshold" ]]; then
   if [[ -n "${RND_DIR:-}" ]]; then
     bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$task_id" "bloat_aversion_underperform" 2>/dev/null || true
   fi
 
-  printf 'cleanup-bloat-gate: %s deletion ratio %d%% is below the 15%% advisory floor — consider whether more code could be removed. Report path: %s\n' \
-    "$task_id" "$ratio_pct" "$report_path" >&2
+  printf 'cleanup-bloat-gate: %s deletion ratio %d%% is below the %d%% advisory floor — consider whether more code could be removed. Report path: %s\n' \
+    "$task_id" "$ratio_pct" "$threshold" "$report_path" >&2
 fi
 
 exit 0

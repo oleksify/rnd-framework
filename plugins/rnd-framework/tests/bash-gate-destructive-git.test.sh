@@ -109,4 +109,95 @@ assert_exit_code "git reflog (no expire) is allowed (exit 0)" 0
 run_hook "$BASH_GATE" "$(_make_json 'git branch -d merged-feature')"
 assert_exit_code "git branch -d (lowercase) is allowed (exit 0)" 0
 
+printf '\n--- bash-gate: additional blocked patterns ---\n'
+
+# git checkout -- . (period as explicit path): must block
+run_hook "$BASH_GATE" "$(_make_json 'git checkout -- .')"
+assert_exit_code "git checkout -- . is blocked (exit 2)" 2
+assert_contains "git checkout -- . stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+# git reset --hard (bare, no ref): must block
+run_hook "$BASH_GATE" "$(_make_json 'git reset --hard')"
+assert_exit_code "git reset --hard (bare) is blocked (exit 2)" 2
+assert_contains "git reset --hard (bare) stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+# git clean -f -d (separate flag tokens): must block
+run_hook "$BASH_GATE" "$(_make_json 'git clean -f -d')"
+assert_exit_code "git clean -f -d (separate flags) is blocked (exit 2)" 2
+assert_contains "git clean -f -d stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+# git clean -fx (-f and -x, no -d): must block
+run_hook "$BASH_GATE" "$(_make_json 'git clean -fx')"
+assert_exit_code "git clean -fx is blocked (exit 2)" 2
+assert_contains "git clean -fx stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+# git stash drop stash@{0}: must block
+run_hook "$BASH_GATE" "$(_make_json 'git stash drop stash@{0}')"
+assert_exit_code "git stash drop stash@{0} is blocked (exit 2)" 2
+assert_contains "git stash drop stash@{0} stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+# git checkout -- src/main.ts (nested path): must block
+run_hook "$BASH_GATE" "$(_make_json 'git checkout -- src/main.ts')"
+assert_exit_code "git checkout -- src/main.ts is blocked (exit 2)" 2
+assert_contains "git checkout -- src/main.ts stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+printf '\n--- bash-gate: additional allowed operations ---\n'
+
+# git checkout main (branch switch, not file discard): must pass
+run_hook "$BASH_GATE" "$(_make_json 'git checkout main')"
+assert_exit_code "git checkout main (branch switch) is allowed (exit 0)" 0
+
+# git reset --soft HEAD~1 (non-destructive reset): must pass
+run_hook "$BASH_GATE" "$(_make_json 'git reset --soft HEAD~1')"
+assert_exit_code "git reset --soft is allowed (exit 0)" 0
+
+# git clean -f (force alone, no d/x flag): must pass
+run_hook "$BASH_GATE" "$(_make_json 'git clean -f')"
+assert_exit_code "git clean -f (no d/x) is allowed (exit 0)" 0
+
+# git worktree remove /path (without --force): must pass
+run_hook "$BASH_GATE" "$(_make_json 'git worktree remove /some/worktree')"
+assert_exit_code "git worktree remove (no --force) is allowed (exit 0)" 0
+
+# git stash list: must pass
+run_hook "$BASH_GATE" "$(_make_json 'git stash list')"
+assert_exit_code "git stash list is allowed (exit 0)" 0
+
+printf '\n--- bash-gate: audit event emission on block ---\n'
+
+# Verify that blocking a destructive git op writes a gate_fired entry to audit.jsonl.
+# Requires RND_DIR to be set so audit-event.sh has a write target.
+_tmp_rnd="$(mktemp -d)"
+_audit_file="${_tmp_rnd}/audit.jsonl"
+
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git reset --hard HEAD')"
+assert_exit_code "git reset --hard is blocked when RND_DIR is set (exit 2)" 2
+
+if [[ -f "$_audit_file" ]]; then
+  _audit_line="$(grep '"gate_fired"' "$_audit_file" | tail -1)"
+  assert_contains "audit.jsonl contains gate_fired event" '"gate_fired"' "$_audit_line"
+  assert_contains "audit.jsonl contains destructive_git_blocked with per-op discriminator" '"destructive_git_blocked:' "$_audit_line"
+else
+  assert_eq "audit.jsonl exists after blocked git reset --hard" "exists" "missing"
+fi
+
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git checkout .')"
+assert_exit_code "git checkout . is blocked when RND_DIR is set (exit 2)" 2
+_audit_count="$(grep -c '"gate_fired"' "$_audit_file" 2>/dev/null || printf '0')"
+assert_contains "audit.jsonl accumulates multiple gate_fired events" "2" "$_audit_count"
+
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git branch -D old-branch')"
+assert_exit_code "git branch -D is blocked when RND_DIR is set (exit 2)" 2
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git stash clear')"
+assert_exit_code "git stash clear is blocked when RND_DIR is set (exit 2)" 2
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git worktree remove --force /tmp/wt')"
+assert_exit_code "git worktree remove --force is blocked when RND_DIR is set (exit 2)" 2
+RND_DIR="$_tmp_rnd" run_hook "$BASH_GATE" "$(_make_json 'git clean -fd .')"
+assert_exit_code "git clean -fd is blocked when RND_DIR is set (exit 2)" 2
+
+_total_audit_count="$(grep -c '"gate_fired"' "$_audit_file" 2>/dev/null || printf '0')"
+assert_contains "audit.jsonl has all 6 gate_fired events" "6" "$_total_audit_count"
+
+rm -rf "$_tmp_rnd"
+
 report

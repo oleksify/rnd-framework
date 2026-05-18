@@ -77,6 +77,12 @@ Excluded (NOT subject to this rule): `T<id>-self-assessment.md`, `T<id>-found-is
 
 The rule applies in autonomous/loop mode too: print the full report verbatim even when AskUserQuestion is skipped. No length cap, no truncation, no executive-summary substitution.
 
+### Rendering Rule
+
+`verbatim` means **exact content**, not **literal escaping**. Reports are Markdown documents and must render as Markdown in the user's terminal, not display as raw syntax.
+
+Emit each report as: a backtick-quoted file path line, a blank line, then the unwrapped file body pasted directly into the chat stream. The body's `#`/`##` headings, lists, **bold**, and `inline code` must be live Markdown — not text inside a fence. Do not wrap, indent, quote, or otherwise envelope the body.
+
 ### Forbidden Anti-Patterns
 
 These responses are defects:
@@ -87,5 +93,6 @@ These responses are defects:
 - Summarizing a report's findings without first printing the file verbatim.
 - Truncating a report because it is "too long".
 - Skipping the verbatim print because "the user can open the file themselves".
+- Wrapping the report body in a fenced code block (```` ``` ````, ```` ```markdown ````, or a 4-space indented block). This defeats Markdown rendering and shows raw `#`, `**`, and backtick syntax to the user. `verbatim` means exact content, not literal escaping — emit the body as bare Markdown.
 
 The verbatim print is mandatory regardless of length, regardless of mode, regardless of whether you also summarize afterward.

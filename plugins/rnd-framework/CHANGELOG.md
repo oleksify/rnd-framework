@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.27.1 — 2026-05-18
+
+### Fix Markdown rendering of surfaced reports
+
+The Report Surfacing Protocol in all three output styles (`rigorous`, `pipeline`, `scientific`) instructed agents to print report contents "verbatim", which the LLM interpreted as "wrap in a fenced code block" — causing surfaced `plan.md`, verification reports, and other artifacts to display as raw Markdown syntax (`#`, `**`, backticks) in chat instead of rendered headings, bold, and inline code. Added an explicit Rendering Rule clarifying that `verbatim` means exact content, not literal escaping, and that the body must be emitted as bare Markdown directly into the chat stream. Added a Forbidden Anti-Pattern bullet explicitly forbidding code-fence wrapping of the body.
+
 ## 3.27.0 — 2026-05-18
 
 ### Add Julia card tier covering core language idioms and Oxygen.jl framework patterns

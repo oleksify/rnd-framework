@@ -4,6 +4,12 @@
 
 ### Python corpus v2: barrier fix, corpus lint, Python coverage, and P-MEASURE-01 canon
 
+**Critical fix:** `/cleanup/` and `/briefs/` barrier paths now require the `.rnd/` artifact-root prefix, so corpus cards under `cards/cleanup/` are no longer blocked during orchestrator card injection.
+**Tooling:** New `tests/cards-corpus-lint.test.sh` enforces 6-field frontmatter, sentence-form `scope:`, no Markdown headings in body, and role/lang/id vs directory consistency (strict by default).
+**Python coverage:** ~28 new builder cards (FastAPI, Pydantic v2, SQLAlchemy 2, Django ORM, asyncio, httpx, Celery, Flask), 4 verifier cards (pytest/mypy/ruff), 5 reality-auditor cards, 2 cleanup cards, 1 planner card.
+**Canon:** New principle `P-MEASURE-01` — gather profiler or benchmark evidence before any performance change.
+**Format:** 29 existing cards rewritten to sentence-form `scope:` and stripped of `### Card …` body headings; lint enforces this going forward.
+
 ## 3.24.0 — 2026-05-17
 
 ### Expand flash-card corpus to v2 with canon principles and language/library tiers

@@ -21,8 +21,12 @@ path_lower="$(_lower "$path")"
 pattern_lower="$(_lower "$pattern")"
 
 # Block verifier/unknown agents that touch self-assessment or briefs/ content.
+# Check path, pattern, AND their concatenation — a Glob with
+# `path=/.../.rnd/sessions/x` and `pattern=/cleanup/*.md` only looks
+# barrier-violating when the two are joined.
 if is_barrier_violation "$path" "${AGENT_TYPE}" \
-   || is_barrier_violation "$pattern" "${AGENT_TYPE}"; then
+   || is_barrier_violation "$pattern" "${AGENT_TYPE}" \
+   || is_barrier_violation "${path}/${pattern}" "${AGENT_TYPE}"; then
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 

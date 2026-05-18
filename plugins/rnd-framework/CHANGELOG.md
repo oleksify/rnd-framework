@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.25.0 — 2026-05-17
+
+### Python corpus v2: barrier fix, corpus lint, Python coverage, and P-MEASURE-01 canon
+
 ## 3.24.0 — 2026-05-17
 
 ### Expand flash-card corpus to v2 with canon principles and language/library tiers

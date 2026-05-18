@@ -8,8 +8,6 @@ scope: Migration up and down must both succeed; verify both directions, not just
 specializes: [P-IMPOSSIBLE-01]
 ---
 
-### Card V12: Migrations require both directions to be tested — specializes the impossible-states principle for SQL migrations
-
 **Good verification comment:**
 > FAIL. The migration adds a `NOT NULL` column `confirmed_at` with no `DEFAULT`. The `up` migration will fail on any table with existing rows unless a default is supplied during the migration (e.g., `SET DEFAULT now()` then `DROP DEFAULT`). The `down` migration drops the column — which is safe, but it was never run. Test evidence must show both `migrate up` and `migrate down` succeeded against a non-empty table. Present output from both runs.
 

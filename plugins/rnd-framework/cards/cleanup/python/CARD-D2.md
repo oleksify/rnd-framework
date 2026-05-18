@@ -4,11 +4,9 @@ role: cleanup
 language: python
 tags: [dead-code, comments]
 applicable_task_types: [refactor]
-scope: small
+scope: Remove comments that restate what the code does and preserve only comments explaining why.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card D2: Comments that restate the code
 
 **Before:**
 ```python

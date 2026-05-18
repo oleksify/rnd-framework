@@ -4,11 +4,9 @@ role: reality-auditor
 language: generic
 tags: [anomaly, skepticism]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Treat a suspiciously clean audit as itself anomalous and probe before accepting it.
 specializes: [P-EFFECTS-EDGE-01]
 ---
-
-### Card R2: Resistance to "everything is fine"
 
 **Good audit output:**
 > Surprising: all 47 facts in the report check out fresh. This is statistically unusual for a codebase this size — typical staleness rate is 8-15%. Either the facts were just refreshed (verify), or the check is producing false negatives. Investigating before accepting "all clean."

@@ -228,6 +228,11 @@ assert_stdout_empty "/cleanup/ + rnd-builder → empty stdout (not auto-allowed)
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/project/src/cleanup.ts"},"agent_type":"rnd-verifier"}'
 assert_exit   "cleanup.ts (no /cleanup/ segment) + verifier → exit 0" 0
 
+# Corpus collision smoke test: cards/cleanup/... is the flash-card priming
+# corpus, NOT an .rnd/ artifact-tree cleanup report. Must not be barrier-blocked.
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/plugins/cache/oleksify-plugins/rnd-framework/3.22.2/cards/cleanup/python/CARD-D1.md"},"agent_type":""}'
+assert_exit   "cards/cleanup/ corpus path + empty agent_type → exit 0 (not barrier)" 0
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------

@@ -8,8 +8,6 @@ scope: LIMIT without ORDER BY returns an arbitrary subset — row order is not g
 specializes: [P-IMPOSSIBLE-01]
 ---
 
-### Card R14: LIMIT without ORDER BY returns nondeterministic rows — specializes the impossible-states principle for PostgreSQL queries
-
 **Good audit observation:**
 > `SELECT * FROM jobs WHERE status = 'pending' LIMIT 10` has no `ORDER BY`. The rows returned depend on the query plan Postgres chooses — typically a sequential scan returns rows in storage order, but after vacuums, concurrent inserts, or a planner decision to use an index, the 10 rows change. Any test that asserts specific rows from this query will flake. Add `ORDER BY created_at, id` (or the natural processing order) before the `LIMIT` to make behavior deterministic.
 

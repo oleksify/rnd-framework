@@ -4,10 +4,8 @@ role: builder
 language: generic
 tags: [boundaries, validation]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: medium
+scope: Use discriminated unions to make invalid states unrepresentable at the type level.
 ---
-
-### Card P-IMPOSSIBLE-01: Make impossible states unrepresentable
 
 **Good:**
 ```typescript

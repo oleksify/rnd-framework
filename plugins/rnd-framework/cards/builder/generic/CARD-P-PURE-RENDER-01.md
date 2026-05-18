@@ -4,10 +4,8 @@ role: builder
 language: generic
 tags: [abstraction, control-flow]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Fetch data at the boundary and hand shaped data to render functions; keep transforms pure.
 ---
-
-### Card P-PURE-RENDER-01: Render/transform functions are pure data→UI
 
 **Good:**
 ```typescript

@@ -4,11 +4,9 @@ role: verifier
 language: python
 tags: [critique-evidence, fail-case]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Articulate the strongest case for FAIL as a required step before issuing any PASS.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card V3: Strongest-case-for-FAIL before any PASS
 
 **Good verifier reasoning:**
 > Strongest case for FAIL: the function assumes inputs are pre-validated, but the only caller (line 89 of `ingest.py`) doesn't validate. So this function will receive malformed input in practice. I checked — there is no validation upstream. This is the bug. FAIL.

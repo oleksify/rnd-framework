@@ -109,8 +109,4 @@ for rel_path in cleanup/python/CARD-D1.md cleanup/python/CARD-D2.md cleanup/pyth
   assert_contains "refactor in applicable_task_types for $rel_path" "refactor" "$content"
 done
 
-# Total card count matches 17
-total_count="$(find "$CARDS_DIR" -name "CARD-*.md" | wc -l | tr -d ' ')"
-assert_eq "total card count is 17" "17" "$total_count"
-
 report

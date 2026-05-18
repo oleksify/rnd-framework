@@ -210,11 +210,17 @@ active_session_dir() {
 #
 # Barrier-protected patterns:
 #   - "self-assessment" — Builder uncertainty records (blocked from Verifier)
-#   - "/briefs/" — user-facing narrative artifacts that may echo Builder reasoning
-#     (matched as a path segment with slashes so the bare word "brief" in a
-#     grep pattern is not flagged)
-#   - "/cleanup/" — per-task cleanup reports (barrier-protected from Verifier;
-#     mirrors /briefs/ semantics)
+#   - ".rnd/.../briefs/" — user-facing narrative artifacts that may echo Builder
+#     reasoning. The `.rnd/` artifact-root anchor distinguishes the artifact
+#     tree from same-named directories elsewhere (e.g. project source).
+#   - ".rnd/.../cleanup/" — per-task cleanup reports (barrier-protected from
+#     Verifier; mirrors /briefs/ semantics).
+#
+# The `.rnd/` anchor is load-bearing: the flash-card priming corpus lives at
+# `plugins/rnd-framework/cards/cleanup/...` in the source repo (and under
+# `plugins/cache/oleksify-plugins/rnd-framework/<version>/cards/cleanup/...`
+# when cached). Without the anchor those legitimate corpus paths would be
+# mistaken for artifact-tree reports and blocked from card-receiving agents.
 is_barrier_violation() {
   local text="$1"
   local agent_type="${2:-}"
@@ -223,10 +229,9 @@ is_barrier_violation() {
   local has_pattern=0
   if [[ "$text_lower" == *"self-assessment"* ]]; then
     has_pattern=1
-  elif [[ "$text_lower" == *"/briefs/"* ]]; then
+  elif [[ "$text_lower" =~ \.rnd/.*briefs/ ]]; then
     has_pattern=1
-  elif [[ "$text_lower" == *"/cleanup/"* ]]; then
-    # /cleanup/ — barrier-protected cleanup-report artifacts (mirrors /briefs/)
+  elif [[ "$text_lower" =~ \.rnd/.*cleanup/ ]]; then
     has_pattern=1
   fi
   [[ "$has_pattern" -eq 1 ]] || return 1

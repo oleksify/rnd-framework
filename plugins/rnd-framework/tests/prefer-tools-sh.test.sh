@@ -655,8 +655,8 @@ run_hook "$(payload_with_agent 'bfs /rnd/builds/T3-self-assessment.md' 'rnd-veri
 assert_exit   "bfs self-assessment + verifier → exit 2" 2
 assert_stderr_contains "bfs self-assessment + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
 
-# ugrep with /briefs/ path + verifier → barrier blocks
-run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-verifier')"
+# ugrep with /briefs/ path + verifier → barrier blocks (realistic .rnd/ artifact path)
+run_hook "$(payload_with_agent 'ugrep -r pattern /home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/' 'rnd-verifier')"
 assert_exit   "ugrep /briefs/ + verifier → exit 2" 2
 assert_stderr_contains "ugrep /briefs/ + verifier → INFORMATION BARRIER" "INFORMATION BARRIER"
 
@@ -665,7 +665,7 @@ run_hook "$(payload_with_agent 'bfs /rnd/builds/T3-self-assessment.md' 'rnd-buil
 assert_exit   "bfs self-assessment + rnd-builder → exit 0" 0
 
 # ugrep with briefs/ path + builder → allowed (barrier does not fire)
-run_hook "$(payload_with_agent 'ugrep -r pattern /rnd/briefs/' 'rnd-builder')"
+run_hook "$(payload_with_agent 'ugrep -r pattern /home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/' 'rnd-builder')"
 assert_exit   "ugrep /briefs/ + rnd-builder → exit 0" 0
 
 # ---------------------------------------------------------------------------

@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [abstraction, premature-abstraction]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: medium
+scope: Add abstractions only when a concrete second use case arrives, not in anticipation of one.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card B2: Premature abstraction
 
 **Good:**
 ```python

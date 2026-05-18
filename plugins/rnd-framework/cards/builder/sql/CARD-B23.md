@@ -8,8 +8,6 @@ scope: Enforce data invariants with database constraints, not application-side c
 specializes: [P-IMPOSSIBLE-01]
 ---
 
-### Card B23: Constraints as validation — specializes the impossible-states principle for PostgreSQL
-
 **Good:**
 ```sql
 CREATE TABLE orders (

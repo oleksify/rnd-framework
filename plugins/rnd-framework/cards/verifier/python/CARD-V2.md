@@ -4,11 +4,9 @@ role: verifier
 language: python
 tags: [abstraction, critique-evidence]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Issue FAIL when something is wrong enough to mention rather than passing with soft non-blocking notes.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card V2: Disagree-and-articulate over polite-and-pass
 
 **Good:**
 > FAIL on the abstraction layer. `EmailTemplateRenderer` is an abstract base with one subclass and no concrete second use case visible in the codebase. The abstraction is paying its cost (3 extra files, 30 extra lines) without earning it. Recommend collapsing to a single function until a second template type is actually needed.

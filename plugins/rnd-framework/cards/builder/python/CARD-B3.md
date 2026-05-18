@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [defensive-programming, validation, boundaries]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Validate at system boundaries; trust internal code rather than silently swallowing impossible states.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card B3: Defensive validation at the wrong boundary
 
 **Good:**
 ```python

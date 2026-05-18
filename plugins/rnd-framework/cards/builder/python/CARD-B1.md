@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [error-handling, defensive-programming]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Handle errors at the layer that can act on them, not the layer that observed them.
 specializes: [P-EFFECTS-EDGE-01]
 ---
-
-### Card B1: Error handling at the right layer
 
 **Good:**
 ```python

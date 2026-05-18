@@ -8,8 +8,6 @@ scope: Wrap multi-row invariants in a transaction to guarantee atomicity
 specializes: [P-EFFECTS-EDGE-01]
 ---
 
-### Card B25: Transaction boundaries — specializes the push-effects-to-edges principle for PostgreSQL
-
 **Good:**
 ```sql
 BEGIN;

@@ -4,11 +4,9 @@ role: cleanup
 language: python
 tags: [dead-code, wrappers, abstraction]
 applicable_task_types: [refactor]
-scope: small
+scope: Delete wrapper classes that add no logic over stdlib operations; use idiomatic stdlib at call sites.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card D3: Wrappers around standard library
 
 **Before:**
 ```python

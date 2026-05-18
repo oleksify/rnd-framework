@@ -4,11 +4,9 @@ role: planner
 language: generic
 tags: [spec-shape, scope, decomposition]
 applicable_task_types: [new-feature, infra]
-scope: medium
+scope: Write specs that constrain size, shape, and scope rather than inviting open-ended flexibility.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card P1: Spec that constrains size and shape
 
 **Good spec:**
 > Add JSON export for user preferences.

@@ -4,10 +4,8 @@ role: planner
 language: generic
 tags: [scope, decomposition, boundaries]
 applicable_task_types: [new-feature, refactor, infra]
-scope: medium
+scope: Enforce stable module boundaries by keeping the public API small from the start.
 ---
-
-### Card P-SMALL-MODULES-01: Small modules with stable boundaries
 
 **Good module boundary:**
 > `users/export.ex` — one function: `export_csv(user_id) :: {:ok, binary} | {:error, atom}`.

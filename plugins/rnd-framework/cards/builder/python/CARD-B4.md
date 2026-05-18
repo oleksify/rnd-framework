@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [naming]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Name functions by what they return and the condition that determines it, not by role or ceremony.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card B4: Naming that describes vs naming that decorates
 
 **Good:**
 ```python

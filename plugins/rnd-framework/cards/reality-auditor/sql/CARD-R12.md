@@ -8,8 +8,6 @@ scope: EXPLAIN ANALYZE returns actual execution stats — estimates and actuals 
 specializes: [P-EFFECTS-EDGE-01]
 ---
 
-### Card R12: Actual vs. estimated rows in EXPLAIN ANALYZE — specializes the push-effects-to-edges principle for PostgreSQL query planning
-
 **Good audit observation:**
 > `EXPLAIN ANALYZE` shows `rows=1 (estimated)` vs `rows=84231 (actual)` on the nested loop join. The planner believed the `status = 'active'` filter was highly selective, but statistics are stale. An `ANALYZE` on the table or a fresh `VACUUM ANALYZE` would update the row estimate — and the planner would likely switch to a hash join that is orders of magnitude faster. The performance regression is a statistics drift, not a query bug.
 

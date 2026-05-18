@@ -8,8 +8,6 @@ scope: Unnamed constraints generate Postgres-derived names that collide across m
 specializes: [P-IMPOSSIBLE-01]
 ---
 
-### Card V13: Constraint name collisions in migrations — specializes the impossible-states principle for PostgreSQL DDL
-
 **Good verification comment:**
 > FAIL. The migration adds `CHECK (status IN ('active', 'inactive'))` without a `CONSTRAINT` name. Postgres will generate `orders_status_check` — but a prior migration already added a CHECK on `status` and generated the same name. Running this migration on a database where the prior migration ran will fail with `constraint "orders_status_check" of relation "orders" already exists`. The fix is `CONSTRAINT orders_status_check2 CHECK (...)` or, better, a unique descriptive name. Show evidence of the migration running against a database that already has the prior schema.
 

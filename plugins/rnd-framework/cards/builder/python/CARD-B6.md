@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [configuration, premature-abstraction]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: medium
+scope: Named constants suffice until a real second use case justifies a config object.
 specializes: [P-SMALL-MODULES-01]
 ---
-
-### Card B6: Configuration when it isn't needed
 
 **Good:**
 ```python

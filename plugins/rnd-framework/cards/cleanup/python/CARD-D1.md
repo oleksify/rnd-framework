@@ -4,11 +4,9 @@ role: cleanup
 language: python
 tags: [dead-code, defensive-programming]
 applicable_task_types: [refactor]
-scope: small
+scope: Delete defensive guards against conditions the type signature already excludes.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card D1: Dead defensive code
 
 **Before (180 chars):**
 ```python

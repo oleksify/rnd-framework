@@ -8,8 +8,6 @@ scope: Use INSERT ... ON CONFLICT for atomic, race-free upserts
 specializes: [P-EFFECTS-EDGE-01]
 ---
 
-### Card B24: Idempotent upserts — specializes the push-effects-to-edges principle for PostgreSQL
-
 **Good:**
 ```sql
 INSERT INTO user_settings (user_id, key, value)

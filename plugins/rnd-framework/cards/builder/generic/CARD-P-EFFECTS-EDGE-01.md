@@ -4,10 +4,8 @@ role: builder
 language: generic
 tags: [abstraction, boundaries]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: medium
+scope: Push I/O and side effects to system boundaries; keep every decision point in pure, testable code.
 ---
-
-### Card P-EFFECTS-EDGE-01: Push effects to the edges; keep the core pure
 
 **Good:**
 ```elixir

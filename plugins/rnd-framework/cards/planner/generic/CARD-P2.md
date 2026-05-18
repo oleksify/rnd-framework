@@ -4,11 +4,9 @@ role: planner
 language: generic
 tags: [decomposition, verifiability]
 applicable_task_types: [new-feature, infra]
-scope: medium
+scope: Decompose into tasks where each unit has a concrete, binary verification check.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card P2: Decomposition that produces verifiable units
 
 **Good decomposition:**
 > Task 1: Add `User.export_dict()` method returning `dict[str, Any]`. Verifiable by: existing users serialize to dict with expected keys.

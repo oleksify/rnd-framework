@@ -4,11 +4,9 @@ role: builder
 language: python
 tags: [control-flow, early-return]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Use early return to make control flow obvious and short-circuiting immediate.
 specializes: [P-PURE-RENDER-01]
 ---
-
-### Card B5: Early return over sentinel tracking
 
 **Good:**
 ```python

@@ -4,11 +4,9 @@ role: verifier
 language: python
 tags: [critique-evidence, error-handling]
 applicable_task_types: [new-feature, bugfix, refactor]
-scope: small
+scope: Critique by naming the bug, the line, the consequence, and the fix rather than describing a feeling.
 specializes: [P-IMPOSSIBLE-01]
 ---
-
-### Card V1: Critique with evidence, not vibes
 
 **Good review comment:**
 > FAIL. `parse_timestamp` returns `None` on parse failure but `process_event` (line 47) dereferences the return value without a None-check. This will `AttributeError` on any malformed timestamp. Either make `parse_timestamp` raise, or handle None at the call site.

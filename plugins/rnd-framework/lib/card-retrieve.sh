@@ -33,71 +33,6 @@ _usage() {
   printf '  --help                 Print this usage and exit 0\n'
 }
 
-# Extract a single frontmatter field value from a card file.
-# Usage: _fm_value <file> <field>
-# Prints the raw value after "field: " with leading whitespace stripped.
-_fm_value() {
-  local file="$1" field="$2" line val
-  line="$(grep "^${field}:" "$file" 2>/dev/null || true)"
-  val="${line#${field}: }"
-  val="${val#${field}:}"
-  printf '%s' "${val## }"
-}
-
-# Score a single card file against the query and emit a TSV record.
-# Emits "<score>\t<card_id>\t<path>" or nothing if role mismatch.
-# Called via: export -f _score_card _fm_value; xargs -I{} bash -c '_score_card "$@"' _ {}
-#
-# Exported globals: _QUERY_ROLE _QUERY_TASK_TYPE _QUERY_TAGS
-_score_card() {
-  local path="$1"
-  local card_role card_id card_tags_raw card_types_raw
-
-  card_role="$(_fm_value "$path" "role")"
-  [[ "$card_role" == "$_QUERY_ROLE" ]] || return 0
-
-  card_id="$(_fm_value "$path" "id")"
-  card_tags_raw="$(_fm_value "$path" "tags")"
-  card_types_raw="$(_fm_value "$path" "applicable_task_types")"
-
-  # Strip surrounding brackets from flow-style YAML lists: [a, b, c] → a, b, c
-  card_tags_raw="${card_tags_raw#[}"
-  card_tags_raw="${card_tags_raw%]}"
-  card_types_raw="${card_types_raw#[}"
-  card_types_raw="${card_types_raw%]}"
-
-  # Use jq to compute tag intersection count + task_type bonus — no shell loops.
-  # jq receives query tags and card tags as comma-separated strings and computes:
-  #   shared_count = length of intersection of the two tag sets
-  #   type_bonus   = 1 if query task_type appears in card types, else 0
-  local score
-  score="$(jq -rn \
-    --arg q_tags  "$_QUERY_TAGS" \
-    --arg c_tags  "$card_tags_raw" \
-    --arg q_type  "$_QUERY_TASK_TYPE" \
-    --arg c_types "$card_types_raw" \
-    '
-      def parse_csv(s):
-        if (s | length) == 0 then []
-        else s | split(",") | map(gsub("^\\s+|\\s+$"; ""))
-        end;
-
-      (parse_csv($q_tags) | map({(.): 1}) | add // {}) as $q_set |
-      (parse_csv($c_tags) | map(select($q_set[.])) | length) as $shared |
-
-      (if ($q_type | length) > 0 and ($c_types | length) > 0
-        then (parse_csv($c_types) | map(select(. == $q_type)) | length > 0)
-        else false
-        end) as $type_bonus |
-
-      $shared + (if $type_bonus then 1 else 0 end)
-    ')"
-
-  printf '%s\t%s\t%s\n' "$score" "$card_id" "$path"
-}
-
-export -f _score_card _fm_value
-
 # ---------------------------------------------------------------------------
 # Main: parse flags then run retrieval.
 # Flags are parsed via jq from "$@" to avoid shell loops.
@@ -136,9 +71,7 @@ fi
 
 _MAX="${_MAX:-${RND_CARDS_MAX_PER_SPAWN:-3}}"
 
-export _QUERY_ROLE _QUERY_TASK_TYPE _QUERY_TAGS
-
-# Collect card paths, score each, sort by score DESC + id ASC, cap, emit paths.
+# Collect card paths under the role-scoped directory.
 mapfile -t _ALL_CARDS < <(
   find "$_CARDS_ROOT/$_QUERY_ROLE" -type f -name 'CARD-*.md' 2>/dev/null | sort
 )
@@ -147,8 +80,79 @@ if [[ ${#_ALL_CARDS[@]} -eq 0 ]]; then
   exit 0
 fi
 
-printf '%s\n' "${_ALL_CARDS[@]}" \
-  | xargs -I{} bash -c '_score_card "$@"' _ {} \
+# Score every card in a single awk pass. Awk parses each file's frontmatter
+# (role, id, tags, applicable_task_types), computes shared-tag count + task-type
+# bonus, and emits "<score>\t<card_id>\t<path>" for each role-matching card.
+# This replaces the previous per-card xargs+jq loop (5 subprocesses × N cards →
+# ~600 forks on the live corpus) with a single awk invocation.
+awk \
+  -v q_role="$_QUERY_ROLE" \
+  -v q_type="$_QUERY_TASK_TYPE" \
+  -v q_tags="$_QUERY_TAGS" \
+  '
+  BEGIN {
+    n_qt = split(q_tags, qt_arr, /[ \t]*,[ \t]*/)
+    for (i = 1; i <= n_qt; i++) {
+      t = qt_arr[i]
+      if (t != "") qt_set[t] = 1
+    }
+    current_file = ""
+  }
+
+  FNR == 1 {
+    if (current_file != "") emit_card()
+    current_file = FILENAME
+    in_fm = 0; fm_done = 0
+    card_role = ""; card_id = ""
+    card_tags = ""; card_types = ""
+  }
+
+  fm_done { next }
+
+  /^---[ \t]*$/ {
+    if (in_fm) { fm_done = 1 } else { in_fm = 1 }
+    next
+  }
+
+  in_fm {
+    if (match($0, /^role:[ \t]*/)) {
+      card_role = substr($0, RLENGTH + 1)
+    } else if (match($0, /^id:[ \t]*/)) {
+      card_id = substr($0, RLENGTH + 1)
+    } else if (match($0, /^tags:[ \t]*/)) {
+      card_tags = substr($0, RLENGTH + 1)
+      sub(/^\[/, "", card_tags); sub(/\][ \t]*$/, "", card_tags)
+    } else if (match($0, /^applicable_task_types:[ \t]*/)) {
+      card_types = substr($0, RLENGTH + 1)
+      sub(/^\[/, "", card_types); sub(/\][ \t]*$/, "", card_types)
+    }
+  }
+
+  END { if (current_file != "") emit_card() }
+
+  function emit_card(    arr, n, i, shared, types_arr, types_n, type_bonus, score, t) {
+    if (card_role != q_role) return
+
+    shared = 0
+    n = split(card_tags, arr, /[ \t]*,[ \t]*/)
+    for (i = 1; i <= n; i++) {
+      t = arr[i]
+      if (t != "" && (t in qt_set)) shared++
+    }
+
+    type_bonus = 0
+    if (q_type != "" && card_types != "") {
+      types_n = split(card_types, types_arr, /[ \t]*,[ \t]*/)
+      for (i = 1; i <= types_n; i++) {
+        if (types_arr[i] == q_type) { type_bonus = 1; break }
+      }
+    }
+
+    score = shared + type_bonus
+    printf "%s\t%s\t%s\n", score, card_id, current_file
+  }
+  ' \
+  "${_ALL_CARDS[@]}" \
   | sort -t $'\t' -k1,1nr -k2,2 \
   | head -n "$_MAX" \
   | cut -f3

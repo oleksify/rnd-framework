@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.27.0 — 2026-05-18
+
+### Add Julia card tier covering core language idioms and Oxygen.jl framework patterns
+
+20 new cards across builder (JL1-5, OXY1-3), reality-auditor (JL-RA1-4, OXY-RA1-3), verifier (JL-V1-3, OXY-V1), and cleanup (JL-D1) roles; grounded in recorded Julia/Oxygen.jl gotchas.
+
 ## 3.26.0 — 2026-05-18
 
 ### Add refutation-first property verification with Elixir StreamData and TypeScript fast-check runners

@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.26.0 — 2026-05-18
+
+### Add refutation-first property verification with Elixir StreamData and TypeScript fast-check runners
+
+**New runner:** `lib/run-properties.sh` dispatches property execution by language. Probes runtimes via `command -v mix` / `command -v bun`; emits `PROPERTY_PASS`, `PROPERTY_COUNTER_EXAMPLE` (stderr JSON: `property`, `shrunk_input`, `seed`), or `PROPERTY_SKIPPED` on absent runtime. Awk parsers tuned against real ExUnit/StreamData 1.3.0 and bun 1.3.14/fast-check 3.23.2 output. Schema-as-degenerate-property dispatch for the Reality Auditor (presence-of-keys check via single jq pass; malformed-fixture inputs fail-fast with exit 2, not a false PROPERTY_PASS).
+**Pre-reg extension:** `## Properties` section in pre-regs supports three shapes — markdown bullets, embedded YAML under `## Verification`, or a sibling test file `T<id>-properties.{exs,ts}`. Documented in `rnd-decomposition` and `rnd-orchestration` skills; absence of the section means prose-mode verification as before.
+**Verifier integration:** `rnd-verification` Step 3.5 detects `## Properties`, invokes the runner, embeds counter-example JSON in `T<id>-verification.md` on COUNTER_EXAMPLE, and emits `property_run` and `property_counterexample` audit events. Counter-examples are auto-pinned to `<project>/test/properties/T<id>-counterexample.{exs,ts}` and tagged with a `property_pinned` event; `disallowedTools: Edit` invariant preserved (Write to a new file path is the pin mechanism).
+**Calibration:** New `verification_mode` field on verdict records — `property | prose | schema | skipped`. Orchestrator writes; existing helpers (`lib/calibration.sh window`) tolerate missing field via `// null` defaults so legacy records remain readable.
+**Critical hook fix:** `is_barrier_violation()` in `hooks/lib.sh` no longer blocks the orchestrator (empty `agent_type`) from reading `briefs/`, `cleanup/`, and `self-assessment` artifacts — restoring the user-facing brief-relay protocol declared in `commands/rnd-start.md`. Barrier still enforced for `rnd-verifier`, `rnd-proof-gate`, `rnd-polisher`. Bidirectional regression test added.
+**Cards:** Four new corpus entries — planner property-shape generation (×2) and verifier counter-example interpretation (×2 for Elixir and TypeScript). Corpus 119 → 123.
+**Perf:** `lib/card-retrieve.sh` rewritten from per-card xargs+jq (~290 subprocess forks on the full corpus) to a single-awk-pass — 1.16s → 0.04s on the full builder corpus (~28× speedup).
+
 ## 3.25.0 — 2026-05-17
 
 ### Python corpus v2: barrier fix, corpus lint, Python coverage, and P-MEASURE-01 canon

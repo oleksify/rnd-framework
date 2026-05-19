@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # calibration.sh — Helpers for the calibration auto-escalation loop.
 #
-# Advisory contract: collapse_eligible and related mode-window subcommands are
-# advisory only — they do NOT change dispatch behavior. They accumulate telemetry
-# and emit informational audit events. Any dispatch change requires a separate task.
-#
 # Usage:
 #   calibration.sh window <tier> [N=10]
 #       Print last N calibration.jsonl records filtered by criticality == <tier>.
@@ -53,9 +49,6 @@ _usage() {
   printf '  should_promote <tier> [N=10]                  Exit 0 if rate >= 0.20 and escalation not disabled\n'
   printf '  promote_tier <tier>                           Print promoted tier (LOW->NORMAL, NORMAL->HIGH, HIGH->HIGH)\n'
   printf '  task_type_window <type> [N=10]                Print last N records filtered by task_type\n'
-  printf '  mode_window <task_type> <mode> [N=30]         Print last N records for (task_type, verification_mode) pair\n'
-  printf '  mode_false_pass_rate <task_type> <mode> [N=30] Print false-PASS rate as percent (0.00-100.00)\n'
-  printf '  collapse_eligible <task_type>                 Print eligible/ineligible; emits advisory audit event when eligible\n'
 }
 
 _window() {

@@ -16,15 +16,7 @@ printf '%s\n' '--- is_barrier_violation ---'
 
 TEXT="path/to/self-assessment.md"
 
-# Lean theorem: proofGate_cannot_access_self_assessment
-# proof-gate agent must be blocked from self-assessment paths
-if is_barrier_violation "$TEXT" "rnd-proof-gate"; then
-  assert_eq "proof-gate blocked from self-assessment (proofGate_cannot_access_self_assessment)" "0" "0"
-else
-  assert_eq "proof-gate blocked from self-assessment (proofGate_cannot_access_self_assessment)" "0" "1"
-fi
-
-# Regression: verifier must still be blocked
+# verifier must be blocked from self-assessment paths
 if is_barrier_violation "$TEXT" "rnd-verifier"; then
   assert_eq "verifier blocked from self-assessment (regression)" "0" "0"
 else

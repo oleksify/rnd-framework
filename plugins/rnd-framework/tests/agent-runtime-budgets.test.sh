@@ -50,7 +50,6 @@ assert_max_turns_le "$AGENTS_DIR/rnd-builder.md"         200
 assert_max_turns_le "$AGENTS_DIR/rnd-cleanup.md"         150
 assert_max_turns_le "$AGENTS_DIR/rnd-integrator.md"      150
 assert_max_turns_le "$AGENTS_DIR/rnd-reality-auditor.md" 100
-assert_max_turns_le "$AGENTS_DIR/rnd-proof-gate.md"      100
 assert_max_turns_le "$AGENTS_DIR/rnd-debugger.md"        200
 assert_max_turns_le "$AGENTS_DIR/rnd-data-scientist.md"  150
 

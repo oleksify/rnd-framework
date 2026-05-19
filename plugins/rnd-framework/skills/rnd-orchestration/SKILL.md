@@ -39,7 +39,6 @@ The framework defines 10 specialized agent roles. Dedicated agents are spawned f
 **Planner** — Decomposes tasks, writes pre-registration docs with testable success criteria. Uses `rnd-framework:rnd-decomposition` skill.
 **Orchestrator** — Analyzes dependencies, schedules parallel waves, enforces iteration budgets. Uses `rnd-framework:rnd-orchestration` skill.
 **Builder** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
-**Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
 **Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
 **Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook).
 **Cleanup** — Post-verification per-task entropy reduction: dead code, orphan files, duplicate implementations, stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Uses `rnd-framework:rnd-cleanup` skill.
@@ -154,7 +153,7 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 | `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
 | `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
-> **Note on non-adaptive agents:** `rnd-polisher` always runs at its listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, proof-gate, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
+> **Note on non-adaptive agents:** `rnd-polisher` always runs at its listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
 
 **Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
@@ -181,7 +180,6 @@ Agent({
 | `rnd-builder` | sonnet | high | yes |
 | `rnd-verifier` | sonnet | high | yes |
 | `rnd-debugger` | sonnet | high | yes |
-| `rnd-proof-gate` | sonnet | low | no (advisory) |
 | `rnd-reality-auditor` | sonnet | low | no |
 | `rnd-cleanup` | sonnet | medium | no |
 | `rnd-polisher` | opus | high | no |
@@ -319,12 +317,7 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
 1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce enriched plan.md with sections: Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets. Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
 3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
-3.5. **Proof Gate** (advisory, conditional) — Attempt Lean 4 formal proofs for tasks with mathematical invariants. Only runs when:
-   - Task has `Proof: lean` annotation in pre-registration
-   - Lean is available in PATH
-   Results (PROVEN/UNPROVEN) passed to Verifier. Pipeline continues regardless.
-
-3.75. **Reality Audit** (blocking, conditional) — Run only when:
+3.5. **Reality Audit** (blocking, conditional) — Run only when:
    - Task has `External dependencies` declared in pre-registration AND
    - User has not disabled via `--skip-reality-checks`
    Adversarially verifies declared external references. INVALID_FOUND routes back to build.
@@ -384,7 +377,7 @@ Common decision points:
 - **Medium tasks:** Full framework with parallel waves. Use 2-judge consensus verification per task.
 - **Large tasks (multi-day):** Add design review gate between Plan and Schedule. Add sub-waves. Use 2-judge consensus verification.
 - **Exploratory:** Add Phase 0 — spike 2-3 approaches with time-box before committing.
-- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement). Add formal invariants via Proof Gate.
+- **High-stakes:** Multi-judge verification (2 judges + tiebreaker on disagreement).
 
 ## User-Facing Briefs
 

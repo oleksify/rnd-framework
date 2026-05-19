@@ -498,18 +498,21 @@ validate_output_styles() {
 
 validate_lib_scripts() {
   begin_category "Lib Scripts"
-  local lib_script script_path
-  for lib_script in "rnd-dir.sh" "bump.sh"; do
-    script_path="${PLUGIN_ROOT}/lib/${lib_script}"
-    if [[ ! -f "$script_path" ]]; then
-      record_fail "lib/${lib_script} not found"
+  # Scripts that are meant to be sourced rather than executed directly.
+  # Their interface contract is documented in their header.
+  local sourced_only=" plugin-dir-base.sh validate-xrefs.sh "
+  local script_path script_name
+  for script_path in "${PLUGIN_ROOT}/lib/"*.sh; do
+    [[ -f "$script_path" ]] || continue
+    script_name="${script_path##*/}"
+    record_pass "lib/${script_name} exists"
+    if [[ "$sourced_only" == *" ${script_name} "* ]]; then
       continue
     fi
-    record_pass "lib/${lib_script} exists"
     if [[ -x "$script_path" ]]; then
-      record_pass "lib/${lib_script} is executable"
+      record_pass "lib/${script_name} is executable"
     else
-      record_fail "lib/${lib_script} is not executable"
+      record_fail "lib/${script_name} is not executable"
     fi
   done
 

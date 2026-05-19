@@ -95,12 +95,12 @@ The framework applies scientific method principles to software engineering:
 
 **Single-flow mode** runs all phases sequentially in one session. No agents are spawned. Best for smaller tasks and quick iterations.
 
-**Multi-agent mode** uses 10 specialized agents (planner, builder, verifier, amendment-arbiter, cleanup, integrator, debugger, proof-gate, reality-auditor, data-scientist), each in isolated context windows with structural information barriers. Best for complex tasks requiring maximum verification rigor.
+**Multi-agent mode** uses 9 specialized agents (planner, builder, verifier, cleanup, polisher, integrator, debugger, reality-auditor, data-scientist), each in isolated context windows with structural information barriers. Best for complex tasks requiring maximum verification rigor.
 
 ### Pipeline
 
 ```
-Plan → Schedule → Build → [Reality Audit] → [Proof Gate] → Verify → Iterate? → Integrate
+Plan → Schedule → Build → [Reality Audit] → Verify → Iterate? → Integrate
 ```
 
 ## Per-Project Configuration

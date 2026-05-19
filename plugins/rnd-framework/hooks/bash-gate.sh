@@ -361,10 +361,12 @@ cmd_lower="$(_lower "$command")"
 # 0. Information barrier — self-assessment files and briefs/ artifacts
 # ---------------------------------------------------------------------------
 # Blocks any Bash command referencing barrier-protected content (self-assessment
-# files OR briefs/ artifacts) when the agent is a verifier or has no declared
-# agent_type. Mirrors the barrier in read-gate.sh so that commands like diff,
-# jq, less, strings, etc. cannot be used to read protected files around the
-# Read tool's guard.
+# files OR briefs/ / cleanup/ artifacts) when the agent is rnd-verifier or
+# rnd-polisher. Empty agent_type (orchestrator) is intentionally NOT blocked —
+# the orchestrator relays these artifacts to the user. Mirrors the barrier in
+# read-gate.sh and lib.sh::is_barrier_violation so that commands like diff, jq,
+# less, strings, etc. cannot be used to read protected files around the Read
+# tool's guard.
 
 if is_barrier_violation "$command" "$_agent_type"; then
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."

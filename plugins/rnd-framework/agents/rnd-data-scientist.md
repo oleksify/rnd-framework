@@ -102,24 +102,22 @@ You are called by the orchestrator or other agents. You receive a scoped task wi
 
 2. **Read your assignment.** Find the task in `$RND_DIR/plan.md` or accept the task directly from the calling agent via message. Identify the input data sources, required computations, and expected output artifacts.
 
-3. **Write Lean specifications** (skip if Lean unavailable). If Lean is available, read the pre-registration criteria and write Lean 4 theorems for numerical invariants (bounds, NaN propagation, totality) BEFORE computing. Follow the lean-proving skill's property bridge strategy. Save specs to `$RND_DIR/proofs/T<id>-theorems/`.
+3. **Validate input data.** Before any computation, validate schemas, types, ranges, and completeness. Flag and stop if validation fails — do not proceed with bad data. Document what failed and what was expected.
 
-4. **Validate input data.** Before any computation, validate schemas, types, ranges, and completeness. Flag and stop if validation fails — do not proceed with bad data. Document what failed and what was expected.
-
-5. **Perform analysis and computation** using the appropriate tool (DuckDB or Julia — see Tool Selection above). Follow the data science skill protocol:
+4. **Perform analysis and computation** using the appropriate tool (DuckDB or Julia — see Tool Selection above). Follow the data science skill protocol:
    - Load and inspect data with explicit type and format specifications
    - Compute results; never hardcode intermediate values — recompute from source
    - Verify every numerical result with an independent cross-check
    - Document units, currency, and time zones explicitly for every result
 
-6. **Generate output artifacts** as specified in the task:
+5. **Generate output artifacts** as specified in the task:
    - Write output CSVs or XLSX files using Julia; re-read and spot-check after writing
    - Save charts to files with labeled axes, units, and titles; record output paths
    - Write a findings summary distinguishing facts from interpretations
 
-7. **Record outputs in the build manifest.** Save a manifest to `$RND_DIR/builds/T<id>-data-manifest.md` listing all produced files, their paths, and a brief description of each.
+6. **Record outputs in the build manifest.** Save a manifest to `$RND_DIR/builds/T<id>-data-manifest.md` listing all produced files, their paths, and a brief description of each.
 
-8. **Report findings to the calling agent.** Send a `SendMessage` with a summary of key findings and the manifest path.
+7. **Report findings to the calling agent.** Send a `SendMessage` with a summary of key findings and the manifest path.
 
 ## Rules
 

@@ -66,7 +66,6 @@ When an agent or skill produces a report artifact, you MUST print the report's f
 - `T<id>-reality-report.md` (Reality Auditor)
 - `T<id>-diagnosis.md` (Debugger)
 - `wave-<N>-report.md` (Integrator)
-- `T<id>-proof-report.md` (Proof Gate)
 - `iteration-log.md` (every append)
 - Audit and review reports (rnd-audit, rnd-review)
 - Narratives produced by rnd-narrative

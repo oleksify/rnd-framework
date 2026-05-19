@@ -37,6 +37,10 @@ die() {
 # Parse the "## Files written" section from a manifest file.
 # Prints one path per line; strips leading bullets, backticks, and fences.
 # Stops at the next "## " heading or EOF.
+# Rejects paths starting with `/` (absolute) or containing `..` (traversal):
+# the revert path is repo-relative, and a stray absolute / parent-relative path
+# would direct `git checkout` / `rm` at locations outside the repo. See the
+# repo-containment guard in revert_file.
 parse_files_written() {
   local manifest="$1"
   local in_section=0
@@ -63,6 +67,16 @@ parse_files_written() {
       [[ -z "$cleaned" ]] && continue
       [[ "$cleaned" == '```' ]] && continue
       [[ "$cleaned" =~ ^[[:space:]]*$ ]] && continue
+
+      # Reject paths that escape the repo root.
+      if [[ "$cleaned" == /* ]]; then
+        printf 'rnd-undo: refusing absolute path in manifest: %s\n' "$cleaned" >&2
+        continue
+      fi
+      if [[ "$cleaned" == *".."* ]]; then
+        printf 'rnd-undo: refusing path with .. traversal in manifest: %s\n' "$cleaned" >&2
+        continue
+      fi
 
       printf '%s\n' "$cleaned"
     fi

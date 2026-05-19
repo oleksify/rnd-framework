@@ -56,10 +56,6 @@ assert_exit "empty agent_type + briefs/ path → exit 0 (orchestrator allowed)" 
 run_hook "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"${BRIEFS_PATH}\"},\"agent_type\":\"rnd-verifier\"}"
 assert_exit "rnd-verifier + briefs/ path → exit 2 (barrier enforced)" 2
 
-# rnd-proof-gate reading a briefs/ path → must also be blocked (exit 2)
-run_hook "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"${BRIEFS_PATH}\"},\"agent_type\":\"rnd-proof-gate\"}"
-assert_exit "rnd-proof-gate + briefs/ path → exit 2 (barrier enforced)" 2
-
 # rnd-polisher reading a briefs/ path → must also be blocked (exit 2)
 run_hook "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"${BRIEFS_PATH}\"},\"agent_type\":\"rnd-polisher\"}"
 assert_exit "rnd-polisher + briefs/ path → exit 2 (barrier enforced)" 2

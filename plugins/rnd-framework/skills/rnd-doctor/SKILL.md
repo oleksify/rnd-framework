@@ -90,7 +90,7 @@ For each `.md` file found, verify:
 
 Report the total number of agents found and how many pass all checks. If any agent has issues, list them.
 
-Expected agents (8): `rnd-builder`, `rnd-verifier`, `rnd-planner`, `rnd-integrator`, `rnd-debugger`, `rnd-proof-gate`, `rnd-reality-auditor`, `rnd-data-scientist`.
+Expected agents (9): `rnd-builder`, `rnd-verifier`, `rnd-planner`, `rnd-integrator`, `rnd-debugger`, `rnd-cleanup`, `rnd-polisher`, `rnd-reality-auditor`, `rnd-data-scientist`.
 
 ## 8. Claude Code Version
 

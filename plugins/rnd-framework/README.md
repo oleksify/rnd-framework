@@ -109,12 +109,11 @@ Run `claude plugin details rnd-framework` to see per-component token estimates. 
 The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
 
 ```
-Plan → Schedule → Build → Reality Audit → [Proof Gate] → Verify → Iterate? → Integrate
+Plan → Schedule → Build → Reality Audit → Verify → Iterate? → Integrate
 ```
 
 Additional pipeline phases:
 - **Reality Audit** — `rnd-reality-auditor` runs on every task (mandatory). Reads the Builder's `## External References` manifest section, then diff-scans all changed files for undeclared references (URLs, emails, addresses, APIs, schemas, env vars, package names). Blocking — INVALID routes back to build.
-- **Proof Gate** — `rnd-proof-gate` attempts formal Lean 4 proofs of pre-registration criteria. Advisory — findings inform but don't block.
 
 Use `/rnd-framework:rnd-start` to launch the pipeline.
 
@@ -180,7 +179,6 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-reality-auditing` | Conditional per-task audit (runs when task declares `External dependencies`) — manifest cross-check, diff-based discovery, adversarial experiments, evidence chains for declared external references |
 | `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
 | `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
-| `lean-proving` | Formal Lean 4 proofs of pre-registration criteria — theorem generation, companion tests, proof reports |
 | `lib-sh-patterns` | Shared lib.sh utilities — path predicates, response functions, stdin parsing |
 | `plugin-architecture` | Plugin structure — config dir detection, path matching, hooks.json, hook events |
 | `plugin-versioning` | Version bumping, changelog entries, validation, and the release workflow |
@@ -198,9 +196,8 @@ Nine specialized agents for the multi-agent execution mode. All have persistent 
 | `rnd-framework:rnd-polisher` | sonnet (medium effort) | — | Wave-level cross-task seam fixer: cross-task duplication, naming drift, shared-location lifting; runs after all per-task cleanup; rolls back if re-verification breaks |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
 | `rnd-framework:rnd-debugger` | sonnet (high effort) | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
-| `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking); only runs when task declares `Proof: lean` and Lean is on PATH |
 | `rnd-framework:rnd-reality-auditor` | sonnet | teal | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when task declares `External dependencies` |
-| `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
+| `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work |
 
 The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 
@@ -326,9 +323,6 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   ├── T1-verification.md      # Full prose report written for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION)
         │   ├── T1-experiments/         # Verifier-written independent experiment tests
         │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
-        ├── proofs/
-        │   ├── T1-proof-report.md      # Proof Gate results for each task
-        │   └── T1-theorems/            # Lean theorem files
         ├── evidence/
         │   └── T<id>/                  # Evidence pack: manifest.json, stdout.txt, stderr.txt (written by run-tool.sh when RND_EVIDENCE_PACK=1)
         ├── integration/
@@ -343,7 +337,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 11 specialized agents for multi-agent mode
+├── agents/                      # 9 specialized agents for multi-agent mode
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
@@ -369,7 +363,6 @@ rnd-framework/
 │   ├── stop-condition-revisions.sh # PreToolUse Write|Edit hook: halts when same file rewritten >= RND_STOP_FILE_REVISIONS times in active task (default 5)
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── proofs/                      # Lean 4 formal verification of pipeline invariants
 ├── skills/                      # Skills (rnd-* namespace)
 ├── lib/
 │   ├── rnd-dir.sh               # Artifact directory path computation + session management
@@ -407,7 +400,7 @@ Then switch with `/output-style scientific`, `/output-style rigorous`, or `/outp
 
 ### Report Surfacing Protocol
 
-All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`plan.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`, `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `T<id>-proof-report.md`, `T<id>-amendments.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
+All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`plan.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`, `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
 
 ## Customization
 

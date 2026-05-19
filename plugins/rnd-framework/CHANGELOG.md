@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.1.0 — 2026-05-19
+
+### Retire the Lean 4 proof gate and clean up post-4.0 doc drift
+
+Removes the rnd-proof-gate agent, the lean-proving skill, the proofs/ Lean tree, and every Proof: lean / T<id>-proof-report.md reference. The agent count drops from 10 to 9 (proof-gate was the lone consumer of Lean infrastructure and is now retired in line with the 4.0 stable-core stance — experimental advisory machinery does not belong on main). The information barrier sheds proof-gate from is_barrier_violation in hooks/lib.sh; verifier and polisher remain. Post-4.0 audit drift fixed in the same pass: CLAUDE.md / AGENTS.md / READMEs reconciled to a coherent 9-agent table (was variously claiming 11, 10, or 9); drift-report-gate.sh and T<id>-amendments.md references purged; lib/calibration.sh _usage and header stripped of the three removed advisory subcommands (mode_window, mode_false_pass_rate, collapse_eligible); lib/rnd-undo.sh::parse_files_written now refuses absolute paths and .. traversals from manifest entries before they reach git checkout / rm; lib/validate.sh::validate_lib_scripts now sweeps every lib/*.sh with a sourced-only carve-out for plugin-dir-base.sh and validate-xrefs.sh; hooks/bash-gate.sh comment corrected to match is_barrier_violation semantics (orchestrator empty agent_type is NOT restricted). 324 validation checks pass; full test suite green (18 files).
+
 ## 4.0.0 — 2026-05-19
 
 ### Stable scientific core

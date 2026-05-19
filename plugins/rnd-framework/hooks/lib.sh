@@ -204,10 +204,9 @@ active_session_dir() {
 # ---------------------------------------------------------------------------
 
 # Returns 0 iff the lowered <text> contains a barrier-protected pattern AND
-# the caller is a named barrier-restricted agent (rnd-verifier, rnd-proof-gate,
-# rnd-polisher). Pure; no side effects. Shared by read-gate.sh,
-# glob-grep-gate.sh, and bash-gate.sh — the three hooks must agree exactly on
-# the barrier semantics.
+# the caller is a named barrier-restricted agent (rnd-verifier, rnd-polisher).
+# Pure; no side effects. Shared by read-gate.sh, glob-grep-gate.sh, and
+# bash-gate.sh — the three hooks must agree exactly on the barrier semantics.
 #
 # The orchestrator runs with an empty agent_type and is the LEGITIMATE consumer
 # of briefs/, cleanup/, and self-assessment artifacts (it relays them to the
@@ -241,7 +240,7 @@ is_barrier_violation() {
   fi
   [[ "$has_pattern" -eq 1 ]] || return 1
   agent_lower="$(_lower "$agent_type")"
-  [[ "$agent_lower" == *"verifier"* || "$agent_lower" == *"proof-gate"* || "$agent_lower" == *"polisher"* ]]
+  [[ "$agent_lower" == *"verifier"* || "$agent_lower" == *"polisher"* ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -260,6 +259,7 @@ detect_pipeline_phase() {
   if compgen -G "${dir}/integration/"*.md > /dev/null 2>&1; then
     printf 'Integrating'
   elif [[ -n "$(ls -A "${dir}/verifications/" 2>/dev/null)" ]]; then
+    # Catches both .md and the wave-N-verdict-map.json — the JSON appears first.
     printf 'Verifying'
   elif compgen -G "${dir}/builds/"*.md > /dev/null 2>&1; then
     printf 'Building'

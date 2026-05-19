@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests: All 8 agent files have correct effort frontmatter,
+# Tests: agent files have correct effort frontmatter,
 # plus explicit (model, effort) checks for adaptive-agent baselines.
 # Valid effort tokens: low | medium | high | xhigh
 
@@ -116,7 +116,6 @@ assert_effort "$AGENTS_DIR/rnd-data-scientist.md"  "medium"
 # rnd-builder high; auxiliary agents low.
 assert_effort "$AGENTS_DIR/rnd-builder.md"         "high"
 assert_effort "$AGENTS_DIR/rnd-integrator.md"      "low"
-assert_effort "$AGENTS_DIR/rnd-proof-gate.md"      "low"
 assert_effort "$AGENTS_DIR/rnd-reality-auditor.md" "low"
 
 # --- Explicit (model, effort) pair checks for adaptive-agent baselines ----------

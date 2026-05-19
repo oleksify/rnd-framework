@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.29.0 — 2026-05-19
+
+### Remove the flash-card priming system
+
+The cards subsystem (corpus, retrieval, injection, propose/impact tooling) is removed in full. After the 3.28.0 expansion (~143 cards across 8 role directories, parent-injection via `specializes:` ladder, cognitive-style sections, new pre-reg `Card tags:` field) agents — especially the Planner — began making obvious mistakes: skipping local-precedent scans, locking destructive scopes into pre-regs, and reaching for generic patterns instead of the project's own conventions. The priming-vs-grounding hypothesis: cards are *generic patterns*, useful when applying a known shape but actively harmful when the agent's actual job is to discover what THIS project does. The scaling shape was also wrong — useful coverage would require an ever-growing corpus or codebase-specific cards, neither of which is sustainable.
+
+**Removed:** `cards/` corpus directory; `lib/card-retrieve.sh`, `lib/rnd-cards-propose.sh`, `lib/rnd-cards-impact.sh`; `skills/rnd-cards/`; `commands/rnd-cards-propose.md`, `commands/rnd-cards-impact.md`; pre-reg `Card tags:` field in `skills/rnd-decomposition/SKILL.md`; line-1 "Cards inject at task-spec-prefix position" comments on four agent files (`rnd-reality-auditor`, `rnd-verifier`, `rnd-cleanup`, `rnd-drift-detector`); 8 cards-specific test files; barrier-test corpus-collision smoke assertions in `tests/read-gate.test.sh` and `tests/lib-is-barrier-violation.test.sh`. The orchestrator command files (`rnd-start.md`, `rnd-debug.md`) and `rnd-multi-judge` skill no longer reference card retrieval or injection.
+
+**Kept (observing):** `## Cognitive Style` sections on `rnd-reality-auditor`/`rnd-verifier`/`rnd-cleanup`/`rnd-drift-detector`, `criteria-classify` helper, inline-verify dispatch, builder-side property runs, JSON-schema reality-audit runner, task_type-aware bloat thresholds, HIGH-PII cross-lineage verifier tier, slug-root calibration trending, destructive-git audit events. Historical `card_injection` records in existing `audit.jsonl` files are preserved as historical fact.
+
 ## 3.28.0 — 2026-05-18
 
 ### Consolidated-backlog roadmap: retire 18 deferred items across 7 sequential waves

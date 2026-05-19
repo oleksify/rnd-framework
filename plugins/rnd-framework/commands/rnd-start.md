@@ -160,44 +160,13 @@ Otherwise:
 
 **Spawn a Planner agent** to decompose the task.
 
-Before spawning, retrieve relevant flash cards for the planner role. Task type is unknown at this point (no pre-reg exists yet), so default to `infra` and rely on role-only filtering:
-
-```bash
-# Cards: Phase 1 Planner
-CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=planner \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}" \
-  --count-parents)
-
-PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-  PARENT_CARDS_COUNT=0
-fi
-```
-
 ```
 Agent({
   description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>"
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>"
 })
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T0" "planner:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 The Planner writes `$RND_DIR/plan.md` with pre-registrations, dependency matrix, and execution schedule.
@@ -230,44 +199,13 @@ Read `plan.md` to extract each task's `Verification level:` field and the `mecha
 
 **For each task in the wave, spawn a Builder agent.**
 
-Before spawning, retrieve relevant flash cards for the builder role. Use the task's declared task type and card tags from its pre-registration (default to `infra` when the task type cannot be inferred):
-
-```bash
-# Cards: Phase 2 Builder
-CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=builder \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}" \
-  --count-parents)
-
-PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-  PARENT_CARDS_COUNT=0
-fi
-```
-
 ```
 Agent({
   description: "Build task T<id>",
   subagent_type: "rnd-framework:rnd-builder",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nLearnings: <language-specific learnings if any>"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nLearnings: <language-specific learnings if any>"
 })
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "builder:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 Do NOT build tasks yourself. The Builder agent handles implementation, TDD, manifest creation, and self-assessment. It returns a status code: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
@@ -291,44 +229,13 @@ Do NOT build tasks yourself. The Builder agent handles implementation, TDD, mani
 
 For each task in the wave, **spawn a Reality Auditor agent.**
 
-Before spawning, retrieve relevant flash cards for the reality-auditor role using the task's declared task type and card tags (default to `infra`):
-
-```bash
-# Cards: Phase 2.5 Reality-auditor
-CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=reality-auditor \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}" \
-  --count-parents)
-
-PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-  PARENT_CARDS_COUNT=0
-fi
-```
-
 ```
 Agent({
   description: "Audit external contracts",
   subagent_type: "rnd-framework:rnd-reality-auditor",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <from pre-registration>"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <from pre-registration>"
 })
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "reality-auditor:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
@@ -406,45 +313,14 @@ After the final wave's integration completes (Phase 6), drain the deferral queue
 
 - **Wave contains only LOW or NORMAL tasks:** Spawn a single Verifier agent for the whole wave.
 
-  Before spawning, retrieve relevant flash cards for the verifier role. This is a wave-level spawn — use one shared retrieval call for the whole wave with `task-type=infra` so wave card priming is uniform across all tasks in the wave:
-
-  ```bash
-  # Cards: Phase 3 Verifier (wave)
-  CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-    --role=verifier \
-    --task-type="${TASK_TYPE:-infra}" \
-    --tags="${CARD_TAGS:-}" \
-    --count-parents)
-
-  PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-  CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-  if [[ -n "$CARD_PATHS" ]]; then
-    CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-    CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-    CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-    CARD_IDS="${CARD_IDS%,}"
-  else
-    CARDS_HEADER_PREPEND=""
-    CARD_IDS="none"
-    PARENT_CARDS_COUNT=0
-  fi
-  ```
-
 ```
 Agent({
   description: "Verify wave <N> tasks",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
 })
 ```
-
-  After the spawn returns, emit a card-injection audit event (wave-scoped task id):
-
-  ```bash
-  bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "wave-<N>" "verifier:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
-  ```
 
 - **Wave contains any HIGH-criticality task (but no HIGH-PII tasks):** Invoke the `rnd-framework:rnd-multi-judge` protocol for the whole wave. The skill runs a first-pass escalation gate: a single Sonnet/medium verifier runs first; if it returns PASS the full dual-judge protocol is skipped and PASS is the final verdict; if it returns FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or AMEND_REQUIRED it is promoted to Judge A and a second judge (Judge B) is spawned. Set `RND_MULTI_JUDGE_ALWAYS=1` to bypass the gate and restore exact pre-gate behavior (both judges always spawn in parallel). Both judges each receive all wave task pre-registrations and each returns a per-task verdict map. Tiebreaker is triggered per-task — only for tasks where Judge A and Judge B disagree. See that skill for the full wave-batched protocol.
 
@@ -565,44 +441,13 @@ If the mutated task pre-registration contains `Proof: lean`, re-trigger the Proo
 
 Spawn the Verifier with the now-mutated pre-registration as if it were the original. The Verifier prompt MUST NOT mention amendments or amendment history — clean-slate re-verification only. The Verifier sees only the current (mutated) pre-reg text.
 
-Before spawning, retrieve relevant flash cards for the verifier role using the amended task's task type and card tags (default to `infra`):
-
-```bash
-# Cards: Phase 3.5 Step 5 Verifier (re-verify after amendment)
-CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=verifier \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}" \
-  --count-parents)
-
-PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-  PARENT_CARDS_COUNT=0
-fi
-```
-
 ```
 Agent({
   description: "Re-verify T<id> after amendment",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id>\nAll task pre-registrations:\n<paste mutated pre-reg from plan.md>"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id>\nAll task pre-registrations:\n<paste mutated pre-reg from plan.md>"
 })
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "verifier:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 Route the re-verification verdict via Gate 3 as normal. The re-verification spawn intentionally uses a single-task wave (the amended task only) — clean-slate isolation from sibling tasks in the original wave.
@@ -613,44 +458,13 @@ After each task passes Gate 3, spawn a Cleanup agent to sweep dead code and stal
 
 **Spawn a Cleanup agent.**
 
-Before spawning, retrieve relevant flash cards for the cleanup role using the task's declared task type and card tags (default to `infra`):
-
-```bash
-# Cards: Phase 4 Cleanup
-CARD_PATHS_RAW=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=cleanup \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}" \
-  --count-parents)
-
-PARENT_CARDS_COUNT=$(printf '%s\n' "$CARD_PATHS_RAW" | grep '^__parents=' | grep -o '[0-9]*$' || echo 0)
-CARD_PATHS=$(printf '%s\n' "$CARD_PATHS_RAW" | grep -v '^__parents=')
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-  PARENT_CARDS_COUNT=0
-fi
-```
-
 ```
 Agent({
   description: "Cleanup task T<id>",
   subagent_type: "rnd-framework:rnd-cleanup",
   mode: "acceptEdits",
-  prompt: "${CARDS_HEADER_PREPEND}Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)"
 })
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T<id>" "cleanup:${CARD_IDS}:parent_cards_count=${PARENT_CARDS_COUNT}"
 ```
 
 The Cleanup agent inspects the working tree for dead code, unused imports, unreachable exports, and leftover scaffolding. It applies fixes in-place and produces `$RND_DIR/cleanup/T<id>-cleanup-report.md`. If applied fixes break re-verification, the agent rolls back its changes and notes `cleanup: rolled_back` in the report.

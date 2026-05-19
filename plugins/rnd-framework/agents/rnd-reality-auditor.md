@@ -1,4 +1,3 @@
-<!-- Cognitive Style additions inject at system-prompt position. Cards inject at task-spec-prefix position. Do not merge. -->
 ---
 name: rnd-reality-auditor
 description: "Adversarial specialist that tests every external service assumption in builder code against live services, producing VALID/INVALID/UNCHECKED verdicts in a reality report."

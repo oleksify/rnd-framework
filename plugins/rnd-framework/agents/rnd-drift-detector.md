@@ -1,4 +1,3 @@
-<!-- Cognitive Style additions inject at system-prompt position. Cards inject at task-spec-prefix position. Do not merge. -->
 ---
 name: rnd-drift-detector
 description: "Per-wave drift detector that reads plan.md, wave pre-registrations, and audit.jsonl events to identify scope or requirement drift between what was planned and what was built. Writes a structured drift report before the Verifier runs."

@@ -1,4 +1,3 @@
-<!-- Cognitive Style additions inject at system-prompt position. Cards inject at task-spec-prefix position. Do not merge. -->
 ---
 name: rnd-cleanup
 description: "Post-verification cleanup specialist that detects dead code, orphan files, duplicate implementations, and stale comments introduced during a pipeline build. Applies mutations, re-verifies, and rolls back if verification breaks."

@@ -75,33 +75,13 @@ Write the full pre-registration to `$RND_DIR/plan.md`, informed by the diagnosis
 - 1-2 criteria specific to the root cause
 - Existing tests continue to pass (no regressions)
 
-Before spawning the builder, retrieve relevant flash cards for the builder role. Debug-mode tasks default to `task-type=bugfix`:
-
-```bash
-# Cards: rnd-debug Step 2 Builder
-CARD_PATHS=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=builder \
-  --task-type="${TASK_TYPE:-bugfix}" \
-  --tags="${CARD_TAGS:-}")
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-fi
-```
-
 Spawn an `rnd-builder` agent to implement the fix:
 
 ```
 subagent_type: "rnd-framework:rnd-builder"
 mode: "acceptEdits"
 prompt: |
-  ${CARDS_HEADER_PREPEND}You are building the fix for: [bug description]
+  You are building the fix for: [bug description]
 
   RND_DIR: [value of $RND_DIR]
 
@@ -113,37 +93,11 @@ prompt: |
   and the self-assessment to $RND_DIR/builds/T1-self-assessment.md.
 ```
 
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T1" "builder:${CARD_IDS}"
-```
-
 The agent completes and returns via `SendMessage`. Wait for it before proceeding.
 
 ## Step 3: Verify the Fix
 
 **CRITICAL: Information Barrier.** Do NOT pass the self-assessment to the verifier agent. The verifier must assess work purely against the pre-registered criteria.
-
-Before spawning the verifier, retrieve relevant flash cards for the verifier role. Debug-mode tasks default to `task-type=bugfix`:
-
-```bash
-# Cards: rnd-debug Step 3 Verifier
-CARD_PATHS=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=verifier \
-  --task-type="${TASK_TYPE:-bugfix}" \
-  --tags="${CARD_TAGS:-}")
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-fi
-```
 
 Spawn an `rnd-verifier` agent to verify the fix:
 
@@ -151,7 +105,7 @@ Spawn an `rnd-verifier` agent to verify the fix:
 subagent_type: "rnd-framework:rnd-verifier"
 mode: "acceptEdits"
 prompt: |
-  ${CARDS_HEADER_PREPEND}You are verifying the fix for: [bug description]
+  You are verifying the fix for: [bug description]
 
   RND_DIR: [value of $RND_DIR]
 
@@ -164,12 +118,6 @@ prompt: |
 
   Write independent experiment tests from the spec, run them, inspect the code,
   and save the verification report to $RND_DIR/verifications/T1-verification.md.
-```
-
-After the spawn returns, emit a card-injection audit event:
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "T1" "verifier:${CARD_IDS}"
 ```
 
 The agent completes and returns its verdict via `SendMessage`. Wait for it before proceeding.

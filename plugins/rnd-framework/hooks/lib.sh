@@ -222,11 +222,10 @@ active_session_dir() {
 #   - ".rnd/.../cleanup/" — per-task cleanup reports (barrier-protected from
 #     Verifier; mirrors /briefs/ semantics).
 #
-# The `.rnd/` anchor is load-bearing: the flash-card priming corpus lives at
-# `plugins/rnd-framework/cards/cleanup/...` in the source repo (and under
-# `plugins/cache/oleksify-plugins/rnd-framework/<version>/cards/cleanup/...`
-# when cached). Without the anchor those legitimate corpus paths would be
-# mistaken for artifact-tree reports and blocked from card-receiving agents.
+# The `.rnd/` anchor is load-bearing: project source trees may contain their
+# own `briefs/` or `cleanup/` directories (e.g. application-level cleanup
+# scripts, design briefs). Without the anchor those legitimate project paths
+# would be mistaken for artifact-tree reports and blocked from agents.
 is_barrier_violation() {
   local text="$1"
   local agent_type="${2:-}"

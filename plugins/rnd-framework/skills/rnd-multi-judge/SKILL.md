@@ -42,42 +42,12 @@ Before spawning two independent judges, run a single first-pass verifier to dete
 
 **First-pass spawn:**
 
-Before spawning, perform a single shared card retrieval for the verifier role. Both the first-pass verifier and (on escalation) Judge A / Judge B / tiebreaker reuse the same `CARDS_HEADER_PREPEND` so wave card priming is uniform across all multi-judge spawns:
-
-```bash
-# Cards: rnd-multi-judge shared retrieval (verifier, wave)
-CARD_PATHS=$(bash "${CLAUDE_PLUGIN_ROOT}/lib/card-retrieve.sh" \
-  --role=verifier \
-  --task-type="${TASK_TYPE:-infra}" \
-  --tags="${CARD_TAGS:-}")
-
-if [[ -n "$CARD_PATHS" ]]; then
-  CARD_BODIES=$(printf '%s\n' "$CARD_PATHS" | xargs cat)
-  CARDS_HEADER_PREPEND=$'# Reference examples for tasks like this one\n\n'"$CARD_BODIES"$'\n\n'
-  CARD_IDS=$(printf '%s\n' "$CARD_PATHS" | xargs -n1 basename | tr '\n' ',')
-  CARD_IDS="${CARD_IDS%,}"
-else
-  CARDS_HEADER_PREPEND=""
-  CARD_IDS="none"
-fi
-```
-
-Emit one card-injection audit event for the wave (wave-scoped task id):
-
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh card_injection "wave-<N>" "verifier:${CARD_IDS}"
-```
-
-Now spawn the first-pass verifier, prepending `${CARDS_HEADER_PREPEND}` to the shared judge prompt:
-
 ```
 Spawn one verifier agent:
   subagent_type: "rnd-framework:rnd-verifier"
   mode: "acceptEdits"
-  prompt: "${CARDS_HEADER_PREPEND}" + same shared judge prompt constructed in Step 1
+  prompt: same shared judge prompt constructed in Step 1
 ```
-
-On escalation in Steps 2 and 4, the same `${CARDS_HEADER_PREPEND}` is prepended to each Judge B and tiebreaker prompt — no additional retrieval call is made.
 
 **Escalation decision:**
 

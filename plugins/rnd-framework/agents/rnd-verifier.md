@@ -1,4 +1,3 @@
-<!-- Cognitive Style additions inject at system-prompt position. Cards inject at task-spec-prefix position. Do not merge. -->
 ---
 name: rnd-verifier
 description: "Independently verifies a Builder's output against the pre-registered success criteria. Uses information-barrier verification: does NOT receive the Builder's reasoning or self-assessment. Issues PASS/FAIL/ITERATE verdicts with evidence."

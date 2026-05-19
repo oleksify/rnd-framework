@@ -91,7 +91,6 @@ Assumptions:
 Properties:  # optional — omit when no invariants are expressible
   - prop_name: forall input matching X, output satisfies Y
 fulfills: [VAL-AREA-NNN, ...]
-Card tags: [tag1, tag2]  # optional, v1 — orchestrator falls back to role + task_type if absent
 ```
 
 The `fulfills` field creates bidirectional traceability between tasks and Validation Contract assertions.
@@ -179,8 +178,6 @@ fc.assert(
 ```
 
 **Execution is verifier-only.** Properties run exclusively in the Verifier's worktree. The Builder never executes them and never sees the runner output. Counter-examples, when found, appear in `T<id>-verification.md` as shrunk reproducers.
-
-The `Card tags:` field is optional in v1. When absent, the orchestrator filters cards by role and task_type only. When present, tags narrow retrieval to cards whose `tags` overlap with the query — pick 0-3 tags from the taxonomy in `rnd-framework:rnd-cards` that match the task's predominant theme.
 
 **The `Assumptions` section is REQUIRED in every pre-registration.** When no assumptions exist, the section must contain the literal placeholder `- None`. Omitting the section entirely is not permitted — it signals the Planner did not consider whether the task rests on unverified beliefs about the environment.
 

@@ -74,21 +74,6 @@ else
   assert_eq "polisher NOT blocked from benign path" "1" "1"
 fi
 
-# Corpus path collision: cards/cleanup/... is the flash-card priming corpus,
-# NOT an artifact-tree cleanup report. Must NOT be barrier-violating.
-CORPUS_CLEANUP="/Users/x/.claude/plugins/cache/oleksify-plugins/rnd-framework/3.22.2/cards/cleanup/python/CARD-D1.md"
-if is_barrier_violation "$CORPUS_CLEANUP" ""; then
-  assert_eq "cards/cleanup/ corpus path NOT a barrier violation (empty agent)" "1" "0"
-else
-  assert_eq "cards/cleanup/ corpus path NOT a barrier violation (empty agent)" "1" "1"
-fi
-
-if is_barrier_violation "$CORPUS_CLEANUP" "rnd-verifier"; then
-  assert_eq "cards/cleanup/ corpus path NOT a barrier violation (verifier)" "1" "0"
-else
-  assert_eq "cards/cleanup/ corpus path NOT a barrier violation (verifier)" "1" "1"
-fi
-
 # Realistic .rnd/ artifact tree cleanup-report IS a barrier violation.
 RND_CLEANUP="/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/cleanup/T1-cleanup-report.md"
 if is_barrier_violation "$RND_CLEANUP" ""; then

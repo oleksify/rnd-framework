@@ -26,15 +26,15 @@ CALIB_FILE="${CALIB_DIR}/calibration.jsonl"
 
 # Seed: 5 refactor, 3 bugfix, 2 docs records (mixed criticality)
 printf '%s\n' \
-  '{"taskId":"T1","criticality":"MEDIUM","verdict":"PASS","task_type":"refactor","falseVerdictFlag":null}' \
+  '{"taskId":"T1","criticality":"NORMAL","verdict":"PASS","task_type":"refactor","falseVerdictFlag":null}' \
   '{"taskId":"T2","criticality":"HIGH","verdict":"PASS","task_type":"refactor","falseVerdictFlag":null}' \
   '{"taskId":"T3","criticality":"LOW","verdict":"PASS","task_type":"refactor","falseVerdictFlag":null}' \
-  '{"taskId":"T4","criticality":"MEDIUM","verdict":"FAIL","task_type":"refactor","falseVerdictFlag":null}' \
+  '{"taskId":"T4","criticality":"NORMAL","verdict":"FAIL","task_type":"refactor","falseVerdictFlag":null}' \
   '{"taskId":"T5","criticality":"HIGH","verdict":"PASS","task_type":"refactor","falseVerdictFlag":null}' \
-  '{"taskId":"T6","criticality":"MEDIUM","verdict":"PASS","task_type":"bugfix","falseVerdictFlag":null}' \
+  '{"taskId":"T6","criticality":"NORMAL","verdict":"PASS","task_type":"bugfix","falseVerdictFlag":null}' \
   '{"taskId":"T7","criticality":"LOW","verdict":"FAIL","task_type":"bugfix","falseVerdictFlag":null}' \
   '{"taskId":"T8","criticality":"HIGH","verdict":"PASS","task_type":"bugfix","falseVerdictFlag":null}' \
-  '{"taskId":"T9","criticality":"MEDIUM","verdict":"PASS","task_type":"docs","falseVerdictFlag":null}' \
+  '{"taskId":"T9","criticality":"NORMAL","verdict":"PASS","task_type":"docs","falseVerdictFlag":null}' \
   '{"taskId":"T10","criticality":"LOW","verdict":"PASS","task_type":"docs","falseVerdictFlag":null}' \
   > "$CALIB_FILE"
 
@@ -105,21 +105,21 @@ assert_contains "--help lists task_type_window" "task_type_window" "$help_out"
 printf '\n--- existing subcommands still work ---\n'
 
 # window subcommand still works
-win_out="$(CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" window MEDIUM)"
+win_out="$(CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" window NORMAL)"
 win_count="$(printf '%s\n' "$win_out" | jq -sc 'length')"
-assert_eq "window MEDIUM still works" "4" "$win_count"
+assert_eq "window NORMAL still works" "4" "$win_count"
 
 # false_pass_rate still works
-rate="$(CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" false_pass_rate MEDIUM)"
-assert_eq "false_pass_rate MEDIUM still works (no false passes = 0.00)" "0.00" "$rate"
+rate="$(CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" false_pass_rate NORMAL)"
+assert_eq "false_pass_rate NORMAL still works (no false passes = 0.00)" "0.00" "$rate"
 
 # promote_tier still works
 tier_out="$(CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" promote_tier LOW)"
-assert_eq "promote_tier LOW still works" "MEDIUM" "$tier_out"
+assert_eq "promote_tier LOW still works" "NORMAL" "$tier_out"
 
 # should_promote still exits non-zero (no false passes)
 promote_exit=0
-CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" should_promote MEDIUM || promote_exit=$?
+CLAUDE_PLUGIN_DATA="$CALIB_DIR" "$CALIB" should_promote NORMAL || promote_exit=$?
 if [[ "$promote_exit" -ne 0 ]]; then
   assert_eq "should_promote exits non-zero (no false passes)" "non-zero" "non-zero"
 else

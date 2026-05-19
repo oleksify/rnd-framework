@@ -171,7 +171,6 @@ PARITY_TABLE=(
   "skills/rnd-decomposition/SKILL.md:skills/rnd-orchestration/SKILL.md:External dependencies:pre-registration field"
   "skills/rnd-building/SKILL.md:skills/rnd-build/SKILL.md:erify external dependencies:build step parity"
   "skills/rnd-verification/SKILL.md:skills/rnd-verify/SKILL.md:External contract conformance:failure mode analysis"
-  "skills/rnd-verification/SKILL.md:skills/rnd-multi-judge/SKILL.md:ulti-Judge:multi-judge consensus protocol"
   "skills/rnd-decomposition/SKILL.md:commands/rnd-start.md:ocal expert:local expert field parity"
   "skills/rnd-building/SKILL.md:skills/rnd-build/SKILL.md:DONE_WITH_CONCERNS:builder status code DONE_WITH_CONCERNS parity"
   "skills/rnd-building/SKILL.md:skills/rnd-build/SKILL.md:NEEDS_CONTEXT:builder status code NEEDS_CONTEXT parity"

@@ -138,44 +138,23 @@ If the Planner omits the field, the orchestrator defaults to NORMAL.
 |-------------|--------|-----------------|------------|
 | LOW | 1 | 2 | Skip |
 | NORMAL | 1 | 3 | If available |
-| HIGH | 1 (2 on opt-in) | 5 | If available |
-
-### Multi-Judge Opt-In
-
-By default, all tasks use single-judge verification. To enable 2-judge consensus for a specific task, the user must explicitly request it when starting the pipeline:
-
-```
-/rnd-framework:rnd-start --multi-judge <task description>
-```
-
-Or add to the pre-registration:
-```
-Task ID: T3
-Intent: Add rate limiting to API endpoints
-Criticality: HIGH
-Verification: multi-judge
-```
-
-When multi-judge is enabled, two independent Verifier agents run in parallel. If they disagree, a third tiebreaker judge resolves the conflict. See `rnd-framework:rnd-multi-judge` for the full consensus protocol.
-
-This is the Sherlock principle: place verification effort where it matters most, not uniformly across all tasks.
+| HIGH | 1 | 5 | If available |
 
 ### Agent Model/Effort Routing by Criticality
 
 Criticality drives both iteration budget (table above) and per-agent model selection. The authoritative source is `rnd-framework:rnd-orchestration` under "Dispatch Policy". The matrix below mirrors it for quick reference:
 
-| Agent | LOW | MEDIUM | HIGH | Adaptive? |
+| Agent | LOW | NORMAL | HIGH | Adaptive? |
 |---|---|---|---|---|
 | `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
 | `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
 | `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
 | `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
-| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
 | `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
 Key rules:
-- `rnd-planner` and `rnd-verifier` escalate to opus at MEDIUM and above; `rnd-builder` and `rnd-debugger` escalate only at HIGH.
-- `rnd-amendment-arbiter` and `rnd-polisher` are non-adaptive — they always run at opus regardless of task criticality.
+- `rnd-planner` and `rnd-verifier` escalate to opus at NORMAL and above; `rnd-builder` and `rnd-debugger` escalate only at HIGH.
+- `rnd-polisher` is non-adaptive — it always runs at opus regardless of task criticality.
 - Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
 ## Anti-Pattern: Skipping the Pipeline

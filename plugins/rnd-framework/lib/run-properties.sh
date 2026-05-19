@@ -32,15 +32,8 @@ _usage() {
   printf '  output. Pinned regression tests may need additional context to\n'
   printf '  deterministically reproduce the original failure.\n\n'
   printf 'Schema fixture format (lang=schema):\n'
-  printf '  v1 (key-presence only) — fixture must contain "required" and "sample":\n'
+  printf '  Key-presence check — fixture must contain "required" and "sample":\n'
   printf '    { "required": ["field1", "field2"], "sample": { ... } }\n'
-  printf '  v2 (full JSON Schema) — detected when fixture contains a "$schema" key:\n'
-  printf '    { "$schema": "...", "type": "object", "properties": {...}, "required": [...] }\n'
-  printf '    Sample data must be passed as a separate file (second argument) or\n'
-  printf '    embedded under a "sample" key alongside the full JSON Schema keys.\n'
-  printf '  Validator selection (v2 only):\n'
-  printf '    preferred: ajv CLI (command -v ajv) — full JSON Schema Draft-07 semantics.\n'
-  printf '    fallback:  jq-based minimal check (type assertion + required-key presence).\n'
 }
 
 if [[ "${1:-}" == "--help" ]]; then
@@ -220,136 +213,32 @@ case "$lang" in
       exit 2
     fi
 
-    # Detect v1 vs v2 by presence of the "$schema" key in the fixture.
-    # v1: { "required": [...], "sample": { ... } }
-    # v2: { "$schema": "...", "type": "object", "properties": {...}, "required": [...], "sample": {...} }
-    has_dollar_schema="$(jq -r 'has("$schema") | tostring' "$spec_path")"
+    # Schema fixture format (spec_path points at this JSON file):
+    #   { "required": ["field1", "field2"], "sample": { ... } }
+    #
+    # Single jq pass: collect required fields that are absent from the sample.
+    # `. as $f` binds each field name before passing to has() — required because
+    # has() interprets its argument as a key, not the current context.
+    missing="$(jq -r '
+      .required as $req |
+      .sample as $data |
+      [ $req[] | . as $f | select(($data | has($f)) | not) ] |
+      if length == 0 then "" else .[0] end
+    ' "$spec_path")"
 
-    if [[ "$has_dollar_schema" == "true" ]]; then
-      # v2: full JSON Schema validation.
-      #
-      # The "sample" key carries the API response or data under test. It lives
-      # alongside the JSON Schema keys inside the same fixture file.
-      sample_data="$(jq '.sample' "$spec_path")"
-
-      if [[ "$sample_data" == "null" || -z "$sample_data" ]]; then
-        printf 'run-properties.sh: v2 schema fixture %s missing "sample" key\n' "$spec_path" >&2
-        exit 2
-      fi
-
-      # Write sample to a temp file — used by both ajv and jq-fallback paths.
-      tmp_data="$(mktemp)"
-      trap 'rm -f "$tmp_data"' EXIT
-      printf '%s\n' "$sample_data" > "$tmp_data"
-
-      if command -v ajv > /dev/null 2>&1; then
-        # ajv path: write a clean schema (without the "sample" key) and validate.
-        tmp_schema="$(mktemp)"
-        trap 'rm -f "$tmp_schema" "$tmp_data"' EXIT
-        jq 'del(.sample)' "$spec_path" > "$tmp_schema"
-
-        ajv_out="$(ajv validate -s "$tmp_schema" -d "$tmp_data" 2>&1)" && ajv_exit=0 || ajv_exit=$?
-
-        if [[ $ajv_exit -eq 0 ]]; then
-          printf 'PROPERTY_PASS\n'
-          exit 0
-        fi
-
-        # Extract the failing field from ajv's error output.
-        # ajv prints: "data must have required property 'fieldname'"
-        failing_field="$(printf '%s\n' "$ajv_out" \
-          | grep -o "must have required property '[^']*'" \
-          | head -1 \
-          | grep -o "'[^']*'" \
-          | tr -d "'" || true)"
-
-        if [[ -z "$failing_field" ]]; then
-          failing_field="schema validation failed"
-        fi
-
-        printf 'PROPERTY_COUNTER_EXAMPLE\n'
-        jq -nc \
-          --arg property    "JSON Schema validation" \
-          --arg shrunk_input "$failing_field" \
-          '{property: $property, shrunk_input: $shrunk_input, seed: null}' \
-          >&2
-        exit 1
-
-      else
-        # jq fallback: minimal check — top-level type + required-key presence.
-        #
-        # Step 1: verify the sample's JSON type matches "type" (if declared).
-        schema_type="$(jq -r '.type // empty' "$spec_path")"
-
-        if [[ -n "$schema_type" ]]; then
-          actual_type="$(jq -r 'type' "$tmp_data")"
-
-          if [[ "$actual_type" != "$schema_type" ]]; then
-            printf 'PROPERTY_COUNTER_EXAMPLE\n'
-            jq -nc \
-              --arg property    "JSON Schema type check" \
-              --arg shrunk_input "expected type $schema_type, got $actual_type" \
-              '{property: $property, shrunk_input: $shrunk_input, seed: null}' \
-              >&2
-            exit 1
-          fi
-        fi
-
-        # Step 2: verify every required key is present in the sample.
-        # Use --slurpfile to load the sample as a parsed JSON value (avoids
-        # env-var string injection and handles nested structures correctly).
-        missing="$(jq -r \
-          --slurpfile data "$tmp_data" '
-          (.required // []) as $req |
-          $data[0] as $d |
-          [ $req[] | . as $f | select(($d | has($f)) | not) ] |
-          if length == 0 then "" else .[0] end
-        ' "$spec_path")"
-
-        if [[ -z "$missing" ]]; then
-          printf 'PROPERTY_PASS\n'
-          exit 0
-        fi
-
-        printf 'PROPERTY_COUNTER_EXAMPLE\n'
-        jq -nc \
-          --arg property    "JSON Schema required-key check" \
-          --arg shrunk_input "$missing" \
-          '{property: $property, shrunk_input: $shrunk_input, seed: null}' \
-          >&2
-        exit 1
-      fi
-
-    else
-      # v1: presence-of-keys check only.
-      #
-      # Schema fixture format (spec_path points at this JSON file):
-      #   { "required": ["field1", "field2"], "sample": { ... } }
-      #
-      # Single jq pass: collect required fields that are absent from the sample.
-      # `. as $f` binds each field name before passing to has() — required because
-      # has() interprets its argument as a key, not the current context.
-      missing="$(jq -r '
-        .required as $req |
-        .sample as $data |
-        [ $req[] | . as $f | select(($data | has($f)) | not) ] |
-        if length == 0 then "" else .[0] end
-      ' "$spec_path")"
-
-      if [[ -z "$missing" ]]; then
-        printf 'PROPERTY_PASS\n'
-        exit 0
-      fi
-
-      printf 'PROPERTY_COUNTER_EXAMPLE\n'
-      jq -nc \
-        --arg property    "schema presence check" \
-        --arg shrunk_input "$missing" \
-        --argjson seed    0 \
-        '{property: $property, shrunk_input: $shrunk_input, seed: $seed}' \
-        >&2
-      exit 1
+    if [[ -z "$missing" ]]; then
+      printf 'PROPERTY_PASS\n'
+      exit 0
     fi
+
+    printf 'PROPERTY_COUNTER_EXAMPLE\n'
+    jq -nc \
+      --arg property    "schema presence check" \
+      --arg shrunk_input "$missing" \
+      --argjson seed    0 \
+      '{property: $property, shrunk_input: $shrunk_input, seed: $seed}' \
+      >&2
+    exit 1
     ;;
 
   *)

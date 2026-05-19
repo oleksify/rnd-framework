@@ -1,5 +1,25 @@
 # Changelog
 
+## 4.0.0 — 2026-05-19
+
+### Stable scientific core
+
+Main returns to the falsifiable, evidence-driven core: pre-registration with assumptions + refuted-by, information barrier (Builder reasoning blocked from Verifier), independent Verifier experiments, plan → build → verify → integrate. Experimental machinery — advisory audit events with no consumer, opt-in dispatchers that bypass the Verifier, escalation gates layered on top of multi-judge, agents that paper over weaknesses elsewhere — was excised. From 4.0 onward, experimental work happens on alpha/beta versions; main carries only what we have empirical reason to keep.
+
+**Removed agents** (11 → 9): `rnd-amendment-arbiter` (whole agent + Phase 3.5 Amendment Flow — `NEEDS_ITERATION` covers the same ground); `rnd-drift-detector` (whole agent + `drift-report-gate.sh` hook — diagnostic with no gating consumer).
+
+**Removed verdict / dispatch machinery:** `AMEND_REQUIRED` verdict (subsumed by `NEEDS_ITERATION`); `Criticality: HIGH-PII` tier + cross-lineage dual-spawn + `cross_lineage_verifier` audit event (2× verifier cost on a tier that was never used in practice); multi-judge first-pass escalation gate + `RND_MULTI_JUDGE_ALWAYS` env var + `skills/rnd-multi-judge/` skill (consensus theater — one independent Verifier with experiments IS the scientific method); `--multi-judge` flag.
+
+**Removed dispatcher complexity:** `Phase 0.1: Pipeline Tier Selection` + `--tier=prototype|standard|high-stakes` flag + `Prototype Short-Circuit Flow` (single Standard flow only); `--verify-mode=final` flag + `lib/verify-mode-final-queue.sh` (deferred spawns but didn't eliminate them); inline-only dispatch + `lib/inline-verify.sh` + `lib/criteria-classify.sh` + `Verification level: inline|unit|system` enum (reverted to `unit|integration|system` — the inline path was fragile shell parsing); `verification_level_assigned` audit event.
+
+**Removed advisory infrastructure:** `lib/cross-phrasing-check.sh` (never wired up); `lib/calibration.sh` `mode_window` / `mode_false_pass_rate` / `collapse_eligible` subcommands + `verifier_collapse_eligible` advisory event (ADVISORY ONLY — no dispatch change); JSON-schema v2 path in `lib/run-properties.sh` with ajv/jq full-validation fork (reverted to v1 key-presence-only); builder-side property runs (Verifier's run remains verdict-of-record); task_type-aware bloat thresholds in `cleanup-bloat-gate.sh` (reverted to single global 15% threshold); `## Cognitive Style` prompt sections on `rnd-reality-auditor`/`rnd-verifier`/`rnd-cleanup` (never measured); `MEDIUM` criticality tier renamed/normalized to `NORMAL`.
+
+**Kept (validated, load-bearing):** Pre-registration with `## Assumptions` + `Refuted by` (the grounding mechanism); information barrier hooks (`read-gate`, `glob-grep-gate`, `bash-gate`); Verifier independent experiments + worktree; SubagentStop quality gates (coverage-gaps, verifier-case, builder-dismissal, anomaly, cleanup-bloat); property runner (`lib/run-properties.sh` v1 key-presence + Elixir StreamData + TS fast-check); Reality Auditor (`External dependencies` declared); Proof Gate (`Proof: lean` opt-in); rnd-polisher (validated in practice); calibration trending with task_type bucketing; destructive-git audit events with discriminators; evidence pack manifest (`RND_EVIDENCE_PACK=1` opt-in); stop conditions (file revisions, verdict flip, plan size).
+
+**Breaking changes:** Pre-reg `Criticality: HIGH-PII` rejected (use `HIGH`); pre-reg `Verification level: inline` rejected (use `unit`); `AMEND_REQUIRED` removed from verifier verdict enum; `--tier=`, `--multi-judge`, `--verify-mode=final` flags on `/rnd-framework:rnd-start` rejected. Existing in-flight sessions on 3.29.0 finish on 3.29.0 (orchestrator-file caching); new sessions land on 4.0.
+
+**Calibration history preserved:** existing `amendmentData`, `escalationGate`, `multiJudge`, and `cross_lineage_verifier` records in `audit.jsonl` and `calibration.jsonl` stay as historical fact; new records will not emit these fields.
+
 ## 3.29.0 — 2026-05-19
 
 ### Remove the flash-card priming system

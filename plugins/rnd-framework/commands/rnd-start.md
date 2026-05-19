@@ -1,6 +1,6 @@
 ---
 description: "Start the R&D orchestration framework for a complex task. Runs the full pipeline: Plan → Build → Verify → Integrate using specialized agents."
-argument-hint: "[--tier=prototype|standard|high-stakes] [--multi-judge] <description of the feature, refactor, or bug fix>"
+argument-hint: "<description of the feature, refactor, or bug fix>"
 effort: high
 ---
 
@@ -47,50 +47,6 @@ If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-start` with no task descr
 **Never fall back to plain text** — `AskUserQuestion` is mandatory at every decision point.
 
 If `$ARGUMENTS` is provided, skip this section and proceed directly.
-
-## Phase 0.1: Pipeline Tier Selection
-
-Pipeline ceremony costs tokens. A quick prototype and a security-critical migration should not run the same pipeline. Ask the user to pick the ceremony level BEFORE discovery begins.
-
-**If `$ARGUMENTS` contains `--tier=prototype`, `--tier=standard`, or `--tier=high-stakes`**, use that value directly — skip the prompt. Strip the flag from the task description before further processing.
-
-**Flag: `--verify-mode=final`** — when present, all per-wave verifier spawns defer to after the final wave completes. Stash as `RND_VERIFY_MODE_FINAL=1` for the remainder of the session. Saves ~75% verifier cost on multi-wave pipelines that don't need per-wave verification before continuing. Strip this flag from the task description before further processing.
-
-**Otherwise**, ask with `AskUserQuestion` (one question, three options):
-
-- **Prototype / Experiment** — No agents. No verification. Orchestrator implements inline, shows the diff. For throwaway exploration, quick hacks, API experimentation.
-- **Standard (Recommended)** — Full pipeline: Plan → Build → Verify → Integrate. Single-judge verification. Reality Audit for tasks with external deps.
-- **High-stakes** — Full pipeline with amplified verification: multi-judge consensus on every HIGH-criticality task, Reality Audit on every task regardless of external-dep declaration, iteration budget 5. Use for security/auth/financial/data-integrity code.
-
-Store the selection as `PIPELINE_TIER` for the remainder of the session.
-
-**Route based on tier:**
-- `PIPELINE_TIER=prototype` → Skip the rest of this file and follow the "Prototype Short-Circuit Flow" section below.
-- `PIPELINE_TIER=standard` → Proceed to Phase 0 as written. No overrides.
-- `PIPELINE_TIER=high-stakes` → Proceed to Phase 0. Apply two overrides when you reach Phase 2.5 and Phase 3:
-  - Phase 2.5: Spawn the Reality Auditor for every task in the wave, even if `External dependencies` is absent.
-  - Phase 3: For every HIGH-criticality task, invoke `rnd-framework:rnd-multi-judge` (equivalent to setting `--multi-judge` on the task).
-
-## Prototype Short-Circuit Flow
-
-**Entry condition:** `PIPELINE_TIER=prototype`. Use this flow in place of Phase 0 through Phase 6.
-
-The orchestrator implements the task directly. No Planner, Builder, Verifier, or Integrator agents are spawned. There are no pre-registration, manifest, verification, or integration artifacts. `$RND_DIR` is still created but most of it remains empty — this is expected.
-
-1. **Quick codebase scan.** Glob/Grep to locate the files that matter. 2-5 minutes of context-gathering. No Local Experts scan, no project-facts reload, no KISS/FP skill loading unless the task explicitly calls for discipline.
-
-2. **State the plan in chat.** One paragraph: what files will change, what logic, what you are explicitly NOT doing. Do not write `plan.md`. Do not create a pre-registration.
-
-3. **Implement directly.** Use Edit/Write. No TDD unless the task is about tests. No self-assessment artifact. No briefs. Keep the working tree honest — you own the diff.
-
-4. **Summarize the diff.** 3-5 lines: files touched, behavior change, anything surprising. Then `AskUserQuestion`:
-   - "Looks good — wrap up"
-   - "Iterate on the prototype" — continue revising inline based on feedback
-   - "Upgrade to Standard pipeline and verify" — this restarts the pipeline at Phase 0 with `PIPELINE_TIER=standard`. The prototype diff becomes the starting point; the Planner and Verifier will inspect what was built.
-
-5. **Wrap-up.** Invoke `rnd-framework:rnd-formatting` on changed files. Skip doc-polish unless the user asks. Do not auto-commit.
-
-**When to reject the prototype tier:** If the task description implies production impact (auth, payments, migrations, data deletion, deployment, anything user-facing at scale) and the user still picked Prototype, push back once with `AskUserQuestion`: "This looks like production work — switch to Standard?" before proceeding. Users overriding after being asked once is their call.
 
 ## Phase 0: Discovery
 
@@ -183,16 +139,6 @@ If the user selects "Approve plan and auto-continue", set **auto-continue mode =
 
 Once approved, create a `TaskCreate` entry for each task.
 
-For each task in the approved plan, emit a `verification_level_assigned` audit event:
-
-```bash
-# Parse Verification level and mechanical_pct from plan.md, then emit per task:
-bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" verification_level_assigned "T<id>" \
-  "{\"level\":\"<inline|unit|system>\",\"mechanical_pct\":<int>}"
-```
-
-Read `plan.md` to extract each task's `Verification level:` field and the `mechanical_pct` from the classifier output recorded by the Planner. If the Planner did not record `mechanical_pct` for a task (e.g., plan was written manually), emit the event with `"mechanical_pct":null`.
-
 ## Phase 2: Build (per wave)
 
 **Before each wave:** Scan `$RND_DIR/builds/` and `$RND_DIR/verifications/` to confirm which tasks are complete. Skip tasks that already have build manifests or verification reports.
@@ -240,15 +186,6 @@ Agent({
 
 Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `INVALID_FOUND`, route back to Phase 2 with the reality report as feedback before verification.
 
-**Calibration write for schema-validated tasks:** When the task's pre-registration includes an `External dependencies` entry with a `schema:` sub-field AND the reality auditor invoked `run-properties.sh schema` with a v2 fixture (detected by `"$schema"` key presence), append a calibration record with `verification_mode: schema`:
-
-```bash
-CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --calibration)}"
-printf '%s\n' '{"taskId":"T<id>","verdict":"<status>","verification_mode":"schema","timestamp":"<iso>"}' >> "$CALIB_FILE"
-```
-
-Set `verification_mode: schema` only for tasks where the JSON Schema property runner produced a `PROPERTY_PASS` or `PROPERTY_COUNTER_EXAMPLE` result. Tasks audited without a schema check use the default `verification_mode: prose`.
-
 ## Phase 3: Verify (per wave — batch verification)
 
 **CRITICAL: Information Barrier.** The Verifier runs in a separate context window and cannot see the Builder's reasoning. The `read-gate.sh` hook blocks reads of self-assessment files. Do NOT pass self-assessment content to the Verifier.
@@ -272,46 +209,7 @@ Set `verification_mode: schema` only for tasks where the JSON Schema property ru
 ```
 Valid verdict values: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`, `NEEDS_ITERATION`, `FAIL`. The `feedback` field is required and non-empty for any non-PASS verdict; empty string for PASS.
 
-**Inline-only dispatch:** If every task in the wave has `Verification level: inline` in its pre-reg, skip the Verifier spawn and invoke `lib/inline-verify.sh` instead. This eliminates the ~200k-token Verifier spawn for waves composed entirely of mechanical, grep-only criteria.
-
-```bash
-# Check whether all tasks in this wave are Verification level: inline
-INLINE_ONLY=1
-for tid in <task-ids-in-wave>; do
-  level=$(grep "^Verification level:" "$RND_DIR/plan.md" | ... # extract per-task level)
-  if [[ "$level" != "inline" ]]; then
-    INLINE_ONLY=0
-    break
-  fi
-done
-
-if [[ "$INLINE_ONLY" == "1" ]]; then
-  bash "${CLAUDE_PLUGIN_ROOT}/lib/inline-verify.sh" "$RND_DIR/plan.md" "<N>"
-else
-  # existing Verifier spawn path (see below)
-fi
-```
-
-When `INLINE_ONLY=1`, the verdict map is written to `$RND_DIR/verifications/wave-<N>-verdict-map.json` by `inline-verify.sh` and the audit log receives one `verifier_spawn_avoided {task_id, reason: "inline"}` event per task. Proceed to Gate 3 as normal — the verdict map format is identical to a spawned Verifier's output.
-
-If ANY task in the wave is not `Verification level: inline`, fall through to the spawn path below. There is no partial inline mode.
-
-**Final-mode dispatch:** If `RND_VERIFY_MODE_FINAL=1`, defer every Verifier spawn until after the last wave completes. For each task in the wave, call the helper instead of spawning:
-
-```bash
-if [[ "${RND_VERIFY_MODE_FINAL:-}" == "1" ]]; then
-  bash "${CLAUDE_PLUGIN_ROOT}/lib/verify-mode-final-queue.sh" "<N>" "T<id>"
-  # Verifier spawn deferred; verdict map populated during post-final-wave drain.
-else
-  # ... existing Verifier spawn path (see below)
-fi
-```
-
-After the final wave's integration completes (Phase 6), drain the deferral queue at `$RND_DIR/.verify-final-queue.jsonl`: read each entry and spawn one Verifier per `(wave, task_id)` pair, collecting verdicts into the matching `wave-<N>-verdict-map.json`. Treat any FAIL as a post-hoc iteration trigger and route through Gate 3 as normal.
-
-**Determine the criticality of tasks in the wave to route correctly:**
-
-- **Wave contains only LOW or NORMAL tasks:** Spawn a single Verifier agent for the whole wave.
+**Spawn a single Verifier agent per wave.** HIGH criticality is handled via the per-agent dispatch policy (model boost to opus/xhigh) — there is no parallel-judge mode.
 
 ```
 Agent({
@@ -322,50 +220,9 @@ Agent({
 })
 ```
 
-- **Wave contains any HIGH-criticality task (but no HIGH-PII tasks):** Invoke the `rnd-framework:rnd-multi-judge` protocol for the whole wave. The skill runs a first-pass escalation gate: a single Sonnet/medium verifier runs first; if it returns PASS the full dual-judge protocol is skipped and PASS is the final verdict; if it returns FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or AMEND_REQUIRED it is promoted to Judge A and a second judge (Judge B) is spawned. Set `RND_MULTI_JUDGE_ALWAYS=1` to bypass the gate and restore exact pre-gate behavior (both judges always spawn in parallel). Both judges each receive all wave task pre-registrations and each returns a per-task verdict map. Tiebreaker is triggered per-task — only for tasks where Judge A and Judge B disagree. See that skill for the full wave-batched protocol.
+The Verifier writes a `T<id>-pass-receipt.json` for PASS tasks, a full `T<id>-verification.md` prose report for FAIL/NEEDS_ITERATION tasks (auto-materialized), and saves the aggregate verdict map to `$RND_DIR/verifications/wave-<N>-verdict-map.json`. PASS_QUALITY_NEEDS_ITERATION tasks get both.
 
-  After the first-pass verdict is known, write the `escalationGate` object to the calibration record for each task: `{ "firstPassVerdict": "<verdict>", "escalated": <true|false>, "overturned": <true|false> }`. Write silently as a graceful no-op if `calibration.jsonl` does not yet exist.
-
-**Cross-lineage dispatch for HIGH-PII tasks:** When a wave contains any task with `Criticality: HIGH-PII`, spawn TWO verifiers in parallel using DIFFERENT model lineages — one with `model: sonnet`, one with `model: opus`. Both receive the same wave pre-registrations. Collect both verdict maps and apply the following rules per task:
-
-- Both PASS → final PASS.
-- Either returns FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or AMEND_REQUIRED → route through the existing tiebreaker protocol per `rnd-multi-judge` skill.
-- Emit one `cross_lineage_verifier` audit event per HIGH-PII task:
-
-  ```bash
-  bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" cross_lineage_verifier "T<id>" \
-    "{\"lineage_a\":\"sonnet\",\"lineage_b\":\"opus\",\"agreed\":<true|false>}"
-  ```
-
-Cost note: HIGH-PII tasks cost 2× the standard Verifier spawn — one full Sonnet pass and one full Opus pass. Use this tier sparingly — only for auth, payment processing, PII handling, or other portal-to-hell scopes where cross-lineage consensus is worth the token cost.
-
-**Spawn pattern for HIGH-PII waves:**
-
-```
-// Spawn verifier A (sonnet lineage)
-Agent({
-  description: "Verify wave <N> tasks — lineage A (sonnet)",
-  subagent_type: "rnd-framework:rnd-verifier",
-  model: "sonnet",
-  mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
-})
-
-// Spawn verifier B (opus lineage) — in parallel with A
-Agent({
-  description: "Verify wave <N> tasks — lineage B (opus)",
-  subagent_type: "rnd-framework:rnd-verifier",
-  model: "opus",
-  mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
-})
-```
-
-The Verifier writes per-task traceability artifacts for every task in the wave: a `T<id>-pass-receipt.json` for PASS tasks, or a full `T<id>-verification.md` prose report for FAIL/NEEDS_ITERATION tasks (auto-materialized). PASS_QUALITY_NEEDS_ITERATION tasks get both. Plus the aggregate verdict map.
-
-The Verifier saves the aggregate verdict map to: `$RND_DIR/verifications/wave-<N>-verdict-map.json`
-
-Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces per-task verification reports. It returns a per-task verdict map.
+Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces per-task verification reports.
 
 **Gate 3:** Verify `$RND_DIR/verifications/wave-<N>-verdict-map.json` exists and is non-empty. Read the verdict map and dispatch each task based on its verdict:
 
@@ -375,82 +232,12 @@ Do NOT verify tasks yourself. The Verifier agent independently writes experiment
 | `PASS_QUALITY_NEEDS_ITERATION` | Same as PASS. Save quality feedback. Does NOT block integration. Route to Phase 4. |
 | `NEEDS_ITERATION` | Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5 for this task. |
 | `FAIL` | Do NOT iterate — route to re-planning. |
-| `AMEND_REQUIRED` | Route to Phase 3.5: Amendment Flow. Does NOT block other tasks in the wave. The Verifier must cite a concrete spec defect in the `feedback` field; without a cited defect, treat as `NEEDS_ITERATION`. |
 
 **After Gate 3:** Summarize per-task verdicts from the verdict map. Then route:
 
 - All PASS/PASS_QUALITY: auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
 - Any NEEDS_ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
 - Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
-
-## Phase 3.5: Amendment Flow (AMEND_REQUIRED only)
-
-**Entry condition:** One or more tasks in the wave received an `AMEND_REQUIRED` verdict. This phase is conditional — it does NOT affect tasks with PASS, NEEDS_ITERATION, or FAIL verdicts.
-
-**Wave-continuation semantics:** AMEND_REQUIRED on one task does NOT block other tasks in the wave. Tasks that PASS or PASS_QUALITY_NEEDS_ITERATION proceed through Phase 4 (cleanup) and Phase 6 (integration) normally. The AMEND_REQUIRED task pauses independently for the arbiter + user gate, then re-joins the pipeline at the next available re-verification slot after amendment resolution.
-
-For each task with an `AMEND_REQUIRED` verdict, execute the following steps independently:
-
-### Step 1: Spawn the Amendment Arbiter
-
-Spawn the arbiter agent with **strictly scoped inputs** — the original task pre-registration text plus the Verifier's AMEND_REQUIRED feedback (including the cited spec defect). No build manifest, no self-assessment, no code, no briefs, no cleanup reports are passed to the arbiter.
-
-```
-Agent({
-  description: "Amendment arbiter for T<id>",
-  subagent_type: "rnd-framework:rnd-amendment-arbiter",
-  mode: "acceptEdits",
-  prompt: "Task pre-registration:\n<paste verbatim from plan.md>\n\nVerifier AMEND_REQUIRED feedback:\n<paste verbatim from verdict map 'feedback' field>"
-})
-```
-
-### Step 2: Read Arbiter Output and Branch
-
-The arbiter emits one of three structured responses:
-
-- **`AMEND { field, old, new, rationale }`** — Proceed to Step 3 (user gate). The arbiter may include multiple AMEND entries for multiple fields.
-- **`REBUILD { rationale }`** — Treat as `NEEDS_ITERATION`; skip Steps 3-5 and route directly to Phase 5 with the original Verifier feedback.
-- **`ESCALATE_REPLAN { rationale }`** — Spawn a Planner micro-spawn for this task only. The Planner receives the original pre-reg and the arbiter's rationale. After micro-replan, re-enter the pipeline at Phase 2 for the re-planned task.
-
-### Step 3: User Gate (mandatory)
-
-Present the arbiter's amendment proposal to the user. Use `AskUserQuestion` with exactly these structured options:
-
-- **"Approve amendment (Recommended)"** — Mutate `plan.md` pre-registration via Edit (update only the fields specified in the AMEND output). Then proceed to Step 4.
-- **"Reject — treat as NEEDS_ITERATION"** — Discard the arbiter proposal. Route to Phase 5 with the original Verifier feedback. The resulting NEEDS_ITERATION rebuild consumes one iteration from the task's budget; the rejection itself is not a separate debit.
-- **"Override to FAIL and re-plan"** — Route to re-planning for this task.
-
-After the user decides, append a record to `$RND_DIR/briefs/T<id>-amendments.md` (create if absent) with these required fields:
-
-```markdown
-## Amendment — <ISO timestamp>
-
-**Cited defect:** <verbatim from Verifier feedback>
-**Arbiter recommendation:** <AMEND | REBUILD | ESCALATE_REPLAN>
-**Arbiter full output:** <verbatim arbiter response>
-**User decision:** approved | rejected | overridden-to-fail
-```
-
-Then write a calibration record to `calibration.jsonl` with `verdict: "AMEND_REQUIRED"` and `amendmentData: { userDecision: "approved" | "rejected" | "overridden-to-fail", arbitersRecommendation: "AMEND" | "REBUILD" | "ESCALATE_REPLAN" }`.
-
-### Step 4: Re-Prove Check (if applicable)
-
-If the mutated task pre-registration contains `Proof: lean`, re-trigger the Proof Gate for this task before re-verification. The Lean proof is now stale — it proved properties of the old criteria. Re-prove is mandatory. If Lean is unavailable and the Proof Gate would normally skip, the existing skip behavior applies; proceed to Step 5.
-
-### Step 5: Re-Verification (clean-slate)
-
-Spawn the Verifier with the now-mutated pre-registration as if it were the original. The Verifier prompt MUST NOT mention amendments or amendment history — clean-slate re-verification only. The Verifier sees only the current (mutated) pre-reg text.
-
-```
-Agent({
-  description: "Re-verify T<id> after amendment",
-  subagent_type: "rnd-framework:rnd-verifier",
-  mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id>\nAll task pre-registrations:\n<paste mutated pre-reg from plan.md>"
-})
-```
-
-Route the re-verification verdict via Gate 3 as normal. The re-verification spawn intentionally uses a single-task wave (the amended task only) — clean-slate isolation from sibling tasks in the original wave.
 
 ## Phase 4: Cleanup (per task)
 

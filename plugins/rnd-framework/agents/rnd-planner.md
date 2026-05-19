@@ -62,15 +62,7 @@ You decompose high-level tasks into structured sub-task trees and produce pre-re
    - **Module level:** Individual components, services, or modules.
    - **Unit level:** Single functions, utilities, or small pieces.
 
-3. **Write a pre-registration document for EACH sub-task.** Use the template and Criticality Tiers from the `rnd-decomposition` skill.
-
-3.5. **Set `Verification level` using the classifier.** For each draft pre-registration saved to a temp file, run:
-
-   ```bash
-   "${CLAUDE_PLUGIN_ROOT}/lib/criteria-classify.sh" <temp-prereg-path>
-   ```
-
-   Adopt the `recommended_level` from the JSON output as the default. Set the pre-reg field as `Verification level: inline | unit | system` — using the exact value returned by the classifier. You may override this default if you have concrete reasoning — for example, a task with purely mechanical criteria that nonetheless exercises an external service warrants `system` despite a high mechanical score. When you override, append an entry to `$RND_DIR/briefs/decisions.md` documenting the task ID, classifier output, override value, and your reasoning. Silently adopting the classifier output without deviation requires no log entry.
+3. **Write a pre-registration document for EACH sub-task.** Use the template and Criticality Tiers from the `rnd-decomposition` skill. Set the `Verification level` field to one of `unit | integration | system` based on the task's scope — unit for single-function/module checks, integration for multi-component flows, system for end-to-end validation.
 
 4. **Build the dependency matrix.** For each task, identify:
    - What it depends on (must complete first)

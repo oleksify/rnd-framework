@@ -133,7 +133,7 @@ Use `/rnd-framework:rnd-start` to launch the pipeline.
 | `/rnd-framework:rnd-validate` | Validate plugin structure: frontmatter, hooks, cross-references |
 | `/rnd-framework:rnd-doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
 | `/rnd-framework:rnd-bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
-| `/rnd-framework:rnd-review` | Review code changes with multi-judge evidence-based rigor |
+| `/rnd-framework:rnd-review` | Review code changes with evidence-based rigor |
 | `/rnd-framework:rnd-audit` | Full codebase audit against project standards |
 | `/rnd-framework:rnd-brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
 | `/rnd-framework:rnd-narrative` | Generate a development narrative for a pipeline session |
@@ -152,7 +152,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
 | `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
 | `rnd-building` | Builder methodology with TDD discipline baked in |
-| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED); information barrier intact |
+| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION); information barrier intact |
 | `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |
 | `rnd-scheduling` | Dependency-based wave scheduling, parallel agent dispatch |
 | `rnd-scaling` | Pipeline scaling rules: trivial → small → medium → large → high-stakes |
@@ -166,7 +166,6 @@ The plugin provides skills that embed structured practices into every phase of c
 | `committing` | Commit message style, length limits, and user confirmation before committing |
 | `writing-skills` | Meta-skill for extending the framework with new skills |
 | `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
-| `rnd-multi-judge` | Wave-batched multi-judge consensus with verdict-based escalation gate — single first-pass verifier runs first; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION escalates to dual judges + per-task tiebreaker; `RND_MULTI_JUDGE_ALWAYS=1` bypasses the gate |
 | `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
 | `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
 | `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
@@ -188,14 +187,13 @@ The plugin provides skills that embed structured practices into every phase of c
 
 ## Agents
 
-Eleven specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+Nine specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
 
 | Agent | Model | Color | Role |
 |---|---|---|---|
 | `rnd-framework:rnd-planner` | sonnet (high effort) | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
 | `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces build manifest + self-assessment |
 | `rnd-framework:rnd-verifier` | sonnet (high effort) | amber | Independent verification against pre-registered criteria with information barrier |
-| `rnd-framework:rnd-amendment-arbiter` | sonnet (medium effort) | — | Evaluates AMEND_REQUIRED verdicts with strict input contract (pre-reg + verdict only); proposes AMEND, REBUILD, or ESCALATE_REPLAN |
 | `rnd-framework:rnd-cleanup` | sonnet (medium effort) | — | Per-task dead-code sweep after PASS; rolls back if cleanup breaks re-verification |
 | `rnd-framework:rnd-polisher` | sonnet (medium effort) | — | Wave-level cross-task seam fixer: cross-task duplication, naming drift, shared-location lifting; runs after all per-task cleanup; rolls back if re-verification breaks |
 | `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
@@ -203,7 +201,6 @@ Eleven specialized agents for the multi-agent execution mode. All have persisten
 | `rnd-framework:rnd-proof-gate` | sonnet | pink | Attempts formal Lean 4 proofs of pre-registration criteria (advisory, non-blocking); only runs when task declares `Proof: lean` and Lean is on PATH |
 | `rnd-framework:rnd-reality-auditor` | sonnet | teal | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when task declares `External dependencies` |
 | `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work, with optional Lean 4 specs |
-| `rnd-framework:rnd-drift-detector` | sonnet (medium effort) | violet | Per-wave drift analysis between Builder and Verifier; detects scope or requirement drift; writes `wave-<N>-drift-report.md` to `$RND_DIR/drift/`; report schema enforced by `drift-report-gate.sh` |
 
 The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
 
@@ -326,7 +323,7 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
         │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
         ├── verifications/
         │   ├── wave-1-verdict-map.json # Per-wave verdict map keyed by task_id (one Verifier spawn per wave)
-        │   ├── T1-verification.md      # Full prose report written for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED)
+        │   ├── T1-verification.md      # Full prose report written for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION)
         │   ├── T1-experiments/         # Verifier-written independent experiment tests
         │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
         ├── proofs/

@@ -45,19 +45,16 @@ Each completed task appends one record to `calibration.jsonl`:
 |-------|------|-------|
 | `taskId` | string | Task identifier (e.g. `"T3"`) |
 | `sessionId` | string | Session that produced this verdict |
-| `verdict` | string | `"PASS"`, `"FAIL"`, `"NEEDS_ITERATION"`, or `"AMEND_REQUIRED"` |
-| `criticality` | string | `"LOW"`, `"MEDIUM"`, or `"HIGH"` — the task's criticality tier at the time of the verdict. Used by `lib/calibration.sh` to compute per-tier rolling false-PASS rates for auto-escalation. |
-| `amendmentData` | object or null | Optional. Only present when `verdict` is `"AMEND_REQUIRED"`. Shape: `{ "userDecision": "approved" \| "rejected", "arbitersRecommendation": "AMEND" \| "REBUILD" \| "ESCALATE_REPLAN" }`. Omit entirely for non-AMEND_REQUIRED verdicts. |
+| `verdict` | string | `"PASS"`, `"FAIL"`, `"NEEDS_ITERATION"`, or `"PASS_QUALITY_NEEDS_ITERATION"` |
+| `criticality` | string | `"LOW"`, `"NORMAL"`, or `"HIGH"` — the task's criticality tier at the time of the verdict. Used by `lib/calibration.sh` to compute per-tier rolling false-PASS rates for auto-escalation. |
 | `criterionResults` | array | Per-criterion `{ criterion, result }` objects |
 | `iterationCount` | number | Build-verify cycles required |
 | `timestamp` | string | ISO 8601 UTC |
 | `falseVerdictFlag` | string or null | Set by detection or manual correction. Values: `"FALSE_PASS"`, `"FALSE_FAIL"`, `"FALSE_PASS_PROXY"`, or `null`. |
 | `proxyFor` | string or null | Present only when `falseVerdictFlag` is `"FALSE_PASS_PROXY"`. The `timestamp` value of the original PASS record this proxy links to. |
-| `escalationGate` | object or null | Optional. Present when a first-pass escalation gate was run. Shape: `{ "firstPassVerdict": "PASS" \| "FAIL" \| "NEEDS_ITERATION" \| "PASS_QUALITY_NEEDS_ITERATION" \| "AMEND_REQUIRED", "escalated": boolean, "overturned": boolean }`. `escalated` is true when the first-pass verdict was not PASS. `overturned` is true when the final consensus verdict differs from the first-pass verdict (i.e., the gate decision was wrong). Omit entirely when `rnd-multi-judge` was not used or `RND_MULTI_JUDGE_ALWAYS=1` bypassed the gate. |
-| `multiJudge` | object or null | Optional. Present when multi-judge verification ran and a disagreement occurred (tiebreaker was invoked). Shape: `{ "judgeA": string, "judgeB": string, "agreed": boolean, "resolution": string, "tiebreaker": string \| null }`. `judgeA`/`judgeB` are the verdict strings each judge returned. `agreed` is false whenever a tiebreaker was invoked. `resolution` is the final verdict after tiebreaker. `tiebreaker` is the tiebreaker verdict string, or null when judges agreed. Omit entirely when both judges agreed on the first pass. |
 | `task_type` | string or null | Optional. Rule-based taxonomy tag inferred by the orchestrator from the pre-registration `Intent` and task title. Values: `refactor \| new-feature \| bugfix \| docs \| config \| infra`. Defaults to `infra` on no keyword match. See "task_type Inference Policy" sub-section below. |
 | `gateFired` | object or null | Optional. Present when a new reliability gate fired for this task. Shape: `{ "gate": string, "outcome": string, "task_id": string }`. `gate` is one of the four producer gate names (see "gateFired Producer Registry" sub-section). `outcome` is the gate result (e.g., `INVALID_FOUND`, `CLEAN`, `FLAGGED`, `BLOCKED`). `task_id` is the task this gate firing applies to. Append one `gateFired` record per gate firing; multiple gates may fire for a single task. |
-| `verification_mode` | string or null | Optional. The mode of verification used to produce this verdict. Allowed values: `property \| prose \| schema \| skipped`. Written by the orchestrator (not the verifier) when it appends the verdict record. Set to `property` when the pre-reg declared `## Properties` and the runner produced a non-skipped result; `schema` when a JSON Schema check ran via the property runner; `skipped` when the property runner detected a missing runtime; `prose` for all other (conventional) verification. Omit entirely for records predating this field. |
+| `verification_mode` | string or null | Optional. The mode of verification used to produce this verdict. Allowed values: `property \| prose \| skipped`. Set to `property` when the pre-reg declared `## Properties` and the runner produced a non-skipped result; `skipped` when the property runner detected a missing runtime; `prose` for all other (conventional) verification. Omit entirely for records predating this field. |
 
 ### task_type Inference Policy
 
@@ -198,8 +195,6 @@ Calibration summary for this project (last 30 verdicts):
 ```
 
 **What the verification phase does with this:** No special action required. The summary is contextual — it raises alertness for known problem areas without overriding the information barrier or the verification phase's independent judgment.
-
-**AMEND_REQUIRED tracking:** `AMEND_REQUIRED` verdicts are counted separately from `PASS`, `FAIL`, and `NEEDS_ITERATION` in the calibration summary. A high `AMEND_REQUIRED` rate (e.g., more than 20% of verdicts) may indicate Verifier drift — the Verifier citing spec defects that are actually implementation gaps, not genuine pre-registration errors. Flag this to the orchestrator for review.
 
 **Keep it simple:** Aggregate counts only. No per-verifier breakdown, no dashboards, no trend charts. A plain read over the JSONL file is sufficient.
 

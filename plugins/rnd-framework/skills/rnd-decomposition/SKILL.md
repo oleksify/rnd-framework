@@ -67,14 +67,14 @@ Task ID: T<number>
 Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
-Criticality: LOW | NORMAL | HIGH | HIGH-PII
+Criticality: LOW | NORMAL | HIGH
 Success criteria:
   Correctness:
   - [ ] [Functional requirement, test passing, or contract conformance condition]
   - [ ] [Another must-pass condition]
   Quality:
   - [ ] [Code quality, naming, patterns, or documentation condition]
-Verification level: inline | unit | system
+Verification level: unit | integration | system
 Dependencies: [Task IDs this depends on]
 Preconditions:
   - [File/content assertion verified before build starts]
@@ -97,14 +97,11 @@ The `fulfills` field creates bidirectional traceability between tasks and Valida
 
 **Criticality field values:**
 
-| Value | When to use | Verifier cost |
+| Value | When to use | Model boost |
 |---|---|---|
-| `LOW` | Trivial config, doc edits, renaming | 1× (single sonnet pass) |
-| `NORMAL` | Standard feature/refactor work | 1× (single sonnet pass) |
-| `HIGH` | Security-relevant, data-integrity, or architectural changes | 1× with multi-judge escalation gate |
-| `HIGH-PII` | Auth, payment processing, PII handling, or other portal-to-hell scopes | **2×** (dual-spawn: one sonnet + one opus verifier in parallel; unanimous PASS required) |
-
-Use `HIGH-PII` sparingly. The 2× verifier cost is intentional — cross-lineage consensus trades token spend for a stronger correctness guarantee on the highest-stakes code. When in doubt between `HIGH` and `HIGH-PII`, ask: "Would a false PASS here expose user data, allow unauthorized access, or result in financial loss?" If yes, use `HIGH-PII`.
+| `LOW` | Trivial config, doc edits, renaming | none — Verifier runs at sonnet/high |
+| `NORMAL` | Standard feature/refactor work | Verifier runs at opus/high |
+| `HIGH` | Security-relevant, data-integrity, or architectural changes | Verifier runs at opus/xhigh |
 
 ## Properties (optional)
 

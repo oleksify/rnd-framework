@@ -105,7 +105,7 @@ _verdict_history() {
     while IFS= read -r f; do
       local v
       v="$(grep -m1 '^## Overall Verdict:' "$f" 2>/dev/null | \
-           grep -o 'PASS\|FAIL\|NEEDS_ITERATION\|PASS_QUALITY_NEEDS_ITERATION\|AMEND_REQUIRED' | \
+           grep -o 'PASS\|FAIL\|NEEDS_ITERATION\|PASS_QUALITY_NEEDS_ITERATION' | \
            head -n1 || true)"
 
       if [[ -n "$v" ]]; then

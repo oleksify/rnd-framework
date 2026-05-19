@@ -105,9 +105,9 @@ assert_model_effort() {
   fi
 }
 
-# --- Effort-only checks (all 8 agents) ----------------------------------------
+# --- Effort-only checks ------------------------------------------------------
 
-# opus reasoning agents: planner/verifier use high effort; amendment-arbiter xhigh.
+# opus reasoning agents: planner/verifier use high effort.
 assert_effort "$AGENTS_DIR/rnd-planner.md"         "high"
 assert_effort "$AGENTS_DIR/rnd-verifier.md"        "high"
 assert_effort "$AGENTS_DIR/rnd-debugger.md"        "high"
@@ -119,14 +119,10 @@ assert_effort "$AGENTS_DIR/rnd-integrator.md"      "low"
 assert_effort "$AGENTS_DIR/rnd-proof-gate.md"      "low"
 assert_effort "$AGENTS_DIR/rnd-reality-auditor.md" "low"
 
-# amendment-arbiter uses xhigh (the only agent with this token).
-assert_effort "$AGENTS_DIR/rnd-amendment-arbiter.md" "xhigh"
-
 # --- Explicit (model, effort) pair checks for adaptive-agent baselines ----------
 
 assert_model_effort "$AGENTS_DIR/rnd-planner.md"           "opus"   "high"
 assert_model_effort "$AGENTS_DIR/rnd-verifier.md"          "opus"   "high"
-assert_model_effort "$AGENTS_DIR/rnd-amendment-arbiter.md" "opus"   "xhigh"
 assert_model_effort "$AGENTS_DIR/rnd-polisher.md"          "opus"   "high"
 assert_model_effort "$AGENTS_DIR/rnd-builder.md"           "sonnet" "high"
 

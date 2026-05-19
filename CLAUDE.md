@@ -53,32 +53,29 @@ plugins/rnd-framework/
 
 ### Execution Model
 
-Eleven specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
+Nine specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|
 | Planning | `rnd-planner` (opus/high, adaptive) | Decomposes tasks into pre-registered sub-tasks with testable criteria; capped at max 4 tasks/wave with min 1-hour scope and forced coalescing; emits `Heuristic ceiling: <integer>` meta-field in plan.md (consumed by the plan-size stop condition: halt when `task_count > RND_STOP_PLAN_RATIO * ceiling`, default ratio 1.5); pre-registrations include a required `## Assumptions` section (`Assumption: ... Refuted by: ...`, placeholder `- None` when none) — the Verifier downgrades a verdict by one tier and emits `gateFired: {gate: "assumption_unchecked"}` when an Assumption's Refuted-by action was declared but not executed |
 | Building | `rnd-builder` (sonnet/high, adaptive, worktree) | Implements tasks using TDD; produces build manifest + self-assessment |
 | Reality Audit | `rnd-reality-auditor` (sonnet/low) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies`; runs an "Existence Pre-Pass" Step 0 (mechanical probes — file-execution only, no `python -c`/`node -e`/`bun -e`) that verifies every imported module / third-party method call / RFC or error-code citation / env-var name actually exists in the form claimed, before adversarial experiments; MISSING short-circuits to `INVALID_FOUND` and emits a `FALSE_PASS_PROXY` calibration record if a prior Builder PASS exists for the task |
-| Proof Gate | `rnd-proof-gate` (sonnet/low) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH; amendments to proven criteria force a re-prove before re-verification |
-| Verification | `rnd-verifier` (sonnet/high, adaptive, worktree) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; writes `T<id>-verification.md` full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED) with a required `## Coverage Gaps` section (`Checked:` + `Couldn't check:` sub-bullets — enforced by `coverage-gaps-gate.sh`); AMEND_REQUIRED (cited concrete spec defect required; routes to amendment arbiter; clean-slate re-verification afterward) pauses the task without blocking the wave; information barrier enforced; HIGH criticality routes through wave-batched multi-judge with verdict-based escalation gate (only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION/AMEND_REQUIRED escalates to full dual-judge; `RND_MULTI_JUDGE_ALWAYS=1` restores always-dual-judge) |
-| Amendment | `rnd-amendment-arbiter` (opus/xhigh, non-adaptive) | Evaluates AMEND_REQUIRED verdicts; proposes spec corrections (AMEND), recommends rebuild (REBUILD), or routes to Planner re-plan (ESCALATE_REPLAN); inputs strictly limited to original pre-reg + Verifier verdict |
+| Proof Gate | `rnd-proof-gate` (sonnet/low) | Formal Lean 4 proofs of pre-registration criteria (advisory); only runs when the task has `Proof: lean` and Lean is on PATH |
+| Verification | `rnd-verifier` (sonnet/high, adaptive, worktree) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a per-task verdict map; writes `T<id>-verification.md` full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION) with a required `## Coverage Gaps` section (`Checked:` + `Couldn't check:` sub-bullets — enforced by `coverage-gaps-gate.sh`) and required `## Case for PASS` / `## Case for FAIL` sections (enforced by `verifier-case-gate.sh`); information barrier enforced |
 | Cleanup | `rnd-cleanup` (sonnet/medium, worktree) | Per-task dead-code sweep after Verifier PASS; detects dead functions, orphan files, duplicate implementations, stale comments; applies fixes and rolls back if cleanup breaks re-verification |
 | Polish | `rnd-polisher` (opus/high, non-adaptive, per-wave, worktree) | Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift, helpers that should be lifted to shared locations, and structural inconsistencies; runs after all per-task cleanup; rolls back if re-verification breaks; reports to `$RND_DIR/polish/wave-<N>-polish-report.md` |
 | Integration | `rnd-integrator` (haiku/low) | Merges verified outputs, runs integration/system tests |
 | Debugging | `rnd-debugger` (sonnet/high, adaptive, worktree) | Root cause analysis for failing tasks |
 | Data Science | `rnd-data-scientist` (sonnet/medium) | Standalone specialist for numerical/analytical work |
-| Drift detection | `rnd-drift-detector` (sonnet/medium) | Per-wave drift analysis between Builder and Verifier; reads plan.md, Builder manifests, and audit.jsonl; emits a structured drift report to `$RND_DIR/drift/`; report schema enforced by `drift-report-gate.sh` |
 
 **Dispatch Policy (criticality-driven, per-agent):** the orchestrator overrides the spawned agent's model based on the per-task `Criticality` field. The mapping is per-agent, not a single global table:
 
-| Agent | LOW | MEDIUM | HIGH |
+| Agent | LOW | NORMAL | HIGH |
 |---|---|---|---|
 | `rnd-planner` | opus/high | opus/high | opus/xhigh |
 | `rnd-verifier` | sonnet/high | opus/high | opus/xhigh |
 | `rnd-builder` | sonnet/high | sonnet/high | opus/high |
 | `rnd-debugger` | sonnet/high | sonnet/high | opus/high |
-| `rnd-amendment-arbiter` (non-adaptive) | opus/xhigh | opus/xhigh | opus/xhigh |
 | `rnd-polisher` (non-adaptive, per-wave) | opus/high | opus/high | opus/xhigh |
 
 If `Criticality` is absent (or no pre-reg exists), the orchestrator does NOT override and the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value. Non-adaptive agents always run at their listed model regardless of criticality. Full policy lives in the `rnd-framework:rnd-orchestration` skill.
@@ -149,7 +146,7 @@ Artifacts live in a centralized directory outside the project tree, computed by 
 ```
 ~/.claude/.rnd/<basename>-<hash>/          # Project slug; un-partitioned at the top
 ├── .active-base-dir                       # Cache: active branch-scoped base dir (fast-path in lib.sh::active_session_dir)
-├── calibration.jsonl                      # Verdict-accuracy tracking, project-wide. Records may include: amendmentData {userDecision, arbitersRecommendation}; multiJudge {judgeA, judgeB, agreed, resolution, tiebreaker}; task_type (refactor|new-feature|bugfix|docs|config|infra); gateFired {gate, outcome, task_id}
+├── calibration.jsonl                      # Verdict-accuracy tracking, project-wide. Records may include: task_type (refactor|new-feature|bugfix|docs|config|infra); gateFired {gate, outcome, task_id}; verification_mode (property|prose|skipped)
 └── branches/<branch>/                     # Branch-scoped partition (slashes → nested dirs)
     ├── .current-session                   # Active session ID
     ├── .session-git-root                  # Git root that started the session (written by session-start, read by cwd-changed)
@@ -176,8 +173,7 @@ Artifacts live in a centralized directory outside the project tree, computed by 
         │   ├── decisions.md               # Cross-phase judgment-call log (rejected alternatives)
         │   ├── plan-briefs.md             # Planner user-facing narrative
         │   ├── T<id>-briefs.md            # Per-task user-facing narrative (Builder/Debugger)
-        │   ├── wave-<N>-briefs.md         # Per-wave integration narrative
-        │   └── T<id>-amendments.md        # Amendment-arbiter proposals (barrier-protected; orchestrator-owned write)
+        │   └── wave-<N>-briefs.md         # Per-wave integration narrative
         └── iteration-log.md               # Build-verify cycle tracking
 ```
 
@@ -197,7 +193,7 @@ Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`,
 - **Tests** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`.
 - **Tooling hierarchy** — system CLI tools first (`prefer-system-tools` skill), then bash scripts, then Python as last resort.
 - **File creation** — always use `Write`/`Edit`, never bash heredocs (`cat > file << 'EOF'`).
-- **Report surfacing** — the three output styles each carry a "Report Surfacing Protocol" requiring the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verdict maps, reality reports, diagnoses, integration reports, proofs, amendments, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log.
+- **Report surfacing** — the three output styles each carry a "Report Surfacing Protocol" requiring the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verdict maps, reality reports, diagnoses, integration reports, proofs, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log.
 
 ## Working on This Codebase
 

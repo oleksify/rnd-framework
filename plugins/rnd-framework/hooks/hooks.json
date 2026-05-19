@@ -271,15 +271,6 @@
             "args": []
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/drift-report-gate.sh",
-            "args": []
-          }
-        ]
       }
     ],
     "PostToolUse": [

@@ -39,11 +39,7 @@ If $ARGUMENTS is a task ID: verify that one task.
 If $ARGUMENTS is a wave: verify all tasks in the wave.
 If $ARGUMENTS is "all": find all built but unverified tasks.
 
-**Wave-batched spawn:** Spawn one Verifier agent per wave (not per task). The Verifier receives all task pre-registrations for the wave and returns a `wave-N-verdict-map.json` plus per-task artifacts.
-
-**Criticality routing:**
-- Tasks with `Criticality: LOW` or `Criticality: NORMAL` → single-judge verification.
-- Tasks with `Criticality: HIGH` → invoke `rnd-framework:rnd-multi-judge` for multi-judge consensus.
+**Wave-batched spawn:** Spawn one Verifier agent per wave (not per task). The Verifier receives all task pre-registrations for the wave and returns a `wave-N-verdict-map.json` plus per-task artifacts. Criticality drives the per-agent model boost (see `rnd-framework:rnd-orchestration`); there is no parallel-judge mode.
 
 ```
 Agent({

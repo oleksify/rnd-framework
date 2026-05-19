@@ -8,7 +8,7 @@ effort: medium
 
 # R&D Verification
 
-Independently verify a Builder's output against pre-registered success criteria — the quality gate checkpoint. Nothing proceeds without your PASS. Assess work purely against the spec, never influenced by the Builder's framing. Default mode for `Criticality: LOW` or `NORMAL` tasks; for `Criticality: HIGH` the orchestrator uses `rnd-framework:rnd-multi-judge`.
+Independently verify a Builder's output against pre-registered success criteria — the quality gate checkpoint. Nothing proceeds without your PASS. Assess work purely against the spec, never influenced by the Builder's framing.
 
 ## The Iron Laws
 
@@ -32,9 +32,6 @@ You receive ONLY the pre-registration, Builder's code/tests/artifacts, and codeb
 | All PASS | Any FAIL | PASS_QUALITY_NEEDS_ITERATION |
 | Any FAIL (fixable) | Any | NEEDS_ITERATION |
 | Any FAIL (unfixable) | Any | FAIL |
-| Concrete spec defect cited | Any | AMEND_REQUIRED |
-
-`AMEND_REQUIRED` — emit only when the Verifier can cite a concrete spec defect in the pre-registration itself (e.g., contradictory criteria, criterion referencing nonexistent system state). When in doubt between `NEEDS_ITERATION` and `AMEND_REQUIRED`, choose `NEEDS_ITERATION`. On re-verification after amendment, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment — clean-slate re-verification.
 
 ## Batch Wave Verification
 
@@ -43,16 +40,14 @@ When the orchestrator spawns the Verifier for an entire wave (all task pre-regs 
 **Batch flow:**
 1. Receive all task pre-registrations for the wave in a single prompt.
 2. For each task in the wave, execute steps 1–6 below sequentially (complete one task fully before beginning the next).
-3. For each task: write a `T<id>-verification.md` full prose report for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED.
+3. For each task: write a `T<id>-verification.md` full prose report for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION.
 4. After completing all tasks in the wave, aggregate per-task verdicts into `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
 The information barrier applies identically to batched wave verification — the Verifier must not read self-assessment files for any task in the wave.
 
 ## Full Prose Report: Every Verdict
 
-**On every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, AMEND_REQUIRED):** write a full `T<id>-verification.md` prose report. No shortcuts — all verdicts produce the same prose format.
-
-**On AMEND_REQUIRED:** the `feedback` field must include the cited spec defect verbatim. On clean-slate re-verification after an amendment is approved, the Verifier receives only the (now-mutated) pre-reg with no mention of the amendment that occurred.
+**On every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION):** write a full `T<id>-verification.md` prose report. No shortcuts — all verdicts produce the same prose format.
 
 ## Process
 
@@ -79,7 +74,7 @@ For each assumption declared in the pre-registration's `Assumptions` section:
 
 4. If the pre-registration has no `Assumptions` section at all (omitted rather than `- None`): flag this as a quality violation — the section is required. Apply the `PASS → PASS_QUALITY_NEEDS_ITERATION` downgrade if all other criteria pass.
 
-**Enforcement decision:** unchecked assumptions are a NEEDS_ITERATION trigger, not a hard FAIL, because a missing refutation step is recoverable. Only a concrete spec defect (contradictory or impossible criteria) warrants AMEND_REQUIRED or FAIL.
+**Enforcement decision:** unchecked assumptions are a NEEDS_ITERATION trigger, not a hard FAIL, because a missing refutation step is recoverable. Only a concrete spec defect (contradictory or impossible criteria) warrants FAIL.
 
 ### 2. Write Independent Experiment Tests
 Before reading Builder code or tests, write one experiment test per criterion using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<criterion-slug>.test.<ext>`.
@@ -221,7 +216,7 @@ Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-fail
 ### 6. Produce Verification Report
 > If `$RND_DIR` not set, compute via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
-Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED. Include narrative context, per-criterion evidence citations, and an overall verdict section.
+Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Include narrative context, per-criterion evidence citations, and an overall verdict section.
 
 ```markdown
 # Verification Report: T<id>
@@ -242,7 +237,7 @@ Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEE
 
 Every prose verification report MUST include both `## Case for PASS` and `## Case for FAIL` sections regardless of the final verdict, with non-trivial content in each. The verifier-case-gate.sh hook blocks completion otherwise.
 
-**Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and AMEND_REQUIRED. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
+**Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
 - `Checked:` lists every VAL assertion command you ran, every code path you traced, every test you executed independently.
 - `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the worktree).
 
@@ -289,10 +284,6 @@ A criterion is binary. **When in doubt between NEEDS_ITERATION and FAIL, choose 
 | **Immutability by default** — immutable unless mutation required | Shell: set-once variable not `local -r`. JS/TS: once-assigned binding uses `let` |
 | **No flag parameters** — booleans in signatures indicate two functions in one | Function signature has a boolean selecting between two distinct code paths |
 | **No commented-out code** — dead code deleted | Code block commented out with no explanation (exception: ticket/decision references) |
-
-## Multi-Judge Mode
-
-For parallel judge and tiebreaker roles, see `rnd-framework:rnd-multi-judge`. The information barrier still applies in all multi-judge roles — MUST NOT read self-assessment files. See `rnd-framework:rnd-failure-modes` for the full anti-patterns catalog.
 
 ## Common Rationalizations
 
@@ -360,6 +351,5 @@ Scan before writing any verdict. The full catalog of 18 failure modes is in `rnd
 
 - `rnd-framework:rnd-experiments` — How to write independent experiment tests from spec in Step 2
 - `rnd-framework:rnd-failure-modes` — Full catalog of 18 verification anti-patterns; scan before writing any verdict
-- `rnd-framework:rnd-multi-judge` — Full protocol for parallel judge and tiebreaker roles
 - `rnd-framework:rnd-debugging` — For root cause analysis of failures found during verification
 - `rnd-framework:rnd-iteration` — For how feedback flows back to Builder

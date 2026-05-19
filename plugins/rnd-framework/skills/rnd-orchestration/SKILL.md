@@ -41,7 +41,7 @@ The framework defines 10 specialized agent roles. Dedicated agents are spawned f
 **Builder** — Writes code + tests + honest self-assessment. Uses `rnd-framework:rnd-building` skill. Does NOT verify own work.
 **Proof Gate** — Attempts formal Lean 4 proofs of pre-registration criteria. Advisory — results inform the Verifier but do not block the pipeline. Skips when Lean is unavailable.
 **Reality Auditor** — Adversarially verifies external service contracts (SQL schemas, HTTP endpoints, env vars, SDK behavior). Blocking — INVALID_FOUND routes the task back to the Builder before the Verifier sees it.
-**Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook). In multi-judge mode, two independent Verifiers run in parallel; if they disagree, a third **Tiebreaker** Verifier receives both reports (but never self-assessments) and issues the final verdict.
+**Verifier** — Checks output against pre-registered criteria. Uses `rnd-framework:rnd-verification` skill. Does NOT read Builder's self-assessment (enforced by `read-gate.sh` hook).
 **Cleanup** — Post-verification per-task entropy reduction: dead code, orphan files, duplicate implementations, stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Uses `rnd-framework:rnd-cleanup` skill.
 **Polisher** — Wave-level cross-task seam fixer: detects cross-task duplication, naming and API drift across the wave, helpers that should be lifted to shared locations, and structural inconsistencies. Runs after all per-task cleanup completes. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/polish/wave-<N>-polish-report.md`.
 **Integrator** — Merges verified outputs, runs integration/system tests. Uses `rnd-framework:rnd-integration` skill.
@@ -146,18 +146,15 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 
 **Per-agent criticality matrix:**
 
-| Agent | LOW | MEDIUM | HIGH | HIGH-PII | Adaptive? |
-|---|---|---|---|---|---|
-| `rnd-planner` | opus/high | opus/high | opus/xhigh | opus/xhigh | yes |
-| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | dual-spawn (sonnet + opus) | yes |
-| `rnd-builder` | sonnet/high | sonnet/high | opus/high | opus/high | yes |
-| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | opus/high | yes |
-| `rnd-amendment-arbiter` | opus/xhigh | opus/xhigh | opus/xhigh | opus/xhigh | no (fixed) |
-| `rnd-polisher` | opus/high | opus/high | opus/xhigh | opus/xhigh | no (per-wave, fixed) |
+| Agent | LOW | NORMAL | HIGH | Adaptive? |
+|---|---|---|---|---|
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
-> **Note on non-adaptive agents:** `rnd-amendment-arbiter` and `rnd-polisher` always run at their listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, proof-gate, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
-
-> **Note on HIGH-PII verifier dispatch:** When `Criticality: HIGH-PII`, the `rnd-verifier` row specifies `dual-spawn (sonnet + opus)` — two independent Verifier instances run in parallel on different model lineages. Unanimous PASS is required for a final PASS verdict; any disagreement routes to the existing tiebreaker protocol (see Phase 3 in `rnd-start.md`). Cost implication: HIGH-PII tasks incur 2× the standard Verifier token spend. Use this tier sparingly — only for auth, payment processing, PII handling, or other portal-to-hell scopes where cross-lineage consensus is worth the cost.
+> **Note on non-adaptive agents:** `rnd-polisher` always runs at its listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, proof-gate, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
 
 **Fallback rule.** If the task has no `Criticality` field (or no pre-reg), the orchestrator does NOT override — the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 
@@ -186,7 +183,6 @@ Agent({
 | `rnd-debugger` | sonnet | high | yes |
 | `rnd-proof-gate` | sonnet | low | no (advisory) |
 | `rnd-reality-auditor` | sonnet | low | no |
-| `rnd-amendment-arbiter` | opus | xhigh | no |
 | `rnd-cleanup` | sonnet | medium | no |
 | `rnd-polisher` | opus | high | no |
 | `rnd-integrator` | haiku | low | no |

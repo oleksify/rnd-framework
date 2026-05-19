@@ -191,16 +191,16 @@ assert_exit_code "NEEDS_ITERATION verdict with both sections → exit 0" 0
 rm -f "$REPORT_H"
 
 # ---------------------------------------------------------------------------
-# Test 9: AMEND_REQUIRED verdict with both sections → exit 0 (VAL-BEHAV-010)
+# Test 9: PASS_QUALITY_NEEDS_ITERATION verdict with both sections → exit 0
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- verifier-case-gate: AMEND_REQUIRED verdict with both sections passes ---'
+printf '\n%s\n' '--- verifier-case-gate: PASS_QUALITY_NEEDS_ITERATION verdict with both sections passes ---'
 
 REPORT_I="${TMP_SESSION}/verifications/T1-verification.md"
-printf '# Verification Report: T1\n## Overall Verdict: AMEND_REQUIRED\n## Case for PASS\nImplementation logic is correct but pre-registration criterion is ambiguous.\n## Case for FAIL\nCriteria text is contradictory — cannot satisfy both simultaneously.\n## Coverage Gaps\n- Checked: spec analysis and implementation review\n- Couldn'"'"'t check: resolve spec ambiguity without amendment\n## Feedback\nSpec defect: contradictory criteria.\n' \
+printf '# Verification Report: T1\n## Overall Verdict: PASS_QUALITY_NEEDS_ITERATION\n## Case for PASS\nAll Correctness criteria met with clear evidence.\n## Case for FAIL\nQuality tier has a missing naming convention check that could be tightened.\n## Coverage Gaps\n- Checked: all VAL assertions and Builder tests\n- Couldn'"'"'t check: long-running integration scenarios\n## Feedback\nQuality polish needed on naming.\n' \
   > "$REPORT_I"
 
 run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
-assert_exit_code "AMEND_REQUIRED verdict with both sections → exit 0" 0
+assert_exit_code "PASS_QUALITY_NEEDS_ITERATION verdict with both sections → exit 0" 0
 
 rm -f "$REPORT_I"
 

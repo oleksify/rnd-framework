@@ -54,22 +54,10 @@ $RND_DIR/verifications/T<id>-experiments/
 
 Example: `$RND_DIR/verifications/T3-experiments/`
 
-**Multi-judge mode:** When operating as one of two parallel judges, the orchestrator passes your judge identity (`judge-a`, `judge-b`, or `tiebreaker`) in the prompt. Use a subdirectory to avoid path collisions:
-
-```
-$RND_DIR/verifications/T<id>-experiments/<judge-id>/
-```
-
-Example: `$RND_DIR/verifications/T3-experiments/judge-a/`
-
-If no judge identity is provided (single-verifier mode), use the flat path.
-
 Create this directory before writing any experiment files:
 
 ```bash
 mkdir -p "$RND_DIR/verifications/T<id>-experiments"
-# or in multi-judge mode:
-mkdir -p "$RND_DIR/verifications/T<id>-experiments/<judge-id>"
 ```
 
 ## Naming Convention

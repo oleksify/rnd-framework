@@ -343,7 +343,7 @@ rnd-framework/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
 │   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer)
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: blocks sed/awk/echo>/inline interpreters//tmp redirects, auto-allows .rnd/; commit protection
+│   ├── bash-gate.sh             # Bash hook: information barrier; blocks destructive git ops, `git add .rnd/`, advisory on `git push` to main/master/production; auto-allows .rnd/ and plugin lib paths; Bash output cache advisory
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
 │   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
@@ -360,7 +360,6 @@ rnd-framework/
 │   ├── format-on-save.sh        # PostToolUse hook: auto-formats code files after Write/Edit using detected project formatter
 │   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
 │   ├── coverage-gaps-gate.sh    # SubagentStop hook scoped to rnd-verifier: blocks missing/trivial ## Coverage Gaps section in T<id>-verification.md
-│   ├── stop-condition-revisions.sh # PreToolUse Write|Edit hook: halts when same file rewritten >= RND_STOP_FILE_REVISIONS times in active task (default 5)
 │   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase
 ├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
 ├── skills/                      # Skills (rnd-* namespace)
@@ -370,7 +369,7 @@ rnd-framework/
 │   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
 │   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
 │   ├── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
-│   └── audit-scan.sh            # audit.jsonl scanner: `revisions <task_id> <path>` counts Write/Edit events; `verdict_history <task_id>` returns verdict sequence with FLIP_DETECTED on pathological flips
+│   └── audit-scan.sh            # audit.jsonl scanner: `verdict_history <task_id>` returns verdict sequence with FLIP_DETECTED on pathological flips
 ├── tests/                       # Bash test suite for hooks and lib scripts
 └── README.md
 ```

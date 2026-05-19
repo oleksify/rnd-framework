@@ -95,19 +95,7 @@ assert_stderr_contains() {
 }
 
 # ---------------------------------------------------------------------------
-# Blocks sed/awk with stderr mentioning "Edit tool", exit 2
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'sed s/foo/bar/ file.txt')"
-assert_exit   "sed → exit 2" 2
-assert_stderr_contains "sed → stderr mentions Edit tool" "Edit tool"
-
-run_hook "$(payload "awk '{print \$1}' file")"
-assert_exit   "awk → exit 2" 2
-assert_stderr_contains "awk → stderr mentions Edit tool" "Edit tool"
-
-# ---------------------------------------------------------------------------
-# cat/head/tail/grep/rg/find are NOT blocked (tool-discipline read-side gates removed)
+# cat/head/tail/grep/rg/find are NOT blocked (read-side tools always allowed)
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'cat somefile')"
@@ -146,23 +134,7 @@ run_hook "$(payload 'npm test | grep FAIL')"
 assert_exit   "grep pipe filter → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Blocks echo/printf with file redirect to non-.rnd/, non-/dev/ paths
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'echo foo > output.txt')"
-assert_exit   "echo > output.txt → exit 2" 2
-assert_stderr_contains "echo > output.txt → Write tool" "Write tool"
-
-run_hook "$(payload "printf '%s' data > file.txt")"
-assert_exit   "printf > file.txt → exit 2" 2
-assert_stderr_contains "printf > file.txt → Write tool" "Write tool"
-
-run_hook "$(payload 'echo content > /tmp/regular.txt')"
-assert_exit   "echo > /tmp/regular.txt → exit 2" 2
-assert_stderr_contains "echo > /tmp/regular.txt → Write tool" "Write tool"
-
-# ---------------------------------------------------------------------------
-# Allows echo/printf to /dev/ and .rnd/ paths
+# echo/printf: /dev/ and .rnd/ paths pass through; .rnd/ gets auto-allow JSON
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo foo > /dev/null')"
@@ -180,16 +152,16 @@ assert_exit   "printf > .rnd/ → exit 0" 0
 assert_stdout_contains "printf > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
-# Allows echo/printf without redirect (outputs allow JSON)
+# echo/printf without redirect: exit 0, no opinion
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'echo hello')"
 assert_exit   "echo without redirect → exit 0" 0
-assert_stdout_contains "echo without redirect → allow JSON" '"permissionDecision":"allow"'
+assert_stdout_empty "echo without redirect → empty stdout (no opinion)"
 
 run_hook "$(payload 'printf hello')"
 assert_exit   "printf without redirect → exit 0" 0
-assert_stdout_contains "printf without redirect → allow JSON" '"permissionDecision":"allow"'
+assert_stdout_empty "printf without redirect → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
 # Blocks git add .rnd/ with stderr "BLOCKED", exit 2
@@ -238,22 +210,9 @@ assert_exit   "git push --tags → exit 0" 0
 assert_stdout_empty "git push --tags → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# Detects prohibited commands after &&, ;, ||, | operators
+# read-side tools in compound commands are allowed
 # ---------------------------------------------------------------------------
 
-run_hook "$(payload "ls && sed -i 's/old/new/' file")"
-assert_exit   "sed after && → exit 2" 2
-assert_stderr_contains "sed after && → Edit tool" "Edit tool"
-
-run_hook "$(payload "npm run build && awk '{print \$1}' file")"
-assert_exit   "awk after && → exit 2" 2
-assert_stderr_contains "awk after && → Edit tool" "Edit tool"
-
-run_hook "$(payload "ls ; awk '{print \$1}' file")"
-assert_exit   "awk after ; → exit 2" 2
-assert_stderr_contains "awk after ; → Edit tool" "Edit tool"
-
-# read-side tools in compound commands are allowed
 run_hook "$(payload 'npm install && cat package.json')"
 assert_exit   "cat after && → exit 0 (no opinion)" 0
 
@@ -267,40 +226,12 @@ run_hook "$(payload 'test -f file || cat fallback.txt')"
 assert_exit   "cat after || → exit 0 (no opinion)" 0
 
 # ---------------------------------------------------------------------------
-# Detects prohibited commands inside $() and backtick substitutions
+# cd prefix stripping: cd chains pass through
 # ---------------------------------------------------------------------------
-
-run_hook "$(payload "echo \$(sed s/a/b/ file)")"
-assert_exit   "sed inside \$() → exit 2" 2
-assert_stderr_contains "sed inside \$() → Edit tool" "Edit tool"
-
-run_hook "$(payload "ls && echo \`awk '{print \$1}' file\`")"
-assert_exit   "awk inside backticks → exit 2" 2
-assert_stderr_contains "awk inside backticks → Edit tool" "Edit tool"
-
-# ---------------------------------------------------------------------------
-# Strips cd prefixes before checking segments
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'cd /some/path && sed s/a/b/ f')"
-assert_exit   "cd && sed → exit 2 (cd stripped, sed blocked)" 2
-assert_stderr_contains "cd && sed → Edit tool" "Edit tool"
 
 run_hook "$(payload 'cd /path && cd /other && ls')"
 assert_exit   "cd && cd && ls → exit 0" 0
 assert_stdout_empty "cd && cd && ls → empty stdout (no opinion)"
-
-run_hook "$(payload 'cd /path ; sed s/a/b/ f')"
-assert_exit   "cd ; sed → exit 2" 2
-assert_stderr_contains "cd ; sed → Edit tool" "Edit tool"
-
-run_hook "$(payload 'cd /path; sed s/a/b/ f')"
-assert_exit   "cd; sed (no space) → exit 2" 2
-assert_stderr_contains "cd; sed (no space) → Edit tool" "Edit tool"
-
-run_hook "$(payload 'cd /a ; cd /b ; sed s/x/y/ file')"
-assert_exit   "cd ; cd ; sed → exit 2" 2
-assert_stderr_contains "cd ; cd ; sed → Edit tool" "Edit tool"
 
 # ---------------------------------------------------------------------------
 # Auto-allows commands containing .rnd/ or rnd-dir.sh
@@ -322,12 +253,7 @@ run_hook "$(payload 'npm install && bun run /Users/alice/.claude/.rnd/check.ts')
 assert_exit   ".rnd/ after && → exit 0 allow" 0
 assert_stdout_contains ".rnd/ after && → allow JSON" '"permissionDecision":"allow"'
 
-# Tool discipline overrides .rnd/ auto-allow (write-side only: sed/awk still blocked)
-run_hook "$(payload 'sed s/foo/bar/ /Users/alice/.claude/.rnd/plan.md')"
-assert_exit   "sed .rnd/ → exit 2 (tool discipline overrides)" 2
-assert_stderr_contains "sed .rnd/ → Edit tool" "Edit tool"
-
-# cat on .rnd/ is now allowed (read-side gate removed)
+# cat on .rnd/ is auto-allowed
 run_hook "$(payload 'cat /Users/alice/.claude/.rnd/builds/manifest.md')"
 assert_exit   "cat .rnd/ → exit 0 (auto-allow)" 0
 assert_stdout_contains "cat .rnd/ → allow JSON" '"permissionDecision":"allow"'
@@ -371,20 +297,8 @@ run_hook '{"no_tool_input":"here"}'
 assert_exit   "JSON without tool_input → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Additional correctness checks: echo redirect variations
+# git add .rnd/ via compound command; git push advisory via compound command
 # ---------------------------------------------------------------------------
-
-run_hook "$(payload 'echo foo > /dev/stderr > /tmp/out')"
-assert_exit   "echo > /dev/stderr > /tmp/out → exit 2" 2
-assert_stderr_contains "echo multiple redirects → Write tool" "Write tool"
-
-run_hook "$(payload 'printf data > /dev/null > file.txt')"
-assert_exit   "printf > /dev/null > file.txt → exit 2" 2
-assert_stderr_contains "printf multiple redirects → Write tool" "Write tool"
-
-run_hook "$(payload 'npm test && echo result > output.txt')"
-assert_exit   "echo redirect after && → exit 2" 2
-assert_stderr_contains "echo redirect after && → Write tool" "Write tool"
 
 run_hook "$(payload 'npm test && echo result > /dev/null')"
 assert_exit   "echo > /dev/null after && → exit 0" 0
@@ -412,55 +326,10 @@ assert_exit   "npm install → exit 0 (no opinion)" 0
 assert_stdout_empty "npm install → empty stdout"
 
 run_hook "$(payload 'npm test && echo results')"
-assert_exit   "npm test && echo results → exit 0 allow" 0
-assert_stdout_contains "npm test && echo results → allow JSON" '"permissionDecision":"allow"'
+assert_exit   "npm test && echo results → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Blocks inline interpreter execution (-c/-e flags)
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload "python3 -c 'print(\"hi\")'")";
-assert_exit   "python3 -c → exit 2" 2
-assert_stderr_contains "python3 -c → inline" "inline"
-
-run_hook "$(payload "python -c 'import json; print(json.dumps({}))'")";
-assert_exit   "python -c → exit 2" 2
-assert_stderr_contains "python -c → inline" "inline"
-
-run_hook "$(payload "node -e 'console.log(1)'")";
-assert_exit   "node -e → exit 2" 2
-assert_stderr_contains "node -e → inline" "inline"
-
-run_hook "$(payload "bun -e 'console.log(1)'")";
-assert_exit   "bun -e → exit 2" 2
-assert_stderr_contains "bun -e → inline" "inline"
-
-run_hook "$(payload "bun eval 'code'")";
-assert_exit   "bun eval → exit 2" 2
-assert_stderr_contains "bun eval → inline" "inline"
-
-run_hook "$(payload "perl -e 'print \"hi\"'")";
-assert_exit   "perl -e → exit 2" 2
-assert_stderr_contains "perl -e → inline" "inline"
-
-run_hook "$(payload "ruby -e 'puts \"hi\"'")";
-assert_exit   "ruby -e → exit 2" 2
-assert_stderr_contains "ruby -e → inline" "inline"
-
-# ---------------------------------------------------------------------------
-# Blocks piped interpreter execution (bare interpreter after pipe)
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload "echo 'code' | python3")";
-assert_exit   "echo | python3 → exit 2" 2
-assert_stderr_contains "echo | python3 → inline" "inline"
-
-run_hook "$(payload "echo 'code' | node")";
-assert_exit   "echo | node → exit 2" 2
-assert_stderr_contains "echo | node → inline" "inline"
-
-# ---------------------------------------------------------------------------
-# Allows interpreter file execution and module invocation
+# Interpreter invocations: all forms pass through
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'python file.py')"
@@ -478,6 +347,12 @@ assert_stdout_empty "python -m pytest → empty stdout (no opinion)"
 run_hook "$(payload 'python3 -m http.server')"
 assert_exit   "python3 -m http.server → exit 0" 0
 assert_stdout_empty "python3 -m http.server → empty stdout (no opinion)"
+
+run_hook "$(payload 'python3 -c "print(1)"')"
+assert_exit   "python3 -c → exit 0 (pass-through)" 0
+
+run_hook "$(payload 'node -e "console.log(1)"')"
+assert_exit   "node -e → exit 0 (pass-through)" 0
 
 run_hook "$(payload 'bun test')"
 assert_exit   "bun test → exit 0" 0
@@ -508,23 +383,7 @@ assert_exit   "lean file.lean → exit 0 (not an interpreter match)" 0
 assert_stdout_empty "lean file.lean → empty stdout (no opinion)"
 
 # ---------------------------------------------------------------------------
-# Blocks /tmp redirects in non-echo commands
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'npm test > /tmp/log.txt')"
-assert_exit   "npm test > /tmp/ → exit 2" 2
-assert_stderr_contains "npm test > /tmp/ → /tmp" "/tmp"
-
-run_hook "$(payload 'python3 script.py > /tmp/out')"
-assert_exit   "python3 script.py > /tmp/ → exit 2" 2
-assert_stderr_contains "python3 script.py > /tmp/ → /tmp" "/tmp"
-
-run_hook "$(payload 'command >> /tmp/append.txt')"
-assert_exit   "command >> /tmp/ → exit 2" 2
-assert_stderr_contains "command >> /tmp/ → /tmp" "/tmp"
-
-# ---------------------------------------------------------------------------
-# /dev/ redirect and non-/tmp redirect are NOT blocked
+# /dev/ redirect and /tmp redirect are NOT blocked
 # ---------------------------------------------------------------------------
 
 run_hook "$(payload 'npm test > /dev/null')"
@@ -535,34 +394,12 @@ run_hook "$(payload 'npm test > output.log')"
 assert_exit   "npm test > output.log → exit 0" 0
 assert_stdout_empty "npm test > output.log → empty stdout (no opinion)"
 
-# ---------------------------------------------------------------------------
-# /tmp redirect: compound commands starting with echo/printf
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'echo Starting && npm test > /tmp/log.txt')"
-assert_exit   "echo && npm test > /tmp/ → exit 2 (compound, /tmp guard not skipped)" 2
-assert_stderr_contains "echo && npm > /tmp/ → /tmp" "/tmp"
-
-run_hook "$(payload 'printf msg && pytest >> /tmp/out.txt')"
-assert_exit   "printf && pytest >> /tmp/ → exit 2" 2
-assert_stderr_contains "printf && pytest >> /tmp/ → /tmp" "/tmp"
-
-# Simple echo > /tmp/ still gets "Write tool" message from check_echo_redirect
-run_hook "$(payload 'echo content > /tmp/regular.txt')"
-assert_exit   "echo > /tmp/ (simple) → exit 2" 2
-assert_stderr_contains "echo > /tmp/ (simple) → Write tool" "Write tool"
+run_hook "$(payload 'npm test > /tmp/log.txt')"
+assert_exit   "npm test > /tmp/ → exit 0 (pass-through)" 0
 
 # ---------------------------------------------------------------------------
-# Env-var prefix: tool discipline detects commands after FOO=bar
+# Env-var prefix: read-side commands and git advisory preserved
 # ---------------------------------------------------------------------------
-
-run_hook "$(payload 'FOO=bar sed s/a/b/ file')"
-assert_exit   "FOO=bar sed → exit 2" 2
-assert_stderr_contains "FOO=bar sed → Edit tool" "Edit tool"
-
-run_hook "$(payload 'FOO=bar BAZ=quux sed s/a/b/ file')"
-assert_exit   "FOO=bar BAZ=quux sed → exit 2 (multiple env vars)" 2
-assert_stderr_contains "FOO=bar BAZ=quux sed → Edit tool" "Edit tool"
 
 # read-side commands with env prefix are allowed
 run_hook "$(payload 'FOO=bar cat somefile')"
@@ -582,26 +419,14 @@ assert_stdout_empty "FOO=bar npm test → empty stdout"
 run_hook "$(payload 'MIX_ENV=test mix ecto.reset')"
 assert_exit   "MIX_ENV=test mix ecto.reset → exit 0 (allowed)" 0
 
-# Env-var prefix in compound command (read-side allowed, write-side blocked)
+# Env-var prefix in compound command
 run_hook "$(payload 'ENV_VAR=value npm test && grep pattern file')"
 assert_exit   "ENV_VAR=value npm test && grep → exit 0" 0
-
-run_hook "$(payload 'ENV_VAR=value npm test && sed s/a/b/ file')"
-assert_exit   "ENV_VAR=value npm test && sed → exit 2" 2
-assert_stderr_contains "ENV_VAR=value && sed → Edit tool" "Edit tool"
 
 # Env-var prefix with git push advisory
 run_hook "$(payload 'FOO=bar git push origin main')"
 assert_exit   "FOO=bar git push main → exit 0 (advisory)" 0
 assert_stdout_contains "FOO=bar git push main → advisory" "systemMessage"
-
-# ---------------------------------------------------------------------------
-# /tmp redirect: no-space before > (cmd>/tmp/out)
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'npm test>/tmp/log.txt')"
-assert_exit   "npm test>/tmp/ (no space) → exit 2" 2
-assert_stderr_contains "npm test>/tmp/ (no space) → /tmp" "/tmp"
 
 # ---------------------------------------------------------------------------
 # Information barrier: self-assessment commands
@@ -633,19 +458,14 @@ assert_stderr_contains "SELF-ASSESSMENT uppercase + verifier → INFORMATION BAR
 run_hook "$(payload_with_agent 'ls /rnd/builds/T3-Self-Assessment.md' '')"
 assert_exit   "Self-Assessment mixed case + empty agent → exit 0 (orchestrator allowed)" 0
 
-# barrier fires before tool discipline: diff is not blocked by tool discipline, but barrier catches it
+# barrier fires before other checks: diff is not otherwise blocked, but barrier catches it
 run_hook "$(payload_with_agent 'diff T3-self-assessment.md other.md' 'rnd-verifier')"
-assert_exit   "diff (not tool-discipline-blocked) + verifier + self-assessment → exit 2" 2
-assert_stderr_contains "diff (barrier before discipline) → INFORMATION BARRIER" "INFORMATION BARRIER"
+assert_exit   "diff (not otherwise blocked) + verifier + self-assessment → exit 2" 2
+assert_stderr_contains "diff (barrier before other checks) → INFORMATION BARRIER" "INFORMATION BARRIER"
 
 # non-self-assessment .rnd/ path + verifier → not blocked by barrier (auto-allow or no-opinion)
 run_hook "$(payload_with_agent 'ls /home/.claude/.rnd/builds/T3-manifest.md' 'rnd-verifier')"
 assert_exit   ".rnd/ manifest path + verifier → exit 0 (no barrier)" 0
-
-# existing tool-discipline blocks still work after barrier is in place
-run_hook "$(payload 'sed s/foo/bar/ file.txt')"
-assert_exit   "sed still blocked after barrier code added → exit 2" 2
-assert_stderr_contains "sed still blocked → Edit tool" "Edit tool"
 
 # bfs with self-assessment path + verifier → barrier blocks
 run_hook "$(payload_with_agent 'bfs /rnd/builds/T3-self-assessment.md' 'rnd-verifier')"
@@ -664,25 +484,6 @@ assert_exit   "bfs self-assessment + rnd-builder → exit 0" 0
 # ugrep with briefs/ path + builder → allowed (barrier does not fire)
 run_hook "$(payload_with_agent 'ugrep -r pattern /home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/' 'rnd-builder')"
 assert_exit   "ugrep /briefs/ + rnd-builder → exit 0" 0
-
-# ---------------------------------------------------------------------------
-# Env-var prefix with quoted value containing internal space — now blocked.
-# strip_env_prefix detects an unmatched leading quote in the value portion of
-# first_word (e.g. FOO="abc) and emits a blocked: message rather than attempting
-# to strip an incomplete prefix. Result: exit 2 (blocked).
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'FOO="abc def" sed s/a/b/ file')"
-assert_exit   'FOO="abc def" sed → exit 2 (unmatched-quote env prefix blocked)' 2
-assert_stderr_contains 'FOO="abc def" sed → blocked message' 'BLOCKED'
-
-# ---------------------------------------------------------------------------
-# Shell loop guard: simple for-loop is detected and blocked (bracket-class fix)
-# ---------------------------------------------------------------------------
-
-run_hook "$(payload 'for i in 1; do echo hi; done')"
-assert_exit   "for i in 1; do echo hi; done → exit 2 (loop guard)" 2
-assert_stderr_contains "for-loop → loop guard message" "for"
 
 # ---------------------------------------------------------------------------
 # Summary

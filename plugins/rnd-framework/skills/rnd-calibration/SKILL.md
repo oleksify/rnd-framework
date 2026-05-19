@@ -82,7 +82,6 @@ The following gates append `gateFired` records to `calibration.jsonl`. Future ga
 | Gate name | Producer | What it records |
 |-----------|----------|-----------------|
 | `existence_prepass` | `rnd-reality-auditor` | Pre-pass existence check result for a declared external reference |
-| `stop_condition_revisions` | orchestrator stop-condition hook | Detects file revision counts exceeding threshold; outcome `FLAGGED` or `CLEAN` |
 | `stop_condition_verdict_flip` | orchestrator post-wave check | Detects PASS→FAIL→PASS or FAIL→PASS→FAIL verdict sequences via `audit-scan.sh verdict_history`; outcome `halted` |
 | `stop_condition_plan_size` | orchestrator post-plan check | Detects task count exceeding `RND_STOP_PLAN_RATIO × Heuristic ceiling`; outcome `halted` |
 | `coverage_gaps_gate` | verifier / SubagentStop enforcement | Records when a pre-reg is missing required coverage sections; outcome `BLOCKED` or `CLEAN` |

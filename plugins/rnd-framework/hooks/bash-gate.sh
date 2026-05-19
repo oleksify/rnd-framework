@@ -5,12 +5,11 @@
 # Fast-path: exits immediately when no active RND session.
 #
 # Responsibilities:
-#   1. Database guard — blocks destructive DB operations (Ecto, Postgres, MySQL, SQLite)
-#   2. Git guards — blocks git add .rnd/ and git push to protected branches
-#   3. Shell loop guard — blocks for/while/until loops (they hang in the Bash tool)
-#   4. /tmp redirect guard — steers writes to $RND_DIR
-#   5. Tool discipline — blocks sed/awk/echo-redirects/inline interpreters
-#   6. Auto-allow — .rnd/ paths, echo/printf without redirect, plugin lib scripts
+#   1. Information barrier — blocks self-assessment/briefs/cleanup reads for rnd-verifier/rnd-polisher
+#   2. Database guard — blocks destructive DB operations (Ecto, Postgres, MySQL, SQLite)
+#   3. Git guards — blocks git add .rnd/, destructive git ops; advisory on git push to protected branches
+#   4. Auto-allow — .rnd/ paths and plugin lib scripts
+#   5. Bash output cache advisory
 #
 # Exit codes:
 #   0 + hookSpecificOutput JSON  — auto-allow
@@ -28,60 +27,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 readonly _CD_AND_PATTERN='^cd[[:space:]]+[^&;]+&&'
 readonly _CD_DSEMI_PATTERN='^cd[[:space:]]+[^&;]+;;'
 readonly _CD_SEMI_PATTERN='^cd[[:space:]]+[^&;]+;'
-readonly _DOLLAR_PAREN_PATTERN='\$\(([^)]*)\)'
-readonly _BACKTICK_PATTERN='`([^`]*)`'
-readonly _TMP_REDIRECT_PATTERN='>>?[[:space:]]*/tmp/'
 readonly _PROTECTED_BRANCHES="main master production"
-readonly _INTERPRETER_BLOCKED_MSG='blocked:Do not run inline interpreter scripts. Use jq for JSON parsing, Grep/Read tools for data extraction, Write tool for file creation. For temporary files, use $RND_DIR instead of /tmp.'
 
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
-
-# Extracts args after the command name and left-trims whitespace.
-_args_after_cmd() {
-  local seg="$1" first_word="$2"
-  local rest="${seg#"$first_word"}"
-  printf '%s' "${rest#"${rest%%[! ]*}"}"
-}
-
-# Checks if a segment invokes an interpreter with an inline eval flag (-c or -e).
-# Returns: "blocked:..." if inline eval, "allowed" if file execution, "$_INTERPRETER_BLOCKED_MSG" if bare interpreter.
-_check_interpreter() {
-  local seg="$1" first_word="$2" flag="$3"
-  local rest
-  rest="$(_args_after_cmd "$seg" "$first_word")"
-  local second_word="${rest%% *}"
-  if [[ -z "$second_word" ]]; then
-    printf '%s' "$_INTERPRETER_BLOCKED_MSG"; return 0
-  fi
-  if [[ "$second_word" == "$flag" ]] || [[ "$seg" == *" ${flag} "* ]] || [[ "$seg" == *" ${flag}'"* ]]; then
-    printf '%s' "$_INTERPRETER_BLOCKED_MSG"; return 0
-  fi
-  printf 'allowed'
-}
-
-check_echo_redirect() {
-  local seg="$1"
-  local stripped="$seg"
-  while [[ "$stripped" =~ \>\ */dev/[^[:space:]]* ]]; do
-    stripped="${stripped//${BASH_REMATCH[0]}/}"
-  done
-  while [[ "$stripped" =~ \>\ *[^[:space:]]*\.claude[^/]*/[^[:space:]]*\.rnd/[^[:space:]]* ]]; do
-    stripped="${stripped//${BASH_REMATCH[0]}/}"
-  done
-  while [[ "$stripped" =~ 2\>\ *\&[[:digit:]] ]]; do
-    stripped="${stripped//${BASH_REMATCH[0]}/}"
-  done
-  while [[ "$stripped" =~ 2\>\ */dev/[^[:space:]]* ]]; do
-    stripped="${stripped//${BASH_REMATCH[0]}/}"
-  done
-  if [[ "$stripped" == *">"* ]]; then
-    printf 'block'
-  else
-    printf 'allow'
-  fi
-}
 
 strip_cd_prefix() {
   local seg="$1"
@@ -108,16 +58,6 @@ strip_cd_prefix() {
 # Strips leading environment variable assignments (e.g., FOO=bar BAZ=quux)
 # from a command segment. Env-var prefixes match [A-Za-z_][A-Za-z_0-9]*=<value>.
 # The value may be quoted or unquoted.
-#
-# Note: This is orthogonal to upstream Accept Edits mode (v2.1.97+), which
-# auto-approves filesystem commands prefixed with safe env vars. Our stripping
-# enforces tool discipline (which tool to use — Edit vs sed, Read vs cat),
-# while upstream decides whether to prompt for permission on the tool call.
-#
-# Quoted values with internal spaces (e.g. FOO="abc def") are detected and
-# blocked immediately: strip_env_prefix identifies an unmatched leading quote in
-# the value portion of first_word and emits a blocked: message rather than
-# attempting to strip an incomplete prefix.
 strip_env_prefix() {
   local seg="$1"
   local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='
@@ -126,17 +66,6 @@ strip_env_prefix() {
     # If the entire segment is a single env assignment, no command follows
     if [[ "$first_word" == "$seg" ]]; then
       printf '%s' "$seg"
-      return 0
-    fi
-    # Detect unmatched quote in the value portion of the env prefix.
-    # A quoted value containing spaces (e.g. FOO="abc def") causes first_word
-    # to capture only FOO="abc, leaving the quote unmatched. Attempting to strip
-    # such a prefix and continue checking the remainder ("def" sed ...) would
-    # allow tool-discipline bypass. Block immediately instead.
-    local _value="${first_word#*=}"
-    if [[ "$_value" == '"'* && "$_value" != *'"' ]] || \
-       [[ "$_value" == "'"* && "$_value" != *"'" ]]; then
-      printf 'blocked:BLOCKED: Env-var prefix with a quoted value containing spaces (e.g. FOO="abc def") cannot be safely stripped. Remove the env-var assignment and use the appropriate tool directly.'
       return 0
     fi
     seg="${seg#"$first_word"}"
@@ -233,87 +162,13 @@ check_segment() {
         return 0
       fi
       ;;
-    sed|awk)
-      printf 'blocked:Use the Edit tool instead of %s. Edit is reviewable, diffable, and handles indentation correctly.' "$cmd"
-      return 0
-      ;;
-    echo|printf)
-      local redirect_result
-      redirect_result="$(check_echo_redirect "$seg")"
-      if [[ "$redirect_result" == "block" ]]; then
-        printf 'blocked:Use the Write tool instead of echo/printf with file redirects. Write is reviewable and creates proper diffs.'
-        return 0
-      else
-        printf 'echo_safe'
-        return 0
-      fi
-      ;;
-    python|python3)
-      local rest
-      rest="$(_args_after_cmd "$seg" "$first_word")"
-      local second_word="${rest%% *}"
-      if [[ -z "$second_word" ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      elif [[ "$second_word" == "-m" ]] || [[ "$second_word" == *.py ]] || [[ "$second_word" == */* ]]; then
-        printf 'allowed'
-        return 0
-      fi
-      _check_interpreter "$seg" "$first_word" "-c"
-      return 0
-      ;;
-    node)
-      _check_interpreter "$seg" "$first_word" "-e"
-      return 0
-      ;;
-    bun)
-      local rest
-      rest="$(_args_after_cmd "$seg" "$first_word")"
-      local second_word="${rest%% *}"
-      if [[ -z "$second_word" ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      elif [[ "$second_word" == "eval" ]]; then
-        printf '%s' "$_INTERPRETER_BLOCKED_MSG"
-        return 0
-      fi
-      _check_interpreter "$seg" "$first_word" "-e"
-      return 0
-      ;;
-    perl|ruby)
-      _check_interpreter "$seg" "$first_word" "-e"
-      return 0
-      ;;
   esac
   printf 'allowed'
 }
 
 split_and_check() {
   local command="$1"
-  local _has_echo=0
   local _result
-
-  local temp="$command"
-  while [[ "$temp" =~ $_DOLLAR_PAREN_PATTERN ]]; do
-    local inner="${BASH_REMATCH[1]}"
-    _result="$(check_segment "${inner# }")" || true
-    if [[ "$_result" == blocked:* ]]; then
-      printf '%s' "$_result"
-      return 0
-    fi
-    temp="${temp/${BASH_REMATCH[0]}/}"
-  done
-
-  temp="$command"
-  while [[ "$temp" =~ $_BACKTICK_PATTERN ]]; do
-    local inner="${BASH_REMATCH[1]}"
-    _result="$(check_segment "${inner# }")" || true
-    if [[ "$_result" == blocked:* ]]; then
-      printf '%s' "$_result"
-      return 0
-    fi
-    temp="${temp/${BASH_REMATCH[0]}/}"
-  done
 
   local split_cmd
   split_cmd="${command//&&/$'\n'}"
@@ -333,16 +188,9 @@ split_and_check() {
       printf '%s' "$_result"
       return 0
     fi
-    if [[ "$_result" == "echo_safe" ]]; then
-      _has_echo=1
-    fi
   done <<< "$split_cmd"
 
-  if [[ "$_has_echo" -eq 1 ]]; then
-    printf 'echo_safe'
-  else
-    printf 'allowed'
-  fi
+  printf 'allowed'
 }
 
 # ---------------------------------------------------------------------------
@@ -440,58 +288,18 @@ fi
 unset _branch_pattern
 
 # ---------------------------------------------------------------------------
-# 3. Shell loop guard
+# 3. Per-segment git checks (git add .rnd/ and destructive git ops)
 # ---------------------------------------------------------------------------
-# Detects for/while/until loops which frequently hang in the Bash tool.
-# Requires both the loop keyword AND the `do` keyword to avoid false positives
-# on commands that merely contain the word "for" (e.g., `echo "search for files"`).
 
-if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])for[[:space:]] ]] && [[ "$cmd_lower" =~ (;|[[:space:]])do((;|[[:space:]])|$) ]]; then
-  block_msg "Avoid shell for-loops — they frequently hang in the Bash tool. Use the Glob tool to list files and the Grep tool to search content. For cross-referencing, use Grep with alternation patterns or multiple parallel tool calls."
-fi
+_git_block_result="$(split_and_check "$command")" || true
 
-if [[ "$cmd_lower" =~ (^|[[:space:];\&\|])(while|until)[[:space:]] ]] && [[ "$cmd_lower" =~ (;|[[:space:]])do((;|[[:space:]])|$) ]]; then
-  block_msg "Avoid shell while/until loops — they can hang in the Bash tool. Use dedicated tools (Glob, Grep, Read) for file operations."
+if [[ "$_git_block_result" == blocked:* ]]; then
+  block_msg "${_git_block_result#blocked:}"
 fi
 
 # ---------------------------------------------------------------------------
-# 4. /tmp redirect guard
+# 4. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
-
-_is_compound=0
-if [[ "$command" == *"&&"* || "$command" == *"||"* || "$command" == *";"* || "$command" == *"|"* ]]; then
-  _is_compound=1
-fi
-_cmd_first_word="${command%% *}"
-_cmd_name="${_cmd_first_word##*/}"
-_skip_tmp_guard=0
-if [[ "$_is_compound" -eq 0 && ( "$_cmd_name" == "echo" || "$_cmd_name" == "printf" ) ]]; then
-  _skip_tmp_guard=1
-fi
-if [[ "$_skip_tmp_guard" -eq 0 ]] && [[ "$command" =~ $_TMP_REDIRECT_PATTERN ]]; then
-  block_msg "Do not write to /tmp. Use \$RND_DIR for temporary files — it is auto-allowed and persists across the pipeline session."
-fi
-
-# ---------------------------------------------------------------------------
-# 5. Tool discipline
-# ---------------------------------------------------------------------------
-
-_discipline_result="$(split_and_check "$command")" || true
-
-if [[ "$_discipline_result" == blocked:* ]]; then
-  block_msg "${_discipline_result#blocked:}"
-fi
-
-# echo/printf without unsafe redirect — auto-allow
-if [[ "$_discipline_result" == "echo_safe" ]]; then
-  allow_json
-  exit 0
-fi
-
-# ---------------------------------------------------------------------------
-# 6. Auto-allow plugin artifact paths and lib scripts
-# ---------------------------------------------------------------------------
-# Tool discipline has already cleared every segment above; the whole-command allow is safe.
 
 if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" =~ (^|/)rnd-dir\.sh($|[[:space:]\"\']) ]]; then
   allow_json
@@ -505,7 +313,7 @@ if [[ -n "$plugin_root" ]] && [[ "$command" == *"${plugin_root}/lib/"* ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Bash output cache advisory
+# 5. Bash output cache advisory
 # ---------------------------------------------------------------------------
 # When the same normalized command was run within RND_BASH_CACHE_TTL_SECONDS
 # (default 600s) and produced non-trivial output, advise the agent to Read+Grep

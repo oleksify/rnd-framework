@@ -20,7 +20,7 @@ effort: low
 
 ## Commit Workflow
 
-Use only git commands and dedicated Claude Code tools — use Read instead of `cat`, Grep instead of `grep`, Edit instead of `sed`, Glob instead of `find`. The bash-gate blocks `sed` and `awk`; the others are allowed but the dedicated tools are reviewable and produce cleaner diffs.
+Use only git commands and dedicated Claude Code tools — use Read instead of `cat`, Grep instead of `grep`, Edit instead of `sed`, Glob instead of `find`. Prefer dedicated tools over shell equivalents — they are reviewable and produce cleaner diffs.
 
 1. Run `git status` and `git diff` (separate Bash calls, never chained with `&&`).
 2. If you need to read a file to understand changes, use the **Read** tool, not `cat`.

@@ -26,13 +26,13 @@ if grep -q "imports" "$SKILL" && grep -q "third-party method" "$SKILL" && grep -
 fi
 assert_eq "skill documents all four reference categories" "found" "$result"
 
-# --- Skill: file-execution constraint (no -c/-e explicitly forbidden) ---
+# --- Skill: file-execution constraint (prefers file-path execution) ---
 
 result=""
-if grep -q "python -c" "$SKILL" && grep -q "node -e" "$SKILL"; then
+if grep -q "python file\|file-based\|execute.*by path\|file.*path" "$SKILL"; then
   result="found"
 fi
-assert_eq "skill explicitly forbids python -c and node -e inline execution" "found" "$result"
+assert_eq "skill recommends file-path execution for probes" "found" "$result"
 
 # --- Skill: Report Template includes Existence Pre-Pass section ---
 
@@ -95,21 +95,13 @@ if [[ -n "$step0_line" && -n "$step1_line" && "$step0_line" -lt "$step1_line" ]]
 fi
 assert_eq "Step 0 appears before Step 1 in agent prompt" "ordered" "$result"
 
-# --- Agent: forbids python -c, node -e, bun -e ---
+# --- Agent: recommends file-path execution over inline flags ---
 
 result=""
-if grep -q "python -c" "$AGENT" && grep -q "node -e" "$AGENT" && grep -q "bun -e" "$AGENT"; then
+if grep -q "file execution\|execute.*by path\|file.*path\|python file\|file-based" "$AGENT"; then
   result="found"
 fi
-assert_eq "agent forbids python -c, node -e, bun -e" "found" "$result"
-
-# --- Agent: points to bash-gate.sh for rationale ---
-
-result=""
-if grep -q "bash-gate" "$AGENT"; then
-  result="found"
-fi
-assert_eq "agent references bash-gate.sh for inline-interpreter rationale" "found" "$result"
+assert_eq "agent recommends file-path execution for probes" "found" "$result"
 
 # --- Agent: FALSE_PASS_PROXY emission documented ---
 

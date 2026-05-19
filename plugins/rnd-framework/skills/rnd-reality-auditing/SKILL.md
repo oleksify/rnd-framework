@@ -121,7 +121,7 @@ Before writing adversarial experiments, run a mechanical existence check on ever
 
 **When to run:** Always, as Step 0, before the Adversarial Experiment Design phase. A single MISSING verdict short-circuits the entire audit: return status `INVALID_FOUND` immediately without running adversarial experiments.
 
-**Probe execution constraint:** Write each probe as a file to `$RND_DIR/reality/T<id>-experiments/existence-probe-<n>.{py,js,sh}` and execute it by path. Never use `python -c`, `node -e`, or `bun -e` — these inline-interpreter flags are blocked by `bash-gate.sh`. See that file for the rationale.
+**Probe execution constraint:** Write each probe as a file to `$RND_DIR/reality/T<id>-experiments/existence-probe-<n>.{py,js,sh}` and execute it by path. Prefer `python file.py` over `python -c '…'` — file execution is reviewable and produces a durable artifact at `$RND_DIR`.
 
 ### Reference Categories
 

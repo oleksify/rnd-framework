@@ -25,15 +25,6 @@ run_hook "$BASH_GATE" \
   "$(_make_json 'bash /some/path/rnd-dir.sh')"
 assert_exit_code "Case 1: rnd-dir.sh as path token is auto-allowed" 0
 
-# Case 2: inline interpreter blocked by tool discipline.
-# python -m is not an inline interpreter (file execution), but python -c is blocked.
-# Use node -e which doesn't require nested quotes; it is blocked by tool discipline.
-# The boundary regex would match "rnd-dir.sh" if present with space boundaries,
-# but tool discipline (section 5) fires first and must block this (exit 2).
-run_hook "$BASH_GATE" \
-  "$(_make_json 'node -e rnd-dir.sh')"
-assert_exit_code "Case 2: node -e is blocked by tool discipline even when arg matches boundary pattern" 2
-
 # Case 3: rnd-dir.sh in middle of arg list is NOT auto-allowed via the rnd-dir.sh substring path.
 # The boundary regex requires `^|/` as leading boundary — a leading SPACE does not count.
 # Without this strictness, `cat rnd-dir.sh some-other-file.txt` would auto-allow because

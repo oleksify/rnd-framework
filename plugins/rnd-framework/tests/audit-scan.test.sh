@@ -45,7 +45,6 @@ printf '%s\n' '--- audit-scan --help exits 0 ---'
 
 run_scan --help
 assert_exit_code "--help exits 0" 0
-assert_contains "--help mentions revisions" "revisions" "$HOOK_STDOUT"
 assert_contains "--help mentions verdict_history" "verdict_history" "$HOOK_STDOUT"
 
 # ---------------------------------------------------------------------------
@@ -61,70 +60,6 @@ rm -f "$stderr_file"
 HOOK_STDOUT=""
 assert_exit_code "unknown subcommand exits 1" 1
 assert_contains "unknown subcommand prints usage to stderr" "Usage:" "$HOOK_STDERR"
-
-# ---------------------------------------------------------------------------
-# Test: revisions with no audit.jsonl → returns 0
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- audit-scan revisions: no audit.jsonl → 0 ---'
-
-rm -f "${TMP_RND}/audit.jsonl"
-
-run_scan revisions "T1" "/path/to/foo.sh"
-assert_exit_code "revisions no audit.jsonl exits 0" 0
-assert_eq "revisions no audit.jsonl returns 0" "0" "$HOOK_STDOUT"
-
-# ---------------------------------------------------------------------------
-# Test: revisions with matching Write events
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- audit-scan revisions: counts matching Write events ---'
-
-printf '{"ts":"2026-05-01T10:00:00Z","tool":"Write","file":"/p/foo.sh"}\n' > "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:01:00Z","tool":"Edit","file":"/p/foo.sh"}\n' >> "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:02:00Z","tool":"Write","file":"/p/bar.sh"}\n' >> "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:03:00Z","tool":"Edit","file":"/p/foo.sh"}\n' >> "${TMP_RND}/audit.jsonl"
-
-run_scan revisions "T1" "/p/foo.sh"
-assert_exit_code "revisions exits 0" 0
-assert_eq "revisions counts 3 events for /p/foo.sh" "3" "$HOOK_STDOUT"
-
-# ---------------------------------------------------------------------------
-# Test: revisions does not count events for a different file
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- audit-scan revisions: different file returns 1 ---'
-
-run_scan revisions "T1" "/p/bar.sh"
-assert_exit_code "different file exits 0" 0
-assert_eq "different file count is 1" "1" "$HOOK_STDOUT"
-
-# ---------------------------------------------------------------------------
-# Test: revisions with task_id in records — task-scoped filtering
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- audit-scan revisions: task_id filtering ---'
-
-printf '{"ts":"2026-05-01T10:00:00Z","tool":"Write","file":"/p/baz.sh","task_id":"T1"}\n' > "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:01:00Z","tool":"Write","file":"/p/baz.sh","task_id":"T2"}\n' >> "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:02:00Z","tool":"Edit","file":"/p/baz.sh","task_id":"T1"}\n' >> "${TMP_RND}/audit.jsonl"
-
-run_scan revisions "T1" "/p/baz.sh"
-assert_exit_code "task-scoped revisions exits 0" 0
-assert_eq "task-scoped revisions returns 2 for T1" "2" "$HOOK_STDOUT"
-
-run_scan revisions "T2" "/p/baz.sh"
-assert_exit_code "T2 task-scoped revisions exits 0" 0
-assert_eq "task-scoped revisions returns 1 for T2" "1" "$HOOK_STDOUT"
-
-# ---------------------------------------------------------------------------
-# Test: revisions tolerates mixed records (some with task_id, some without)
-# ---------------------------------------------------------------------------
-printf '\n%s\n' '--- audit-scan revisions: mixed task_id presence ---'
-
-printf '{"ts":"2026-05-01T10:00:00Z","tool":"Write","file":"/p/mixed.sh"}\n' > "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:01:00Z","tool":"Edit","file":"/p/mixed.sh","task_id":"T1"}\n' >> "${TMP_RND}/audit.jsonl"
-printf '{"ts":"2026-05-01T10:02:00Z","tool":"Write","file":"/p/mixed.sh","task_id":""}\n' >> "${TMP_RND}/audit.jsonl"
-
-run_scan revisions "T1" "/p/mixed.sh"
-assert_exit_code "mixed task_id revisions exits 0" 0
-assert_eq "mixed task_id: all 3 counted (no task_id + matching task_id)" "3" "$HOOK_STDOUT"
 
 # ---------------------------------------------------------------------------
 # Test: verdict_history with no verifications dir → empty output
@@ -223,7 +158,7 @@ printf '\n%s\n' '--- audit-scan: RND_DIR unset exits 1 ---'
 
 HOOK_EXIT=0
 stderr_file="$(mktemp)"
-"$AUDIT_SCAN" revisions "T1" "/p/foo.sh" 2>"$stderr_file" || HOOK_EXIT=$?
+"$AUDIT_SCAN" verdict_history "T1" 2>"$stderr_file" || HOOK_EXIT=$?
 HOOK_STDERR="$(cat "$stderr_file")"
 rm -f "$stderr_file"
 HOOK_STDOUT=""

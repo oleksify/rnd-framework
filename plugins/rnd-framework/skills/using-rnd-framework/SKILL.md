@@ -20,15 +20,8 @@ Pipeline work runs in specialized subagents spawned via `subagent_type` (e.g., `
 
 ## Tool Discipline
 
-Hooks enforce these in every session; writing through them is slower than writing to them the first time. Applies to the orchestrator and every agent:
-
 - **Temporary files:** use `$RND_DIR` — never `/tmp`. `$RND_DIR` is auto-allowed and persists across the pipeline.
-- **File read / write:** use the `Read` and `Write` / `Edit` tools — never `cat`/`head`/`tail` or `echo >`/`printf >` redirects.
-- **Search / listing:** use the `Grep` and `Glob` tools — never `grep`/`find`/`ls` in Bash.
-- **Iteration:** never shell `for`/`while`/`until` loops (they hang the Bash tool). To check many names at once, make one `Grep` call with an alternation pattern (`name1|name2|name3`). To run a per-item command, make multiple parallel `Bash` calls in a single message. For non-trivial iteration, write a script file and invoke it once.
-- **No inline interpreter code:** running project files and test runners (`python -m pytest`, `bun test`) is fine; `python -c '…'`, `node -e '…'`, `bun -e '…'` is blocked — use `jq` for JSON and the Read/Write tools for file work.
-
-When in doubt, the block message from `bash-gate.sh` names the exact rule and the allowed alternative — read it and retry with the suggested tool.
+- **Prefer dedicated tools:** use `Read`/`Write`/`Edit` over shell redirects, `Grep`/`Glob` over `grep`/`find` in Bash — they are reviewable and produce cleaner diffs.
 
 ## Data Science Tasks
 

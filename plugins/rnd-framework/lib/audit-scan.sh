@@ -2,13 +2,6 @@
 # audit-scan.sh — Query utilities for $RND_DIR/audit.jsonl.
 #
 # Usage:
-#   audit-scan.sh revisions <task_id> <file_path>
-#       Print the integer count of Write/Edit events in audit.jsonl
-#       matching the given file_path. task_id is reserved for future
-#       per-task attribution when audit records carry that field;
-#       current Write/Edit records lack task_id so this counts
-#       file-path matches across the full session.
-#
 #   audit-scan.sh verdict_history <task_id>
 #       Print the space-separated verdict sequence for <task_id>
 #       parsed from verifications/T<id>-verification*.md files,
@@ -33,9 +26,8 @@ _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _usage() {
   printf 'Usage: audit-scan.sh <subcommand> [args]\n\n'
   printf 'Subcommands:\n'
-  printf '  revisions <task_id> <file_path>   Print Write/Edit count for file_path in audit.jsonl\n'
-  printf '  verdict_history <task_id>         Print verdict sequence; FLIP_DETECTED on flip\n'
-  printf '  --help                            Print this usage and exit 0\n'
+  printf '  verdict_history <task_id>   Print verdict sequence; FLIP_DETECTED on flip\n'
+  printf '  --help                      Print this usage and exit 0\n'
 }
 
 _require_rnd_dir() {
@@ -43,38 +35,6 @@ _require_rnd_dir() {
     printf 'audit-scan.sh: RND_DIR is not set\n' >&2
     exit 1
   fi
-}
-
-_revisions() {
-  local task_id="${1:?task_id required}"
-  local file_path="${2:?file_path required}"
-
-  _require_rnd_dir
-
-  local audit="${RND_DIR}/audit.jsonl"
-
-  if [[ ! -f "$audit" ]]; then
-    printf '0\n'
-    return 0
-  fi
-
-  # Count Write/Edit events matching file_path.
-  # When a record has task_id, also require it matches.
-  # When a record lacks task_id, match on file_path alone.
-  local count
-  count="$(jq -sc \
-    --arg tid "$task_id" \
-    --arg fp "$file_path" \
-    '[.[] |
-      select(.tool == "Write" or .tool == "Edit") |
-      select(.file == $fp) |
-      select(
-        (.task_id == null or .task_id == "") or
-        (.task_id == $tid)
-      )
-    ] | length' "$audit")"
-
-  printf '%s\n' "$count"
 }
 
 _verdict_history() {
@@ -154,10 +114,6 @@ subcommand="${1:-}"
 case "$subcommand" in
   --help)
     _usage
-    ;;
-  revisions)
-    shift
-    _revisions "$@"
     ;;
   verdict_history)
     shift

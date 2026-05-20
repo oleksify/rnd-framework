@@ -60,10 +60,39 @@ Hard limits that apply after heuristics:
 
 Before decomposition, write structured findings to `$RND_DIR/exploration/` (`mkdir -p`). One kebab-case file per area (e.g., `hooks-architecture.md`). Each file: `## Files Examined`, `## Key Patterns`, `## Relevant Dependencies`, `## Notes for Builders`.
 
+## Session-Local Skills
+
+During exploration, the Planner may discover project conventions that no global skill covers. When that happens, mint a session-local skill so every Builder and Verifier in the session gets the same context automatically — without requiring each agent to re-explore the same files.
+
+**Mint a session-local skill when any of these triggers fires:**
+
+- **Non-obvious testing helper.** The project wraps test assertions in a custom helper (e.g., `assertInvariant`, `expectSnapshot`) that is not self-documenting from its name alone — Builders will reach for the wrong idiom without guidance.
+- **Custom assertion library not in the global skill set.** The project uses a test-doubles, schema-validation, or matcher library (e.g., a bespoke `assert_schema/2` module, a vendor-forked copy of a popular library) that differs from the ecosystem default in ways that cause silent test failures if used incorrectly.
+- **Unusual build pipeline or domain idiom.** The project has a non-standard compile step, code-generation phase, or domain-specific convention (e.g., a custom asset pipeline, protocol buffer generation, domain event naming rules) that Builders must follow to produce correct outputs.
+- **Project-specific error handling contract.** The codebase enforces a consistent error shape or exception hierarchy that Builders must conform to — deviating produces code that compiles but breaks callers silently at runtime.
+
+Place skill files at `$RND_DIR/skills/<skill-name>/SKILL.md`. Use the same frontmatter format as global skills:
+
+```markdown
+---
+name: <skill-name>
+description: "<one sentence — when to invoke and what it teaches>"
+effort: low
+---
+
+# <Skill Title>
+
+[Concise description of the convention, helper, or idiom. Include concrete examples — a function signature, a code snippet, a naming rule. Builders read this in full before writing code.]
+```
+
+Set `effort: low` for reference skills (read-once for orientation). Only raise effort if the skill documents a multi-step workflow.
+
+After writing a session-local skill, list it in `$RND_DIR/AGENTS.md` under a `## Session Skills` section so the orchestrator picks it up for injection.
+
 ## Pre-Registration Document
 
 ```
-Task ID: T<number>
+Task ID: M<N>.T<NN>.<slug>
 Intent: [One sentence — what this accomplishes and why]
 Approach: [Brief planned implementation strategy]
 Expected outputs: [List of files/functions/artifacts to produce]
@@ -75,7 +104,7 @@ Success criteria:
   Quality:
   - [ ] [Code quality, naming, patterns, or documentation condition]
 Verification level: unit | integration | system
-Dependencies: [Task IDs this depends on]
+Dependencies: [Task IDs this depends on — M<N>.T<NN>.<slug> format]
 Preconditions:
   - [File/content assertion verified before build starts]
   - [Another assertion — if any fails, task is BLOCKED]
@@ -90,7 +119,7 @@ Assumptions:
   - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
 Properties:  # optional — omit when no invariants are expressible
   - prop_name: forall input matching X, output satisfies Y
-fulfills: [VAL-AREA-NNN, ...]
+fulfills: [M<N>.<area>.<slug>, ...]
 ```
 
 The `fulfills` field creates bidirectional traceability between tasks and Validation Contract assertions.
@@ -141,15 +170,15 @@ Properties:
       invariant: "is_binary(Codec.encode(x))"
 ```
 
-### Shape 3 — sibling file `T<id>-properties.{exs,ts}`
+### Shape 3 — sibling file `<task-id>-properties.{exs,ts}`
 
 Executable property test code living alongside the pre-registration as a build artifact. The Planner writes a skeleton; the Verifier executes it in its worktree. The Builder never runs it.
 
 For Elixir (StreamData):
 
 ```elixir
-# T7-properties.exs
-defmodule T7Properties do
+# M1.T07.codec-properties.exs
+defmodule CodecProperties do
   use ExUnitProperties
 
   property "encode/decode roundtrip" do
@@ -163,7 +192,7 @@ end
 For TypeScript (fast-check):
 
 ```typescript
-// T7-properties.ts
+// M1.T07.codec-properties.ts
 import * as fc from "fast-check"
 import { encode, decode } from "./codec"
 
@@ -215,63 +244,67 @@ Build a dependency matrix. Assign tasks with zero dependencies to Wave 1, tasks 
 
 ## Output
 
-Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to create). Save to `$RND_DIR/plan.md` with these sections:
+Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to create). Write four artifact files to `$RND_DIR`:
 
-- **Task Tree** — hierarchical list with task IDs
-- **Environment Setup** — runtime, package manager, dependencies, install commands
-- **Infrastructure** — external services (URL + auth), off-limits items
-- **Testing Strategy** — test framework, baseline count, exact run commands for unit/integration/live tests, user testing instructions
-- **Worker Guidelines** — `USE`/`OFF-LIMITS` boundaries; coding conventions from CLAUDE.md/linters; architectural patterns; design decisions
-- **Validation Contract** — numbered VAL-AREA-NNN assertions (see format below)
-- **Pre-Registration Documents** — one per task
-- **Dependency Matrix** — task dependency table
-- **Execution Schedule** — wave assignments with parallel opportunities
-- **Iteration Budgets** — per-task budgets based on criticality
+**`protocol.md`** — strategic prose with `Heuristic ceiling: <N>` on line 2 (the orchestrator greps this value to enforce the plan-size stop condition). Contains: scope, milestones, task tree (using `M<N>.T<NN>.<slug>` IDs), environment setup, infrastructure, testing strategy, worker guidelines, dependency matrix, execution schedule, iteration budgets, and pre-registration documents.
+
+**`validation-contract.md`** — one `### M<N>.<area>.<slug>` heading per assertion. The heading is the assertion ID; the orchestrator slices by heading to extract assertion text. Contains: `Claim` and `Verified-by` fields per assertion.
+
+**`features.json`** — machine-readable task manifest consumed by the orchestrator with `jq`. Each task entry includes `id` (`M<N>.T<NN>.<slug>`), `slug`, `milestone`, `dependsOn` (array of task IDs), `assertionIds` (array of assertion IDs from `validation-contract.md`), `criticality`, and `status`.
+
+**`AGENTS.md`** — session-local agent guidance authored from scratch. Not a copy of global agent prompts; contains only session-scoped context, domain constraints, and cross-task conventions for builders and verifiers on this decomposition.
 
 ### Validation Contract Format
 
-```markdown
-### Area: [Functional Domain]
+The validation contract is written to `validation-contract.md`. Each assertion gets its own `### <assertion-id>` heading — the heading IS the assertion ID. The orchestrator slices assertions by heading, so do not nest assertion IDs within body prose.
 
-#### VAL-AREA-NNN: [Assertion title]
+```markdown
+## Area: [Functional Domain]
+
+### M<N>.<area>.<slug>
 [One-sentence description of what must be true]
-Tool: [shell | grep | glob | read | code review]
-Evidence: [Exact command + expected output pattern]
+Claim: [precise statement of the invariant]
+Verified-by: [exact command or observable evidence; not "tests pass" but `npx vitest run exits 0`]
 ```
 
-ID format: `VAL-` + area abbreviation (2-6 uppercase chars) + `-` + 3-digit number (e.g., `VAL-AUTH-001`). Evidence must be concrete: not "tests pass" but `npx vitest run exits 0, reports >= 50 passed`. Cross-cutting assertions go under `### Area: Cross-Area`. Every assertion must be fulfilled by at least one task; every task should fulfill at least one assertion.
+ID format: `M<N>` is the milestone number, `<area>` is a lowercase domain abbreviation (2-6 chars, e.g., `auth`, `planner`), `<slug>` is a kebab-case descriptor (e.g., `emits-protocol-md`). Mint IDs via `id-gen.sh assertion <milestone> <area> "<title>"` — never manually slugify. Cross-cutting assertions use `area: cross`. Every assertion must be referenced in at least one task's `assertionIds` in `features.json`; every task must reference at least one assertion.
 
 ## Verification Checklist
 
-- [ ] Every task has a complete pre-registration document
+- [ ] Every task has a complete pre-registration document with `M<N>.T<NN>.<slug>` ID
 - [ ] Every success criterion is testable and tagged Correctness or Quality
 - [ ] No circular dependencies; waves correctly ordered; parallel opportunities identified
 - [ ] Tasks >5 criteria have been split; uncertain approaches have Phase 0 spikes
 - [ ] Every task touching an external system has an `External Dependencies` field with system type, assumed contract, and verification method
-- [ ] Environment Setup, Infrastructure, and Testing Strategy sections populated
-- [ ] Worker Guidelines contains boundaries, conventions, and architecture notes
-- [ ] Validation Contract has VAL-AREA-NNN assertions with Tool and Evidence for every Correctness criterion
-- [ ] Every task has a `fulfills` field; every VAL assertion is fulfilled by at least one task
+- [ ] `protocol.md` Environment Setup, Infrastructure, and Testing Strategy sections populated
+- [ ] `protocol.md` Worker Guidelines contains boundaries, conventions, and architecture notes
+- [ ] `validation-contract.md` has `M<N>.<area>.<slug>` assertions with `Claim` and `Verified-by` for every Correctness criterion
+- [ ] Every task's `fulfills` field references `M<N>.<area>.<slug>` IDs; every assertion is referenced by at least one task
+- [ ] `features.json` is valid JSON; every task entry includes `id`, `slug`, `milestone`, `dependsOn`, `assertionIds`, `criticality`, `status`
+- [ ] Every `assertionIds` entry in `features.json` matches a `### <id>` heading in `validation-contract.md`
+- [ ] `AGENTS.md` written with session-scoped guidance (not a copy of global agent prompts)
 
 ## Plan Self-Review
 
-After writing all sections of plan.md, reread it with fresh eyes. This is a checklist you run yourself before notifying the orchestrator — not a subagent dispatch. The Verifier cannot save you from plan-level mistakes; they cascade through every downstream phase.
+After writing all four artifact files (`protocol.md`, `validation-contract.md`, `features.json`, `AGENTS.md`), reread them with fresh eyes. This is a checklist you run yourself before notifying the orchestrator — not a subagent dispatch. The Verifier cannot save you from plan-level mistakes; they cascade through every downstream phase.
 
-Run these six checks against the finished plan.md. If any fails, fix inline and re-check.
+Run these six checks against the finished artifacts. If any fails, fix inline and re-check.
 
-1. **Spec coverage.** For each explicit user requirement or discovery-context constraint, point to the task(s) covering it. Gaps → add a task or explicitly note it as out-of-scope in Worker Guidelines.
+1. **Spec coverage.** For each explicit user requirement or discovery-context constraint, point to the task(s) covering it. Gaps → add a task or explicitly note it as out-of-scope in Worker Guidelines in `protocol.md`.
 
-2. **Placeholder scan.** Grep the plan for `TODO`, `TBD`, `???`, `XXX`, `[...]`, `handle appropriately`, `works correctly`, `as needed`. Any hit → replace with concrete content or remove.
+2. **Placeholder scan.** Grep all four artifacts for `TODO`, `TBD`, `???`, `XXX`, `[...]`, `handle appropriately`, `works correctly`, `as needed`. Any hit → replace with concrete content or remove.
 
-3. **VAL traceability.** Every `VAL-AREA-NNN` is named in at least one task's `fulfills` field, and every task has a non-empty `fulfills`. A VAL with no fulfiller, or a task fulfilling nothing, means the Validation Contract and Pre-Registration drifted apart — fix whichever side is wrong.
+3. **Assertion traceability.** Every `M<N>.<area>.<slug>` heading in `validation-contract.md` appears in at least one task's `assertionIds` in `features.json`, and every task has a non-empty `assertionIds`. Every task's `fulfills` field lists the same IDs as its `assertionIds` entry. A mismatch means the validation contract and pre-registration drifted apart — fix whichever side is wrong.
 
-4. **Identifier consistency.** For each function name, file path, type name, or env var that appears in multiple tasks, confirm the spelling matches across mentions. A function named `clearLayers` in T3 and `clearFullLayers` in T7 is the most common cascading plan error.
+4. **Identifier consistency.** For each function name, file path, type name, or env var that appears in multiple tasks, confirm the spelling matches across mentions. A function named `clearLayers` in `M1.T03.add-auth` and `clearFullLayers` in `M1.T07.wire-api` is the most common cascading plan error.
 
 5. **External-dependency completeness.** Any task whose Intent, Approach, or Expected outputs references a DB, API, file, env var, or external service MUST have a populated `External Dependencies` block with `system`, `contract`, and `verification`. Missing block → add it (this is also what gates the Reality Auditor).
 
 6. **Verifier test on each Correctness criterion.** Reread each Correctness criterion as if you have no context. If you can't translate it into "run X, expect Y" in under 10 seconds, rewrite it with an observable outcome, concrete condition, and binary result.
 
-If the plan has >10 tasks or any HIGH criticality task, consider one additional escalation: dispatch a fresh reviewer via the Task tool with the spec and plan.md, asking them to flag only concrete problems from this same checklist. Optional; not required.
+After checks 1–6 pass, also verify cross-file consistency: every `id` in `features.json` appears in the pre-registration documents; every `assertionIds` value exists as a `### <id>` heading in `validation-contract.md`; `Heuristic ceiling` is present on line 2 of `protocol.md`.
+
+If the plan has >10 tasks or any HIGH criticality task, consider one additional escalation: dispatch a fresh reviewer via the Task tool with the spec and all four artifacts, asking them to flag only concrete problems from this same checklist. Optional; not required.
 
 ## Related Skills
 

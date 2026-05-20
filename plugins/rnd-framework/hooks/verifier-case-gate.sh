@@ -3,6 +3,8 @@
 # Blocks the rnd-verifier agent from completing when its most-recent
 # T<id>-verification.md lacks both a ## Case for PASS and a ## Case for FAIL
 # section, or when either section contains only trivially-empty content.
+# The section-presence check is scope-agnostic: it fires whether the body
+# discusses a single overall verdict or enumerates per-assertion content.
 # Exits 2 (block) on violation; exits 0 (no-opinion) for all other agents or
 # when no active session / verification report is found.
 # shellcheck source=./lib.sh

@@ -253,4 +253,65 @@ assert_contains "stderr contains VERIFIER CASE GATE phrase" "VERIFIER CASE GATE"
 rm -f "$REPORT_K"
 
 # ---------------------------------------------------------------------------
+# Test 13: per-assertion body — sections present and substantive → exit 0
+# Confirms gate is scope-agnostic when body enumerates per-assertion content.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- verifier-case-gate: per-assertion body with both sections passes ---'
+
+REPORT_L="${TMP_SESSION}/verifications/T1-verification.md"
+printf '%s' \
+  '# Verification Report: T1
+## Per-Criterion Results
+### VAL.hooks.001
+- [PASS] section-presence check fires on missing heading — verified by bash test
+### VAL.hooks.002
+- [PASS] trivial-content check rejects bare "none" — verified by bash test
+## Overall Verdict: PASS
+## Case for PASS
+VAL.hooks.001: section-presence regex matched correctly for both headings.
+VAL.hooks.002: trivial-content logic rejected bare "none" and "no case" as expected.
+## Case for FAIL
+Live SubagentStop invocation was not tested — only offline bash invocations ran.
+Regex requires exact spacing; extra whitespace in heading would bypass the check.
+## Coverage Gaps
+- Checked: VAL.hooks.001 and VAL.hooks.002 via bash offline tests
+- Couldn'"'"'t check: live agent spawn timing
+## Feedback
+No issues.
+' > "$REPORT_L"
+
+run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
+assert_exit_code "per-assertion body with both sections → exit 0" 0
+assert_eq "per-assertion body → empty stderr" "" "$HOOK_STDERR"
+
+rm -f "$REPORT_L"
+
+# ---------------------------------------------------------------------------
+# Test 14: per-assertion body — Case for PASS missing → still blocked
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- verifier-case-gate: per-assertion body missing Case for PASS → exit 2 ---'
+
+REPORT_M="${TMP_SESSION}/verifications/T1-verification.md"
+printf '%s' \
+  '# Verification Report: T1
+## Per-Criterion Results
+### VAL.hooks.001
+- [FAIL] section-presence check missing
+## Overall Verdict: FAIL
+## Case for FAIL
+VAL.hooks.001: section heading not found in report — implementation absent.
+## Coverage Gaps
+- Checked: file existence
+- Couldn'"'"'t check: runtime invocation
+## Feedback
+Implementation missing.
+' > "$REPORT_M"
+
+run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
+assert_exit_code "per-assertion body missing Case for PASS → exit 2" 2
+assert_contains "stderr contains VERIFIER CASE GATE" "VERIFIER CASE GATE" "$HOOK_STDERR"
+
+rm -f "$REPORT_M"
+
+# ---------------------------------------------------------------------------
 report

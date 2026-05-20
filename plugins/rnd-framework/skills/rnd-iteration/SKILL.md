@@ -25,7 +25,8 @@ When passing Verifier feedback to the Builder:
 
 **INCLUDE:**
 - The "Feedback" section from the verification report
-- Which criteria failed and what evidence showed the failure
+- Which assertions failed and what evidence showed the failure — the feedback string for each failing assertion MUST cite the assertion ID verbatim (e.g., "Assertion M1.verifier.prose-report-per-assertion: …")
+- The failing assertion IDs from the verdict map, so the Builder can map feedback to specific Validation Contract assertions
 
 **EXCLUDE:**
 - The Verifier's internal reasoning
@@ -36,9 +37,9 @@ When passing Verifier feedback to the Builder:
 
 When receiving verification feedback:
 
-1. **Read the feedback carefully** — Understand WHAT failed, not just that it failed
+1. **Read the feedback carefully** — Understand WHAT failed, not just that it failed. Each failing assertion ID is cited verbatim in the feedback; use those IDs to look up the exact assertion in the Validation Contract.
 2. **Diagnose** — Use `rnd-framework:rnd-debugging` if the failure is unclear
-3. **Fix ALL failed criteria** — Address every criterion marked FAIL or NEEDS ITERATION, not just the primary failure. Use a checklist: list each failed criterion, diagnose it, fix it, and mark it done. Do not move to step 4 until every failed criterion has been addressed.
+3. **Fix ALL failed assertions** — Address every assertion marked FAIL or NEEDS ITERATION, not just the primary failure. Use a checklist: list each failing assertion ID, diagnose it, fix it, and mark it done. Do not move to step 4 until every failing assertion has been addressed.
 4. **Check shared code paths** — Identify code paths shared between your fixes and currently-passing criteria. Re-run tests covering those paths to confirm your fixes haven't introduced regressions. If a passing criterion shares logic with a fixed one, explicitly re-verify it.
 5. **Re-run ALL tests** — Run the complete test suite, not just tests related to flagged criteria. Fixes often have cross-cutting effects.
 6. **Update self-assessment** — Note what changed and why
@@ -81,7 +82,7 @@ Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"$
 
 ### Cycle 1
 - **Failing tasks:** [T<id>, T<id>, ...]
-- **Wave failure report:** [summary of per-task verdict map sent to Builder]
+- **Wave failure report:** [summary of per-assertion verdict map sent to Builder — list failing assertion IDs verbatim]
 - **Builder response:** [what was changed across all failing tasks]
 - **Result:** PASS | NEEDS_ITERATION | FAIL
 
@@ -89,7 +90,7 @@ Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"$
 ...
 
 #### T<id> detail
-- **Criterion failed:** [criterion text]
+- **Assertion failed:** [assertion ID verbatim, e.g., M1.verifier.prose-report-per-assertion]
 - **Evidence:** [evidence summary]
 - **Fix applied:** [what Builder changed]
 ```

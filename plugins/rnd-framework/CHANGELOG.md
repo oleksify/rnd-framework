@@ -1,5 +1,25 @@
 # Changelog
 
+## 5.0.0 — 2026-05-20
+
+**M2 additions:** The Verifier now emits a per-assertion verdict map (`wave-*-verdict-map.json`) that keys results by stable assertion ID (`M<N>.<area>.<slug>`) rather than task ID; `hooks/coverage-gaps-gate.sh` and `hooks/verifier-case-gate.sh` enforce the required `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections in every verification report. **M3 additions:** Session-local skill injection — the orchestrator assembles a `SESSION_SKILLS_FRAGMENT` from `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md` and interpolates it into every Agent() spawn prompt; planner decomposition and orchestration skills document the minting heuristic and injection policy; `audit-event.sh` emits a `skill_injected` record per spawn when the fragment is non-empty.
+
+### Split planner output into four stable artifacts with milestone-scoped IDs
+
+**Why this matters.** The single-file `plan.md` contract had two load-bearing problems. First, the orchestrator pasted whole-file blobs into every spawn prompt — a scaling tax that grew with plan size. Second, `T<N>` task IDs were session-local integers: no two sessions agreed on what `T3` meant, so `audit.jsonl` records from different runs were incomparable. The new contract is purpose-built around the framework's scientific-method focus — information barriers, evidence-based verification, atomic assertions, and multi-session traceability: each pipeline run produces four narrowly-scoped artifacts instead of one monolith, and every identifier is milestone-qualified so records from different runs compose without collision.
+
+**Four new Planner output artifacts** (replaces `plan.md`):
+- `protocol.md` — human-readable scope and goals; carries the heuristic-ceiling integer on line 2 (preserving the stop-condition grep contract)
+- `validation-contract.md` — one `### M<N>.<area>.<slug>` heading per testable assertion; orchestrator slices per-task assertion sets from this file using the `assertionIds[]` in `features.json`
+- `features.json` — machine-readable task manifest; each entry carries `id` (`M<N>.T<NN>.<slug>`), `milestone`, `dependsOn[]`, `assertionIds[]`, `criticality`, `status`
+- `AGENTS.md` — per-agent work assignments derived from the task list; consumed by the orchestrator's spawn-prompt builder
+
+**New stable ID scheme:** `M<N>.T<NN>.<slug>` for tasks, `M<N>.<area>.<slug>` for assertions. Minted via `lib/id-gen.sh`; never manually slugified. IDs are stable across re-plans of the same milestone — a FAIL verdict in `audit.jsonl` for `M1.T02.emits-protocol-md` refers to the same logical task in every session.
+
+**Hard-cut for pre-v5 sessions:** `commands/rnd-start.md` and `commands/rnd-resume.md` now detect a missing `protocol.md` and emit a clear error rather than silently continuing on stale `plan.md` state. In-flight sessions on 4.x finish on 4.x; new sessions land on v5.
+
+**No version bump in this milestone — bump lands in M4.**
+
 ## 4.2.0 — 2026-05-19
 
 ### Strip stylistic tool-discipline blocks
@@ -545,9 +565,9 @@ Focus exclusively on Claude Code. Remove all multi-platform infrastructure.
 
 ## 2.1.0 — 2026-03-30
 
-### Missions-grade planning: enriched plan.md with environment discovery, validation contract, and worker guidelines
+### Enriched plan.md with environment discovery, validation contract, and worker guidelines
 
-Upgrade the planning phase to produce richer, more intelligent plans inspired by Factory Droid's Missions mode. The plan.md format gains 6 new sections while preserving all existing structure.
+Upgrade the planning phase to produce richer, more intelligent plans. The plan.md format gains 6 new sections while preserving all existing structure.
 
 - **Environment Discovery:** New structured checklist scan in Phase 0 — detects package manager, test framework, CI config, external services, env vars, secrets. Findings presented to user for confirmation.
 - **Validation Contract:** Numbered VAL-AREA-NNN assertions with exact Tool + Evidence commands for every Correctness criterion. Verifiers run these commands directly.
@@ -577,7 +597,7 @@ Major release restoring the rigorous multi-agent architecture from v0.13.8 while
 - All agents retain v0.13.8 features: model selection, skills preloading, persistent memory, maxTurns, disallowedTools, SendMessage communication, tool discipline, convergent iteration
 
 **Skill Rigor Restoration:**
-- `rnd-orchestration`: Dual-mode support (single-flow + multi-agent), Agent Roles section listing all 8 agents, Subagent Coordination, Proof Gate phase documentation, Mission Mode section for Factory Droid Missions integration
+- `rnd-orchestration`: Dual-mode support (single-flow + multi-agent), Agent Roles section listing all 8 agents, Subagent Coordination, Proof Gate phase documentation
 - `rnd-verification`: Exhaustive Reporting Discipline, 6 Known Failure Modes, Epistemic Posture, Multi-Judge Mode with agent-spawning protocol, Evidence Standards, Common Rationalizations table
 - `rnd-building`: Convergent Iteration, Status Codes table (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED), exploration cache reading, external dependency verification
 - `rnd-multi-judge`: Agent-spawning language restored (spawn 2 independent verifier agents)

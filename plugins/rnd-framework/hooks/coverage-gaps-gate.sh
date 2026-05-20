@@ -3,6 +3,8 @@
 # Blocks the rnd-verifier agent from completing when its most-recent
 # T<id>-verification.md lacks a ## Coverage Gaps section or contains only
 # trivially-empty content in that section.
+# The section-presence check is scope-agnostic: it fires whether the body
+# lists a single overall summary or enumerates per-assertion coverage detail.
 # Exits 2 (block) on violation; exits 0 (no-opinion) for all other agents or
 # when no active session / verification report is found.
 # shellcheck source=./lib.sh
@@ -72,84 +74,11 @@ fi
 
 # ---------------------------------------------------------------------------
 # Check B: Section must contain non-trivial content
-#
-# Trivial-content denylist (whole-line anchored to avoid false positives):
-#   nothing | none | n/a | all checks ran | no gaps
-#
-# Whole-line matching prevents triggering on legitimate content such as:
-#   "Couldn't check: none of the upstream APIs were reachable"
-# because that line contains additional words beyond the bare trivial term.
 # ---------------------------------------------------------------------------
 
-# Extract the section content: lines after ## Coverage Gaps until the next ## heading
-section_content=""
-in_section=0
+section_content="$(extract_section "Coverage Gaps" "$report_content")"
 
-while IFS= read -r line; do
-  if [[ "$line" =~ ^##[[:space:]]Coverage[[:space:]]Gaps ]]; then
-    in_section=1
-    continue
-  fi
-
-  if [[ "$in_section" -eq 1 ]]; then
-    if [[ "$line" =~ ^## ]]; then
-      break
-    fi
-
-    section_content="${section_content}${line}
-"
-  fi
-done <<< "$report_content"
-
-# Check whether all non-empty lines in the section are trivially-empty
-trivial_only=1
-has_any_content=0
-
-while IFS= read -r line; do
-  # Skip blank lines
-  line_stripped="${line#"${line%%[! ]*}"}"
-  if [[ -z "$line_stripped" ]]; then
-    continue
-  fi
-
-  has_any_content=1
-
-  # Whole-line match against trivial terms (case-insensitive)
-  # Strip leading bullet markers before matching
-  stripped="${line_stripped#-}"
-  stripped="${stripped#\*}"
-  stripped="${stripped# }"
-
-  line_lower="$(_lower "$stripped")"
-
-  # Match exact trivial values only (anchored — no additional words allowed).
-  # Strip any sub-bullet label prefix up to and including the first colon+space
-  # (e.g. "Checked: " or "Couldn't check: ") before testing, so both
-  # "- Checked: nothing" and "- nothing" match the trivial denylist.
-  # This does NOT match "Couldn't check: none of the upstream APIs were reachable"
-  # because after stripping the prefix "none of the upstream APIs were reachable"
-  # does not equal any trivial term.
-  if [[ "$line_lower" == *": "* ]]; then
-    sub_value="${line_lower#*: }"
-  else
-    sub_value="$line_lower"
-  fi
-
-  if [[ "$sub_value" == "nothing" ]] || \
-     [[ "$sub_value" == "none" ]] || \
-     [[ "$sub_value" == "n/a" ]] || \
-     [[ "$sub_value" == "all checks ran" ]] || \
-     [[ "$sub_value" == "no gaps" ]]; then
-    # This line is trivial — continue checking the rest
-    true
-  else
-    # Found a non-trivial line — section is meaningful
-    trivial_only=0
-    break
-  fi
-done <<< "$section_content"
-
-if [[ "$has_any_content" -eq 1 && "$trivial_only" -eq 1 ]]; then
+if is_trivial_section "$section_content" "nothing" "none" "n/a" "all checks ran" "no gaps"; then
   # Emit gateFired audit event before blocking
   if [[ -n "${RND_DIR:-}" ]]; then
     bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \

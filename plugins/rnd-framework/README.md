@@ -104,6 +104,16 @@ This matches `rnd-framework:rnd-start`, `rnd-framework:rnd-orchestration`, and e
 
 Run `claude plugin details rnd-framework` to see per-component token estimates. Current always-on context cost (skills with frontmatter only, before any are invoked): **~4,577 tokens per session**. On-invoke costs are paid only when a skill or agent actually runs.
 
+## v5.0 Highlights
+
+Three structural changes shipped in v5.0.0:
+
+- **Stable hierarchical IDs + four-artifact planner output.** The Planner emits four narrowly-scoped artifacts: `protocol.md` (scope + heuristic ceiling), `validation-contract.md` (one `M<N>.<area>.<slug>` heading per testable assertion), `features.json` (machine-readable task manifest with `M<N>.T<NN>.<slug>` IDs and `assertionIds[]`), and `AGENTS.md` (per-agent work assignments). IDs are stable across re-plans of the same milestone, so `audit.jsonl` records compose across sessions rather than colliding on session-local integers.
+
+- **Verifier per-assertion verdict map.** The Verifier emits `wave-<N>-verdict-map.json` keyed by assertion ID rather than task ID, giving per-assertion traceability from code change to audit record. Each entry carries `{verdict, evidence[], feedback, task_id}`. Gate 3 in `commands/rnd-start.md` aggregates per-task using the rule: any FAIL → NEEDS_ITERATION; any PASS_QUALITY_NEEDS_ITERATION without FAIL → PASS_QUALITY_NEEDS_ITERATION; all PASS → PASS.
+
+- **Session-local skill injection.** The orchestrator reads `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`, injects their content under `## Session Context` / `## Session Skills` sections in every Agent() spawn, and records a `skill_injected` audit event per injected session-local skill. This lets a pipeline carry session-specific guidance (custom agents, domain context, project-specific patterns) without modifying global plugin files.
+
 ## Execution Model
 
 The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
@@ -311,7 +321,11 @@ Each pipeline run gets a unique session ID. Previous sessions remain on disk and
     ├── roadmap.md                      # Multi-session roadmap (lazy-inherits from default branch)
     └── sessions/
         └── <YYYYMMDD-HHMMSS-XXXX>/     # One session per pipeline run
-        ├── plan.md                     # Enriched plan: environment, testing strategy, worker guidelines, validation contract, pre-registrations, schedule
+        ├── protocol.md                 # Strategic scope, milestones, environment, worker guidelines, pre-registration documents (carries `Heuristic ceiling: <N>` on line 2)
+        ├── validation-contract.md      # One `### M<N>.<area>.<slug>` heading per atomic assertion (orchestrator slices per-task by `assertionIds[]`)
+        ├── features.json               # Machine-readable task manifest: `{tasks: [{id, slug, milestone, dependsOn, assertionIds, criticality, status}]}`
+        ├── AGENTS.md                   # Session-local agent guidance authored from scratch each session
+        ├── skills/<name>/SKILL.md      # Session-local skills the orchestrator injects under `## Session Skills` on every Agent() spawn
         ├── design-spec.md              # Approved architectural design spec (Design phase output)
         ├── diagnosis/
         │   └── T1-diagnosis.md         # Debugger's root cause analysis (debug pipeline only)
@@ -399,7 +413,7 @@ Then switch with `/output-style scientific`, `/output-style rigorous`, or `/outp
 
 ### Report Surfacing Protocol
 
-All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`plan.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`, `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
+All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`protocol.md`, `validation-contract.md`, `features.json`, `AGENTS.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json` (per-assertion), `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
 
 ## Customization
 

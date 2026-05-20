@@ -2,15 +2,25 @@
 
 A scientific-method orchestration plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Structures coding workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 
+## v5.0 Highlights
+
+Three structural changes shipped in v5.0.0:
+
+- **Stable hierarchical IDs + four-artifact planner output.** The Planner now emits four narrowly-scoped artifacts instead of a single `plan.md` monolith: `protocol.md` (scope + heuristic ceiling), `validation-contract.md` (one `M<N>.<area>.<slug>` heading per testable assertion), `features.json` (machine-readable task manifest with `M<N>.T<NN>.<slug>` IDs and `assertionIds[]`), and `AGENTS.md` (per-agent work assignments). IDs are stable across re-plans of the same milestone, so `audit.jsonl` records compose across sessions.
+
+- **Verifier per-assertion verdict map.** The Verifier now emits `wave-<N>-verdict-map.json` keyed by assertion ID, giving per-assertion traceability from code change to audit record. Each entry carries `{verdict, evidence[], feedback, task_id}`. The orchestrator's Gate 3 aggregates per-task using the rule: any FAIL → NEEDS_ITERATION; any PASS_QUALITY_NEEDS_ITERATION without FAIL → PASS_QUALITY_NEEDS_ITERATION; all PASS → PASS.
+
+- **Session-local skill injection.** The orchestrator reads `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`, injects them as session-local skill content in every Agent() spawn, and records a `skill_injected` audit event per injected session-local skill. This lets pipelines carry session-specific guidance without modifying global plugin files.
+
 ## Features
 
-- **Dual execution modes:** single-flow (sequential in one session) or multi-agent (10 specialized agents with structural isolation)
+- **Dual execution modes:** single-flow (sequential in one session) or multi-agent (9 specialized agents with structural isolation)
 - **Pre-registration:** testable success criteria declared before implementation begins
 - **Information barriers:** verification phase cannot read build-phase self-assessments
 - **Quality gates:** evidence-based PASS/FAIL verdicts at every phase boundary
-- **Structured decomposition:** hierarchical task trees with dependency-based scheduling
+- **Structured decomposition:** hierarchical task trees with stable milestone-scoped IDs
 - **Reality auditing:** adversarial verification of external service contracts (SQL, APIs, env vars)
-- **Formal proofs:** optional Lean 4 verification of pre-registration criteria
+- **Per-assertion verification:** verdict map keyed by assertion ID for fine-grained traceability
 - **Multi-session roadmaps:** decompose large tasks into milestones spanning multiple days
 
 ## Installation

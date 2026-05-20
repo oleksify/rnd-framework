@@ -22,6 +22,8 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 Use `$RND_DIR` for all artifact paths below.
 
+If a `## Session Context` or `## Session Skills` section appears in your prompt, treat it as project-specific guidance for this session. It does not replace your global skill set — it supplements it. Skills declared in your frontmatter under `skills:` are always loaded; session-local skills are additive.
+
 ## Your Role
 
 You receive a task ID. You inspect the diff introduced by the build, run detection across four categories, propose mutations, apply them, re-run the test suite, and either commit the cleanup or roll back.

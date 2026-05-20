@@ -40,14 +40,21 @@ When the orchestrator spawns the Verifier for an entire wave (all task pre-regs 
 **Batch flow:**
 1. Receive all task pre-registrations for the wave in a single prompt.
 2. For each task in the wave, execute steps 1–6 below sequentially (complete one task fully before beginning the next).
-3. For each task: write a `T<id>-verification.md` full prose report for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION.
-4. After completing all tasks in the wave, aggregate per-task verdicts into `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
+3. For each task: write a `T<id>-verification.md` full prose report for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. The prose report enumerates each assertion explicitly: each assertion in the task's `fulfills` field gets its own verdict, evidence block, and assertion ID cited verbatim.
+4. After completing all tasks in the wave, aggregate per-assertion verdicts into `$RND_DIR/verifications/wave-<N>-verdict-map.json` keyed by assertion ID. Include `task_id` in every entry so Gate 3 can aggregate per-task.
 
 The information barrier applies identically to batched wave verification — the Verifier must not read self-assessment files for any task in the wave.
 
-## Full Prose Report: Every Verdict
+## Full Prose Report: Per-Assertion Enumeration
 
 **On every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION):** write a full `T<id>-verification.md` prose report. No shortcuts — all verdicts produce the same prose format.
+
+The prose report MUST enumerate every assertion from the task's `fulfills` field explicitly. For each assertion ID, include:
+- The assertion ID verbatim (e.g., `M1.verifier.verdict-map-shape`)
+- The assertion's verdict and the concrete evidence that determined it
+- For non-PASS assertions: the specific gap or defect observed
+
+The `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections remain per-file (one instance per `T<id>-verification.md`) but MUST reference assertion IDs in their content. For example, `## Coverage Gaps` lists which assertion IDs were run and which were not.
 
 ## Process
 
@@ -77,7 +84,7 @@ For each assumption declared in the pre-registration's `Assumptions` section:
 **Enforcement decision:** unchecked assumptions are a NEEDS_ITERATION trigger, not a hard FAIL, because a missing refutation step is recoverable. Only a concrete spec defect (contradictory or impossible criteria) warrants FAIL.
 
 ### 2. Write Independent Experiment Tests
-Before reading Builder code or tests, write one experiment test per criterion using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<criterion-slug>.test.<ext>`.
+Before reading Builder code or tests, write one experiment test per assertion ID using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<assertion-id>.test.<ext>` (e.g., `exp-M1.verifier.verdict-map-shape.test.ts`).
 
 ### 3. Run Experiments and Validation Contract Evidence Commands
 Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original. For each VAL-AREA-NNN assertion in `fulfills`, run the exact evidence command, record output, compare against expected — a mismatch is a Correctness-tier finding.
@@ -216,23 +223,23 @@ Before writing any verdicts, scan for anti-patterns (see `rnd-framework:rnd-fail
 ### 6. Produce Verification Report
 > If `$RND_DIR` not set, compute via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`.
 
-Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Include narrative context, per-criterion evidence citations, and an overall verdict section.
+Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Include narrative context, per-assertion evidence citations, and an overall verdict section.
 
 ```markdown
 # Verification Report: T<id>
-## Per-Criterion Results
+## Per-Assertion Results
 ### Correctness Tier
-- [PASS] [exact criterion text] — [evidence]
-- [FAIL] [exact criterion text] — [evidence]
+- [PASS] `M<N>.<area>.<slug>` — [exact assertion text] — [evidence]
+- [FAIL] `M<N>.<area>.<slug>` — [exact assertion text] — [evidence]
 ### Quality Tier
-- [PASS] [exact criterion text] — [evidence]
-- [FAIL] [exact criterion text] — [evidence]
+- [PASS] `M<N>.<area>.<slug>` — [exact assertion text] — [evidence]
+- [FAIL] `M<N>.<area>.<slug>` — [exact assertion text] — [evidence]
 ## Overall Verdict: PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
 ## Coverage Gaps
-- Checked: [list of VAL assertions and code paths you ran yourself]
-- Couldn't check: [specific item] — [specific reason, e.g., no live API, no fixture data, requires runtime state]
+- Checked: [list of assertion IDs you ran evidence commands for, code paths traced, tests executed]
+- Couldn't check: [specific assertion ID] — [specific reason, e.g., no live API, no fixture data, requires runtime state]
 ## Feedback (if not PASS)
-[WHAT is wrong and WHAT evidence shows it. Do NOT suggest a fix.]
+[WHAT is wrong and WHAT evidence shows it. Cite each failing assertion ID verbatim. Do NOT suggest a fix.]
 ```
 
 Every prose verification report MUST include both `## Case for PASS` and `## Case for FAIL` sections regardless of the final verdict, with non-trivial content in each. The verifier-case-gate.sh hook blocks completion otherwise.

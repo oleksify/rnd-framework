@@ -23,12 +23,12 @@ Experiments are independent tests written by the Verifier from the pre-registrat
 ## The Iron Law
 
 ```
-EXPERIMENTS ARE MANDATORY FOR EVERY CORRECTNESS CRITERION — NOT OPTIONAL, NOT ON-DEMAND
+EXPERIMENTS ARE MANDATORY FOR EVERY CORRECTNESS ASSERTION — NOT OPTIONAL, NOT ON-DEMAND
 ```
 
-If the pre-registration lists N Correctness criteria, the Verifier writes N experiments. Skipping an experiment for a Correctness criterion — because it "looks simple" or "is obviously met" — is a verification failure. The point is to produce independent evidence, not to confirm what already seems true.
+If the task's `fulfills` field lists N Correctness assertions, the Verifier writes N experiments — one per assertion ID. Skipping an experiment for a Correctness assertion — because it "looks simple" or "is obviously met" — is a verification failure. The point is to produce independent evidence, not to confirm what already seems true.
 
-Quality criteria are optional for experiments — writing experiments for them is encouraged but not required when time is limited. Correctness criteria always get experiments.
+Quality assertions are optional for experiments — writing experiments for them is encouraged but not required when time is limited. Correctness assertions always get experiments.
 
 ## What Makes Experiments Different from Builder Tests
 
@@ -62,19 +62,18 @@ mkdir -p "$RND_DIR/verifications/T<id>-experiments"
 
 ## Naming Convention
 
-Name experiment files after the criterion they test, using kebab-case:
+Name experiment files after the assertion ID they test:
 
 ```
-exp-<criterion-slug>.test.<ext>
+exp-<assertion-id>.test.<ext>
 ```
 
 Examples:
-- `exp-file-exists-at-declared-path.test.ts`
-- `exp-frontmatter-contains-name-field.test.ts`
-- `exp-output-directory-is-created.test.ts`
-- `exp-returns-401-for-expired-token.test.ts`
+- `exp-M1.verifier.verdict-map-shape.test.ts`
+- `exp-M2.api.schema-field-present.test.ts`
+- `exp-M3.build.output-directory-created.test.ts`
 
-Use the same file extension and test runner as the project's existing test suite. One experiment file per criterion. Do not bundle multiple criteria into one file — if an experiment fails, you need to know exactly which criterion it covers.
+Use the same file extension and test runner as the project's existing test suite. One experiment file per assertion ID. Do not bundle multiple assertions into one file — if an experiment fails, you need to know exactly which assertion it covers.
 
 ## What Makes a Good Experiment
 
@@ -89,22 +88,22 @@ A good experiment:
 ## Experiment Template
 
 ```typescript
-// exp-<criterion-slug>.test.ts
-// Criterion: <exact criterion text from pre-registration>
+// exp-<assertion-id>.test.ts
+// Assertion: <assertion-id> — <exact assertion text from Validation Contract>
 // Spec source: T<id> pre-registration, <Correctness|Quality> tier
 
 import { describe, test, expect } from "bun:test";
 // Import only production code, not Builder test helpers
 
-describe("T<id>: <criterion text>", () => {
+describe("<assertion-id>: <assertion text>", () => {
   test("<observable outcome — what should happen>", async () => {
     // Arrange: set up the minimum conditions from the spec
-    // Act: invoke the behavior the criterion describes
-    // Assert: check the observable outcome stated in the criterion
+    // Act: invoke the behavior the assertion describes
+    // Assert: check the observable outcome stated in the assertion
     expect(result).toBe(expectedValue);
   });
 
-  // If the criterion implies a boundary or negative case, add it here
+  // If the assertion implies a boundary or negative case, add it here
   test("<boundary case — what should NOT happen or edge input>", async () => {
     // ...
   });
@@ -115,16 +114,16 @@ Adapt the test runner imports to the project's conventions (Bun, Jest, Vitest, e
 
 ## Process: Writing Experiments
 
-For each criterion in the pre-registration:
+For each assertion ID in the task's `fulfills` field:
 
-1. **Read only the criterion text.** Do not look at Builder files yet.
+1. **Read only the assertion text from the Validation Contract.** Do not look at Builder files yet.
 2. **Identify the observable outcome.** What can be measured or asserted from outside the implementation?
-3. **Identify the minimal setup.** What inputs, files, or state does the criterion require to be exercised?
-4. **Write the experiment** following the template above.
+3. **Identify the minimal setup.** What inputs, files, or state does the assertion require to be exercised?
+4. **Write the experiment** following the template above, using the assertion ID as both the filename stem and the `describe()` label.
 5. **Identify one boundary or negative case** — what input or condition should produce a different outcome?
 6. **Save to `$RND_DIR/verifications/T<id>-experiments/`** with the naming convention above.
 
-After writing all experiments (one per criterion), proceed to Step 3 of the verification process: run experiments against the Builder's code.
+After writing all experiments (one per assertion ID), proceed to Step 3 of the verification process: run experiments against the Builder's code.
 
 ## Recording Experiment Results
 

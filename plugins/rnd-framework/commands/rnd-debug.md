@@ -91,6 +91,8 @@ prompt: |
 
   Implement the fix using TDD. Save the build manifest to $RND_DIR/builds/T1-manifest.md
   and the self-assessment to $RND_DIR/builds/T1-self-assessment.md.
+
+  ${SESSION_SKILLS_FRAGMENT}
 ```
 
 The agent completes and returns via `SendMessage`. Wait for it before proceeding.
@@ -118,6 +120,8 @@ prompt: |
 
   Write independent experiment tests from the spec, run them, inspect the code,
   and save the verification report to $RND_DIR/verifications/T1-verification.md.
+
+  ${SESSION_SKILLS_FRAGMENT}
 ```
 
 The agent completes and returns its verdict via `SendMessage`. Wait for it before proceeding.

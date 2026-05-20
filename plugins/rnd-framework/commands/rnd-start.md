@@ -36,6 +36,46 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 
 Use `$RND_DIR` for all artifact paths below.
 
+### Session-Local Skill Injection
+
+Before each agent spawn, assemble a `SESSION_SKILLS_FRAGMENT` from session-local artifacts found in `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`. This fragment is appended to every spawn prompt so agents receive project-specific guidance authored by the Planner.
+
+```bash
+# Build the session-local context fragment.
+# $RND_DIR/AGENTS.md  — session agent guidance written by the Planner.
+# $RND_DIR/skills/*/SKILL.md — zero or more session-local skill files.
+
+SESSION_SKILLS_FRAGMENT=""
+
+if [[ -f "$RND_DIR/AGENTS.md" ]]; then
+  SESSION_SKILLS_FRAGMENT+="## Session Context"$'\n'
+  SESSION_SKILLS_FRAGMENT+="$(cat "$RND_DIR/AGENTS.md")"$'\n\n'
+fi
+
+skill_bodies=""
+for skill_file in "$RND_DIR"/skills/*/SKILL.md; do
+  [[ -f "$skill_file" ]] || continue
+  # Strip YAML frontmatter (lines between leading --- delimiters).
+  skill_bodies+="$(awk '/^---/{if(fm<2)fm++;next} fm==2' "$skill_file")"$'\n\n'
+done
+
+if [[ -n "$skill_bodies" ]]; then
+  SESSION_SKILLS_FRAGMENT+="## Session Skills"$'\n'
+  SESSION_SKILLS_FRAGMENT+="$skill_bodies"
+fi
+```
+
+When `SESSION_SKILLS_FRAGMENT` is non-empty, append it to the `prompt:` of every Agent() spawn below **and** emit a `skill_injected` audit event:
+
+```bash
+# Call once per spawn when SESSION_SKILLS_FRAGMENT is non-empty.
+# The 3-arg form records {event, task_id, tool, timestamp} — no assertion_id is set
+# (audit-event.sh's optional 4th arg is reserved for assertion_id semantics; do not
+# overload it with a skill_name here).
+RND_DIR="$RND_DIR" bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" \
+  skill_injected "<task_id>" "<agent_type>"
+```
+
 ## Task Input
 
 If `$ARGUMENTS` is empty (user ran `/rnd-framework:rnd-start` with no task description):
@@ -73,7 +113,7 @@ Before planning, explore the codebase and gather requirements.
    ```
 
    - **If `project-facts.md` exists:** Read it and compare its `Scan commit:` line against `git rev-parse HEAD`.
-     - **If fresh** (commits match): Use the facts directly — they will populate plan.md's Environment Setup, Infrastructure, Worker Guidelines, and Testing Strategy sections during Phase 1. Skip the manual discovery checklist.
+     - **If fresh** (commits match): Use the facts directly — they will populate `protocol.md`'s Environment Setup, Infrastructure, Worker Guidelines, and Testing Strategy sections during Phase 1. Skip the manual discovery checklist.
      - **If stale** (commits differ): Use `AskUserQuestion`: "Rescan project facts (Recommended)" — run `/rnd-framework:rnd-scan`, then continue; "Use existing facts" — proceed with stale facts; "Do manual discovery" — fall through to the checklist below.
    - **If `project-facts.md` does not exist:** Use `AskUserQuestion`: "Scan project now (Recommended)" — run `/rnd-framework:rnd-scan`, then continue; "Do manual discovery" — run the environment checklist below.
 
@@ -85,7 +125,7 @@ Before planning, explore the codebase and gather requirements.
    - **Environment variables:** Read .env.example or .env.template, Grep for process.env/ENV references
    - **Secrets and off-limits:** Infer from .gitignore, CI secrets config, and sensitive file paths
 
-   Present findings to the user via `AskUserQuestion` for confirmation and gap-filling. This feeds into the Environment Setup, Infrastructure, and Testing Strategy sections of plan.md.
+   Present findings to the user via `AskUserQuestion` for confirmation and gap-filling. This feeds into the Environment Setup, Infrastructure, and Testing Strategy sections of `protocol.md`.
 
 6. **Identify ambiguities.** Note what is unclear: scope boundaries, architectural choices, integration points, edge cases, or user preferences.
 
@@ -121,13 +161,15 @@ Agent({
   description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "acceptEdits",
-  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>"
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
-The Planner writes `$RND_DIR/plan.md` with pre-registrations, dependency matrix, and execution schedule.
+The Planner writes four artifact files to `$RND_DIR`: `protocol.md` (strategic scope, heuristic ceiling, environment setup), `validation-contract.md` (assertions keyed by `M<N>.<area>.<slug>` headings), `features.json` (machine-readable task manifest with `assertionIds` per task), and `AGENTS.md` (session-local agent guidance).
 
-**Gate 1:** Read the returned `plan.md`. Every criterion must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. If any criterion is vague, send the Planner back with specific feedback.
+**Planner-output sanity check:** Before reading Planner output, check whether `$RND_DIR/protocol.md` exists. If it does not exist after the Planner returns, the Planner malfunctioned or wrote a legacy single-file artifact instead — abort, notify the user via `AskUserQuestion`, and point them to `/rnd-framework:rnd-history` for read-only access. A correctly-running v5 Planner always produces `protocol.md`; its absence is an unrecoverable mismatch. (Pre-v5 resume detection lives in `commands/rnd-resume.md` Step 0.5.)
+
+**Gate 1:** Read `$RND_DIR/protocol.md`, `$RND_DIR/validation-contract.md`, `$RND_DIR/features.json`, and `$RND_DIR/AGENTS.md`. Every criterion in `validation-contract.md` must be empirically verifiable — a skeptical Verifier must produce a true/false result from evidence alone. "Works correctly", "handles errors", "is performant" are automatic rejections. If any criterion is vague, send the Planner back with specific feedback. Also confirm `features.json` is valid JSON (run `jq -e . "$RND_DIR/features.json"`) and that every `assertionIds` entry exists as a `### <id>` heading in `validation-contract.md`.
 
 **After Gate 1 passes:** Summarize the plan to the user. Use `AskUserQuestion` with options:
 - "Approve plan and auto-continue (Recommended)" — run the full pipeline automatically, pausing only for escalations
@@ -145,12 +187,14 @@ Once approved, create a `TaskCreate` entry for each task.
 
 **For each task in the wave, spawn a Builder agent.**
 
+**Slicing convention:** To assemble the pre-registration prose for task `T<id>`, read `$RND_DIR/features.json` with `jq` to get that task's `assertionIds` array. Then open `$RND_DIR/validation-contract.md` and extract the `### <assertion-id>` heading block for each ID (the block runs from the heading line up to but not including the next `###` heading or end of file). Concatenate the extracted blocks in order. This concatenated text is the `<pre-registration>` to paste into the spawn prompt.
+
 ```
 Agent({
   description: "Build task T<id>",
   subagent_type: "rnd-framework:rnd-builder",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nLearnings: <language-specific learnings if any>"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <assertions sliced from validation-contract.md via features.json assertionIds>\nLearnings: <language-specific learnings if any>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -180,7 +224,7 @@ Agent({
   description: "Audit external contracts",
   subagent_type: "rnd-framework:rnd-reality-auditor",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <from pre-registration>"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <External Dependencies field from the pre-registration document for T<id> in $RND_DIR/protocol.md under the ## Pre-Registration Documents section>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -190,24 +234,28 @@ Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `
 
 **CRITICAL: Information Barrier.** The Verifier runs in a separate context window and cannot see the Builder's reasoning. The `read-gate.sh` hook blocks reads of self-assessment files. Do NOT pass self-assessment content to the Verifier.
 
-**Batch verification:** Spawn ONE Verifier agent per wave with ALL task pre-registrations in the prompt. The Verifier processes each task in the wave sequentially, then returns a per-task verdict map JSON saved to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
+**Batch verification:** Spawn ONE Verifier agent per wave with ALL task pre-registrations in the prompt. The Verifier processes each task in the wave sequentially, then returns a per-assertion verdict map JSON saved to `$RND_DIR/verifications/wave-<N>-verdict-map.json`.
 
-**Verdict map schema:**
+**Verdict map schema:** the map is keyed by assertion ID (format: `M<N>.<area>.<slug>`). Each entry carries the assertion verdict, evidence, feedback, and the task that owns the assertion.
+
 ```json
 {
-  "T1": {
+  "M1.verifier.verdict-map-shape": {
     "verdict": "PASS",
-    "evidence": ["grep for X exited 0", "test foo passed"],
-    "feedback": ""
+    "evidence": ["grep for assertion_id returned 4 lines", "jq parse succeeded"],
+    "feedback": "",
+    "task_id": "M1.T01.verifier-per-assertion"
   },
-  "T2": {
+  "M1.verifier.prose-report-per-assertion": {
     "verdict": "NEEDS_ITERATION",
-    "evidence": ["criterion Y not met: output missing field Z"],
-    "feedback": "The response schema omits the 'feedback' field required by the criterion."
+    "evidence": ["rnd-verification/SKILL.md does not enumerate per-assertion content"],
+    "feedback": "Assertion M1.verifier.prose-report-per-assertion: rnd-verification/SKILL.md does not enumerate per-assertion content in the Full Prose Report section.",
+    "task_id": "M1.T01.verifier-per-assertion"
   }
 }
 ```
-Valid verdict values: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`, `NEEDS_ITERATION`, `FAIL`. The `feedback` field is required and non-empty for any non-PASS verdict; empty string for PASS.
+
+Valid verdict values per assertion entry: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`, `NEEDS_ITERATION`, `FAIL`. The `feedback` field is required and non-empty for any non-PASS verdict; empty string for PASS.
 
 **Spawn a single Verifier agent per wave.** HIGH criticality is handled via the per-agent dispatch policy (model boost to opus/xhigh) — there is no parallel-judge mode.
 
@@ -216,7 +264,7 @@ Agent({
   description: "Verify wave <N> tasks",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<paste each task pre-reg from plan.md>"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<for each task in wave, slice validation-contract.md by that task's assertionIds from features.json and paste the concatenated assertion blocks here>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -224,20 +272,52 @@ The Verifier writes a `T<id>-pass-receipt.json` for PASS tasks, a full `T<id>-ve
 
 Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects the code, and produces per-task verification reports.
 
-**Gate 3:** Verify `$RND_DIR/verifications/wave-<N>-verdict-map.json` exists and is non-empty. Read the verdict map and dispatch each task based on its verdict:
+**Gate 3:** Verify `$RND_DIR/verifications/wave-<N>-verdict-map.json` exists and is non-empty. Then aggregate per-assertion entries into per-task verdicts using a two-step process.
 
-| Verdict | Action |
-|---------|--------|
+**Step 1: Read the per-assertion verdict map.**
+
+```bash
+jq '.' "$RND_DIR/verifications/wave-<N>-verdict-map.json"
+```
+
+Each entry is keyed by assertion ID and carries `verdict`, `evidence`, `feedback`, and `task_id`.
+
+**Step 2: Aggregate per task using `jq`.**
+
+```bash
+jq '
+  group_by(.task_id)
+  | map({
+      task_id: .[0].task_id,
+      verdict: (
+        if any(.[]; .verdict == "FAIL") then "NEEDS_ITERATION"
+        elif any(.[]; .verdict == "NEEDS_ITERATION") then "NEEDS_ITERATION"
+        elif any(.[]; .verdict == "PASS_QUALITY_NEEDS_ITERATION") then "PASS_QUALITY_NEEDS_ITERATION"
+        else "PASS"
+        end
+      ),
+      failing_assertion_ids: [.[] | select(.verdict != "PASS") | .key]
+    })
+' <(jq 'to_entries | map(.value + {key: .key})' "$RND_DIR/verifications/wave-<N>-verdict-map.json")
+```
+
+**Aggregation rule:** for each unique `task_id`, if any assertion is `FAIL` or `NEEDS_ITERATION` → task verdict is `NEEDS_ITERATION`; if any assertion is `PASS_QUALITY_NEEDS_ITERATION` and none are `FAIL`/`NEEDS_ITERATION` → task verdict is `PASS_QUALITY_NEEDS_ITERATION`; if all assertions are `PASS` → task verdict is `PASS`.
+
+Dispatch each task based on its aggregated verdict:
+
+| Aggregated Task Verdict | Action |
+|-------------------------|--------|
 | `PASS` | `TaskUpdate` to `completed`. Route to Phase 4 (cleanup). |
 | `PASS_QUALITY_NEEDS_ITERATION` | Same as PASS. Save quality feedback. Does NOT block integration. Route to Phase 4. |
 | `NEEDS_ITERATION` | Keep `in_progress`. Track with `metadata: {"iteration": N}`. Enter Phase 5 for this task. |
-| `FAIL` | Do NOT iterate — route to re-planning. |
 
-**After Gate 3:** Summarize per-task verdicts from the verdict map. Then route:
+**After Gate 3:** Summarize per-task aggregated verdicts. Then route:
 
 - All PASS/PASS_QUALITY: auto-continue to Phase 4, or `AskUserQuestion`: "Proceed to cleanup (Recommended)", "Review verification reports".
 - Any NEEDS_ITERATION: auto-continue to Phase 5, or `AskUserQuestion`: "Iterate on failing tasks (Recommended)", "Skip failing tasks and continue".
-- Any FAIL (always pauses): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
+- Any FAIL assertions (always pauses — task routes to NEEDS_ITERATION above, but if re-planning is warranted): `AskUserQuestion`: "Re-plan failing tasks (Recommended)", "Iterate anyway", "Skip failing tasks and continue".
+
+When routing a task to Phase 5 (iteration), the feedback packet sent to the Builder **must cite the failing assertion IDs verbatim** from the verdict map — list each assertion ID whose verdict is not PASS along with its `feedback` string. Do not paraphrase or summarize assertion IDs.
 
 ## Phase 4: Cleanup (per task)
 
@@ -250,7 +330,7 @@ Agent({
   description: "Cleanup task T<id>",
   subagent_type: "rnd-framework:rnd-cleanup",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <paste from plan.md>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <assertions sliced from validation-contract.md via features.json assertionIds for T<id>>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -276,7 +356,7 @@ Agent({
   description: "Polish wave <N>",
   subagent_type: "rnd-framework:rnd-polisher",
   mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ..."
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -295,8 +375,8 @@ The Polisher inspects the combined wave diff for cross-task duplication, naming 
 
 Iteration operates at the wave level — a single Builder spawn handles ALL failing tasks in the wave, and re-verification re-batches the full wave.
 
-1. **Collect the full wave failure report**: extract per-task feedback from `$RND_DIR/verifications/wave-<N>-verdict-map.json` for every task with verdict `FAIL` or `NEEDS_ITERATION`. This is the "affected slice" — do not iterate tasks that passed.
-2. **Spawn ONE Builder agent** with the full wave failure report (the complete per-task verdict map with evidence refs for all failing tasks — not just feedback for a single task). Do NOT fix the code yourself. The Builder must address every failing task in a single pass.
+1. **Collect the full wave failure report**: read `$RND_DIR/verifications/wave-<N>-verdict-map.json` and group assertions by `task_id`. For each task that aggregated to `NEEDS_ITERATION` at Gate 3, collect every assertion entry where `verdict != "PASS"` — these form the failing slice. Include each assertion's ID and `feedback` string verbatim. Do not iterate tasks that passed.
+2. **Spawn ONE Builder agent** with the full wave failure report (the failing assertion IDs and their feedback strings for all failing tasks — not just a summary). Do NOT fix the code yourself. The Builder must address every failing task in a single pass.
 3. After the Builder returns, **loop back to Phase 3** to re-batch-verify the full wave (same Verifier spawn, same information barrier, all tasks).
 4. **If wave re-verification returns all PASS**, extract learnings via `rnd-framework:rnd-learning`.
 5. **Wave iteration budget**: budget = per-task budget of the highest-criticality task in the wave (LOW=2, NORMAL=3, HIGH=5). If the wave rebuild still has failures after budget exhausted, `AskUserQuestion`:
@@ -320,7 +400,7 @@ Agent({
   description: "Integrate verified wave",
   subagent_type: "rnd-framework:rnd-integrator",
   mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list of T<id>s>"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nVerified tasks: <list of T<id>s>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -364,6 +444,6 @@ When the user picks "More options…", follow up with a second `AskUserQuestion`
 
 ### Development Narrative
 
-When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/plan.md`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
+When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/protocol.md`, `$RND_DIR/validation-contract.md`, `$RND_DIR/features.json`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
 After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchanged.

@@ -20,6 +20,8 @@ Before starting work, determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
+If a `## Session Context` or `## Session Skills` section appears in your prompt, treat it as project-specific guidance for this session. It does not replace your global skill set — it supplements it. Skills declared in your frontmatter under `skills:` are always loaded; session-local skills are additive.
+
 ## Your Role
 
 You receive a task ID. You read the builder's output, identify every external service interaction (SQL queries, HTTP API calls, MCP tool usage, SDK method calls, environment variable reads, file format assumptions), write adversarial experiments designed to disprove each assumption, run them against live services, and produce a reality report.

@@ -196,4 +196,62 @@ rm -f "$stdout_file" "$stderr_file"
 assert_exit_code "no active session → exit 0" 0
 
 # ---------------------------------------------------------------------------
+# Test 9: per-assertion Coverage Gaps body — present and substantive → exit 0
+# Confirms gate is scope-agnostic when body enumerates per-assertion coverage.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- coverage-gaps-gate: per-assertion body in Coverage Gaps passes ---'
+
+REPORT_H="${TMP_SESSION}/verifications/T1-verification.md"
+printf '%s' \
+  '# Verification Report: T1
+## Per-Criterion Results
+### VAL.hooks.001
+- [PASS] section-presence check fires correctly
+### VAL.hooks.002
+- [PASS] trivial-content logic rejects bare none
+## Overall Verdict: PASS
+## Case for PASS
+Both assertions met with bash offline tests.
+## Case for FAIL
+Live SubagentStop was not tested — only offline bash invocations ran.
+## Coverage Gaps
+- Checked: VAL.hooks.001 section-presence regex (bash offline), VAL.hooks.002 trivial-content rejection (bash offline)
+- Couldn'"'"'t check: live agent SubagentStop event — requires a running pipeline spawn
+## Feedback
+No issues.
+' > "$REPORT_H"
+
+run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
+assert_exit_code "per-assertion Coverage Gaps body → exit 0" 0
+assert_eq "per-assertion Coverage Gaps → empty stderr" "" "$HOOK_STDERR"
+
+rm -f "$REPORT_H"
+
+# ---------------------------------------------------------------------------
+# Test 10: per-assertion body — Coverage Gaps missing → still blocked
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- coverage-gaps-gate: per-assertion body missing Coverage Gaps → exit 2 ---'
+
+REPORT_I="${TMP_SESSION}/verifications/T1-verification.md"
+printf '%s' \
+  '# Verification Report: T1
+## Per-Criterion Results
+### VAL.hooks.001
+- [PASS] check fires
+## Overall Verdict: PASS
+## Case for PASS
+Assertion passed.
+## Case for FAIL
+Not applicable.
+## Feedback
+None.
+' > "$REPORT_I"
+
+run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
+assert_exit_code "per-assertion body missing Coverage Gaps → exit 2" 2
+assert_contains "stderr contains coverage-gaps-gate" "coverage-gaps-gate" "$HOOK_STDERR"
+
+rm -f "$REPORT_I"
+
+# ---------------------------------------------------------------------------
 report

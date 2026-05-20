@@ -13,25 +13,41 @@ Determine the RND artifacts directory for the current session:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
+## Step 0.5: Pre-v5 Session Detection
+
+Before doing anything else, run:
+
+```bash
+test -f "$RND_DIR/protocol.md"
+```
+
+- **If `protocol.md` exists:** This is a v5 session — proceed to Step 1.
+- **If `protocol.md` is absent:** Run `test -f "$RND_DIR/plan.md"`. If `plan.md` exists but `protocol.md` does not, this is a **pre-v5 session** — the artifact format has changed and resuming inline is not supported. Use `AskUserQuestion` with:
+  - "View the session read-only via /rnd-framework:rnd-history (Recommended)"
+  - "Start a fresh /rnd-framework:rnd-start instead"
+  - "Cancel"
+
+  Do not proceed past this step for a pre-v5 session.
+
 ## Step 1: Validate Active Session
 
-If `$RND_DIR` is empty, does not exist, or does not contain `plan.md`, display:
+If `$RND_DIR` is empty, does not exist, or does not contain `protocol.md`, display:
 
 > No active pipeline session found. Start a new pipeline with `/rnd-framework:rnd-start <task>`.
 
 Then stop — do not proceed further.
 
-## Step 2: Parse plan.md
+## Step 2: Parse session artifacts
 
-Read `$RND_DIR/plan.md` and extract:
+Read `$RND_DIR/features.json` with `jq` and `$RND_DIR/protocol.md` to extract:
 
-1. **Task IDs** — scan the Pre-Registration Documents section for lines matching the pattern `Task ID: T<number>`. Collect all task IDs found (e.g., T1, T2, T3).
+1. **Task IDs** — parse `features.json`: `jq -r '.tasks[].id' "$RND_DIR/features.json"`. Collect all task IDs (e.g., `M1.T01.add-auth`).
 
-2. **Wave assignments** — read the Execution Schedule section. Each subsection heading (`### Wave N: T1, T2`) lists which tasks belong to which wave. Record the wave number for each task ID.
+2. **Wave assignments** — read the Execution Schedule section of `protocol.md`. Each subsection heading (`### Wave N: T<id1>, T<id2>`) lists which tasks belong to which wave. Record the wave number for each task ID.
 
-3. **Dependency relationships** — read the Dependency Matrix section. For each task, record its "Depends On" column entries. These will be used to set `addBlockedBy` when recreating tasks.
+3. **Dependency relationships** — parse `features.json`: `jq -r '.tasks[] | .id + " " + (.dependsOn | join(","))' "$RND_DIR/features.json"`. These will be used to set `addBlockedBy` when recreating tasks.
 
-4. **Task names** — from each Pre-Registration Document block, extract the task name from the `Intent:` line or the task title in the Task Tree section.
+4. **Task names** — from the Task Tree section of `protocol.md`, extract the task name for each task ID.
 
 ## Step 3: Scan Build Artifacts
 
@@ -73,7 +89,7 @@ Using the data gathered in Steps 2-6, assign a status to each task:
 
 | Condition | Status |
 |-----------|--------|
-| Task found in plan.md only (no build artifact) | `planned` |
+| Task found in features.json only (no build artifact) | `planned` |
 | Build manifest exists, no verification report | `built` |
 | Verification verdict is PASS or PASS (quality: NEEDS ITERATION) | `verified` |
 | Verification verdict is NEEDS_ITERATION, iteration log shows active cycle | `iterating` |
@@ -84,10 +100,10 @@ Using the data gathered in Steps 2-6, assign a status to each task:
 
 Recreate the pipeline's task tracking state to mirror the reconstructed status:
 
-1. **Create tasks.** For each task found in `plan.md`, issue a `TaskCreate` with:
-   - `subject`: the task name (e.g., "T1: Create resume command")
-   - `description`: the task's pre-registration content from `plan.md`
-   - `activeForm`: present-continuous task description (e.g., "Building resume command")
+1. **Create tasks.** For each task found in `features.json`, issue a `TaskCreate` with:
+   - `subject`: the task name (e.g., "M1.T01.add-auth: Add authentication")
+   - `description`: the task's assertion blocks sliced from `validation-contract.md` via `assertionIds`
+   - `activeForm`: present-continuous task description (e.g., "Building authentication")
 
 2. **Set dependencies.** For each task that has entries in the "Depends On" column of the Dependency Matrix, call `TaskUpdate` with `addBlockedBy` listing the dependent task IDs. This mirrors the original pipeline's dependency graph.
 
@@ -105,7 +121,7 @@ Based on the reconstructed state, determine where the pipeline left off:
 
 | State | Next Phase |
 |-------|-----------|
-| plan.md exists, no built tasks | Phase 2 (Build) — Wave 1 |
+| features.json exists, no built tasks | Phase 2 (Build) — Wave 1 |
 | Some tasks built, none verified | Phase 3 (Verify) — current wave |
 | Some tasks verified with PASS, none integrated | Phase 5 (Integrate) — current wave |
 | Some tasks with NEEDS_ITERATION verdict | Phase 4 (Iterate) — failing tasks |
@@ -130,7 +146,7 @@ Then use `AskUserQuestion` to present the appropriate next-action options based 
 
 **If plan exists but no builds yet (resume at Phase 2):**
 - "Start building Wave 1 (Recommended)" — run the build phase for the first wave
-- "Review plan before building" — display plan.md contents
+- "Review plan before building" — display `protocol.md` and `features.json` contents
 
 **If some tasks built but not verified (resume at Phase 3):**
 - "Verify built tasks (Recommended)" — run the verification phase for built tasks

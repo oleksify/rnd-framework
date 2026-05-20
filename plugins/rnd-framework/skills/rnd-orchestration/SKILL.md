@@ -446,3 +446,47 @@ Persistent, append-only record of non-trivial judgment calls shared across Plann
 
 **Explicit-fork discipline:** when an agent makes a decision that qualifies, the agent's output MUST narrate the fork ("I considered A, B, C; chose A because...") before appending the entry. This forces critical thinking at the decision point instead of post-hoc justification.
 
+## Session-Local Skill Injection
+
+Session-local skills are narrow, project-specific skills the Planner mints during exploration when the project has a convention, helper library, or domain idiom that no global skill covers. They supplement — not replace — global skills for the duration of a single pipeline session.
+
+### Layout
+
+Skills are placed at:
+
+```
+$RND_DIR/skills/<skill-name>/SKILL.md
+$RND_DIR/AGENTS.md              ← lists which skills are active this session
+```
+
+`AGENTS.md` carries a `## Session Skills` section listing each active skill by name. The orchestrator reads this file on every agent spawn to discover the current skill set.
+
+### Injection Mechanism
+
+Before spawning any agent, the orchestrator reads `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`. The content of each session-local skill is injected into the agent's prompt under two headers:
+
+- **`## Session Context`** — session-wide guidance from `AGENTS.md` (conventions, domain constraints, cross-task rules)
+- **`## Session Skills`** — content of each session-local `SKILL.md`, one per skill, titled by skill name
+
+Both sections appear in the agent prompt before the task-specific instructions. This is prompt injection only — session-local skills are NOT registered with the Skill tool and are not invocable by name. In v5.0 of the framework, they are prompt-injected exclusively.
+
+### Audit Event
+
+After injecting session-local context into an agent prompt, the orchestrator emits one audit event per spawn:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" skill_injected <task_id> <agent_type>
+```
+
+For example:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" skill_injected M1.T03 rnd-builder
+```
+
+The 3-argument form is canonical. `audit-event.sh`'s optional 4th argument is reserved for `assertion_id` semantics and must not be overloaded with a skill name — agent-spawn injection is a per-spawn event, not a per-skill event, so the full session-local fragment is logged once per spawn regardless of how many skills it contains.
+
+### When to Inject
+
+Inject session-local skills into every agent spawn — not selectively. An agent that does not receive a skill it needed produces incorrect output that looks correct, which is worse than a build failure. The injection cost is a few extra prompt tokens; the risk of selective injection is silent divergence.
+

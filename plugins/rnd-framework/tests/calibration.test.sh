@@ -115,4 +115,37 @@ assert_eq "audit-event tier_escalated writes task_id" "T7" "$task_val"
 tool_val="$(jq -r '.tool' "$AUDIT_FILE")"
 assert_eq "audit-event tier_escalated writes tool (tier transition)" "NORMAL->HIGH" "$tool_val"
 
+printf '\n--- calibration: assertion_id_window subcommand ---\n'
+
+# Seed a mixed calibration file: some records carry assertion_id, historical ones don't.
+MIXED_DIR="${TMP_DIR}/mixed-plugin-data"
+mkdir -p "$MIXED_DIR"
+MIXED_FILE="${MIXED_DIR}/calibration.jsonl"
+
+cat > "$MIXED_FILE" <<'JSONL'
+{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}
+{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":"FALSE_PASS","assertion_id":"M1.foo.bar"}
+{"criticality":"HIGH","verdict":"FAIL","falseVerdictFlag":null,"assertion_id":"M1.foo.baz"}
+{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null,"assertion_id":"M1.foo.bar"}
+JSONL
+
+# Test 10: assertion_id_window returns only records matching the given assertion_id
+matched="$(CLAUDE_PLUGIN_DATA="$MIXED_DIR" "$CALIB" assertion_id_window "M1.foo.bar")"
+count="$(printf '%s\n' "$matched" | jq -sc 'length')"
+assert_eq "assertion_id_window M1.foo.bar returns 2 records" "2" "$count"
+
+# Test 11: assertion_id_window for an absent id returns empty output
+absent="$(CLAUDE_PLUGIN_DATA="$MIXED_DIR" "$CALIB" assertion_id_window "M1.not.present")"
+assert_eq "assertion_id_window absent id returns empty" "" "$absent"
+
+# Test 12: window NORMAL still returns historical records (without assertion_id) unchanged
+all_normal="$(CLAUDE_PLUGIN_DATA="$MIXED_DIR" "$CALIB" window NORMAL)"
+normal_count="$(printf '%s\n' "$all_normal" | jq -sc 'length')"
+assert_eq "window NORMAL includes records without assertion_id" "3" "$normal_count"
+
+# Test 13: assertion_id_window filters by assertion_id across different criticalities
+all_baz="$(CLAUDE_PLUGIN_DATA="$MIXED_DIR" "$CALIB" assertion_id_window "M1.foo.baz")"
+baz_count="$(printf '%s\n' "$all_baz" | jq -sc 'length')"
+assert_eq "assertion_id_window M1.foo.baz returns 1 record (HIGH criticality)" "1" "$baz_count"
+
 report

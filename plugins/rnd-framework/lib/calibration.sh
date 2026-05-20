@@ -4,6 +4,7 @@
 # Usage:
 #   calibration.sh window <tier> [N=10]
 #       Print last N calibration.jsonl records filtered by criticality == <tier>.
+#       Records with or without assertion_id are both included.
 #
 #   calibration.sh false_pass_rate <tier> [N=10]
 #       Print the fraction of records in the window whose falseVerdictFlag is
@@ -20,6 +21,10 @@
 #   calibration.sh task_type_window <type> [N=10]
 #       Print last N calibration.jsonl records filtered by task_type == <type>.
 #       task_type values: refactor | new-feature | bugfix | docs | config | infra
+#
+#   calibration.sh assertion_id_window <assertion_id> [N=10]
+#       Print last N calibration.jsonl records that carry assertion_id == <assertion_id>.
+#       Historical records without assertion_id are excluded from this view.
 #
 #   calibration.sh --help
 #       Print this usage and exit 0.
@@ -49,6 +54,7 @@ _usage() {
   printf '  should_promote <tier> [N=10]                  Exit 0 if rate >= 0.20 and escalation not disabled\n'
   printf '  promote_tier <tier>                           Print promoted tier (LOW->NORMAL, NORMAL->HIGH, HIGH->HIGH)\n'
   printf '  task_type_window <type> [N=10]                Print last N records filtered by task_type\n'
+  printf '  assertion_id_window <assertion_id> [N=10]     Print last N records with assertion_id == <assertion_id>\n'
 }
 
 _window() {
@@ -145,6 +151,19 @@ _task_type_window() {
   jq -c --arg type "$type" 'select(.task_type == $type)' "$calib" | tail -n "$n"
 }
 
+_assertion_id_window() {
+  local assertion_id="${1:?assertion_id required}"
+  local n="${2:-10}"
+  local calib
+  calib="$(_calib_file)"
+
+  if [[ ! -f "$calib" ]]; then
+    printf '' ; return 0
+  fi
+
+  jq -c --arg id "$assertion_id" 'select(.assertion_id == $id)' "$calib" | tail -n "$n"
+}
+
 subcommand="${1:-}"
 
 case "$subcommand" in
@@ -170,6 +189,10 @@ case "$subcommand" in
   task_type_window)
     shift
     _task_type_window "$@"
+    ;;
+  assertion_id_window)
+    shift
+    _assertion_id_window "$@"
     ;;
   *)
     _usage >&2

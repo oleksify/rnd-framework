@@ -42,7 +42,7 @@ fi
 wt_root="${cwd}/.rnd-worktrees/${rnd_session_id}"
 wt_path="${wt_root}/${agent_name}"
 
-mkdir -p "$wt_root" 2>/dev/null || true
+mkdir -p "$wt_path" 2>/dev/null || true
 
 if [[ -n "${RND_DIR:-}" ]]; then
   plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

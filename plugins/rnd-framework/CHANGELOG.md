@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.0.1 — 2026-05-21
+
+### Fix WorktreeCreate hook to mkdir the leaf path, not the parent root
+
+Every worktree-isolated agent spawn (Builder/Verifier/Cleanup/Polisher/Debugger/Integrator) failed at the harness WorktreeCreate gate with "path is not a directory" because hooks/worktree-create.sh:45 created $wt_root but echoed $wt_path. One-character fix: mkdir -p $wt_path. tests/worktree-hooks.test.sh stays green (8/8).
+
 ## 5.0.0 — 2026-05-20
 
 **M2 additions:** The Verifier now emits a per-assertion verdict map (`wave-*-verdict-map.json`) that keys results by stable assertion ID (`M<N>.<area>.<slug>`) rather than task ID; `hooks/coverage-gaps-gate.sh` and `hooks/verifier-case-gate.sh` enforce the required `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections in every verification report. **M3 additions:** Session-local skill injection — the orchestrator assembles a `SESSION_SKILLS_FRAGMENT` from `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md` and interpolates it into every Agent() spawn prompt; planner decomposition and orchestration skills document the minting heuristic and injection policy; `audit-event.sh` emits a `skill_injected` record per spawn when the fragment is non-empty.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.0.2 — 2026-05-23
+
+### Skip auto-format inside linked worktrees
+
+format-on-save.sh now exits before formatting when cwd is a linked git worktree, where the project's gitignored toolchain dirs (deps/, _build/, node_modules/, target/) are absent and the formatter would error or silently diverge. Formatting defers to the merge-time rnd-formatting step in the main checkout. Worktree detection compares git rev-parse --path-format=absolute --git-dir against --git-common-dir.
+
 ## 5.0.1 — 2026-05-21
 
 ### Fix WorktreeCreate hook to mkdir the leaf path, not the parent root

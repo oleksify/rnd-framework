@@ -17,6 +17,28 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # ---------------------------------------------------------------------------
+# Linked-worktree guard
+# ---------------------------------------------------------------------------
+# Build/verify/cleanup/polish/debug agents work in linked git worktrees that lack
+# the project's gitignored toolchain dirs (deps/, _build/, node_modules/, target/),
+# so the formatter would error or diverge there. Skip auto-format in worktrees;
+# formatting is applied once at merge time by the rnd-formatting skill, which runs
+# in the main checkout where the toolchain is whole.
+#
+# A linked worktree's git-dir lives under <common>/worktrees/<name>, so it differs
+# from the common git-dir; in the main checkout the two are identical. --path-format=absolute
+# (git 2.31+) normalizes both to the same absolute form, avoiding the symlink/relative
+# mismatches that plain --show-toplevel vs cd+pwd or relative --git-common-dir produce.
+# Outside a git tree (or on git <2.31) the calls fail → return 1 → not a worktree.
+in_linked_worktree() {
+  local gitdir common
+  gitdir="$(git rev-parse --path-format=absolute --git-dir 2>/dev/null)"        || return 1
+  common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 1
+
+  [[ "$gitdir" != "$common" ]]
+}
+
+# ---------------------------------------------------------------------------
 # Fast-path: skip if no active session
 # ---------------------------------------------------------------------------
 
@@ -41,6 +63,10 @@ if is_plugin_artifact_path "$file_path"; then
 fi
 
 if ! is_code_file "$file_path"; then
+  exit 0
+fi
+
+if in_linked_worktree; then
   exit 0
 fi
 

@@ -4,7 +4,6 @@ description: "Wave-level polish specialist that detects cross-task duplication, 
 tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: opus
 effort: high
-isolation: "worktree"
 color: "#EF4444"
 skills: kiss-practices, fp-practices
 maxTurns: 150

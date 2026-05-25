@@ -11,9 +11,6 @@ raw="$(cat)"
 five_hour_pct="$(jq_extract "$raw" '.rate_limits.fiveHour.used_percentage')"
 seven_day_pct="$(jq_extract "$raw" '.rate_limits.sevenDay.used_percentage')"
 
-# Extract git worktree path (v2.1.97+). Non-empty when cwd is inside a linked worktree.
-git_worktree="$(jq_extract "$raw" '.workspace.git_worktree')"
-
 session_dir="$(active_session_dir 2>/dev/null || true)"
 phase="$(detect_pipeline_phase "$session_dir")"
 
@@ -34,12 +31,6 @@ if [[ -n "$parts" ]]; then
   text="${phase} | ${parts}"
 else
   text="${phase}"
-fi
-
-# Append worktree indicator when inside a linked worktree.
-if [[ -n "$git_worktree" ]]; then
-  wt_name="${git_worktree##*/}"
-  text="${text} [wt: ${wt_name}]"
 fi
 
 printf '%s\n' "$(jq -cn --arg t "$text" '{text:$t}')"

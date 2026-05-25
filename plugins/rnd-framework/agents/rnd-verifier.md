@@ -5,7 +5,6 @@ tools: Read, Write, Bash, Grep, Glob
 disallowedTools: Edit
 model: opus
 effort: high
-isolation: "worktree"
 memory: user
 color: "#F59E0B"
 skills: rnd-verification

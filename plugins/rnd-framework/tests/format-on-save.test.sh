@@ -198,51 +198,6 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Test 12: linked worktree → auto-format skipped; main checkout → runs
-# ---------------------------------------------------------------------------
-# Worktrees lack the project's gitignored toolchain dirs (deps/, node_modules/,
-# target/, ...), so the formatter would error or diverge there. The hook must skip
-# auto-format inside a linked worktree but still run in the main checkout.
-printf '\n%s\n' '--- format-on-save: linked-worktree skip ---'
-
-wt_repo="$(mktemp -d)"
-( cd "$wt_repo" && git init -q && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init )
-
-# A formatter that, if it runs, creates the marker file.
-wt_marker="$(mktemp -u)"
-printf '{"detected":true,"command":"touch %s #","name":"marker-fmt"}' "$wt_marker" > "${session_dir}/.formatter-cache"
-
-# Positive control: main checkout → formatter runs → marker created.
-rm -f "$wt_marker"
-touch "${wt_repo}/main.ts"
-cd "$wt_repo"
-run_fmt_hook '{"tool_input":{"file_path":"'"${wt_repo}/main.ts"'"}}' "CLAUDE_CONFIG_DIR=${tmp_config}"
-assert_exit_code "main checkout → exit 0" 0
-if [[ -e "$wt_marker" ]]; then
-  assert_eq "main checkout: formatter runs" "ran" "ran"
-else
-  assert_eq "main checkout: formatter runs" "ran" "skipped"
-fi
-
-# Worktree: formatter must be skipped → marker NOT created.
-wt_dir="$(mktemp -d)/wt"
-( cd "$wt_repo" && git worktree add -q "$wt_dir" -b fmt-wt-test )
-rm -f "$wt_marker"
-touch "${wt_dir}/code.ts"
-cd "$wt_dir"
-run_fmt_hook '{"tool_input":{"file_path":"'"${wt_dir}/code.ts"'"}}' "CLAUDE_CONFIG_DIR=${tmp_config}"
-assert_exit_code "worktree → exit 0" 0
-if [[ -e "$wt_marker" ]]; then
-  assert_eq "worktree: formatter skipped" "skipped" "ran"
-  rm -f "$wt_marker"
-else
-  assert_eq "worktree: formatter skipped" "skipped" "skipped"
-fi
-
-cd "$tmp_project"
-rm -rf "$wt_repo" "$(dirname "$wt_dir")"
-
-# ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
 rm -rf "$tmp_config" "$tmp_project"

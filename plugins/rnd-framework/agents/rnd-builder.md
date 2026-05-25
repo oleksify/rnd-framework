@@ -4,7 +4,6 @@ description: "Implements a single task from the RND plan. Writes code, tests, an
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 effort: high
-isolation: "worktree"
 memory: user
 color: "#22C55E"
 skills: rnd-building, rnd-iteration
@@ -95,7 +94,7 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 ## Properties (advisory, Builder-side)
 
-When a task's pre-registration includes a `## Properties` section, the Builder MAY invoke `${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh` in its worktree to iterate against the property suite before submitting work.
+When a task's pre-registration includes a `## Properties` section, the Builder MAY invoke `${CLAUDE_PLUGIN_ROOT}/lib/run-properties.sh` to iterate against the property suite before submitting work.
 
 **Output path:** `$RND_DIR/builds/T<id>-self-assessment-properties.txt`
 

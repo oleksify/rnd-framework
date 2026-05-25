@@ -34,7 +34,6 @@ The resolved `CONFIG_DIR` is the base for artifact storage: `$CONFIG_DIR/.rnd/<p
 
 - `basename`: derived from `git rev-parse --git-common-dir` parent directory name
 - `hash`: first 8 chars of sha256 of the canonicalized git-common-dir path
-- Worktree support: all worktrees of the same repo produce the same slug (git-common-dir is shared)
 - Non-git fallback: uses `pwd` basename and hash
 
 ## Environment Variables

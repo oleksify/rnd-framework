@@ -47,7 +47,7 @@ else
 fi
 
 # --- Compute project slug ---
-# Use git common-dir so all worktrees share one artifact base directory.
+# Use git common-dir so all clones of the same repo share one artifact base directory.
 # Falls back to pwd when not inside a git repo.
 if _pdb_git_raw="$(git rev-parse --git-common-dir 2>/dev/null)"; then
   if [[ "$_pdb_git_raw" = /* ]]; then

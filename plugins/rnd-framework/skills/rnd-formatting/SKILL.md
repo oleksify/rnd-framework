@@ -15,13 +15,12 @@ After a pipeline run produces code, run the project's formatter before doc-polis
 
 ## Automatic Formatting (v2.1.90+)
 
-The `format-on-save.sh` PostToolUse hook automatically formats code files after every Write/Edit operation during an active RND session — **except inside linked git worktrees**. Worktrees lack the project's gitignored toolchain dirs (`deps/`, `_build/`, `node_modules/`, `target/`), so the formatter would error or diverge there; the hook skips them. It uses the same formatter detection logic described below, cached at session level.
+The `format-on-save.sh` PostToolUse hook automatically formats code files after every Write/Edit operation during an active RND session. It uses the same formatter detection logic described below, cached at session level.
 
-Because write-side agents (builder, verifier, cleanup, polisher, debugger) run in worktrees, their writes are **not** auto-formatted — this manual step at merge time (Phase 6, in the main checkout where the toolchain is whole) is what formats that code. In the main checkout, auto-format still runs, so manual formatting of orchestrator-written files is typically redundant.
+In the main checkout, auto-format runs on every write, so manual formatting of orchestrator-written files is typically redundant.
 
 Use this skill's manual process when:
-- Formatting code written by worktree agents after the integrator merges to main (the primary case)
-- You need to format files changed outside the pipeline (e.g., git merge)
+- You need to format files changed outside the pipeline (e.g., manual edits, git merge)
 - You want to format the entire project, not just individual files
 - The auto-format hook is not available (Claude Code < v2.1.90)
 

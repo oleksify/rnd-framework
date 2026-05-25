@@ -121,7 +121,7 @@ Properties:
       invariant: "Codec.decode(Codec.encode(x)) == x"
 ```
 
-**Shape 3 — sibling file `T<id>-properties.{exs,ts}`:** Executable code the Planner sketches and the Verifier runs in its own worktree. The Builder never executes it.
+**Shape 3 — sibling file `T<id>-properties.{exs,ts}`:** Executable code the Planner sketches and the Verifier runs independently. The Builder never executes it.
 
 ```typescript
 // T7-properties.ts
@@ -131,7 +131,7 @@ import { encode, decode } from "./codec"
 fc.assert(fc.property(fc.string(), (input) => decode(encode(input)) === input))
 ```
 
-**Execution is verifier-only.** Properties run exclusively in the Verifier's worktree. Counter-examples appear in `T<id>-verification.md` as shrunk reproducers.
+**Execution is verifier-only.** Properties run exclusively in the Verifier agent. Counter-examples appear in `T<id>-verification.md` as shrunk reproducers.
 
 **Calibration write — `verification_mode`.** When a pre-registration contains any of the three Properties shapes, the orchestrator MUST set `verification_mode: property` in the per-verdict calibration record it writes to `calibration.jsonl`. Pre-regs without a `## Properties` section default to `verification_mode: prose`. Reality-audit schema checks use `verification_mode: schema`. Property runs that are skipped due to a missing runtime use `verification_mode: skipped`.
 

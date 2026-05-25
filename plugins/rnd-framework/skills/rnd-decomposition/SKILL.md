@@ -172,7 +172,7 @@ Properties:
 
 ### Shape 3 — sibling file `<task-id>-properties.{exs,ts}`
 
-Executable property test code living alongside the pre-registration as a build artifact. The Planner writes a skeleton; the Verifier executes it in its worktree. The Builder never runs it.
+Executable property test code living alongside the pre-registration as a build artifact. The Planner writes a skeleton; the Verifier executes it independently. The Builder never runs it.
 
 For Elixir (StreamData):
 
@@ -203,7 +203,7 @@ fc.assert(
 )
 ```
 
-**Execution is verifier-only.** Properties run exclusively in the Verifier's worktree. The Builder never executes them and never sees the runner output. Counter-examples, when found, appear in `T<id>-verification.md` as shrunk reproducers.
+**Execution is verifier-only.** Properties run exclusively in the Verifier agent. The Builder never executes them and never sees the runner output. Counter-examples, when found, appear in `T<id>-verification.md` as shrunk reproducers.
 
 **The `Assumptions` section is REQUIRED in every pre-registration.** When no assumptions exist, the section must contain the literal placeholder `- None`. Omitting the section entirely is not permitted — it signals the Planner did not consider whether the task rests on unverified beliefs about the environment.
 

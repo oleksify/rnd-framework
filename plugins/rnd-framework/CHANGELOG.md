@@ -1,5 +1,27 @@
 # Changelog
 
+## 5.0.3 — 2026-05-25
+
+### Remove worktree isolation
+
+The worktree infrastructure (introduced in 3.21.0 / v2.1.84) has been retired. Agents never wrote to worktree paths, and the custom `.rnd-worktrees/` directory structure bypassed Claude Code defaults while failing to create real git worktrees.
+
+**Removed:**
+- `isolation: "worktree"` from all five agent frontmatters (`rnd-builder`, `rnd-verifier`, `rnd-cleanup`, `rnd-polisher`, `rnd-debugger`)
+- `WorktreeCreate` and `WorktreeRemove` hook entries from `hooks.json`
+- `hooks/worktree-create.sh` and `hooks/worktree-remove.sh` scripts
+- Worktree sweep logic from `hooks/session-end.sh`
+- Linked-worktree guard (`in_linked_worktree()`) from `hooks/format-on-save.sh`
+- Worktree indicator from `hooks/statusline.sh`
+- `tests/worktree-hooks.test.sh` and Test 12 from `tests/format-on-save.test.sh`
+
+**Updated:**
+- `agents/rnd-integrator.md` now instructs `git add` + `git commit` of verified task files instead of fetching/merging from worktree branches
+- All skills and docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `rnd-formatting`, `rnd-decomposition`, `rnd-verification`, `rnd-orchestration`, `rnd-doctor`, `plugin-architecture`) updated to remove worktree references
+- `lib/plugin-dir-base.sh` comment updated from "worktrees" to "clones"
+
+The `bash-gate.sh` destructive-git denylist retains `git worktree remove --force` as a general safety rule, and `tests/bash-gate-destructive-git.test.sh` tests for it remain.
+
 ## 5.0.2 — 2026-05-23
 
 ### Skip auto-format inside linked worktrees

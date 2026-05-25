@@ -4,7 +4,6 @@ description: "Reproduces bugs, identifies root causes, and produces a structured
 tools: Read, Bash, Glob, Grep, Write
 model: sonnet
 effort: high
-isolation: "worktree"
 memory: user
 color: "#FF8C00"
 skills: rnd-debugging, rnd-debug-pipeline

@@ -168,7 +168,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" property_counterexample <task-id
 Promote the shrunk reproducer to the project's regression corpus so every FAIL grows the test suite.
 
 1. Determine the file extension from `<lang>`: `.exs` for `elixir`, `.ts` for `typescript`.
-2. Create the target directory if it does not exist — use `Bash mkdir -p <project>/test/properties/` before writing. The directory is created inside the verifier worktree so the file commits to the worktree branch and merges to main via the Integrator.
+2. Create the target directory if it does not exist — use `Bash mkdir -p <project>/test/properties/` before writing. The directory is created in the main checkout so the file commits directly to the current branch.
 3. Write a small regression-test stub at `<project>/test/properties/T<id>-counterexample.<ext>` using the **Write tool** (not Edit). Write must target a new file path — `disallowedTools: Edit` in the verifier frontmatter remains unchanged; pin-promotion does NOT relax that invariant. Write to a fresh path is permitted.
 4. The stub contains the shrunk input from the stderr JSON and a one-line regression assertion.
 
@@ -246,7 +246,7 @@ Every prose verification report MUST include both `## Case for PASS` and `## Cas
 
 **Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
 - `Checked:` lists every VAL assertion command you ran, every code path you traced, every test you executed independently.
-- `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the worktree).
+- `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the session).
 
 If everything was checked, write: `Couldn't check: none — all VAL assertions and experiment tests ran successfully against the implementation.` — never just "nothing" or "none" alone as the entire content of the section.
 

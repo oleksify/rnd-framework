@@ -4,7 +4,6 @@ description: "Post-verification cleanup specialist that detects dead code, orpha
 tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: sonnet
 effort: medium
-isolation: "worktree"
 color: "#F59E0B"
 skills: kiss-practices, fp-practices, rnd-cleanup
 maxTurns: 150

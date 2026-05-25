@@ -32,16 +32,16 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
 
 1. **Confirm all tasks in the wave are verified.** Check `$RND_DIR/verifications/` for PASS verdicts on every task in the current wave.
 
-2. **Merge each worktree back to main.** Write-side agents (Builder/Verifier/Cleanup/Polisher/Debugger) run inside per-task worktrees at `.rnd-worktrees/<session_id>/T<id>/` on ephemeral branches `rnd/<session_id>/T<id>`. The integrator runs in the main checkout (NOT worktree-isolated) and is the only merge path back to main. The procedure is to merge each worktree's branch using `git merge --no-ff` in pre-registration dependency order. For each task `T<id>` whose final Verifier verdict is PASS:
+2. **Apply each verified task's changes to main.** Read each task's build manifest (`$RND_DIR/builds/T<id>-manifest.md`) to collect the files it created or modified. Stage those files with `git add` and commit them in pre-registration dependency order. For each task `T<id>` whose final Verifier verdict is PASS:
 
    ```bash
-   git fetch .rnd-worktrees/<session_id>/T<id> rnd/<session_id>/T<id>
-   git merge --no-ff --no-edit FETCH_HEAD -m "integrate T<id>"
+   git add <files from T<id> manifest>
+   git commit -m "integrate T<id>"
    ```
 
-   After all merges succeed, prune branches and worktrees: `git branch -D rnd/<session_id>/T<id>` and remove the worktree path. Resolve conflicts in the main tree (escalate to debugger if non-trivial). Ensure interfaces match, no duplicate definitions, and imports resolve.
+   Resolve any conflicts in the main tree (escalate to debugger if non-trivial). Ensure interfaces match, no duplicate definitions, and imports resolve.
 
-   **Log integration decisions** to `$RND_DIR/briefs/decisions.md` when you resolve a non-trivial conflict: reconciling mismatched interfaces between tasks, choosing one task's approach over another's on a shared concern, or deciding to defer integration of a module. Narrate the fork in your output first ("Task T3 and T7 both defined handle(); considered A: merge to shared util, B: keep T3's and update T7's callers; chose B because...") — see the Decisions Log template in the rnd-orchestration skill. Skip logging when merges are mechanical.
+   **Log integration decisions** to `$RND_DIR/briefs/decisions.md` when you resolve a non-trivial conflict: reconciling mismatched interfaces between tasks, choosing one task's approach over another's on a shared concern, or deciding to defer integration of a module. Narrate the fork in your output first ("Task T3 and T7 both defined handle(); considered A: merge to shared util, B: keep T3's and update T7's callers; chose B because...") — see the Decisions Log template in the rnd-orchestration skill. Skip logging when integration is mechanical.
 
 3. **Run integration tests:**
    - Do the modules communicate correctly?

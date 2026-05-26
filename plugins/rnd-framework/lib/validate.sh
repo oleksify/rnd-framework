@@ -516,7 +516,7 @@ validate_lib_scripts() {
     fi
   done
 
-  # Parity check: root lib copy must match the plugin copy
+  # Parity check: root lib copy must match the rnd-framework plugin copy
   local root_copy="${PLUGIN_ROOT}/../../lib/plugin-dir-base.sh"
   local plugin_copy="${PLUGIN_ROOT}/lib/plugin-dir-base.sh"
   if [[ ! -f "$root_copy" ]]; then
@@ -525,6 +525,18 @@ validate_lib_scripts() {
     record_pass "lib/plugin-dir-base.sh copies are identical"
   else
     record_fail "lib/plugin-dir-base.sh root copy differs from plugin copy — run: diff ${root_copy} ${plugin_copy}"
+  fi
+
+  # 3-way parity: tight-loop copy must also match root lib copy
+  local tight_copy="${PLUGIN_ROOT}/../../plugins/tight-loop/lib/plugin-dir-base.sh"
+  if [[ ! -f "$root_copy" ]]; then
+    record_pass "lib/plugin-dir-base.sh root copy not present — skipping tight-loop parity check"
+  elif [[ ! -f "$tight_copy" ]]; then
+    record_pass "plugins/tight-loop/lib/plugin-dir-base.sh not present — skipping tight-loop parity check"
+  elif diff -q "$root_copy" "$tight_copy" > /dev/null 2>&1; then
+    record_pass "lib/plugin-dir-base.sh tight-loop copy is identical to root"
+  else
+    record_fail "lib/plugin-dir-base.sh tight-loop copy differs from root — run: diff ${root_copy} ${tight_copy}"
   fi
 }
 

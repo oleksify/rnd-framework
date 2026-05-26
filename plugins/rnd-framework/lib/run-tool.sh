@@ -191,12 +191,13 @@ _hash_file() {
 }
 
 # Collect tracked + modified files from project root
-inputs_json="[]"
-
 # Get project root (git root or cwd)
 project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-# Collect tracked files
+# Accumulate path<TAB>hash records — tab is safe because git paths never contain tabs.
+# The single jq call after the loop converts these records to the JSON array.
+inputs_buf=""
+
 while IFS= read -r -d '' filepath; do
   abs_path="${project_root}/${filepath}"
 
@@ -218,8 +219,12 @@ while IFS= read -r -d '' filepath; do
     continue
   fi
 
-  inputs_json="$(printf '%s' "$inputs_json" | jq --arg p "$filepath" --arg h "$hash" '. + [{"path": $p, "sha256": $h}]')"
+  inputs_buf="${inputs_buf}${filepath}	${hash}
+"
 done < <(git -C "$project_root" ls-files -z 2>/dev/null || true)
+
+# Build the inputs JSON array in a single jq pass from the accumulated records.
+inputs_json="$(printf '%s' "$inputs_buf" | jq -R -s '[split("\n")[] | select(length > 0) | split("\t") | {path: .[0], sha256: .[1]}]')"
 
 # Only tracked files are included by default.
 

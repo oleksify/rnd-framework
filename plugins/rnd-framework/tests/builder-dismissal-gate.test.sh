@@ -106,26 +106,54 @@ rm -f "$stdout_file" "$stderr_file"
 assert_exit_code "no active session → exit 0" 0
 
 # ---------------------------------------------------------------------------
-# Test 5: Check B — problem terms in manifest without a ledger → exit 2
+# Test 5: Check B — benign problem-term mentions without a ledger → exit 0
 #
-# BY DESIGN: Check B fires whenever problem terms (error, issue, broken, bug,
-# failure) appear anywhere in the manifest and no found-issues ledger exists.
-# This means a manifest like "Fixed a compilation error in lib.sh" will block
-# without a ledger entry. This is the intended strict behavior.
-# If this causes operational friction, the ledger mechanism provides the escape:
-# append a found-issues entry and the hook passes.
+# "Fixed a compilation error in lib.sh" mentions "error" but it is benign:
+# the term appears alongside a resolution marker ("fixed"), so Check B must
+# pass it through. No ledger entry should be required.
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- builder-dismissal-gate: Check B — problem term without ledger ---'
+printf '\n%s\n' '--- builder-dismissal-gate: Check B — benign problem term without ledger → exit 0 ---'
 
 MANIFEST_C="${TMP_SESSION}/builds/T1-manifest.md"
 printf '# Build Manifest: T1\n\nFixed a compilation error in lib.sh. All tests pass.\n' \
   > "$MANIFEST_C"
 
 run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
-assert_exit_code "problem term without ledger → exit 2 (by design)" 2
-assert_contains "stderr explains acknowledged problems" "found-issues" "$HOOK_STDERR"
+assert_exit_code "benign problem term without ledger → exit 0" 0
 
 rm -f "$MANIFEST_C"
+
+# ---------------------------------------------------------------------------
+# Test 5c: Check B — genuine acknowledged-but-unfixed failure, no ledger → exit 2
+#
+# A manifest that acknowledges a real problem without resolving it must still
+# block. "This bug is unresolved" has "bug" with no resolution markers.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check B — genuine unfixed failure, no ledger → exit 2 ---'
+
+MANIFEST_C2="${TMP_SESSION}/builds/T1-manifest.md"
+printf '# Build Manifest: T1\n\nThis bug is unresolved and will need a follow-up.\n' \
+  > "$MANIFEST_C2"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "genuine unfixed failure without ledger → exit 2" 2
+assert_contains "stderr explains acknowledged problems" "found-issues" "$HOOK_STDERR"
+
+rm -f "$MANIFEST_C2"
+
+# ---------------------------------------------------------------------------
+# Test 5d: Check B — various benign mentions without ledger → exit 0
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: Check B — various benign mentions → exit 0 ---'
+
+MANIFEST_C3="${TMP_SESSION}/builds/T1-manifest.md"
+printf '# Build Manifest: T1\n\n## Summary\nNo issues found. Added error handling. GitHub issue #42 referenced.\n' \
+  > "$MANIFEST_C3"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "no issues found / error handling / GitHub issue → exit 0" 0
+
+rm -f "$MANIFEST_C3"
 
 # ---------------------------------------------------------------------------
 # Test 5b: Check B — problem term WITH valid ledger → exit 0

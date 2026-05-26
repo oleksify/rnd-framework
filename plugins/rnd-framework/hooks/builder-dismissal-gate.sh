@@ -68,18 +68,52 @@ done
 
 # ---------------------------------------------------------------------------
 # Check B: acknowledged-but-unfixed scan
+#
+# Blocks when a problem term (failure/error/broken/bug/issue) appears on a
+# line without a co-occurring resolution marker. A line is benign when the
+# term is paired with: "fixed", "resolved" (but not "unresolved"), "handling"
+# (as in error-handling feature), "addressed", "no <term>" (e.g. "no issues"),
+# or "<term> #<N>" (a tracker reference like "issue #42"). Any line that
+# contains a problem term without one of these markers is treated as an
+# acknowledged-but-unfixed problem that requires a ledger entry.
 # ---------------------------------------------------------------------------
 
-has_problem_language=0
+has_unresolved_problem=0
 
-for term in "failure" "error" "broken" "bug" "issue"; do
-  if [[ "$lower" == *"$term"* ]]; then
-    has_problem_language=1
+_check_b_line_benign() {
+  local line="$1" term="$2"
+  [[ "$line" == *"fixed"*    ]] && return 0
+  # "resolved" but not "unresolved" — avoid substring false match
+  if [[ "$line" == *"resolved"* ]] && [[ "$line" != *"unresolved"* ]]; then return 0; fi
+  [[ "$line" == *"handling"* ]] && return 0
+  [[ "$line" == *"addressed"* ]] && return 0
+  # "no <term>": "no issues", "no errors"
+  [[ "$line" == *"no $term"* ]] && return 0
+  # tracker reference: "issue #42", "bug #7"
+  [[ "$line" == *"$term #"* ]] && return 0
+  return 1
+}
+
+while IFS= read -r manifest_line; do
+  line_lower="$(_lower "$manifest_line")"
+
+  for term in "failure" "error" "broken" "bug" "issue"; do
+    if [[ "$line_lower" != *"$term"* ]]; then
+      continue
+    fi
+
+    if _check_b_line_benign "$line_lower" "$term"; then
+      continue
+    fi
+
+    has_unresolved_problem=1
     break
-  fi
-done
+  done
 
-if [[ "$has_problem_language" -eq 1 ]]; then
+  [[ "$has_unresolved_problem" -eq 1 ]] && break
+done <<< "$manifest_content"
+
+if [[ "$has_unresolved_problem" -eq 1 ]]; then
   ledger_has_entries=0
 
   if [[ -f "$ledger" ]]; then

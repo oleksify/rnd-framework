@@ -171,5 +171,34 @@ assert_exit   "/cleanup/ in Glob pattern + verifier → exit 2" 2
 run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/someone/project/src/cleanup.ts","pattern":"dead"},"agent_type":"rnd-verifier"}'
 assert_exit   "cleanup.ts (no /cleanup/ segment) + verifier → exit 0" 0
 
+# ---------------------------------------------------------------------------
+# Anchored deferral: .rnd/ presence determines deferral for briefs/cleanup
+# ---------------------------------------------------------------------------
+
+# .rnd/.../briefs/ with non-verifier builder → still defers (exit 0, empty stdout)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/briefs/decisions.md","pattern":"foo"},"agent_type":"rnd-builder"}'
+assert_exit   ".rnd/ + /briefs/ + rnd-builder → exit 0 (defers, not auto-allowed)" 0
+assert_stdout_empty ".rnd/ + /briefs/ + rnd-builder → empty stdout (deferred, not auto-allowed)"
+
+# .rnd/.../cleanup/ with non-verifier builder → still defers (exit 0, empty stdout)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/home/user/.claude/.rnd/sessions/20260101-120000-abcd/cleanup/T3-cleanup-report.md","pattern":"dead"},"agent_type":"rnd-builder"}'
+assert_exit   ".rnd/ + /cleanup/ + rnd-builder → exit 0 (defers, not auto-allowed)" 0
+assert_stdout_empty ".rnd/ + /cleanup/ + rnd-builder → empty stdout (deferred, not auto-allowed)"
+
+# Project source path with /briefs/ (no .rnd/) + rnd-builder → NOT deferred, flows to no-opinion (exit 0, empty stdout)
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/someone/myproject/src/briefs/design.md","pattern":"spec"},"agent_type":"rnd-builder"}'
+assert_exit   "project /briefs/ (no .rnd/) + rnd-builder → exit 0" 0
+assert_stdout_empty "project /briefs/ (no .rnd/) + rnd-builder → empty stdout (no-opinion, not deferred)"
+
+# Project source path with /cleanup/ (no .rnd/) + rnd-builder → NOT deferred, flows to no-opinion
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/someone/myproject/src/cleanup/old-files.md","pattern":"TODO"},"agent_type":"rnd-builder"}'
+assert_exit   "project /cleanup/ (no .rnd/) + rnd-builder → exit 0" 0
+assert_stdout_empty "project /cleanup/ (no .rnd/) + rnd-builder → empty stdout (no-opinion, not deferred)"
+
+# self-assessment deferral remains unanchored: non-.rnd path with self-assessment + non-verifier → still defers
+run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/someone/myproject/docs/self-assessment-guide.md","pattern":"test"},"agent_type":"rnd-builder"}'
+assert_exit   "non-.rnd self-assessment + rnd-builder → exit 0 (still defers, unanchored)" 0
+assert_stdout_empty "non-.rnd self-assessment + rnd-builder → empty stdout (deferred)"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]] || exit 1

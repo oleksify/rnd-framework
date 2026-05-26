@@ -26,8 +26,15 @@ fi
 # not blocked, but is still not auto-allowed — defer to Claude Code's standard
 # permission flow so the user sees the prompt rather than silently allowing
 # the read.
+#
+# The /briefs/ and /cleanup/ checks are anchored on .rnd/ to mirror
+# is_barrier_violation in lib.sh — project source paths like /repo/src/briefs/
+# are not artifact-tree paths and should fall through to no-opinion below.
+# The self-assessment check is intentionally left unanchored (same as lib.sh).
 lower="$(_lower "$file_path")"
-if [[ "$lower" == *"self-assessment"* ]] || [[ "$lower" == *"/briefs/"* ]] || [[ "$lower" == *"/cleanup/"* ]]; then
+if [[ "$lower" == *"self-assessment"* ]] \
+   || [[ "$lower" =~ \.rnd/.*briefs/ ]] \
+   || [[ "$lower" =~ \.rnd/.*cleanup/ ]]; then
   exit 0
 fi
 

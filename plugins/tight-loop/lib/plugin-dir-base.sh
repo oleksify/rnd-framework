@@ -47,7 +47,7 @@ else
 fi
 
 # --- Compute project slug ---
-# Use git common-dir so all worktrees share one artifact base directory.
+# Use git common-dir so all clones of the same repo share one artifact base directory.
 # Falls back to pwd when not inside a git repo.
 if _pdb_git_raw="$(git rev-parse --git-common-dir 2>/dev/null)"; then
   if [[ "$_pdb_git_raw" = /* ]]; then
@@ -112,12 +112,6 @@ _plugin_dir_create_session() {
   for _sub in "$@"; do
     mkdir -p "${_session_dir}/${_sub}"
   done
-
-  # Cache base dir for fast-path lookups in active_session_dir.
-  # Non-atomic write; concurrent sessions may race. Acceptable: readers
-  # tolerate stale values and fall back to the slow git+shasum path.
-  local _rnd_parent="${BASE_DIR%/*}"
-  printf '%s' "$BASE_DIR" > "${_rnd_parent}/.active-base-dir" 2>/dev/null || true
 
   echo "$_session_dir"
 }

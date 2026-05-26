@@ -438,4 +438,21 @@ bash "$RUN_TOOL" --task-id 'T1_test-42' -- printf '' >/dev/null 2>&1 || VALID_EX
 assert_eq "task-id with [A-Za-z0-9_-]+ is accepted" "0" "$VALID_EXIT"
 
 # ---------------------------------------------------------------------------
+# inputs_json accumulation: single jq call after the loop, not inside it
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- single-pass inputs accumulation ---'
+
+# Extract the while-loop body from run-tool.sh (lines between "while IFS= read" and the
+# matching "done") and verify it contains no jq invocation.
+loop_body="$(awk '/^while IFS= read -r -d .* filepath/,/^done/' "$RUN_TOOL")"
+
+JQ_IN_LOOP="$(printf '%s' "$loop_body" | grep -c '\bjq\b' || true)"
+assert_eq "no jq call inside the while-loop body" "0" "$JQ_IN_LOOP"
+
+# Verify exactly one jq invocation appears after the done line (the single-pass build).
+post_loop="$(awk '/^done/,EOF{found=1} found' "$RUN_TOOL")"
+JQ_AFTER_LOOP="$(printf '%s' "$post_loop" | grep -c 'inputs_json=.*jq' || true)"
+assert_eq "exactly one inputs_json jq call after the loop" "1" "$JQ_AFTER_LOOP"
+
+# ---------------------------------------------------------------------------
 report

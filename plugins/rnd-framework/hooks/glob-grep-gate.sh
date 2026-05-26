@@ -31,9 +31,14 @@ if is_barrier_violation "$path" "${AGENT_TYPE}" \
 fi
 
 # Non-verifier agent touching self-assessment, briefs/, or cleanup/: no-opinion, not auto-allow.
+#
+# The /briefs/ and /cleanup/ checks are anchored on .rnd/ to mirror
+# is_barrier_violation in lib.sh — project source paths like /repo/src/briefs/
+# are not artifact-tree paths and should fall through to no-opinion below.
+# The self-assessment check is intentionally left unanchored (same as lib.sh).
 if [[ "$path_lower" == *"self-assessment"* ]] || [[ "$pattern_lower" == *"self-assessment"* ]] \
-   || [[ "$path_lower" == *"/briefs/"* ]] || [[ "$pattern_lower" == *"/briefs/"* ]] \
-   || [[ "$path_lower" == *"/cleanup/"* ]] || [[ "$pattern_lower" == *"/cleanup/"* ]]; then
+   || [[ "$path_lower" =~ \.rnd/.*briefs/ ]] || [[ "$pattern_lower" =~ \.rnd/.*briefs/ ]] \
+   || [[ "$path_lower" =~ \.rnd/.*cleanup/ ]] || [[ "$pattern_lower" =~ \.rnd/.*cleanup/ ]]; then
   exit 0
 fi
 

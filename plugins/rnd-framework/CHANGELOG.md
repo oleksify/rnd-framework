@@ -1,5 +1,25 @@
 # Changelog
 
+## 5.1.0 — 2026-05-27
+
+### Phase 0 stats substrate
+
+Adds observability infrastructure for tracking planner shape and confidence output through the verification pipeline: a JSON Schema SSOT, a planner gate, a stateless DuckDB view module, a backfill script, a stats command, and a builder self-verdict emitter.
+
+**Event schema SSOT (`lib/event-schema.json`):** draft-07 JSON Schema defining the per-(session, assertion) fact grain. Declares `shape` (12-value enum: `crud`, `schema-migration`, `external-integration`, `pure-refactor`, `perf`, `auth`, `data-transform`, `wiring`, `cleanup`, `docs`, `test-only`, `misc`) and `confidence` (`high`, `medium`, `stretch`) as required fields alongside `session_id` and `assertion_id`. The controlled vocabularies are also surfaced in a top-level `x-shape-vocab` extension array so gate scripts can read them via a single `jq` call without re-parsing nested refs.
+
+**Planner shape+confidence output (`agents/rnd-planner.md`, `skills/rnd-decomposition/SKILL.md`):** The Validation Contract template in both the planner agent and the decomposition skill now includes `Shape:` and `Confidence:` lines under each `### M<N>.<area>.<slug>` assertion heading. Both files reference `lib/event-schema.json` `x-shape-vocab` as the SSOT for the controlled vocabularies, and forward-reference `hooks/planner-emit-gate.sh` as the enforcer.
+
+**Planner-emit gate (`hooks/planner-emit-gate.sh`):** New SubagentStop gate (registered in `hooks.json`, scoped to `rnd-planner`) that reads the session's `validation-contract.md` and blocks completion when any assertion is missing a `Shape:` line, has a `Shape:` value outside the `x-shape-vocab` vocabulary, has a `Confidence:` value outside `{high, medium, stretch}`, or is missing `Confidence:` entirely. Non-planner agents and missing sessions fast-path to exit 0. Emits a `gate_fired` / `planner_emit_gate` audit event on block.
+
+**Stateless DuckDB view module (`lib/stats/*.sql`):** Five SQL views query session `audit.jsonl` and per-slug `calibration.jsonl` in place via `read_csv` (robust raw-line read tolerating malformed legacy files) with no persistent `.duckdb` file. Views: `shape_distribution` (per-shape audit counts), `per_shape_fail_rate` (per-shape verifier-FAIL rate from calibration), `iteration_depth` (iteration-depth histogram), `fail_rate_over_time` (weekly FAIL-rate drift), and `self_fail_vs_verdict_gap` (builder self-verdict vs verifier verdict disagreement). All views run from the `.rnd` root so the `*/**/audit.jsonl` and `*/calibration.jsonl` globs span all project slugs. A committed fixture tree (`lib/stats/fixtures/`) covers both the dogfood and feature segments across legacy and branch-partitioned directory layouts, with `EXPECTED.md` documenting hand-computed expected outputs.
+
+**Mechanical SQL backfill (`lib/stats/backfill.sql`):** Standalone script that reads historical `calibration.jsonl` records and derives `shape`, `confidence`, and `segment` for pre-schema verdicts. Backfill is calibration-only (no audit join needed); segment comes from the first path component of the per-slug calibration filename. NULL `shape` and `confidence` are emitted for historical records — no back-assignment.
+
+**`/rnd-framework:rnd-stats` command (`commands/rnd-stats.md`):** Probe-and-skip command that runs all five views against the active project's `.rnd` root. Exits 0 with an informational message when `duckdb` is absent from `PATH` or when no `calibration.jsonl` files are found, guarding against the `read_json_auto` zero-match hard-error in DuckDB v1.5.3.
+
+**Builder self-verdict emitter (`hooks/builder-self-assessment-emit.sh`):** New SubagentStop hook (registered in `hooks.json`, scoped to `rnd-builder`) that reads the most recently modified `*-self-assessment.md` from the session's `builds/` directory, classifies it as `PASS` (minimal one-liner form) or `FAIL` (full template with concerns), and appends a `builder_self_assessment` audit event carrying `task_id`, `session_id`, and `self_verdict`. This event is the input to the `self_fail_vs_verdict_gap` view, which surfaces cases where the builder's self-verdict disagrees with the verifier's final verdict — a leading indicator for calibration issues. The hook is non-blocking: any internal error exits 0.
+
 ## 5.0.3 — 2026-05-25
 
 ### Remove worktree isolation

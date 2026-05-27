@@ -80,6 +80,7 @@ The framework guides you through: **Plan → Build → Verify → Integrate**.
 | `/rnd-framework:rnd-debug <bug>` | Reproduce, diagnose, fix, verify |
 | `/rnd-framework:rnd-roadmap <goal>` | Multi-session roadmap for large tasks |
 | `/rnd-framework:rnd-scan` | Scan project environment, build project-facts.md |
+| `/rnd-framework:rnd-stats` | Run stateless DuckDB stats views over session JSONL; print the Phase 0 exit-criteria report |
 | `/rnd-framework:rnd-review` | Evidence-based code review |
 | `/rnd-framework:rnd-audit` | Full codebase audit |
 | `/rnd-framework:rnd-brainstorm` | Funnel vague ideas into focused plans |

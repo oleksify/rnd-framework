@@ -1,0 +1,3 @@
+{"ts":"2026-03-15T08:00:00Z","tool":"Write","file":"/repo/old.ts"}
+{"event":"task_created","task_id":"M0.T-h.setup","tool":"Task","session_id":"s-df-hist","timestamp":"2026-03-15T08:01:00Z"}
+{"event":"SubagentStart","agent_id":"ag-h1","agent_type":"rnd-builder","session_id":"s-df-hist","timestamp":"2026-03-15T08:02:00Z"}

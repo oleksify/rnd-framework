@@ -1,0 +1,3 @@
+{"taskId":"M2.T-f.crud","sessionId":"s-ft-1","verdict":"PASS","criticality":"NORMAL","iterationCount":0,"timestamp":"2026-05-05T09:00:00Z","falseVerdictFlag":null}
+{"taskId":"M2.T-g.docs","sessionId":"s-ft-1","verdict":"PASS","criticality":"LOW","iterationCount":1,"timestamp":"2026-05-05T09:10:00Z","falseVerdictFlag":null}
+{"taskId":"M0.T-i.setup","sessionId":"s-ft-hist","verdict":"FAIL","criticality":"NORMAL","iterationCount":2,"timestamp":"2026-03-20T10:30:00Z","falseVerdictFlag":null}

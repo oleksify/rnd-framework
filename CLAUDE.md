@@ -28,7 +28,8 @@ plugins/rnd-framework/
 │   ├── stop-failure.sh / setup.sh / instructions-loaded.sh / permission-denied.sh
 │   ├── cwd-changed.sh / file-changed.sh / task-created.sh / subagent-lifecycle.sh
 │   ├── format-on-save.sh / session-title.sh
-│   ├── builder-dismissal-gate.sh / coverage-gaps-gate.sh / anomaly-gate.sh / verifier-case-gate.sh / cleanup-bloat-gate.sh   # SubagentStop quality gates (agent-scoped)
+│   ├── builder-dismissal-gate.sh / coverage-gaps-gate.sh / anomaly-gate.sh / verifier-case-gate.sh / cleanup-bloat-gate.sh / planner-emit-gate.sh   # SubagentStop quality gates (agent-scoped)
+│   ├── builder-self-assessment-emit.sh # SubagentStop (rnd-builder, non-blocking): appends {event:builder_self_assessment, self_verdict} to audit.jsonl — feeds the self-fail-vs-verdict-gap stats view
 │   ├── evidence-pack-gate.sh           # PreToolUse Read: validates evidence-pack manifest schema for verifier
 │   └── statusline.sh                   # Rate-limit % + pipeline phase
 ├── lib/
@@ -38,6 +39,8 @@ plugins/rnd-framework/
 │   ├── tools.json                      # Heavy-tool registry (pytest/jest/vitest/tsc/eslint/dialyzer/mypy/bun/cargo/mix/ruff/biome) with relevant_globs for input scoping; project override at $RND_DIR/tools.json
 │   ├── run-tool.sh                     # Evidence-pack writer (opt-in: RND_EVIDENCE_PACK=1)
 │   ├── manifest-schema.json            # JSON Schema for evidence-pack manifest; `x-disallowed-fields` is the SSOT consumed by evidence-pack-gate.sh
+│   ├── event-schema.json               # JSON Schema SSOT for the per-(session,assertion) fact grain; `x-shape-vocab` (12 values incl. `misc`) + confidence enum (high|medium|stretch) sourced by planner-emit-gate.sh
+│   ├── stats/*.sql                      # Stateless DuckDB view module over session JSONL in place (tolerant `read_csv` raw-line + `json_valid`, no persistence): shape distribution, per-shape verifier-FAIL rate, iteration depth, builder-self-fail-vs-verdict gap, FAIL-rate drift, + backfill.sql; segment via inline `dogfood_slugs` CTE; run out-of-band by /rnd-framework:rnd-stats
 │   ├── audit-event.sh                  # Single-line {event,task_id,tool,timestamp} emitter to $RND_DIR/audit.jsonl
 │   ├── audit-scan.sh                   # Subcommands: `verdict_history <task>` (prints FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL)
 │   ├── rnd-undo.sh                     # Surgical task-scoped revert (reads `## Files written` from build manifest)
@@ -85,7 +88,7 @@ The `hooks.json` routes each event to an external script under `hooks/`. The loa
 - **Bash gate** (`bash-gate.sh`): enforces the information barrier (blocks commands targeting `self-assessment`, `briefs/`, or `cleanup/` paths for verifier/polisher); blocks destructive git ops (`git reset --hard`, `git checkout .`, `git clean -fd`, etc.) and `git add .rnd/` artifact pollution; emits an advisory on `git push` to main/master/production. Auto-allows `.rnd/` and plugin-lib paths. Includes a Bash output cache advisory (identical re-runs within TTL are pointed at cached output).
 - **Audit + Bash output cache** (`post-dispatch.sh`): logs Write/Edit ops to `$RND_DIR/audit.jsonl`, advises when output >50 lines, and writes Bash stdout/stderr to `$session/.bash-cache/<sha>.txt` keyed by `cmd_hash` from `lib.sh`. PreToolUse Bash detects identical re-runs within `RND_BASH_CACHE_TTL_SECONDS` (default 600) and points at the cached file when the prior output was ≥10 lines. Non-blocking; cache auto-clears with session.
 - **Stop conditions**: The verdict-flip and plan-size stop conditions are enforced at the orchestration-prompt level (gate names `stop_condition_verdict_flip`, `stop_condition_plan_size`), invoke `AskUserQuestion`, and emit `gateFired` audit events.
-- **SubagentStop quality gates** (agent-scoped): blocking — `builder-dismissal-gate.sh` (phrases like `pre-existing`/`out of scope` blocked; the only legal dismissal path is a `T<id>-found-issues.jsonl` ledger entry with `decision:"escalated"`); `coverage-gaps-gate.sh` (verification.md must have substantive `## Coverage Gaps`); `verifier-case-gate.sh` (must have substantive `## Case for PASS` and `## Case for FAIL` — symmetry forces opposing-side articulation); `anomaly-gate.sh` (reality-report must have sourced `## Anomalies` OR substantive `## No-Finding Rationale` ≥200 chars). Advisory-only — `cleanup-bloat-gate.sh` emits `bloat_aversion_underperform` when cleanup deletion ratio <15%. Every block emits a `gate_fired` (or `gateFired`) audit event.
+- **SubagentStop quality gates** (agent-scoped): blocking — `builder-dismissal-gate.sh` (phrases like `pre-existing`/`out of scope` blocked; the only legal dismissal path is a `T<id>-found-issues.jsonl` ledger entry with `decision:"escalated"`); `coverage-gaps-gate.sh` (verification.md must have substantive `## Coverage Gaps`); `verifier-case-gate.sh` (must have substantive `## Case for PASS` and `## Case for FAIL` — symmetry forces opposing-side articulation); `anomaly-gate.sh` (reality-report must have sourced `## Anomalies` OR substantive `## No-Finding Rationale` ≥200 chars); `planner-emit-gate.sh` (blocks the `rnd-planner` when any `validation-contract.md` assertion lacks a valid `Shape:` ∈ `event-schema.json` `x-shape-vocab` or `Confidence:` ∈ {high,medium,stretch}). Advisory-only — `cleanup-bloat-gate.sh` emits `bloat_aversion_underperform` when cleanup deletion ratio <15%. Every block emits a `gate_fired` (or `gateFired`) audit event.
 - **Evidence pack gate** (`evidence-pack-gate.sh`): PreToolUse Read; runs the info-barrier check first, then — only for `rnd-verifier` reading `$RND_DIR/evidence/T*/manifest.json` — validates the manifest by `jq has()` against `lib/manifest-schema.json`'s `x-disallowed-fields` (default: `notes`, `summary`, `confidence`, `reasoning`, `explanation`). Blocks with `EVIDENCE PACK BARRIER` on any disallowed field.
 - **Other** observability/UX hooks: `stop-failure.sh` (API-error logging), `permission-denied.sh` (auto-mode denial → `{retry: true}`), `cwd-changed.sh` (cross-repo warning), `file-changed.sh` (external `.rnd/` edit advisory), `task-created.sh`, `subagent-lifecycle.sh`, `format-on-save.sh` (auto-format code on Write/Edit; cached detection; skips `.rnd/` artifact paths), `session-title.sh` (dynamic `RND: <phase> | <project>` title for `/resume`).
 
@@ -179,7 +182,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`.
+Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`, `rnd-stats`.
 
 ## Key Conventions
 

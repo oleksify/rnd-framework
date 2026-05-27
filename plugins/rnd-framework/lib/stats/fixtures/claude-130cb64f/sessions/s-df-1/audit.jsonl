@@ -1,0 +1,10 @@
+{"ts":"2026-05-01T09:00:00Z","tool":"Write","file":"/repo/a.txt"}
+{"event":"task_created","task_id":"M1.T-a.crud","tool":"Task","timestamp":"2026-05-01T09:01:00Z"}
+{"session_id":"s-df-1","assertion_id":"M1.a.one","shape":"crud","confidence":"high","task_id":"M1.T-a.crud","timestamp":"2026-05-01T09:02:00Z"}
+{"session_id":"s-df-1","assertion_id":"M1.b.one","shape":"crud","confidence":"medium","task_id":"M1.T-b.crud","timestamp":"2026-05-01T09:03:00Z"}
+{"session_id":"s-df-1","assertion_id":"M1.c.one","shape":"docs","confidence":"high","task_id":"M1.T-c.docs","timestamp":"2026-05-01T09:04:00Z"}
+{"event":"builder_self_assessment","session_id":"s-df-1","task_id":"M1.T-a.crud","self_verdict":"FAIL","timestamp":"2026-05-01T09:04:30Z"}
+{"event":"builder_self_assessment","session_id":"s-df-1","task_id":"M1.T-a.crud","self_verdict":"PASS","timestamp":"2026-05-01T09:05:00Z"}
+{"event":"builder_self_assessment","session_id":"s-df-1","task_id":"M1.T-b.crud","self_verdict":"PASS","timestamp":"2026-05-01T09:06:00Z"}
+{"event":"builder_self_assessment","session_id":"s-df-1","task_id":"M1.T-c.docs","self_verdict":"PASS","timestamp":"2026-05-01T09:07:00Z"}
+{"ts":"2026-05-01T09:08:00Z","tool":"Edit","file":"/repo/b.txt"}

@@ -239,6 +239,24 @@
             "args": []
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/planner-emit-gate.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/builder-self-assessment-emit.sh",
+            "args": []
+          }
+        ]
       }
     ],
     "PostToolUse": [

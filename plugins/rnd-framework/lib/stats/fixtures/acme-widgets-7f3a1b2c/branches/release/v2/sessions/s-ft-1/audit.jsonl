@@ -1,0 +1,5 @@
+{"ts":"2026-05-05T08:00:00Z","tool":"Write","file":"/proj/x.ts"}
+{"session_id":"s-ft-1","assertion_id":"M2.f.one","shape":"crud","confidence":"high","task_id":"M2.T-f.crud","timestamp":"2026-05-05T08:01:00Z"}
+{"session_id":"s-ft-1","assertion_id":"M2.g.one","shape":"docs","confidence":"medium","task_id":"M2.T-g.docs","timestamp":"2026-05-05T08:02:00Z"}
+{"event":"builder_self_assessment","session_id":"s-ft-1","task_id":"M2.T-f.crud","self_verdict":"PASS","timestamp":"2026-05-05T08:03:00Z"}
+{"event":"builder_self_assessment","session_id":"s-ft-1","task_id":"M2.T-g.docs","self_verdict":"PASS","timestamp":"2026-05-05T08:04:00Z"}

@@ -1,0 +1,6 @@
+{"event":"SubagentStart","agent_id":"ag-1","agent_type":"rnd-builder","timestamp":"2026-05-10T14:00:00Z"}
+{"session_id":"s-df-2","assertion_id":"M1.d.one","shape":"schema-migration","confidence":"stretch","task_id":"M1.T-d.schema","timestamp":"2026-05-10T14:01:00Z"}
+{"session_id":"s-df-2","assertion_id":"M1.e.one","shape":"wiring","confidence":"high","task_id":"M1.T-e.wiring","timestamp":"2026-05-10T14:02:00Z"}
+{"event":"builder_self_assessment","session_id":"s-df-2","task_id":"M1.T-d.schema","self_verdict":"FAIL","timestamp":"2026-05-10T14:03:00Z"}
+{"event":"builder_self_assessment","session_id":"s-df-2","task_id":"M1.T-e.wiring","self_verdict":"FAIL","timestamp":"2026-05-10T14:04:00Z"}
+{"ts":"2026-05-10T14:05:00Z","tool":"Write","file":"/repo/d.sql"}

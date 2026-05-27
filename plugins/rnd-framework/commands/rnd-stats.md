@@ -120,3 +120,30 @@ echo "=== Shape distribution ==="
 duckdb -c ".read ${stats_dir}/shape_distribution.sql" \
        -c "SELECT segment, shape, task_count FROM shape_distribution ORDER BY segment, shape"
 ```
+
+### Section 6 — Sycophancy probe flip rate
+
+Hard-flip rate of fresh adversarial re-reviews over historical PASS verdicts,
+split by artifact basis. A hard flip is a re-review that returned FAIL or
+NEEDS_ITERATION; a soft flip returned PASS_QUALITY_NEEDS_ITERATION. The
+`pinned_commit` subset (artifact reconstructed at the original commit) is the
+drift-free measurement; `head_fallback` is reported separately as a weaker basis.
+
+This section is populated by the one-shot probe harness
+(`lib/sycophancy-probe.sh`), which writes `<slug>/sycophancy-probe.jsonl`. The
+glob hard-errors on a zero-file match, so guard on its existence first — print a
+pending line and skip when no probe has run, consistent with the no-calibration
+guard above.
+
+```bash
+echo ""
+echo "=== Sycophancy probe flip rate ==="
+has_probe=$(duckdb -noheader -list -c "SELECT count(*) FROM glob('*/sycophancy-probe.jsonl')" 2>/dev/null)
+
+if [[ "${has_probe:-0}" -eq 0 ]]; then
+  echo "pending — no sycophancy probe data yet. Run lib/sycophancy-probe.sh to populate."
+else
+  duckdb -c ".read ${stats_dir}/sycophancy_flip_rate.sql" \
+         -c "SELECT artifact_basis, record_count, hard_flip_count, soft_flip_count, hard_flip_rate FROM sycophancy_flip_rate ORDER BY artifact_basis"
+fi
+```

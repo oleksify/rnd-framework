@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.4.0 — 2026-05-28
+
+### Add the M3 sycophancy-delta probe: harness, flip-rate view, and rnd-stats Section 6
+
+Ship the M3 measure-and-decide milestone. lib/sycophancy-probe.sh (prepare/ingest/summary) reconstructs each historical PASS assertion's artifact at its owning session's commit via guarded git show (artifact_basis pinned_commit|head_fallback), writes barrier-clean review-inputs (assertion text + artifact only, no original verdict/evidence/feedback), and aggregates fresh adversarial re-review verdicts into the slug-root sycophancy-probe.jsonl with a new_verdict enum (no collapsed flipped bool). lib/stats/sycophancy_flip_rate.sql adds a per-artifact_basis hard/soft flip-rate view over */sycophancy-probe.jsonl using the shape_distribution raw-line idiom; commands/rnd-stats.md gains Section 6 (probe-and-skip guard). The probe found 0 clear false-PASSes among the 24 cleanly-reviewable historical assertions (corpus-limited: 173 historical PASS, only 24 with both a real criterion and a reconstructable artifact); apparent flips are reconstruction/diffstat-insufficiency, not verifier sycophancy. M3 is also the producer bootstrap session (the M2.5 assertion_shape/builder_self_assessment/calibration producers fired for the first time, on M3's own pipeline).
+
 ## 5.3.0 — 2026-05-27
 
 ### Wire the Phase 0 stat producers (path-driven) so the DuckDB stats substrate collects data

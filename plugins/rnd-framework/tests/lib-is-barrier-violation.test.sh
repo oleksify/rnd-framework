@@ -95,4 +95,48 @@ else
   assert_eq "self-assessment NOT a barrier violation for empty agent (orchestrator)" "1" "1"
 fi
 
+# --- M2.5: self-assessment match anchored to the .md artifact suffix ---
+# The real Builder artifact builds/T<id>-self-assessment.md is STILL blocked (absolute).
+RND_SELFASSESS="/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/builds/M2.T02.foo-self-assessment.md"
+if is_barrier_violation "$RND_SELFASSESS" "rnd-verifier"; then
+  assert_eq "verifier blocked from builds/<task>-self-assessment.md artifact" "0" "0"
+else
+  assert_eq "verifier blocked from builds/<task>-self-assessment.md artifact" "0" "1"
+fi
+
+# Still blocked via a RELATIVE reference to the artifact (preserves prior protection).
+if is_barrier_violation "builds/T01-self-assessment.md" "rnd-verifier"; then
+  assert_eq "verifier blocked from RELATIVE self-assessment.md artifact" "0" "0"
+else
+  assert_eq "verifier blocked from RELATIVE self-assessment.md artifact" "0" "1"
+fi
+
+# The property-runner output (builds/T<id>-self-assessment-properties.txt) is STILL blocked.
+if is_barrier_violation "/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/builds/T99-self-assessment-properties.txt" "rnd-verifier"; then
+  assert_eq "verifier blocked from self-assessment-properties.txt (property output)" "0" "0"
+else
+  assert_eq "verifier blocked from self-assessment-properties.txt (property output)" "0" "1"
+fi
+
+# The legitimately-named producer SOURCE file is NOT blocked (no "self-assessment.md" substring).
+if is_barrier_violation "/Users/x/plugins/rnd-framework/hooks/self-assessment-producer.sh" "rnd-verifier"; then
+  assert_eq "verifier NOT blocked from hooks/self-assessment-producer.sh" "1" "0"
+else
+  assert_eq "verifier NOT blocked from hooks/self-assessment-producer.sh" "1" "1"
+fi
+
+# The producer TEST file is NOT blocked for the polisher.
+if is_barrier_violation "plugins/rnd-framework/tests/self-assessment-producer.test.sh" "rnd-polisher"; then
+  assert_eq "polisher NOT blocked from tests/self-assessment-producer.test.sh" "1" "0"
+else
+  assert_eq "polisher NOT blocked from tests/self-assessment-producer.test.sh" "1" "1"
+fi
+
+# A Bash command that RUNS the producer test is NOT blocked (lacks "self-assessment.md").
+if is_barrier_violation "bash tests/self-assessment-producer.test.sh" "rnd-verifier"; then
+  assert_eq "verifier NOT blocked from running the producer test" "1" "0"
+else
+  assert_eq "verifier NOT blocked from running the producer test" "1" "1"
+fi
+
 report

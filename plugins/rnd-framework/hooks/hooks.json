@@ -248,15 +248,6 @@
             "args": []
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/builder-self-assessment-emit.sh",
-            "args": []
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -276,6 +267,36 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-on-save.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/self-assessment-producer.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shape-producer.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/calibration-producer.sh",
             "args": []
           }
         ]

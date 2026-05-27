@@ -70,70 +70,31 @@ _valid_confidence() {
 }
 
 # ---------------------------------------------------------------------------
-# Walk every `### M<N>.<area>.<slug>` assertion heading, collecting the Shape:
-# and Confidence: values beneath it (up to the next ## or ### heading).
+# Walk every `### M<N>.<area>.<slug>` assertion heading via the shared parser,
+# then validate each assertion's Shape: and Confidence: values.
 # ---------------------------------------------------------------------------
 
 contract_content="$(< "$contract_path")"
 
-heading_re='^###[[:space:]]+(M[0-9]+\.[a-z0-9-]+\.[a-z0-9-]+)([[:space:]]|$)'
-
-current_id=""
-current_shape=""
-current_confidence=""
 offenders=""
 
-_check_current() {
-  [[ -n "$current_id" ]] || return 0
+while IFS=$'\t' read -r assertion_id assertion_shape assertion_confidence; do
+  [[ -n "$assertion_id" ]] || continue
 
-  local bad=0
+  bad=0
 
-  if [[ -z "$current_shape" ]] || ! _in_shape_vocab "$current_shape"; then
+  if [[ -z "$assertion_shape" ]] || ! _in_shape_vocab "$assertion_shape"; then
     bad=1
   fi
 
-  if [[ -z "$current_confidence" ]] || ! _valid_confidence "$current_confidence"; then
+  if [[ -z "$assertion_confidence" ]] || ! _valid_confidence "$assertion_confidence"; then
     bad=1
   fi
 
   if [[ "$bad" -eq 1 ]]; then
-    offenders="${offenders}${offenders:+ }${current_id}"
+    offenders="${offenders}${offenders:+ }${assertion_id}"
   fi
-}
-
-while IFS= read -r line; do
-  if [[ "$line" =~ $heading_re ]]; then
-    _check_current
-
-    current_id="${BASH_REMATCH[1]}"
-    current_shape=""
-    current_confidence=""
-    continue
-  fi
-
-  # A new ## section heading ends the current assertion's scope.
-  if [[ "$line" =~ ^## ]]; then
-    _check_current
-
-    current_id=""
-    current_shape=""
-    current_confidence=""
-    continue
-  fi
-
-  if [[ -n "$current_id" ]]; then
-    if [[ "$line" =~ ^[[:space:]]*Shape:[[:space:]]*(.*)$ ]]; then
-      current_shape="$(_lower "${BASH_REMATCH[1]}")"
-      current_shape="${current_shape%"${current_shape##*[![:space:]]}"}"
-    elif [[ "$line" =~ ^[[:space:]]*Confidence:[[:space:]]*(.*)$ ]]; then
-      current_confidence="$(_lower "${BASH_REMATCH[1]}")"
-      current_confidence="${current_confidence%"${current_confidence##*[![:space:]]}"}"
-    fi
-  fi
-done <<< "$contract_content"
-
-# Flush the final assertion.
-_check_current
+done <<< "$(parse_contract_assertions "$contract_content")"
 
 if [[ -n "$offenders" ]]; then
   first_id="${offenders%% *}"

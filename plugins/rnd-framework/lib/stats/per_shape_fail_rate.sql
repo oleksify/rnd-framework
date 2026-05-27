@@ -59,6 +59,9 @@ WITH
 
   -- Per-slug calibration: the slug is the first path component of the
   -- calibration filename, so segment is known without any session join.
+  -- QUALIFY deduplicates to the latest record per (session_id, taskId) so that
+  -- re-verify rewrites do not inflate counts — mirrors self_fail_vs_verdict_gap's
+  -- existing pattern exactly.
   verdicts AS (
     SELECT
       regexp_extract(filename, '^\.?/?([^/]+)/', 1) AS slug,
@@ -76,6 +79,11 @@ WITH
     )
     WHERE json_valid(j)
       AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL  -- drop correction records (they carry no verdict)
+    QUALIFY row_number() OVER (
+      PARTITION BY TRY(json_extract_string(j, '$.session_id')),
+                   TRY(json_extract_string(j, '$.taskId'))
+      ORDER BY TRY(json_extract_string(j, '$.timestamp')) DESC
+    ) = 1
   ),
 
   classified AS (

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.3.0 — 2026-05-27
+
+### Wire the Phase 0 stat producers (path-driven) so the DuckDB stats substrate collects data
+
+Replace the broken builder-self-assessment-emit SubagentStop hook (mis-resolved the session via the mutable .current-session pointer; emitted 0 events across 359 sessions) with three path-driven PostToolUse Write|Edit producers that read identity off the artifact file_path: self-assessment-producer.sh ({event:builder_self_assessment} on builds/<task>-self-assessment.md writes), shape-producer.sh (one {event:assertion_shape} per assertion, mapped to its owning task via features.json, on validation-contract.md/features.json writes, both-present gated for write-order robustness), and calibration-producer.sh (per-task {taskId,verdict} collapsed via the Gate 3 rule to the slug-root calibration.jsonl on wave verdict-map writes). Lift session_id_from_path/calib_path_from_artifact/parse_contract_assertions/normalize_artifact_path into hooks/lib.sh; planner-emit-gate.sh sources the lifted parser. Add a latest-per-(session_id,taskId) QUALIFY to per_shape_fail_rate.sql so re-verify rewrites do not inflate counts. Narrow the information-barrier self-assessment match from the bare substring to self-assessment.md / self-assessment-properties so producer source files are not false-positives. Make the builder self-verdict MEDIUM/LOW heuristic portable and word-anchored.
+
 ## 5.2.0 — 2026-05-27
 
 ### Premortem intervention

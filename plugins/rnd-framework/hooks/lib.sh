@@ -214,7 +214,16 @@ active_session_dir() {
 # barrier-restricted.
 #
 # Barrier-protected patterns:
-#   - "self-assessment" — Builder uncertainty records (blocked from Verifier)
+#   - "self-assessment.md" — the Builder uncertainty artifact
+#     builds/T<id>-self-assessment.md (blocked from Verifier/Polisher).
+#   - "self-assessment-properties" — the property-runner output the Builder writes
+#     to builds/T<id>-self-assessment-properties.txt (named to inherit barrier
+#     protection; see tests/builder-properties.test.sh).
+#     Both are matched on their artifact-specific token, NOT the bare
+#     "self-assessment" substring, so legitimately-named SOURCE files (e.g.
+#     hooks/self-assessment-producer.sh and its test — "self-assessment-producer")
+#     are not false-positives. The tokens still catch absolute and relative
+#     references to the real artifacts.
 #   - ".rnd/.../briefs/" — user-facing narrative artifacts that may echo Builder
 #     reasoning. The `.rnd/` artifact-root anchor distinguishes the artifact
 #     tree from same-named directories elsewhere (e.g. project source).
@@ -231,7 +240,7 @@ is_barrier_violation() {
   local text_lower agent_lower
   text_lower="$(_lower "$text")"
   local has_pattern=0
-  if [[ "$text_lower" == *"self-assessment"* ]]; then
+  if [[ "$text_lower" == *"self-assessment.md"* || "$text_lower" == *"self-assessment-properties"* ]]; then
     has_pattern=1
   elif [[ "$text_lower" =~ \.rnd/.*briefs/ ]]; then
     has_pattern=1
@@ -396,6 +405,128 @@ bash_cache_dir() {
   local session_dir
   session_dir="$(active_session_dir 2>/dev/null)" || return 1
   printf '%s' "${session_dir}/.bash-cache"
+}
+
+# ---------------------------------------------------------------------------
+# Path-identity helpers — pure (input path → output string, no side effects)
+# ---------------------------------------------------------------------------
+
+# Normalizes an artifact file_path to absolute form (the FM1 guard).
+# An already-absolute path is returned unchanged. A relative path is resolved
+# via `realpath -e`; if resolution fails (path does not exist on disk), the
+# original relative path is returned so the caller can still fall back to it.
+# Pure-ish: one realpath probe, deterministic for a given filesystem state.
+# Shared by the path-driven producer hooks so the relative→absolute fallback
+# lives in exactly one place.
+normalize_artifact_path() {
+  local path="$1"
+
+  if [[ "$path" == /* ]]; then
+    printf '%s' "$path"
+    return 0
+  fi
+
+  local resolved
+  resolved="$(realpath -e "$path" 2>/dev/null || true)"
+
+  if [[ -n "$resolved" ]]; then
+    printf '%s' "$resolved"
+    return 0
+  fi
+
+  printf '%s' "$path"
+}
+
+# Extracts the session_id from an artifact file_path by reading the path
+# component immediately after the first /sessions/ segment.
+# Works for both branch-partitioned and legacy path layouts.
+# Prints the session id, or empty string when no /sessions/ component exists.
+session_id_from_path() {
+  local path="$1"
+  local after_sessions
+
+  case "$path" in
+    */sessions/*)
+      after_sessions="${path#*/sessions/}"
+      printf '%s' "${after_sessions%%/*}"
+      ;;
+    *)
+      printf ''
+      ;;
+  esac
+}
+
+# Derives the slug-root calibration.jsonl path from an artifact file_path.
+# The slug is the path component immediately following /.rnd/ (same as what
+# rnd-dir.sh --calibration returns: <config>/.rnd/<slug>/calibration.jsonl).
+# Returns empty when the path contains no /.rnd/ segment.
+calib_path_from_artifact() {
+  local path="$1"
+  local prefix after_rnd slug
+
+  case "$path" in
+    */.rnd/*)
+      prefix="${path%%/.rnd/*}"
+      after_rnd="${path#*/.rnd/}"
+      slug="${after_rnd%%/*}"
+      printf '%s/.rnd/%s/calibration.jsonl' "$prefix" "$slug"
+      ;;
+    *)
+      printf ''
+      ;;
+  esac
+}
+
+# Emits one tab-separated assertion line when the id is non-empty; no-op
+# otherwise. Module-private helper for parse_contract_assertions (defined at
+# top level so it is not redefined on every parse call).
+__emit_assertion_line() {
+  [[ -n "$1" ]] || return 0
+  printf '%s\t%s\t%s\n' "$1" "$2" "$3"
+}
+
+# Walks every ### M<N>.<area>.<slug> assertion heading in contract_content and
+# emits one tab-separated line per assertion:
+#   <assertion_id>\t<shape>\t<confidence>
+# Shape and Confidence fields are lowercased and trailing-space-trimmed.
+# Missing fields are emitted as empty strings (tab still present).
+# Output contract: consumers split on \t and take fields 1, 2, 3.
+parse_contract_assertions() {
+  local contract_content="$1"
+  local heading_re='^###[[:space:]]+(M[0-9]+\.[a-z0-9-]+\.[a-z0-9-]+)([[:space:]]|$)'
+  local current_id="" current_shape="" current_confidence=""
+
+  while IFS= read -r line; do
+    if [[ "$line" =~ $heading_re ]]; then
+      __emit_assertion_line "$current_id" "$current_shape" "$current_confidence"
+
+      current_id="${BASH_REMATCH[1]}"
+      current_shape=""
+      current_confidence=""
+      continue
+    fi
+
+    if [[ "$line" =~ ^## ]]; then
+      __emit_assertion_line "$current_id" "$current_shape" "$current_confidence"
+
+      current_id=""
+      current_shape=""
+      current_confidence=""
+      continue
+    fi
+
+    if [[ -n "$current_id" ]]; then
+      if [[ "$line" =~ ^[[:space:]]*Shape:[[:space:]]*(.*)$ ]]; then
+        current_shape="$(_lower "${BASH_REMATCH[1]}")"
+        current_shape="${current_shape%"${current_shape##*[![:space:]]}"}"
+      elif [[ "$line" =~ ^[[:space:]]*Confidence:[[:space:]]*(.*)$ ]]; then
+        current_confidence="$(_lower "${BASH_REMATCH[1]}")"
+        current_confidence="${current_confidence%"${current_confidence##*[![:space:]]}"}"
+      fi
+    fi
+  done <<< "$contract_content"
+
+  __emit_assertion_line "$current_id" "$current_shape" "$current_confidence"
 }
 
 # ---------------------------------------------------------------------------

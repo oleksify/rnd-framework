@@ -160,6 +160,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `using-rnd-framework` | Session bootstrap — injected on startup, lists all available skills and commands |
 | `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
 | `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
+| `premortem` | Pre-planning failure imagination — N parallel haiku agents each imagine a way the milestone fails under one framing; aggregated into `premortem.md` before `protocol.md`; the Planner addresses or dismisses each `FM<k>` |
 | `rnd-building` | Builder methodology with TDD discipline baked in |
 | `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION); information barrier intact |
 | `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |

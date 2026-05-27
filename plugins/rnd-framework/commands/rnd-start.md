@@ -154,6 +154,34 @@ Otherwise:
 
 ## Phase 1: Plan
 
+### Phase 1 pre-step: Premortem fan-out
+
+Before spawning the Planner, run a premortem: spawn N parallel `general-purpose` agents with `model: "haiku"`, each imagining one failure framing. Aggregate their narratives into `$RND_DIR/premortem.md`.
+
+**Determine framings.** Start with the 5 core framings from `rnd-framework:premortem`. Derive up to 2 task-specific framings from the task description. Bounds: `3 ≤ N ≤ 7`, default `N = 5`. See the `rnd-framework:premortem` skill for the framing labels, framing prompts, and per-agent prompt template.
+
+**Spawn N agents in ONE message**, one per framing. Fill in `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` from the per-agent prompt template in the `rnd-framework:premortem` skill:
+
+```
+Agent({ subagent_type: "general-purpose", model: "haiku", prompt: "<framing 1 prompt from premortem skill>" })
+Agent({ subagent_type: "general-purpose", model: "haiku", prompt: "<framing 2 prompt from premortem skill>" })
+... (repeat for each framing up to N)
+```
+
+Each agent returns a short failure narrative only — no file writes, no tool use.
+
+**Aggregate.** Collect narratives in framing-assignment order. Deduplicate near-identical failure modes (same root cause AND mechanism — keep the more specific one). Assign stable `FM<k>` IDs starting at FM1. Write `$RND_DIR/premortem.md` using the `## FM<k> — {framing-label}` format from the `rnd-framework:premortem` skill.
+
+**Emit** the audit event after writing `premortem.md`:
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/lib/premortem-emit.sh" "<framings_csv>" "<failure_mode_count>"
+```
+
+Where `framings_csv` is the comma-joined list of framing labels used and `failure_mode_count` is the count of `FM<k>` entries written.
+
+---
+
 **Spawn a Planner agent** to decompose the task.
 
 ```
@@ -161,7 +189,7 @@ Agent({
   description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "acceptEdits",
-  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md (address/dismiss each FM<k> in protocol.md's ## Premortem Responses)\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 

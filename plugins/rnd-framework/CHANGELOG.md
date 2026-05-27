@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.2.0 — 2026-05-27
+
+### Premortem intervention
+
+Adds a pre-planning premortem step that imagines failure modes before the Planner writes a protocol, feeding the results back into the Planner as a required `## Premortem Responses` section.
+
+**Premortem emitter (`lib/premortem-emit.sh`):** Dedicated audit-event emitter that appends a `premortem_generated` event to `audit.jsonl`, carrying `n` (number of framings aggregated), `framings` (array of framing labels), `failure_mode_count`, and `timestamp`. Kept separate from `audit-event.sh` because the payload schema differs from the single-field event shape.
+
+**Premortem skill (`skills/premortem/SKILL.md`):** Protocol SSOT for the premortem fan-out. Defines five canonical framings (wrong external-service assumption, data-model misfit, performance at scale, auth/permission edge case, user-meant-something-different), the per-agent prompt template, the `premortem.md` `FM<k>` output format, the emit invocation pattern, and the N bounds (3–7, default 5).
+
+**Phase 1 fan-out (`commands/rnd-start.md`):** New Phase 1 pre-step before protocol writing. The orchestrator spawns N parallel `general-purpose`/`haiku` agents, each imagining failures from one framing; results are aggregated into `premortem.md` (orchestrator-owned, written before `protocol.md`), and `premortem_generated` is emitted via `premortem-emit.sh`.
+
+**Planner premortem responses (`agents/rnd-planner.md`):** The Planner reads `premortem.md` when present and writes a `## Premortem Responses` section in `protocol.md`, addressing or dismissing each `FM<k>` with a brief rationale. Gracefully skipped when `premortem.md` is absent.
+
+**New tests:** `tests/premortem-emit.test.sh`, `tests/premortem-skill.test.sh`, `tests/premortem-wiring.test.sh`, `tests/premortem-planner.test.sh`.
+
 ## 5.1.0 — 2026-05-27
 
 ### Phase 0 stats substrate

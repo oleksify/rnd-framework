@@ -42,6 +42,7 @@ plugins/rnd-framework/
 │   ├── event-schema.json               # JSON Schema SSOT for the per-(session,assertion) fact grain; `x-shape-vocab` (12 values incl. `misc`) + confidence enum (high|medium|stretch) sourced by planner-emit-gate.sh
 │   ├── stats/*.sql                      # Stateless DuckDB view module over session JSONL in place (tolerant `read_csv` raw-line + `json_valid`, no persistence): shape distribution, per-shape verifier-FAIL rate, iteration depth, builder-self-fail-vs-verdict gap, FAIL-rate drift, + backfill.sql; segment via inline `dogfood_slugs` CTE; run out-of-band by /rnd-framework:rnd-stats
 │   ├── audit-event.sh                  # Single-line {event,task_id,tool,timestamp} emitter to $RND_DIR/audit.jsonl
+│   ├── premortem-emit.sh               # Emits the premortem_generated event {event,n,framings[],failure_mode_count,timestamp}; n derived from the framings CSV (separate from audit-event.sh because the payload schema differs)
 │   ├── audit-scan.sh                   # Subcommands: `verdict_history <task>` (prints FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL)
 │   ├── rnd-undo.sh                     # Surgical task-scoped revert (reads `## Files written` from build manifest)
 │   ├── run-properties.sh               # Property-runner dispatcher: invokes `mix test --include property` (Elixir/StreamData) or `bun test` (TS/fast-check); emits `PROPERTY_PASS`, `PROPERTY_COUNTER_EXAMPLE` (stderr JSON: property/input/shrunk_input/seed), or `PROPERTY_SKIPPED`; probe via `command -v mix`/`bun` — absent runtime → skip; called by Verifier when pre-reg has `## Properties`
@@ -153,6 +154,7 @@ Artifacts live in a centralized directory outside the project tree, computed by 
     ├── roadmap.md                         # Multi-session roadmap (lazy-inherited from default branch)
     ├── project-facts.md                   # Persistent project scan (lazy-inherited from default branch)
     └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   # $RND_DIR (one per pipeline run)
+        ├── premortem.md                   # Orchestrator-owned, immutable; written BEFORE protocol.md from N parallel haiku failure-imagination spawns; one FM<k> per failure mode; Planner addresses/dismisses each in protocol.md's ## Premortem Responses
         ├── protocol.md                    # Scope + goals; carries Heuristic ceiling integer on line 2
         ├── validation-contract.md         # One M<N>.<area>.<slug> assertion per heading; orchestrator slices per-task sets via assertionIds[] in features.json
         ├── features.json                  # Machine-readable task manifest: M<N>.T<NN>.<slug> IDs, dependsOn[], assertionIds[], criticality, status

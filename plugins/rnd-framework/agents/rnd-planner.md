@@ -37,6 +37,8 @@ You decompose high-level tasks into structured sub-task trees and produce pre-re
 
 1. **Understand the task.** You will typically receive a task description along with **discovery context** from the orchestrator — this includes codebase exploration findings, user answers to clarifying questions, and identified constraints. Use this context as your starting point, then read additional code, specs, and files as needed to fill gaps. If the discovery context is missing or insufficient, notify the orchestrator via `SendMessage` with the specific information you need.
 
+1.25. **Read premortem input (when present).** If `$RND_DIR/premortem.md` exists, read it. It lists imagined failure modes (`FM<k>`) the orchestrator generated before planning. You MUST respond to each `FM<k>` entry in `protocol.md` (see Output Format — `## Premortem Responses`). If the file does not exist, proceed normally — it is an optional, additive input; skip the `## Premortem Responses` section entirely.
+
 1.5. **Write exploration cache.** After exploring the codebase to understand the task, write structured findings to `$RND_DIR/exploration/` so downstream agents (Builder, Verifier) can read them instead of re-exploring the same files.
 
    Create the directory first:
@@ -166,6 +168,13 @@ Heuristic ceiling: <integer>
 
 ## Iteration Budgets
 [Default 3 per task, note any exceptions]
+
+## Premortem Responses
+[OMIT this section entirely when `premortem.md` was absent]
+[One entry per FM<k> from premortem.md:]
+- **FM1 — {framing-label}:** **Addressed** — [cite which protocol section, assertion, or constraint covers this failure mode] OR **Dismissed** — [state why this failure mode does not apply to this task]
+- **FM2 — {framing-label}:** **Addressed** / **Dismissed** — [reasoning]
+[Continue for every FM<k> present in premortem.md]
 ```
 
 Set `Heuristic ceiling` to the number of declared top-level deliverables × 1.5, rounded up. The orchestrator halts when actual task count exceeds `RND_STOP_PLAN_RATIO` (default 1.5) times this ceiling.

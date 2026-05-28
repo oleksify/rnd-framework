@@ -382,6 +382,8 @@ Dispatch each task based on its aggregated verdict:
 
 When routing a task to Phase 5 (iteration), the feedback packet sent to the Builder **must cite the failing assertion IDs verbatim** from the verdict map — list each assertion ID whose verdict is not PASS along with its `feedback` string. Do not paraphrase or summarize assertion IDs.
 
+**Re-plan routing.** When the user selects "Re-plan failing tasks" from the Gate 3 prompt (or the equivalent option in Phase 5's budget-exhaustion prompt), do NOT iterate the Builder. Route instead to the [Re-plan flow](#re-plan-flow) subsection of Phase 5, which archives the prior plan, spawns a fresh Planner without inlining prior `validation-contract.md` or `protocol.md` content, and diffs the new plan against the archive before resuming from Phase 2.
+
 ## Phase 4: Cleanup (per task)
 
 After each task passes Gate 3, spawn a Cleanup agent to sweep dead code and stale artifacts introduced or exposed by that task's changes.
@@ -443,11 +445,91 @@ Iteration operates at the wave level — a single Builder spawn handles ALL fail
 3. After the Builder returns, **loop back to Phase 3** to re-batch-verify the full wave (same Verifier spawn, same information barrier, all tasks).
 4. **If wave re-verification returns all PASS**, extract learnings via `rnd-framework:rnd-learning`.
 5. **Wave iteration budget**: budget = per-task budget of the highest-criticality task in the wave (LOW=2, NORMAL=3, HIGH=5). If the wave rebuild still has failures after budget exhausted, `AskUserQuestion`:
-   - "Re-plan failing tasks"
+   - "Re-plan failing tasks" — route to the [Re-plan flow](#re-plan-flow) subsection below
    - "Skip failing tasks and continue (Recommended)"
    - "Stop pipeline"
 
 Track wave iterations in `$RND_DIR/iteration-log.md` using the `## Wave-<N> Iteration Log` template (see `rnd-framework:rnd-iteration`).
+
+### Re-plan flow
+
+The Re-plan flow runs when the user selects **"Re-plan failing tasks"** from one of two trigger conditions:
+
+1. **Gate 3 FAIL** — the verdict map contains FAIL assertions and the post-Gate-3 `AskUserQuestion` offered "Re-plan failing tasks (Recommended)".
+2. **Phase 5 budget exhaustion** — the wave rebuild still has failures after the wave iteration budget is spent, and the budget-exhaustion `AskUserQuestion` offered "Re-plan failing tasks".
+
+In either case, do NOT inline the prior `validation-contract.md` or `protocol.md` content into the new Planner spawn. The intervention is to *hide the previous plan* from the fresh Planner — only the failing task IDs and their failing assertion IDs are forwarded, drawn from the latest wave verdict map.
+
+**Step-by-step:**
+
+1. **Archive the prior plan.** Invoke `lib/replan-archive.sh` to move the four canonical artifacts (`protocol.md`, `validation-contract.md`, `features.json`, `AGENTS.md`) into `$RND_DIR/prior-plans/replan-<k>/`. Capture the archive path printed on stdout.
+
+   ```bash
+   ARCHIVE_PATH="$("${CLAUDE_PLUGIN_ROOT}/lib/replan-archive.sh" "$RND_DIR")"
+   ```
+
+2. **Touch the marker file.** This enables the `is_replan_artifact_violation` barrier in `hooks/lib.sh`, which blocks the fresh Planner from reading the four canonical session-root plan paths (`$RND_DIR/{protocol.md,validation-contract.md,features.json,AGENTS.md}`). The archived copies under `$RND_DIR/prior-plans/` remain readable for the differ.
+
+   ```bash
+   touch "$RND_DIR/.replan-in-progress"
+   ```
+
+3. **Emit the `replan_started` audit event.** `<iteration>` is the 1-based re-plan counter (count the existing directories under `$RND_DIR/prior-plans/`).
+
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/lib/replan-emit.sh" started <iteration> "$ARCHIVE_PATH"
+   ```
+
+4. **Build the `${REPLAN_HINT_BLOCK}`.** Read `$RND_DIR/verifications/wave-<N>-verdict-map.json` (using the archive copy if it was moved during step 1 — the path is preserved under `$ARCHIVE_PATH/` for reference). Extract:
+   - The set of `task_id` values whose aggregated verdict is `NEEDS_ITERATION` (per the Gate 3 aggregation rule).
+   - For each failing task, the assertion IDs whose verdict is not `PASS`.
+
+   Render as plain text — assertion IDs only, no assertion bodies, no evidence, no feedback strings:
+
+   ```
+   Re-plan trigger: <Gate 3 FAIL | Phase 5 budget exhaustion>
+   Failing tasks (from prior plan):
+     - <task_id_1>: failing assertions <assertion_id_a>, <assertion_id_b>
+     - <task_id_2>: failing assertions <assertion_id_c>
+   ```
+
+5. **Spawn the fresh Planner.** Use the spawn template below. The prompt MUST NOT inline any prior `validation-contract.md`, `protocol.md`, `features.json`, or `AGENTS.md` content. Only the `${REPLAN_HINT_BLOCK}` is forwarded. (FM2 defense-in-depth: the barrier hook is the mechanical enforcer; this instruction is the prompt-level enforcer.)
+
+   ```
+   Agent({
+     description: "Re-plan failing tasks",
+     subagent_type: "rnd-framework:rnd-planner",
+     mode: "acceptEdits",
+     prompt: "Task: <original task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md\n${OUTSIDE_VIEW_BLOCK}\n${REPLAN_HINT_BLOCK}\n\nIMPORTANT: This is a re-plan after a prior plan's failure. The prior plan's protocol.md, validation-contract.md, features.json, and AGENTS.md have been archived under $RND_DIR/prior-plans/. You MUST NOT read or inline any prior plan artifact content. The barrier hook will block such reads. Treat the failing task IDs and assertion IDs in ${REPLAN_HINT_BLOCK} as the only signal about what went wrong; re-decompose the task from scratch.\n${SESSION_SKILLS_FRAGMENT}"
+   })
+   ```
+
+6. **Wait for the Planner.** It will write fresh `protocol.md`, `validation-contract.md`, `features.json`, and `AGENTS.md` to `$RND_DIR`.
+
+7. **Spawn the differ.** Pass the old/new path pairs for the four artifacts. The differ produces `$RND_DIR/replan-diff.md` summarizing what changed: task additions, removals, renames, and assertion-level diffs.
+
+   ```
+   Agent({
+     description: "Diff old vs new plan",
+     subagent_type: "rnd-framework:rnd-replan-differ",
+     mode: "acceptEdits",
+     prompt: "RND_DIR: <path>\nArchive: $ARCHIVE_PATH\nNew plan: $RND_DIR (protocol.md, validation-contract.md, features.json, AGENTS.md)\nWrite the diff to $RND_DIR/replan-diff.md."
+   })
+   ```
+
+8. **Emit the `replan_diff_emitted` audit event.** Parse the diff for change counts (the differ records them in the report header).
+
+   ```bash
+   "${CLAUDE_PLUGIN_ROOT}/lib/replan-emit.sh" diff_emitted <task_changes_count> <assertion_changes_count>
+   ```
+
+9. **Remove the marker.** This re-opens the archived paths to subsequent reads (e.g., the development narrative may reference them).
+
+   ```bash
+   rm -f "$RND_DIR/.replan-in-progress"
+   ```
+
+10. **Surface the diff to the user** via the brief-relay mechanism (`SendMessage` of the `[user-brief]` form pointing at `$RND_DIR/replan-diff.md`). Then resume the pipeline from **Phase 2** with the fresh plan — Gate 1 is implicit because the Planner just ran, but you may re-run the `jq -e` shape check on `features.json` defensively.
 
 ### Skip Procedure
 

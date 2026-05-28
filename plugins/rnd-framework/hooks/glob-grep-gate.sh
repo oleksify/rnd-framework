@@ -30,6 +30,16 @@ if is_barrier_violation "$path" "${AGENT_TYPE}" \
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
+# Re-plan barrier: parallel coverage to read-gate.sh. Check path, pattern,
+# and their concatenation — same smuggling defense as the verifier barrier
+# above: a Glob like `path=<session_dir>` + `pattern=/protocol.md` only
+# resolves to a canonical artifact when joined.
+if is_replan_artifact_violation "$path" "${AGENT_TYPE}" \
+   || is_replan_artifact_violation "$pattern" "${AGENT_TYPE}" \
+   || is_replan_artifact_violation "${path}/${pattern}" "${AGENT_TYPE}"; then
+  block_msg "RE-PLAN BARRIER: prior plan artifacts at their canonical paths are hidden from a re-plan Planner spawn. Read the archive under prior-plans/ if needed, or proceed without prior context."
+fi
+
 # Non-verifier agent touching self-assessment, briefs/, or cleanup/: no-opinion, not auto-allow.
 #
 # The /briefs/ and /cleanup/ checks are anchored on .rnd/ to mirror

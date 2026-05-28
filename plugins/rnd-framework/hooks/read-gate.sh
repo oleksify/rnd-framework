@@ -22,6 +22,15 @@ if is_barrier_violation "$file_path" "${AGENT_TYPE}"; then
   block_msg "INFORMATION BARRIER: self-assessment files and briefs/ artifacts are records written for the orchestrator and the user — not for the Verifier. Direct reading is blocked to maintain information barriers between Builder and Verifier."
 fi
 
+# Re-plan barrier: a freshly-spawned Planner during a re-plan must not read
+# its own prior canonical artifacts at the session root — the previous plan
+# has been archived under prior-plans/replan-<k>/. Runs after the verifier
+# barrier and before the .rnd/ auto-allow so the canonical paths (which
+# live under .rnd/) don't silently slip through.
+if is_replan_artifact_violation "$file_path" "${AGENT_TYPE}"; then
+  block_msg "RE-PLAN BARRIER: prior plan artifacts at their canonical paths are hidden from a re-plan Planner spawn. Read the archive under prior-plans/ if needed, or proceed without prior context."
+fi
+
 # A non-verifier agent reading a self-assessment, briefs/, or cleanup/ path is
 # not blocked, but is still not auto-allowed — defer to Claude Code's standard
 # permission flow so the user sees the prompt rather than silently allowing

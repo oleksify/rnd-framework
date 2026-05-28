@@ -252,6 +252,79 @@ is_barrier_violation() {
   [[ "$agent_lower" == *"verifier"* || "$agent_lower" == *"polisher"* ]]
 }
 
+# Returns 0 iff <file_path> points at one of the four canonical plan artifacts
+# at the active session root AND a re-plan-in-progress marker is present AND
+# the caller is the freshly-spawned Planner. Otherwise returns 1 (no
+# violation). Pure-ish: probes the filesystem for the marker file but has no
+# side effects.
+#
+# Why this exists (defense-in-depth around the re-plan flow):
+#
+#   The orchestrator archives the prior plan under prior-plans/replan-<k>/
+#   and writes a marker at $session_dir/.replan-in-progress before spawning a
+#   fresh Planner. The intent is that the new Planner reasons from the
+#   protocol-style brief alone — not from the artifacts it is about to
+#   overwrite. The spawn-prompt construction omits the prior content, but
+#   prompt-omission alone is fragile: a future code path may forget to omit,
+#   or the Planner may try to Read the canonical paths directly. This
+#   predicate is the hook-level safety net.
+#
+#   Design rationale:
+#     - Prompt-omission fragility: barrier blocks Read regardless of whether
+#       the orchestrator omitted prior-plan content from the spawn prompt.
+#     - Agent-type drift: matched on substring "planner" so any future
+#       planner variant (rnd-planner, rnd-planner-fast, …) is caught, while
+#       rnd-replan-differ (contains "rep" but not "planner") is NOT caught —
+#       the differ must still be able to compare archives to drafts.
+#     - Over-blocking guard: the orchestrator (empty agent_type) and the
+#       differ are explicitly excluded so they can do their jobs reading both
+#       archived and canonical paths.
+#     - Marker as a file, not an env var: probed at hook-invocation time,
+#       survives subprocess boundaries cleanly where env vars would be lost.
+#
+#   The barrier targets Read/Glob/Grep only. write-gate.sh is intentionally
+#   NOT wired to this predicate — the Planner MUST be able to Write the new
+#   canonical artifacts to replace the archived ones.
+#
+#   Archived paths under prior-plans/replan-*/ are out of scope: the
+#   barrier protects only the canonical session-root paths. A planner can
+#   still cross-reference an archive if it really wants — the spawn-prompt
+#   guidance discourages that, but the hook does not enforce it.
+is_replan_artifact_violation() {
+  local file_path="$1"
+  local agent_type="${2:-}"
+
+  [[ -n "$file_path" ]] || return 1
+
+  local agent_lower
+  agent_lower="$(_lower "$agent_type")"
+  [[ "$agent_lower" == *"planner"* ]] || return 1
+
+  local session_dir
+  session_dir="$(active_session_dir 2>/dev/null)" || return 1
+
+  [[ -f "${session_dir}/.replan-in-progress" ]] || return 1
+
+  local abs
+  abs="$(normalize_artifact_path "$file_path")"
+  # Collapse repeated slashes (e.g. from path/pattern smuggling concatenation
+  # in glob-grep-gate.sh: "<session_dir>" + "/protocol.md" → "<dir>//protocol.md").
+  # macOS realpath lacks -e so normalize_artifact_path is a no-op for absolute
+  # inputs that don't exist on disk; tr -s ensures the matcher is robust
+  # independently of that. Bash 3.2's pattern-replacement syntax mishandles
+  # slash escapes, so tr is the safer primitive.
+  abs="$(printf '%s' "$abs" | tr -s /)"
+
+  case "$abs" in
+    "${session_dir}/protocol.md") return 0 ;;
+    "${session_dir}/validation-contract.md") return 0 ;;
+    "${session_dir}/features.json") return 0 ;;
+    "${session_dir}/AGENTS.md") return 0 ;;
+  esac
+
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # Pipeline phase detection
 # ---------------------------------------------------------------------------

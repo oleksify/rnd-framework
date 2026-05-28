@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.6.0 — 2026-05-28
+
+### Add the hide-the-previous-plan replan intervention
+
+Adds an orchestrator-driven re-plan flow that fires when the user selects "Re-plan failing tasks" from either the Gate 3 FAIL prompt or the Phase 5 budget-exhaustion prompt. The intervention hides the prior plan from the fresh Planner so the new decomposition cannot anchor on the failed one.
+
+Adds lib/replan-archive.sh, which moves the four canonical plan artifacts (protocol.md, validation-contract.md, features.json, AGENTS.md) under $RND_DIR/prior-plans/replan-<k>/ and prints the archive path on stdout. Adds lib/replan-emit.sh with subcommands `started <iteration> <archive_path>` and `diff_emitted <task_changes_count> <assertion_changes_count>`, which append replan_started and replan_diff_emitted audit events to $RND_DIR/audit.jsonl. Adds agents/rnd-replan-differ.md, a haiku/low Read+Write agent that compares the archived plan against the new plan and writes $RND_DIR/replan-diff.md. Adds the is_replan_artifact_violation predicate in hooks/lib.sh, gated by the $RND_DIR/.replan-in-progress marker file; while a replan is in progress the predicate blocks the fresh Planner from reading the four canonical session-root plan paths ($RND_DIR/{protocol.md,validation-contract.md,features.json,AGENTS.md}), while leaving the archived copies under $RND_DIR/prior-plans/ readable so the rnd-replan-differ agent can compare them against the new plan. Wires the predicate into hooks/read-gate.sh and hooks/glob-grep-gate.sh so Read, Glob, and Grep are all covered.
+
+Updates commands/rnd-start.md with a new `### Re-plan flow` subsection inside Phase 5 documenting the trigger conditions and the ten-step protocol (archive, marker, started event, hint-block construction, Planner spawn with the FM2 MUST NOT spawn-prompt rule against inlining prior validation-contract.md or protocol.md content, differ spawn, diff_emitted event, marker removal, brief relay, resume from Phase 2). Adds a Re-plan routing paragraph after the Gate 3 dispatch table and wires the Phase 5 budget-exhaustion "Re-plan failing tasks" option to the new subsection. Updates skills/rnd-orchestration/SKILL.md with a `## Re-plan Flow` section that documents the flow at a high level and cross-references the rnd-start.md canonical step list, the lib/ helpers, the rnd-replan-differ agent, and the .replan-in-progress marker.
+
 ## 5.5.0 — 2026-05-28
 
 ### Add outside-view injector for the Planner spawn

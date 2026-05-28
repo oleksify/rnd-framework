@@ -15,7 +15,7 @@ lib/plugin-dir-base.sh                  # Canonical shared artifact-dir logic (e
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json          # Plugin manifest
-├── agents/                             # 10 agents (9 pipeline-phase + 1 premortem fan-out helper)
+├── agents/                             # 11 agents (9 pipeline-phase + 2 helpers: premortem fan-out + replan-differ)
 ├── commands/                           # /rnd-framework:* slash commands
 ├── skills/                             # One dir per skill, each with SKILL.md
 ├── output-styles/                      # scientific, rigorous, pipeline
@@ -45,6 +45,8 @@ plugins/rnd-framework/
 │   ├── premortem-emit.sh               # Emits the premortem_generated event {event,n,framings[],failure_mode_count,timestamp}; n derived from the framings CSV (separate from audit-event.sh because the payload schema differs)
 │   ├── outside-view.sh                 # M4 outside-view injector: queries stats/per_shape_fail_rate via duckdb, applies the N_THIN_CORPUS=5 gate, renders the `## Outside View (Reference Class)` block (header + FM6 framing-constraint paragraph + per-shape rows when n_total≥5, or `Mode: thin-corpus`/`Mode: unavailable` sentinels otherwise), writes $RND_DIR/outside-view.md and stdout. Invoked from commands/rnd-start.md Phase 1 between premortem fan-out and Planner spawn.
 │   ├── outside-view-emit.sh            # Emits the outside_view_injected event {event,mode,n_total,shapes,framing_constraint_emitted,timestamp}; separate from audit-event.sh because the payload schema differs (mirrors the premortem-emit.sh pattern)
+│   ├── replan-emit.sh                  # M5 re-plan lifecycle emitter: subcommands `started <iteration> <archive_path>` → replan_started event; `diff_emitted <task_changes_count> <assertion_changes_count>` → replan_diff_emitted event; both append to $RND_DIR/audit.jsonl
+│   ├── replan-archive.sh               # M5 archive helper: moves the four canonical plan artifacts (protocol.md, validation-contract.md, features.json, AGENTS.md) into $RND_DIR/prior-plans/replan-<k>/ where <k> is the next-available counter; prints archive path on stdout. Invoked by commands/rnd-start.md Phase 5 re-plan flow before the fresh Planner spawn.
 │   ├── audit-scan.sh                   # Subcommands: `verdict_history <task>` (prints FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL)
 │   ├── rnd-undo.sh                     # Surgical task-scoped revert (reads `## Files written` from build manifest)
 │   ├── run-properties.sh               # Property-runner dispatcher: invokes `mix test --include property` (Elixir/StreamData) or `bun test` (TS/fast-check); emits `PROPERTY_PASS`, `PROPERTY_COUNTER_EXAMPLE` (stderr JSON: property/input/shrunk_input/seed), or `PROPERTY_SKIPPED`; probe via `command -v mix`/`bun` — absent runtime → skip; called by Verifier when pre-reg has `## Properties`
@@ -176,6 +178,9 @@ Artifacts live in a centralized directory outside the project tree, computed by 
         ├── integration/wave-*-report.md   # Integration results, SHIP/NO-SHIP
         ├── cleanup/T*-cleanup-report.md   # Cleanup reports (barrier-protected from Verifier)
         ├── polish/wave-*-polish-report.md # Polisher wave-level seam-fix reports
+        ├── prior-plans/replan-<k>/        # M5: archived planner artifact snapshots (one dir per re-plan generation, written by lib/replan-archive.sh); differ Reads from here to produce replan-diff.md
+        ├── replan-diff.md                 # M5: rnd-replan-differ output; sections ## Task delta, ## Assertion delta, ## Summary
+        ├── .replan-in-progress            # M5: marker file enabling hooks/lib.sh::is_replan_artifact_violation; orchestrator touches before fresh Planner spawn and removes after diff_emitted
         ├── briefs/                        # Barrier-protected Builder-reasoning artifacts (blocked from Verifier by hooks)
         │   ├── decisions.md               # Cross-phase judgment-call log (rejected alternatives)
         │   ├── plan-briefs.md             # Planner user-facing narrative

@@ -446,6 +446,31 @@ Persistent, append-only record of non-trivial judgment calls shared across Plann
 
 **Explicit-fork discipline:** when an agent makes a decision that qualifies, the agent's output MUST narrate the fork ("I considered A, B, C; chose A because...") before appending the entry. This forces critical thinking at the decision point instead of post-hoc justification.
 
+## Re-plan Flow
+
+When the user selects "Re-plan failing tasks" from either the Gate 3 FAIL prompt or the Phase 5 budget-exhaustion prompt, the orchestrator runs the re-plan flow defined in `commands/rnd-start.md` (Phase 5 → `### Re-plan flow`). The flow is designed to *hide the previous plan* from the fresh Planner so the new decomposition is not anchored on the failed one.
+
+**Trigger conditions:**
+
+1. **Gate 3 FAIL** — the wave verdict map contains FAIL assertions and the user picks "Re-plan failing tasks (Recommended)" from the post-Gate-3 `AskUserQuestion`.
+2. **Phase 5 budget exhaustion** — the wave iteration budget is spent and the wave rebuild still has failures, and the user picks "Re-plan failing tasks" from the budget-exhaustion `AskUserQuestion`.
+
+**Outline:**
+
+1. Archive the four canonical plan artifacts (`protocol.md`, `validation-contract.md`, `features.json`, `AGENTS.md`) under `$RND_DIR/prior-plans/replan-<k>/` via `lib/replan-archive.sh "$RND_DIR"`.
+2. Touch the marker file `$RND_DIR/.replan-in-progress`. This enables the `is_replan_artifact_violation` predicate in `hooks/lib.sh`, which mechanically blocks the fresh Planner from reading the four canonical session-root plan paths (`$RND_DIR/{protocol.md,validation-contract.md,features.json,AGENTS.md}`). The archived copies under `$RND_DIR/prior-plans/` remain readable so the differ can compare them against the new plan.
+3. Emit `replan-emit.sh started <iteration> <archive_path>`.
+4. Build a `${REPLAN_HINT_BLOCK}` containing only the failing task IDs and assertion IDs sliced from the latest `wave-<N>-verdict-map.json`. Do NOT include prior `protocol.md`, `validation-contract.md`, or assertion-body content.
+5. Spawn `rnd-planner` with the hint block as the only signal about prior failure. The spawn prompt carries an explicit `MUST NOT` imperative against inlining prior artifact content — this is the FM2 defense-in-depth at the prompt layer; the barrier hook is the mechanical layer.
+6. After the Planner returns and writes the new plan artifacts, spawn the `rnd-replan-differ` agent with the old/new path pairs. The differ writes `$RND_DIR/replan-diff.md` summarizing task and assertion-level changes.
+7. Emit `replan-emit.sh diff_emitted <task_changes_count> <assertion_changes_count>`.
+8. Remove the `.replan-in-progress` marker so the diff and archive are readable again by the orchestrator's narrative phase.
+9. Surface the diff to the user via the brief-relay mechanism, then resume from Phase 2 with the fresh plan.
+
+**Audit events.** Two events frame each re-plan cycle: `replan_started` (carries iteration counter and archive path) and `replan_diff_emitted` (carries change counts). Both are emitted via `lib/replan-emit.sh`.
+
+**Cross-references:** the canonical step-by-step lives in `commands/rnd-start.md` under Phase 5's `### Re-plan flow` subsection; the helpers are `lib/replan-archive.sh` and `lib/replan-emit.sh`; the diff agent is `agents/rnd-replan-differ.md`; the barrier predicate is `hooks/lib.sh::is_replan_artifact_violation`, gated by the `.replan-in-progress` marker.
+
 ## Session-Local Skill Injection
 
 Session-local skills are narrow, project-specific skills the Planner mints during exploration when the project has a convention, helper library, or domain idiom that no global skill covers. They supplement — not replace — global skills for the duration of a single pipeline session.

@@ -353,7 +353,7 @@ Since artifacts live outside the project directory, no `.gitignore` changes are 
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 10 agents (9 pipeline-phase + 1 premortem fan-out helper)
+├── agents/                      # 11 agents (9 pipeline-phase + 2 helpers: premortem fan-out + replan-differ)
 ├── commands/                    # 19 pipeline commands
 ├── hooks/
 │   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied

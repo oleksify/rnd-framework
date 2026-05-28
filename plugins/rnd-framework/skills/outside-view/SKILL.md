@@ -1,6 +1,6 @@
 ---
 name: outside-view
-description: "Fires in Phase 1 of rnd-start, after the premortem fan-out and before the Planner spawn, to inject a historical reference-class block (per-shape FAIL rates) into the Planner's context as a calibration anchor."
+description: "Use in Phase 1 of rnd-start (after the premortem fan-out, before the Planner spawn) to inject a historical reference-class block — per-shape FAIL rates from the session corpus — into the Planner's context as a calibration anchor."
 effort: low
 user-invocable: false
 ---

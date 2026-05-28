@@ -1,6 +1,6 @@
 ---
 name: rnd-reality-auditing
-description: "Adversarial methodology for verifying external service contracts — identifies SQL, API, MCP, SDK, and env-var assumptions in Builder code, designs disproving experiments, and produces reality reports with VALID/INVALID/UNCHECKED verdicts backed by raw evidence"
+description: "Use when adversarially verifying external service contracts in Builder code — identifies SQL, API, MCP, SDK, and env-var assumptions, designs disproving experiments, and produces reality reports with VALID/INVALID/UNCHECKED verdicts backed by raw evidence"
 effort: medium
 ---
 

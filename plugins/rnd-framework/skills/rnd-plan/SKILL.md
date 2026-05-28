@@ -42,7 +42,7 @@ Run ONLY the planning phase for: $ARGUMENTS
 
    Present findings to the user via `AskUserQuestion` for confirmation and gap-filling.
 
-4. Explore the codebase using Glob/Grep. Write exploration findings to `$RND_DIR/exploration/`.
+4. Explore the codebase using Glob/Grep **inline** — do NOT spawn the `Explore` subagent. The `Explore` subagent has been observed to return with `0 tool uses` during rnd phases, producing no findings and wasting a spawn. Call `Glob`/`Grep` (and `Read` when needed) directly in this context. Write exploration findings to `$RND_DIR/exploration/`.
 
 5. Decompose the task into a hierarchical task tree with pre-registration documents following the decomposition skill's protocol.
 

@@ -92,7 +92,7 @@ If `$ARGUMENTS` is provided, skip this section and proceed directly.
 
 Before planning, explore the codebase and gather requirements.
 
-1. **Explore the codebase.** Use Glob/Grep to identify: existing patterns, relevant files/modules, architectural conventions, and constraints.
+1. **Explore the codebase.** Call `Glob`/`Grep` (and `Read` when needed) **inline** to identify: existing patterns, relevant files/modules, architectural conventions, and constraints. Do NOT spawn the `Explore` subagent — it has been observed to return with `0 tool uses` during rnd phases, wasting the spawn and producing no findings. Run the searches in this context.
 
 2. **Discover local experts.** Invoke `rnd-framework:rnd-local-experts` to scan `.claude/agents/` and `.claude/skills/` for project-local agents and skills. If none exist, record `Local Experts Discovered: none` and continue.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.7.2 — 2026-05-28
+
+### Guard against Explore-subagent spawns in rnd phases and add Related Skills back-links to surface orphan skills
+
+Add an explicit do-not-spawn-Explore instruction with Glob/Grep inline guidance to skills/rnd-plan/SKILL.md Phase 1, commands/rnd-start.md Phase 0, and a new Subagent Coordination subsection in skills/rnd-orchestration/SKILL.md after observing that Explore subagent spawns return with 0 tool uses during rnd phases. Add ## Related Skills back-links from rnd-orchestration covering premortem, outside-view, rnd-design, rnd-local-experts, rnd-roadmapping, rnd-formatting, rnd-doc-polish, rnd-narrative, rnd-debug-pipeline, and rnd-doctor, plus back-links from rnd-building covering kiss-practices, fp-practices, prefer-system-tools, bun-scripting, and committing, so the 13 previously-orphan skills now have inbound cross-references. Rewrite the description frontmatter for kiss-practices, outside-view, and rnd-reality-auditing to begin with 'Use when …' per the writing-skills convention.
+
 ## 5.7.1 — 2026-05-28
 
 ### Canonicalize `behaviour` in x-shape-vocab; sharpen pipeline-context-leak guidance

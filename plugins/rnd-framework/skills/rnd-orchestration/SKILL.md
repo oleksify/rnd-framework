@@ -302,6 +302,10 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
 
 **Rationale:** The framework's own quality gates (pre-registration, information barriers, independent verification, evidence-based pass/fail gates) provide robust quality control. `acceptEdits` auto-approves Edit/Write on project files — the exact surface pipeline agents need — while leaving Bash under the normal classifier. Observed on Claude Code 2.1.112: `mode: "auto"` denied project-file Edit/Write for team-spawned subagents (see audit log), and `mode: "bypassPermissions"` was not honored for tmux-backed team agents.
 
+### Do Not Spawn the `Explore` Subagent
+
+During rnd phases (Phase 0 discovery, Phase 1 planning, Phase 5 re-plan), the `Explore` subagent has been observed to return with `0 tool uses` — no work performed, no findings, the spawn slot wasted. When the orchestrator or a pipeline agent needs to search the codebase, call `Glob`, `Grep`, and `Read` **inline** in the current context. Reserve subagent spawns for pipeline roles (`rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-reality-auditor`, `rnd-cleanup`, `rnd-polisher`, `rnd-integrator`, `rnd-debugger`, `rnd-data-scientist`, `rnd-premortem-imaginer`, `rnd-replan-differ`).
+
 ### Blocking Behavior
 
 **The Agent tool is blocking** — it returns only when the subagent completes. Do not poll, sleep, or manually check `$RND_DIR` files for progress. Spawn agents and process their results when the tool returns.
@@ -515,3 +519,21 @@ The 3-argument form is canonical. `audit-event.sh`'s optional 4th argument is re
 
 Inject session-local skills into every agent spawn — not selectively. An agent that does not receive a skill it needed produces incorrect output that looks correct, which is worse than a build failure. The injection cost is a few extra prompt tokens; the risk of selective injection is silent divergence.
 
+## Related Skills
+
+- `rnd-framework:premortem` — Phase 1 failure-imagination fan-out before the Planner spawn
+- `rnd-framework:outside-view` — Phase 1 reference-class injection into the Planner prompt
+- `rnd-framework:rnd-design` — Phase 0.5 architectural alternatives gate
+- `rnd-framework:rnd-decomposition` — Planner protocol for task breakdown
+- `rnd-framework:rnd-scheduling` — Wave scheduling from the dependency matrix
+- `rnd-framework:rnd-local-experts` — Phase 0 project-local agent/skill discovery
+- `rnd-framework:rnd-roadmapping` — Multi-session roadmap milestone management
+- `rnd-framework:rnd-iteration` — Build–verify feedback loop and re-plan escalation
+- `rnd-framework:rnd-failure-modes` — Catalog of pipeline failure modes
+- `rnd-framework:rnd-scaling` — Choosing the right ceremony level per task
+- `rnd-framework:rnd-formatting` — Pre-commit formatter run (Phase 7)
+- `rnd-framework:rnd-doc-polish` — CLAUDE.md / README updates after SHIP (Phase 7)
+- `rnd-framework:rnd-narrative` — Development narrative on demand (Phase 7)
+- `rnd-framework:rnd-completion` — Branch/PR workflow after SHIP
+- `rnd-framework:rnd-debug-pipeline` — Bug-fix pipeline variant for diagnosis-first work
+- `rnd-framework:rnd-doctor` — Runtime environment readiness check

@@ -162,3 +162,5 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 ## Output Discipline
 
 This command produces `brainstorm.md` (Phase 5/6) under `$RND_DIR/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE the Phase 6 `AskUserQuestion` — in the same turn, including in autonomous/loop mode. "Plan saved to `$RND_DIR/brainstorm.md`. Pick an option:" without printing the file verbatim is a defect.
+
+**Do NOT wrap the body in a fenced code block.** The Phase 5 ` ```markdown ` block above (lines 94–131) shows the file *structure* the model should write — it is illustrative-only and is NOT a presentation directive. When surfacing the actual brainstorm.md to the user, emit: the path in single backticks, a blank line, then the body as bare Markdown with no surrounding ` ```markdown ` / ` ``` ` fence and no 4-space indent. Wrapping the body in a fence makes headings, bold, and inline code render as literal text — the exact failure mode this discipline prevents.

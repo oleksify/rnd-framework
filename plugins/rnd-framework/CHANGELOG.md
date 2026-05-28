@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.7.3 — 2026-05-28
+
+### Strengthen Report Surfacing Protocol with concrete shape and no-fence reminder
+
+Add a Concrete-shape example to the Rendering Rule of all three output styles and an explicit no-fence reminder to rnd-brainstorm's Output Discipline that disambiguates the Phase 5 markdown-template fence as illustrative-only, fixing the recurring failure where brainstorm.md surfaced with literal ## and ** syntax instead of rendered Markdown.
+
 ## 5.7.2 — 2026-05-28
 
 ### Guard against Explore-subagent spawns in rnd phases and add Related Skills back-links to surface orphan skills

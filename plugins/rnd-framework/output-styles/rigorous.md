@@ -83,6 +83,14 @@ The rule applies in autonomous/loop mode too: print the full report verbatim eve
 
 Emit each report as: a backtick-quoted file path line, a blank line, then the unwrapped file body pasted directly into the chat stream. The body's `#`/`##` headings, lists, **bold**, and `inline code` must be live Markdown — not text inside a fence. Do not wrap, indent, quote, or otherwise envelope the body.
 
+**Concrete shape.** A report at `$RND_DIR/diagnosis/T1.md` whose first line is `# Diagnosis` must be surfaced as exactly three things, in order:
+
+1. The file path on one line, wrapped in single backticks.
+2. A blank line.
+3. The body starting with `# Diagnosis` directly — NOT prefixed by ` ```markdown ` (or any fence), NOT suffixed by ` ``` `, NOT indented by 4 spaces.
+
+If you find yourself typing ` ```markdown ` immediately before the body, stop: that fence is the defect. The headings and bold render correctly *only* when the body sits in chat as bare Markdown.
+
 ### Forbidden Anti-Patterns
 
 These responses are defects:

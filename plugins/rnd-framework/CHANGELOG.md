@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.8.0 — 2026-05-28
+
+### Add re-measurement harness and rnd-remeasure command
+
+Adds lib/remeasurement.sh (corpus_count, gate_met, memo subcommands) and commands/rnd-remeasure.md. The harness reads the existing M1 stats substrate read-only, counts post-M5 dogfood sessions, and writes a remeasurement-memo.md comparing current per-shape FAIL rate, builder-self-fail-vs-verdict gap, and iteration-depth against the M3 baseline. When fewer than 10 sessions have accrued the harness writes a pending stub naming N and the threshold. The M4+M5 confound is documented verbatim, not disentangled.
+
 ## 5.7.3 — 2026-05-28
 
 ### Strengthen Report Surfacing Protocol with concrete shape and no-fence reminder

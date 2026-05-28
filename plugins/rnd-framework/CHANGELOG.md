@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.4.2 — 2026-05-28
+
+### Add disallowed-tools: [Edit, Write] to the read-only diagnostic commands
+
+rnd-history, rnd-status, and rnd-stats are pure read-only diagnostics that should never modify state. Declaring disallowed-tools in their frontmatter (a v2.1.152 capability) makes that invariant enforcement at the model level rather than convention. The model can still Read, Bash (for duckdb/jq/git log queries), Glob, and Grep. validate.sh accepts the new field cleanly (338/0). Older Claude Code versions ignore the field silently.
+
 ## 5.4.1 — 2026-05-28
 
 ### Set the phase-aware session title on SessionStart, not just on UserPromptSubmit

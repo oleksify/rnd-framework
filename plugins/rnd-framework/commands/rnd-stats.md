@@ -1,6 +1,7 @@
 ---
 description: "Print the Phase 0 exit-criteria report: per-shape FAIL rate, builder-self-fail-vs-verdict gap, iteration depth, drift, and shape distribution — each segment-aware (dogfood vs feature). Requires duckdb on PATH; skips gracefully when absent."
 effort: low
+disallowed-tools: ["Edit", "Write"]
 ---
 
 # R&D Framework: Stats

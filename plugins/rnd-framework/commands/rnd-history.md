@@ -1,6 +1,7 @@
 ---
 description: "Browse past R&D pipeline sessions for this project. Shows session dates, task summaries, and SHIP/NO-SHIP verdicts."
 effort: low
+disallowed-tools: ["Edit", "Write"]
 ---
 
 # R&D Framework: History

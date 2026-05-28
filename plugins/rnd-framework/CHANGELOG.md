@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.8.1 — 2026-05-28
+
+### M8 re-sycophancy probe over the post-M2.5 schema-rich corpus (measurement)
+
+Re-ran the M3 sycophancy delta probe (`lib/sycophancy-probe.sh`) over the post-M2.5 corpus. M3's 100 prior records were archived out of the view glob (`sycophancy-probe.m3-archive.jsonl`, preserved) so `/rnd-framework:rnd-stats` Section 6 renders the fresh number distinct from M3's. Fresh corpus: n=25 cleanly-reviewable (`pinned_commit`) post-M2.5 PASS assertions, re-reviewed by fresh adversarial `rnd-verifier`@opus reviewers under the information barrier (assertion text + reconstructed artifact only). Raw hard-flip rate rose to 36% (9/25) vs M3's 20.8%, but per-flip classification finds **0 genuine clear-FAILs** — all 9 flips are reconstruction-insufficiency (the probe reconstructed the wrong/insufficient file for an AND-conjunction or a runtime/test claim). M3's "0 clear false-PASSes" finding is **UPHELD**; the higher raw rate with zero genuine failures sharpens M3's "raw flip rate ≠ sycophancy" point. The run is **underpowered**: n=25 is below M8's ≥30 cleanly-reviewable gate (≈ M3's own 24), so it detects a large regression but not subtle softening — re-run at ≥30 once more post-M2.5 sessions accrue. The post-M2.5 corpus spans the M4+M5+M6 intervention regimes (M6 is verifier-side), so it is **not a single-regime baseline** — any delta from M3 could be intervention confound. No framework code changed; the memo is `sycophancy-reprobe-memo.md`. Patch bump (measurement, no new feature).
+
 ## 5.8.0 — 2026-05-28
 
 ### Add re-measurement harness and rnd-remeasure command

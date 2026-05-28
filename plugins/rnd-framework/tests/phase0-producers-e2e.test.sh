@@ -328,7 +328,7 @@ assert_eq "per_shape_fail_rate count unchanged (QUALIFY dedup holds)" \
 printf '\n%s\n' '--- e2e: segment = dogfood for claude-130cb64f slug ---'
 
 SEGMENT="$(
-  cd "$RND_ROOT" && duckdb -csv \
+  cd "$RND_ROOT" && RND_DOGFOOD_SLUGS="claude-130cb64f" duckdb -csv \
     -c ".read ${PLUGIN_ROOT}/lib/stats/shape_distribution.sql" \
     -c "SELECT segment FROM shape_distribution WHERE segment = 'dogfood' LIMIT 1" \
     2>/dev/null | tail -1 || true

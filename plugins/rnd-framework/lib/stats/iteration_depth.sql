@@ -1,7 +1,27 @@
 -- Iteration-depth distribution: histogram of how many build-verify cycles
--- tasks needed, split by segment. iterationCount lives directly on each
--- calibration verdict record; correction records carry no verdict and are
--- excluded.
+-- tasks needed, split by segment.
+--
+-- Two calibration-record shapes are tolerated:
+--
+--   Mode A (legacy/fixture): one calibration record per task, carrying the
+--     final iterationCount as a stored field. The stored value is read
+--     directly.
+--
+--   Mode B (current production producer): one calibration record per verifier
+--     run; the producer does not write iterationCount. Iteration depth is
+--     derived as the count of records up to and INCLUDING the first PASS in
+--     chronological order (by timestamp). Records after the first PASS are
+--     re-verifies of an already-passing task, NOT new build-verify cycles,
+--     and are excluded. Tasks that never reach PASS contribute their total
+--     record count.
+--
+-- COALESCE(stored_iter, derived_iter) prefers the stored field when present,
+-- so fixture validation is unchanged.
+--
+-- session_id is read with COALESCE on both spellings: $.session_id (current
+-- producer, snake_case) and $.sessionId (fixture/legacy, camelCase). Without
+-- this fallback the per-task partition would degenerate to one bucket per slug
+-- and re-verifies of different sessions would be conflated.
 --
 -- Segment is derived DIRECTLY from the per-slug calibration filename — no
 -- session join is needed.
@@ -21,17 +41,30 @@
 
 CREATE OR REPLACE VIEW iteration_depth AS
 WITH
-  -- Dogfood allowlist: a source slug in this list is the rnd-framework repo
-  -- instrumenting itself; everything else is a downstream feature project.
+  -- Dogfood allowlist: comma-separated slug list via the RND_DOGFOOD_SLUGS
+  -- env var (a slug in this list is the rnd-framework repo instrumenting
+  -- itself; empty/unset → everything classifies as feature). The env var is
+  -- the single source of truth — see commands/rnd-stats.md for the default.
   dogfood_slugs AS (
-    SELECT unnest(['claude-130cb64f']) AS slug
+    SELECT trim(s) AS slug
+    FROM (
+      SELECT unnest(string_split(COALESCE(getenv('RND_DOGFOOD_SLUGS'), ''), ',')) AS s
+    ) t
+    WHERE trim(s) != ''
   ),
 
-  -- Per-slug calibration: slug is the first path component of the filename.
-  verdicts AS (
+  records AS (
     SELECT
       regexp_extract(filename, '^\.?/?([^/]+)/', 1)                    AS slug,
-      CAST(TRY(json_extract_string(j, '$.iterationCount')) AS INTEGER) AS iteration_count
+      COALESCE(
+        TRY(json_extract_string(j, '$.session_id')),
+        TRY(json_extract_string(j, '$.sessionId')),
+        ''
+      )                                                                AS session_id,
+      TRY(json_extract_string(j, '$.taskId'))                          AS task_id,
+      TRY(json_extract_string(j, '$.verdict'))                         AS verdict,
+      TRY(json_extract_string(j, '$.timestamp'))                       AS ts,
+      CAST(TRY(json_extract_string(j, '$.iterationCount')) AS INTEGER) AS stored_iter
     FROM read_csv(
       '*/calibration.jsonl',
       columns = {'j': 'VARCHAR'},
@@ -43,15 +76,38 @@ WITH
       filename = true
     )
     WHERE json_valid(j)
-      AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL  -- drop correction records (they carry no verdict)
+      AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL
+      AND TRY(json_extract_string(j, '$.taskId')) IS NOT NULL
+  ),
+
+  ranked AS (
+    SELECT
+      slug, session_id, task_id, verdict, ts, stored_iter,
+      ROW_NUMBER() OVER (
+        PARTITION BY slug, session_id, task_id
+        ORDER BY ts NULLS LAST
+      ) AS rn
+    FROM records
+  ),
+
+  per_task AS (
+    SELECT
+      slug,
+      session_id,
+      task_id,
+      MAX(stored_iter)                                                AS stored_iter,
+      MIN(CASE WHEN verdict = 'PASS' THEN rn END)                     AS first_pass_rn,
+      count(*)                                                        AS total_records
+    FROM ranked
+    GROUP BY 1, 2, 3
   ),
 
   classified AS (
     SELECT
       CASE WHEN slug IN (SELECT slug FROM dogfood_slugs)
-           THEN 'dogfood' ELSE 'feature' END AS segment,
-      iteration_count
-    FROM verdicts
+           THEN 'dogfood' ELSE 'feature' END                          AS segment,
+      COALESCE(stored_iter, first_pass_rn, total_records)             AS iteration_count
+    FROM per_task
   )
 
 SELECT

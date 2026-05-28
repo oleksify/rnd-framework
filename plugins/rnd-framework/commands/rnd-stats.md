@@ -53,7 +53,20 @@ if [[ "${has_calib:-0}" -eq 0 ]]; then
 fi
 ```
 
-## 3. Run the views and print the Phase 0 exit-criteria report
+## 3. Configure the dogfood allowlist
+
+Every view segments rows into `dogfood` vs `feature` by checking whether the
+source slug appears in `RND_DOGFOOD_SLUGS` (a comma-separated env var, read
+directly inside each SQL view via `getenv()`). This is the single source of
+truth — no SQL view carries a hardcoded slug. Default is the framework's own
+project slug; downstream users can override with their own CSV or leave it
+unset (everything classifies as `feature`).
+
+```bash
+export RND_DOGFOOD_SLUGS="${RND_DOGFOOD_SLUGS:-claude-130cb64f}"
+```
+
+## 4. Run the views and print the Phase 0 exit-criteria report
 
 The working directory is already the `.rnd` root (from the guard above), so the
 relative globs in the SQL views resolve:
@@ -89,13 +102,30 @@ duckdb -c ".read ${stats_dir}/self_fail_vs_verdict_gap.sql" \
 
 ### Section 3 — Iteration depth
 
-Distribution of how many build-verify cycles tasks required, by segment.
+Distribution of how many build-verify cycles tasks required, by segment. The
+view tolerates two calibration-record shapes: a stored `iterationCount` field
+(fixture/legacy) takes precedence; otherwise depth is derived as the count of
+records up to and including the first PASS in chronological order. Records
+after the first PASS are re-verifies, not new cycles, and are excluded.
 
 ```bash
 echo ""
 echo "=== Iteration depth ==="
 duckdb -c ".read ${stats_dir}/iteration_depth.sql" \
        -c "SELECT segment, iteration_count, task_count FROM iteration_depth ORDER BY segment, iteration_count"
+```
+
+### Section 3a — Iteration reasons
+
+Distribution of the non-PASS verdicts that triggered re-iterations, by
+segment. Companion to Section 3: depth says *how many* cycles, reasons says
+*why* they iterated.
+
+```bash
+echo ""
+echo "=== Iteration reasons ==="
+duckdb -c ".read ${stats_dir}/iteration_reasons.sql" \
+       -c "SELECT segment, reason_verdict, occurrences FROM iteration_reasons ORDER BY segment, reason_verdict"
 ```
 
 ### Section 4 — Drift (FAIL rate over time)

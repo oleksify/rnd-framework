@@ -13,12 +13,18 @@ actually meet in production.
 
 ## How to run
 
-From this fixture directory (`lib/stats/fixtures/`):
+From this fixture directory (`lib/stats/fixtures/`). Every view reads the
+`RND_DOGFOOD_SLUGS` env var to classify slugs into the `dogfood` segment —
+without it, all rows classify as `feature` and the expected tables below will
+not reproduce. Set the env var first:
 
 ```sh
+export RND_DOGFOOD_SLUGS="claude-130cb64f"
+
 duckdb -c ".read ../shape_distribution.sql"        -c "SELECT * FROM shape_distribution ORDER BY segment, shape"
 duckdb -c ".read ../per_shape_fail_rate.sql"       -c "SELECT * FROM per_shape_fail_rate ORDER BY segment, shape"
 duckdb -c ".read ../iteration_depth.sql"           -c "SELECT * FROM iteration_depth ORDER BY segment, iteration_count"
+duckdb -c ".read ../iteration_reasons.sql"         -c "SELECT * FROM iteration_reasons ORDER BY segment, reason_verdict"
 duckdb -c ".read ../self_fail_vs_verdict_gap.sql"  -c "SELECT * FROM self_fail_vs_verdict_gap ORDER BY segment"
 duckdb -c ".read ../fail_rate_over_time.sql"       -c "SELECT * FROM fail_rate_over_time ORDER BY segment, week"
 duckdb -c ".read ../backfill.sql"                  -c "SELECT * FROM backfill ORDER BY segment, task_id"
@@ -118,7 +124,12 @@ not appear here.
 
 ## View 3 — `iteration_depth`
 
-Histogram of `iterationCount` over verdict records, by segment.
+Histogram of iteration depth per task, by segment. The view tolerates two
+calibration-record shapes via `COALESCE(stored_iter, first_pass_rn, total_records)`:
+when records carry a stored `iterationCount` field (this fixture's shape) the
+stored value is used directly; otherwise depth is derived as the count of
+records up to and including the first PASS in chronological order.
+
 Historical tasks contribute to the histogram: `M0.T-h.setup` (dogfood, count=0)
 adds to dogfood/0; `M0.T-i.setup` (feature, count=2) adds a new feature/2 bucket.
 
@@ -131,6 +142,23 @@ adds to dogfood/0; `M0.T-i.setup` (feature, count=2) adds a new feature/2 bucket
 | feature | 0               | 1          |
 | feature | 1               | 1          |
 | feature | 2               | 1          |
+
+## View 3a — `iteration_reasons`
+
+Distribution of non-PASS verdicts in calibration, by segment. Each non-PASS
+verdict is a reason the build-verify cycle did not terminate cleanly at that
+record. Companion to `iteration_depth` (which counts cycles).
+
+In this fixture only `FAIL` appears as a non-PASS verdict (the verdicts
+`NEEDS_ITERATION` and `PASS_QUALITY_NEEDS_ITERATION` exist in the schema but
+are not present in fixture data). Three FAIL records contribute: `M1.T-b.crud`
+and `M1.T-d.schema` in dogfood, `M0.T-i.setup` in feature. The correction
+record on `M1.T-b.crud` carries no `verdict` field and is excluded.
+
+| segment | reason_verdict | occurrences |
+|---------|----------------|-------------|
+| dogfood | FAIL           | 2           |
+| feature | FAIL           | 1           |
 
 ## View 4 — `self_fail_vs_verdict_gap`
 

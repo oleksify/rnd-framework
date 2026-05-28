@@ -22,10 +22,16 @@
 
 CREATE OR REPLACE VIEW fail_rate_over_time AS
 WITH
-  -- Dogfood allowlist: a source slug in this list is the rnd-framework repo
-  -- instrumenting itself; everything else is a downstream feature project.
+  -- Dogfood allowlist: comma-separated slug list via the RND_DOGFOOD_SLUGS
+  -- env var (a slug in this list is the rnd-framework repo instrumenting
+  -- itself; empty/unset → everything classifies as feature). The env var is
+  -- the single source of truth — see commands/rnd-stats.md for the default.
   dogfood_slugs AS (
-    SELECT unnest(['claude-130cb64f']) AS slug
+    SELECT trim(s) AS slug
+    FROM (
+      SELECT unnest(string_split(COALESCE(getenv('RND_DOGFOOD_SLUGS'), ''), ',')) AS s
+    ) t
+    WHERE trim(s) != ''
   ),
 
   -- Per-slug calibration: slug is the first path component of the filename.

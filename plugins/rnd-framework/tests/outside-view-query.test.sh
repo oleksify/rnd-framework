@@ -55,7 +55,7 @@ assert_eq "script is non-empty" "0" "$(test -s "$SCRIPT" && echo 0 || echo 1)"
 printf '\n%s\n' '--- outside-view-query: renders fixture block ---'
 
 session_dir="$(make_session_dir "fixture-session")"
-stdout="$(RND_DIR="$session_dir" RND_ROOT="$FIXTURE_ROOT" "$SCRIPT")"
+stdout="$(RND_DIR="$session_dir" RND_ROOT="$FIXTURE_ROOT" RND_DOGFOOD_SLUGS="claude-130cb64f" "$SCRIPT")"
 
 header_match="$(printf '%s\n' "$stdout" | grep -cE '^## Outside View \(Reference Class\)$' || true)"
 assert_eq "header line present" "1" "$header_match"

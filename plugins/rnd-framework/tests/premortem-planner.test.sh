@@ -14,7 +14,7 @@ AGENT="${PLUGIN_ROOT}/agents/rnd-planner.md"
 content="$(cat "$AGENT")"
 
 # ---------------------------------------------------------------------------
-# Read instruction (M2.planner.reads-premortem-md)
+# Read instruction — planner reads premortem.md
 # ---------------------------------------------------------------------------
 printf '\n--- rnd-planner: premortem.md read instruction ---\n'
 
@@ -25,7 +25,7 @@ assert_contains "process step uses read/consume verb near premortem.md" \
   "read" "$content"
 
 # ---------------------------------------------------------------------------
-# Premortem Responses output requirement (M2.planner.writes-premortem-responses)
+# Premortem Responses output requirement — planner writes the section
 # ---------------------------------------------------------------------------
 printf '\n--- rnd-planner: Premortem Responses output requirement ---\n'
 
@@ -42,7 +42,7 @@ assert_contains "requires Dismissed marker" \
   "Dismissed" "$content"
 
 # ---------------------------------------------------------------------------
-# Graceful absence clause (M2.planner.graceful-when-absent)
+# Graceful absence clause — planner proceeds when premortem.md missing
 # ---------------------------------------------------------------------------
 printf '\n--- rnd-planner: graceful-absence clause ---\n'
 

@@ -93,7 +93,6 @@ printf '%s' \
 
 # ---------------------------------------------------------------------------
 # Test 1: 3-assertion fixture → exactly 3 assertion_shape lines
-#         (M2.shape.emits-one-shape-fact-per-asserti)
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- shape-producer: 3-assertion contract → exactly 3 lines ---'
 
@@ -108,7 +107,6 @@ assert_eq "exactly 3 assertion_shape lines" "3" "$LINE_COUNT"
 
 # ---------------------------------------------------------------------------
 # Test 2: assertion_ids match headings verbatim
-#         (M2.shape.emits-one-shape-fact-per-asserti)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- shape-producer: assertion_ids match headings verbatim ---'
 
@@ -122,11 +120,10 @@ assert_contains "assertion_id M1.prod.emits-shape-facts present" \
 
 # ---------------------------------------------------------------------------
 # Test 3: shapes are valid x-shape-vocab values
-#         (M2.shape.emits-one-shape-fact-per-asserti)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- shape-producer: shapes are valid x-shape-vocab values ---'
 
-VALID_SHAPES="crud schema-migration external-integration pure-refactor perf auth data-transform wiring cleanup docs test-only misc"
+VALID_SHAPES="crud schema-migration external-integration pure-refactor perf auth data-transform wiring cleanup docs test-only behaviour misc"
 
 while IFS= read -r line; do
   if printf '%s' "$line" | grep -q '"event":"assertion_shape"'; then
@@ -144,7 +141,6 @@ done < "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
 # Test 4: task_id field is snake_case task id from features.json mapping
-#         (M2.shape.emits-one-shape-fact-per-asserti)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- shape-producer: task_id is the owning task id ---'
 
@@ -160,7 +156,6 @@ rm -f "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
 # Test 5: relative file_path resolves to the correct session (FM1 guard)
-#         (M2.shape.relative-file-path-does-not-skip)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- shape-producer: relative file_path → ≥1 emitted line ---'
 
@@ -198,7 +193,6 @@ assert_contains "relative path → ≥1 line emitted" "1" "$([ "$REL_LINE_COUNT"
 
 # ---------------------------------------------------------------------------
 # Test 6: non-artifact path (no /sessions/) → exit 0, no emit
-#         (M2.shape.relative-file-path-does-not-skip)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- shape-producer: non-artifact path → exit 0, no emit ---'
 

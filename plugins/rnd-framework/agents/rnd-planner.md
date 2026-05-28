@@ -196,7 +196,7 @@ Shape: [shape value from lib/event-schema.json x-shape-vocab]
 Confidence: [high | medium | stretch]
 ```
 
-Every assertion heading follows the format `M<N>.<area>.<slug>`. Every assertion must be referenced in at least one task's `assertionIds` in `features.json`. `Shape` vocab is the controlled list in `lib/event-schema.json` (`x-shape-vocab` array — 12 values); `Confidence` is one of `high | medium | stretch`. Both fields are required; `hooks/planner-emit-gate.sh` enforces their presence at emit time.
+Every assertion heading follows the format `M<N>.<area>.<slug>`. Every assertion must be referenced in at least one task's `assertionIds` in `features.json`. `Shape` vocab is the controlled list in `lib/event-schema.json` (`x-shape-vocab` array — 13 values); `Confidence` is one of `high | medium | stretch`. Both fields are required; `hooks/planner-emit-gate.sh` enforces their presence at emit time.
 
 ### features.json
 

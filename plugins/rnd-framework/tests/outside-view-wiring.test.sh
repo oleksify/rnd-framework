@@ -28,7 +28,6 @@ count_exact() {
 }
 
 # ---------------------------------------------------------------------------
-# M4.wiring.outside-view-section-exists
 # The heading appears exactly once.
 # ---------------------------------------------------------------------------
 
@@ -42,7 +41,6 @@ assert_eq \
   "$heading_count"
 
 # ---------------------------------------------------------------------------
-# M4.wiring.ordering-after-premortem-before-planner
 # Premortem heading line < outside-view heading line < planner Agent({ line.
 # ---------------------------------------------------------------------------
 
@@ -87,7 +85,6 @@ assert_eq \
   "$([ "${outside_view_line:-0}" -lt "${planner_spawn_line:-0}" ] && printf pass || printf fail)"
 
 # ---------------------------------------------------------------------------
-# M4.wiring.planner-prompt-includes-block
 # The Planner spawn block contains ${OUTSIDE_VIEW_BLOCK} or cat .*outside-view.
 # ---------------------------------------------------------------------------
 
@@ -109,7 +106,6 @@ assert_eq \
   "$block_ref_count"
 
 # ---------------------------------------------------------------------------
-# M4.wiring.invokes-injector-and-emitter
 # The outside-view section contains lib/outside-view.sh and lib/outside-view-emit.sh,
 # emitter appearing after injector.
 # ---------------------------------------------------------------------------
@@ -144,9 +140,8 @@ assert_eq \
   "$([ "${injector_line_in_section:-0}" -lt "${emitter_line_in_section:-0}" ] && printf pass || printf fail)"
 
 # ---------------------------------------------------------------------------
-# M4.changelog.entry-exists-with-version-bump
 # CHANGELOG contains a ## 5.5.0 — entry (anywhere in the file — later releases
-# push it down but it must still exist), and the M4-scoped section contains a
+# push it down but it must still exist), and the scoped section contains a
 # ### headline naming "outside-view" and "Planner" together.
 # ---------------------------------------------------------------------------
 
@@ -169,19 +164,18 @@ assert_eq \
   "1" \
   "$changelog_header_count"
 
-# Extract the M4-scoped section (lines between ## 5.5.0 and the next ## N.N.N).
-m4_section="$(awk '/^## 5\.5\.0/{found=1; next} found && /^## [0-9]+\.[0-9]/{exit} found{print}' "$CHANGELOG" || true)"
-headline_count="$(printf '%s' "$m4_section" | grep -cE '^### .*[Oo]utside.?[Vv]iew.*[Pp]lanner|^### .*[Pp]lanner.*[Oo]utside.?[Vv]iew' || true)"
+# Extract the scoped section (lines between ## 5.5.0 and the next ## N.N.N).
+release_section="$(awk '/^## 5\.5\.0/{found=1; next} found && /^## [0-9]+\.[0-9]/{exit} found{print}' "$CHANGELOG" || true)"
+headline_count="$(printf '%s' "$release_section" | grep -cE '^### .*[Oo]utside.?[Vv]iew.*[Pp]lanner|^### .*[Pp]lanner.*[Oo]utside.?[Vv]iew' || true)"
 
 assert_eq \
-  "M4 section headline names outside-view and Planner together" \
+  "section headline names outside-view and Planner together" \
   "1" \
   "$headline_count"
 
 # ---------------------------------------------------------------------------
-# M4.changelog.entry-content-matches-protocol
 # The top entry body contains the four mandatory phrases, each of which also
-# appears in tests/fixtures/protocol.md (the SSOT fixture).
+# appears in tests/fixtures/protocol.md (the canonical fixture).
 # ---------------------------------------------------------------------------
 
 printf '\n--- changelog-entry-content-matches-protocol ---\n'
@@ -241,7 +235,6 @@ assert_eq \
   "$(grep -q 'Phase 1\|rnd-start\.md' "$PROTOCOL_FIXTURE" && printf pass || printf fail)"
 
 # ---------------------------------------------------------------------------
-# M4.e2e.validate-sh-and-xrefs-clean
 # Both validators exit 0 after the ship.
 # ---------------------------------------------------------------------------
 
@@ -264,7 +257,6 @@ assert_eq \
   "$xrefs_exit"
 
 # ---------------------------------------------------------------------------
-# M4.e2e.full-pipeline-emits-event
 # Run the Phase 1 outside-view pre-step scripts with a sandboxed RND_DIR and
 # confirm audit.jsonl gets the outside_view_injected event and outside-view.md
 # is written and non-empty.

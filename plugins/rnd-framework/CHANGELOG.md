@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.7.1 — 2026-05-28
+
+### Canonicalize `behaviour` in x-shape-vocab; sharpen pipeline-context-leak guidance
+
+Adds `behaviour` (UK spelling) to `x-shape-vocab` and the nested `shape.enum` in `lib/event-schema.json`, making it a valid Planner shape rather than a gate-violating free-text value. Historical calibration data carried `behaviour` (60 records) and `behavior` (13 records) despite neither being in the controlled list — surfaced by Section 5 of `/rnd-framework:rnd-stats`. UK spelling is chosen as canonical (dominant in the corpus, fewer records to reclassify); `behavior` (US) remains rejected by `planner-emit-gate.sh`. Updates the 12-values count in `agents/rnd-planner.md`, `skills/rnd-decomposition/SKILL.md`, and root `CLAUDE.md` to 13. Updates the hardcoded vocab list in `tests/shape-producer.test.sh` to match the SSOT.
+
+Sharpens the pipeline-context-leak detection guidance after a sweep found narrative milestone tags (`# M6: …`, `# M5: …`, `# M4 …`) surviving in `CLAUDE.md` tree comments and test-comment trace tags (`# M4.wiring.foo`, `(M2.calib.bar)`) in eight test files. `skills/rnd-cleanup/SKILL.md` category 4 now lists concrete leakage patterns (narrative tags, test-trace tags, framing-mode IDs) with explicit "do not scrub" carve-outs for ID-format documentation and test fixture data. `agents/rnd-polisher.md` adds a fifth detection category for pipeline-context leakage in canonical docs (`CLAUDE.md`, `README.md`, top-level `AGENTS.md`) and shared test scaffolding, and expands the polisher's scope rule so those files are scanned even when no per-task cleanup touched them.
+
+Extends pipeline-context-hygiene detection to the audit/review/debug surfaces. `skills/code-review/SKILL.md` adds a seventh review category (**Pipeline-context hygiene**) with the same pattern catalog and "do not flag" carve-outs; severity defaults to Minor, escalating to Major when found in `CLAUDE.md`, `README.md`, or top-level `AGENTS.md`. Both `/rnd-framework:rnd-audit` and `/rnd-framework:rnd-review` automatically pick up the new category because they already load `code-review` as the SSOT — descriptions and category lists in both command files updated to seven categories. `skills/rnd-debugging/SKILL.md` adds an `## Incidental Findings` section instructing the debugger to record (not fix inline) any leakage observed during root-cause investigation, keeping bug diagnosis distinct from hygiene cleanup.
+
 ## 5.7.0 — 2026-05-28
 
 ### Add the M6 evidence-locking hook for rnd-verifier

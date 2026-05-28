@@ -52,7 +52,6 @@ run_with_session() {
 
 # ---------------------------------------------------------------------------
 # Test 1: missing Shape: → exit 2 + names gate and offending assertion
-#         (M1.gate.blocks-missing-shape)
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- planner-emit-gate: assertion missing Shape: blocks ---'
 
@@ -73,7 +72,7 @@ assert_contains "stderr names the gate" "planner-emit-gate" "$HOOK_STDERR"
 assert_contains "stderr names offending assertion" "M1.gate.no-shape" "$HOOK_STDERR"
 
 # ---------------------------------------------------------------------------
-# Test 2: Confidence: bogus → exit 2  (M1.gate.blocks-invalid-confidence)
+# Test 2: Confidence: bogus → exit 2
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- planner-emit-gate: bogus Confidence blocks ---'
 
@@ -94,7 +93,6 @@ assert_contains "stderr names offending assertion" "M1.gate.bad-confidence" "$HO
 
 # ---------------------------------------------------------------------------
 # Test 3: fully-valid contract → exit 0, empty stderr
-#         (M1.gate.passes-valid-contract)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- planner-emit-gate: fully-valid contract passes ---'
 
@@ -131,7 +129,6 @@ assert_eq "valid contract → empty stderr" "" "$HOOK_STDERR"
 
 # ---------------------------------------------------------------------------
 # Test 4: non-planner / empty agent_type → fast-path exit 0
-#         (M1.gate.fast-paths-non-planner-agent)
 # Contract still has an invalid assertion to prove the fast path short-circuits
 # before any contract parsing.
 # ---------------------------------------------------------------------------
@@ -155,7 +152,6 @@ assert_eq "empty agent_type → empty stderr" "" "$HOOK_STDERR"
 
 # ---------------------------------------------------------------------------
 # Test 5: blocking path emits a gate_fired audit event for planner_emit_gate
-#         (M1.gate.emits-gate-fired-audit-event)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- planner-emit-gate: blocking path emits gate_fired audit event ---'
 

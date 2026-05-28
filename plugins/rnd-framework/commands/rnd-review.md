@@ -1,5 +1,5 @@
 ---
-description: "Review recent code changes with evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, and style issues."
+description: "Review recent code changes with evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, style, and pipeline-context-hygiene issues."
 argument-hint: "[commit range like HEAD~3..HEAD | directory path | empty for uncommitted changes]"
 effort: high
 ---
@@ -8,7 +8,7 @@ effort: high
 
 Review code changes using structured review criteria — single-pass, thorough inline analysis.
 
-**Distinct from Claude Code's native `/code-review`** (correctness + reuse/simplification cleanups at a chosen effort level, with an optional `--fix` to apply findings to the working tree). This pipeline-style review covers **six categories** (architecture, security, correctness, testing, KISS, style), writes a **persistent report** under `$RND_DIR/review/`, and offers `/rnd-framework:rnd-start` as the recommended next step so findings flow into the full plan → build → verify pipeline. Reach for native `/code-review` when you want a focused single-pass diff scan; reach for this when you want a broader audit that produces an artifact and integrates with the framework.
+**Distinct from Claude Code's native `/code-review`** (correctness + reuse/simplification cleanups at a chosen effort level, with an optional `--fix` to apply findings to the working tree). This pipeline-style review covers **seven categories** (architecture, security, correctness, testing, KISS, style, pipeline-context hygiene), writes a **persistent report** under `$RND_DIR/review/`, and offers `/rnd-framework:rnd-start` as the recommended next step so findings flow into the full plan → build → verify pipeline. Reach for native `/code-review` when you want a focused single-pass diff scan; reach for this when you want a broader audit that produces an artifact and integrates with the framework.
 
 ## Setup
 
@@ -45,8 +45,8 @@ Collect the full diff output and the list of changed files. If the diff is empty
 
 ## Phase 2: Review
 
-Systematically examine the diff against the six review categories:
-- Architecture, Security, Correctness, Testing, KISS compliance, Style
+Systematically examine the diff against the seven review categories:
+- Architecture, Security, Correctness, Testing, KISS compliance, Style, Pipeline-context hygiene
 
 For each category, check every changed file. Use Read/Grep to inspect surrounding context. Produce findings with severity levels (critical, major, minor, info).
 

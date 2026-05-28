@@ -94,7 +94,6 @@ assert_exit_code "verdict-map path → exit 0" 0
 
 # ---------------------------------------------------------------------------
 # Test 2: records land at slug-root calibration.jsonl, NOT session dir
-#         (M2.calib.verdict-record-lands-at-slug-roo)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- calibration-producer: writes to slug-root, not session dir ---'
 
@@ -104,7 +103,6 @@ assert_eq "session-dir calibration.jsonl not created" "" \
 
 # ---------------------------------------------------------------------------
 # Test 3: camelCase taskId field; never snake_case task_id
-#         (M2.calib.uses-camelcase-taskid-field)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- calibration-producer: camelCase taskId field ---'
 
@@ -125,7 +123,6 @@ done <<< "$CALIB_CONTENT"
 
 # ---------------------------------------------------------------------------
 # Test 4: Gate 3 collapse — all-PASS → PASS, any-FAIL → NEEDS_ITERATION
-#         (M2.calib.aggregates-per-assertion-to-per)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- calibration-producer: Gate 3 aggregation rule ---'
 
@@ -147,8 +144,7 @@ TASK_A_SESSION="$(grep '"M1.T01.task-a"' "$CALIB_PATH" | jq -r '.session_id' 2>/
 assert_eq "task A record has correct session_id" "$SESSION_ID" "$TASK_A_SESSION"
 
 # ---------------------------------------------------------------------------
-# Test 6: PASS_QUALITY_NEEDS_ITERATION collapses correctly
-#         (M2.calib.aggregates-per-assertion-to-per — Gate 3 middle tier)
+# Test 6: PASS_QUALITY_NEEDS_ITERATION collapses correctly (Gate 3 middle tier)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- calibration-producer: PASS_QUALITY_NEEDS_ITERATION tier ---'
 
@@ -179,7 +175,6 @@ assert_eq "PASS+PQNI → PASS_QUALITY_NEEDS_ITERATION" "PASS_QUALITY_NEEDS_ITERA
 
 # ---------------------------------------------------------------------------
 # Test 7: idempotency — firing twice does not inflate the raw record count
-#         (M2.calib.idempotent-on-re-verify-no-infla)
 #         Dedup is view-side (per_shape_fail_rate QUALIFY) or producer-side.
 #         This test asserts: IF the dedup is producer-side (session_id+taskId),
 #         the file has exactly 1 record per task after two fires.

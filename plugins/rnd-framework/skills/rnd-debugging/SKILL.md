@@ -78,8 +78,13 @@ Within the R&D pipeline:
 
 **ALL of these mean: STOP. Return to Phase 1.**
 
+## Incidental Findings
+
+If during Phase 1 investigation or Phase 2 pattern analysis you observe **pipeline-context leakage** (narrative milestone tags like `# M6:`, test-comment trace tags like `# M4.wiring.foo`, or other session-specific identifiers in canonical project files), record them in the diagnosis report under a `## Incidental Findings` section. Do NOT fix them inline — that's the cleanup/polisher path, and mixing it with a bug fix muddies the diagnosis. The orchestrator routes incidental findings to the cleanup agent or surfaces them to the user. See the Pipeline-Context Hygiene category in `rnd-framework:code-review` for the full pattern catalog.
+
 ## Related Skills
 
 - `rnd-framework:rnd-building` — For writing the failing test (Phase 4)
 - `rnd-framework:rnd-iteration` — For feedback loop management
 - `rnd-framework:rnd-verification` — Verifier's perspective on failures
+- `rnd-framework:code-review` — Pipeline-context hygiene patterns for incidental findings

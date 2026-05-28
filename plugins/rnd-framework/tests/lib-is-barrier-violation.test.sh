@@ -95,7 +95,7 @@ else
   assert_eq "self-assessment NOT a barrier violation for empty agent (orchestrator)" "1" "1"
 fi
 
-# --- M2.5: self-assessment match anchored to the .md artifact suffix ---
+# --- self-assessment match anchored to the .md artifact suffix ---
 # The real Builder artifact builds/T<id>-self-assessment.md is STILL blocked (absolute).
 RND_SELFASSESS="/Users/x/.claude/.rnd/claude-abc/branches/main/sessions/20260101-120000-abcd/builds/M2.T02.foo-self-assessment.md"
 if is_barrier_violation "$RND_SELFASSESS" "rnd-verifier"; then

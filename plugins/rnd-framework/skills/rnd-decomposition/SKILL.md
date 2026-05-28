@@ -269,7 +269,7 @@ Shape: [shape value from lib/event-schema.json x-shape-vocab]
 Confidence: [high | medium | stretch]
 ```
 
-`Shape` vocab is the controlled list in `lib/event-schema.json` (`x-shape-vocab` array — 12 values). `Confidence` is one of `high | medium | stretch`. Both fields are required; `hooks/planner-emit-gate.sh` enforces their presence at emit time.
+`Shape` vocab is the controlled list in `lib/event-schema.json` (`x-shape-vocab` array — 13 values). `Confidence` is one of `high | medium | stretch`. Both fields are required; `hooks/planner-emit-gate.sh` enforces their presence at emit time.
 
 ID format: `M<N>` is the milestone number, `<area>` is a lowercase domain abbreviation (2-6 chars, e.g., `auth`, `planner`), `<slug>` is a kebab-case descriptor (e.g., `emits-protocol-md`). Mint IDs via `id-gen.sh assertion <milestone> <area> "<title>"` — never manually slugify. Cross-cutting assertions use `area: cross`. Every assertion must be referenced in at least one task's `assertionIds` in `features.json`; every task must reference at least one assertion.
 

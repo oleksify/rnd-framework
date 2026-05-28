@@ -31,7 +31,7 @@ assert_contains "frontmatter has user-invocable: false" \
   "user-invocable: false" "$content"
 
 # ---------------------------------------------------------------------------
-# Five core framings (M2.skill.five-core-framings)
+# Five core framings
 # ---------------------------------------------------------------------------
 printf '\n--- premortem skill: five core framings ---\n'
 
@@ -51,7 +51,7 @@ assert_contains "framing: user-meant-something-different" \
   "user-meant" "$content"
 
 # ---------------------------------------------------------------------------
-# Per-agent prompt template (M2.skill.agent-prompt-template)
+# Per-agent prompt template
 # ---------------------------------------------------------------------------
 printf '\n--- premortem skill: per-agent prompt template ---\n'
 
@@ -68,7 +68,7 @@ assert_contains "template prohibits tool use" \
   "no tool" "$content"
 
 # ---------------------------------------------------------------------------
-# premortem.md format with FM<k> IDs (M2.skill.premortem-md-fm-format)
+# premortem.md format with FM<k> IDs
 # ---------------------------------------------------------------------------
 printf '\n--- premortem skill: premortem.md format ---\n'
 
@@ -88,7 +88,7 @@ assert_contains "states premortem.md is immutable input" \
   "immutable" "$content"
 
 # ---------------------------------------------------------------------------
-# Emit invocation and bounds (M2.skill.emit-invocation-and-bounds)
+# Emit invocation and bounds
 # ---------------------------------------------------------------------------
 printf '\n--- premortem skill: emit invocation and bounds ---\n'
 

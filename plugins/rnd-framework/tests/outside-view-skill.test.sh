@@ -14,7 +14,7 @@ SKILL="${PLUGIN_ROOT}/skills/outside-view/SKILL.md"
 content="$(cat "$SKILL")"
 
 # ---------------------------------------------------------------------------
-# Frontmatter (M4.skill.file-exists-with-frontmatter)
+# Frontmatter — file exists with valid frontmatter
 # ---------------------------------------------------------------------------
 printf '\n--- outside-view skill: frontmatter ---\n'
 
@@ -55,7 +55,7 @@ assert_contains "description mentions when mechanism fires" \
   "Phase 1" "$content"
 
 # ---------------------------------------------------------------------------
-# Thin-corpus threshold (M4.skill.documents-thin-corpus-threshold)
+# Thin-corpus threshold — skill documents the threshold
 # ---------------------------------------------------------------------------
 printf '\n--- outside-view skill: thin-corpus threshold ---\n'
 
@@ -114,7 +114,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Framing constraint section (M4.skill.documents-framing-constraint)
+# Framing constraint section — skill documents the framing constraint
 # ---------------------------------------------------------------------------
 printf '\n--- outside-view skill: framing constraint section ---\n'
 

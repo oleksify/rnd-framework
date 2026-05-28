@@ -1,5 +1,5 @@
 ---
-description: "Audit the full codebase with evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, and style issues across all tracked files."
+description: "Audit the full codebase with evidence-based rigor. Detects architecture, security, correctness, testing, KISS compliance, style, and pipeline-context-hygiene issues across all tracked files."
 argument-hint: "[optional focus area like \"security\" or \"tests\" | empty for full audit]"
 effort: high
 ---
@@ -30,8 +30,8 @@ If `$ARGUMENTS` is non-empty, treat it as a focus area hint (judges still examin
 
 ## Phase 2: Audit
 
-Systematically examine the codebase against the six review categories:
-- Architecture, Security, Correctness, Testing, KISS compliance, Style
+Systematically examine the codebase against the seven review categories:
+- Architecture, Security, Correctness, Testing, KISS compliance, Style, Pipeline-context hygiene
 
 Use Read, Grep, Glob tools to explore all tracked files. Examine every area — this is a full audit, not a diff review. Produce findings with severity levels (critical, major, minor, info).
 

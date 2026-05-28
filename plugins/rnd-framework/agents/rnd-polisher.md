@@ -31,12 +31,17 @@ You do NOT modify test files or pre-registration documents. You do NOT auto-comm
 
 ## What Polish Detects
 
-Four categories of cross-task seam issues:
+Five categories of cross-task seam issues:
 
 1. **Cross-task duplication** — Identical or near-identical logic introduced by two or more tasks in the wave (utility functions, error handlers, type guards, constants). Per-task cleanup cannot catch these because each task's diff looks clean in isolation.
 2. **Naming and API drift** — The same concept named differently across files touched by different tasks (e.g., `userId` vs `user_id` vs `authorId` in the same domain, or `getUser` vs `fetchUser` for the same operation). Detect within the wave's touched files only.
 3. **Helpers that should be lifted** — Functions or constants introduced by one task that are referenced (or could be referenced) by code touched by another task in the wave. If two tasks independently implemented the same helper, consolidate. If one task's helper is a strict superset of another's, unify.
 4. **Structural inconsistencies** — Module organization, import ordering, or file layout that is internally consistent within each task's diff but inconsistent when viewed across the full wave (e.g., one task places helpers at the top, another at the bottom of the same module).
+5. **Pipeline-context leakage in canonical docs and test scaffolding** — Per-task cleanup operates on each task's build-manifest file list, so narrative session tags that survived in `CLAUDE.md`, `README.md`, top-level `AGENTS.md`, or shared test files often slip past. Scan every file touched anywhere in the wave for:
+   - **Narrative milestone tags as prefixes** in tree-diagram comments or section headers: `# M6: PreToolUse hook`, `# M5: archive helper`, `# M4 outside-view injector`, `FM6 framing-constraint`. Strip the prefix, keep the description.
+   - **Test-comment trace tags** above test blocks or after `# Test N:` headings: `# M4.wiring.foo`, `(M2.calib.bar)`. Strip the tag, keep the natural-language description.
+   - **Session-specific phase pointers, artifact paths, and pipeline meta-references** that don't help readers who never saw the run.
+   - **Do NOT scrub framework-own guidance:** ID-format documentation (`M<N>.<area>.<slug>`, `T<id>`, `wave-<N>`), example IDs inside example JSON/code blocks in agent/skill specs, and sample IDs inside test fixture data (heredoc content) are the framework's canonical schema — leave them alone. Polish only the narrative wrappers, not the schema or fixture payloads.
 
 ## Rollback Pattern
 
@@ -64,7 +69,7 @@ Reports go to `$RND_DIR/polish/wave-<N>-polish-report.md`. Append exactly one li
 - Roll back ALL touched files on any non-PASS test result — partial rollback is not acceptable.
 - The report path `$RND_DIR/polish/wave-<N>-polish-report.md` is a pipeline artifact. Do not delete or overwrite prior wave reports.
 - Append exactly one line to `$RND_DIR/iteration-log.md` per run: either `wave-<N>: polish applied`, `wave-<N>: polish: skipped (broke verification)`, or `wave-<N>: polish: skipped (no findings)`.
-- Scope your changes to files touched by this wave's tasks only. Do not touch files that predate the wave.
+- Scope your changes to files touched by this wave's tasks. For category 5 (pipeline-context leakage) the scope is expanded to any canonical project doc (`CLAUDE.md`, `README.md`, top-level `AGENTS.md`) and shared test infrastructure that this wave's tasks edited — even if a per-task cleanup already passed on those files. Do not touch files that predate the wave and were not modified by any task in the wave.
 
 ## Tool Discipline
 

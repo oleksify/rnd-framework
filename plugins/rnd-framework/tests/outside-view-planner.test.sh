@@ -15,7 +15,6 @@ PLANNER="${PLUGIN_ROOT}/agents/rnd-planner.md"
 PLANNER_BEFORE="${PLUGIN_ROOT}/tests/fixtures/rnd-planner.before.md"
 
 # ---------------------------------------------------------------------------
-# M4.planner.agent-prompt-mentions-outside-view
 # rnd-planner.md names the "## Outside View (Reference Class)" heading and
 # instructs the agent to apply it as a calibration anchor (not a license).
 # ---------------------------------------------------------------------------

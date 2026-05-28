@@ -44,7 +44,6 @@ run_producer() {
 
 # ---------------------------------------------------------------------------
 # Test 1: full-template self-assessment → self_verdict=FAIL, path-derived ids
-#         (M2.selfassess.emits-self-verdict-keyed-by-path)
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- self-assessment-producer: full-template → FAIL, path-derived task_id ---'
 
@@ -83,7 +82,6 @@ rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
 # Test 2: minimal one-liner self-assessment → self_verdict=PASS
-#         (M2.selfassess.emits-self-verdict-keyed-by-path)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- self-assessment-producer: minimal one-liner → PASS ---'
 
@@ -108,7 +106,7 @@ rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
 # Test 3: parallel-wave paths — each attributed to ITS OWN task, not most-recent
-#         (M2.selfassess.emits-self-verdict-keyed-by-path — path-not-ls-t guarantee)
+#         (path-not-ls-t guarantee)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- self-assessment-producer: parallel-wave paths attributed by path ---'
 
@@ -146,8 +144,7 @@ assert_eq "no cross-contamination in session1 audit" "" "$CROSS"
 rm -f "$ASSESS1" "$ASSESS2" "${SESSION}/audit.jsonl" "${SESSION2}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
-# Test 4: non-artifact path → exit 0, no emit
-#         (M2.shape.relative-file-path-does-not-skip — non-artifact path guard)
+# Test 4: non-artifact path → exit 0, no emit (non-artifact path guard)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- self-assessment-producer: non-artifact path → exit 0, no emit ---'
 

@@ -50,11 +50,14 @@ LLM diff review only. Read the diff; identify whether an existing utility does t
 - TODO / FIXME / HACK comments resolved by this build but left in place.
 - `if false`, `if 0`, permanently-dead feature flags introduced or made dead by this build.
 - Comment-guarded dead code with no ticket or decision reference.
-- **Pipeline-context leaks** — any reference in project code (comments, docstrings, test names, variable names) to RND-internal concepts that will rot when the session ends:
-  - Task / wave identifiers: `T1`, `T01`, `T14`, `M2`, `wave-3`.
-  - Planner phase or disposition labels: `Q4 disposition`, "compatibility audit", "decided during planning".
-  - Session artifact paths or meta-references: `research/*.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
-  Rewrite the comment to ground its rationale in the project's own concepts, or delete it if it doesn't help a future reader who never saw the pipeline run.
+- **Pipeline-context leaks** — any reference anywhere in project code, documentation, or test scaffolding (comments, docstrings, test names, variable names, tree-diagram annotations, headings) to RND-internal concepts that will rot when the session ends. **Canonical project docs (`CLAUDE.md`, `README.md`, top-level `AGENTS.md`) and shared test infrastructure are in scope** whenever this task's build manifest touched them — leakage in those files is the most damaging because future readers have no session to anchor on.
+  - **Narrative milestone tags as prefixes:** `# M6: PreToolUse hook`, `# M5: archive helper`, `# M4 outside-view injector`, `(M3)` parentheticals describing what a file or section does. Strip the prefix; keep the description.
+  - **Test-comment trace tags:** `# M4.wiring.outside-view-section-exists` above a test block, `(M2.calib.verdict-record-lands-at-slug-roo)` parentheticals after a `# Test N:` line. These trace tests back to validation-contract assertion IDs from a specific session. Strip the tag; keep the natural-language description.
+  - **Task / wave identifiers:** `T1`, `T01`, `T14`, `M2`, `wave-3`, `FM6`, `Phase 1` (when used as a session-phase pointer rather than a domain term).
+  - **Planner phase or disposition labels:** `Q4 disposition`, "compatibility audit", "decided during planning".
+  - **Session artifact paths or meta-references:** `research/*.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
+  - **Distinguish leakage from framework-own guidance.** ID FORMATS (`M<N>.<area>.<slug>`, `T<id>`, `wave-<N>`) documented in agent/skill specs are canonical schema, NOT leakage — leave them alone. Sample IDs inside test FIXTURE DATA (heredoc content creating validation-contract.md or features.json) are demonstrating the parser, NOT leakage — leave them alone. The leakage pattern is narrative session-tag prefixes and trace comments in surrounding prose.
+  Rewrite the comment/heading to ground its rationale in the project's own concepts, or delete it if it doesn't help a future reader who never saw the pipeline run.
 
 ## Workflow
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.4.3 — 2026-05-28
+
+### Document how rnd-review relates to Claude Code's native /code-review
+
+Adds a one-paragraph note at the top of rnd-review's body distinguishing the two: native /code-review (introduced in v2.1.147) focuses on correctness bugs + reuse/simplification cleanups with an optional --fix mode; this rnd-review is a six-category structured review (architecture, security, correctness, testing, KISS, style) that produces a persistent report under $RND_DIR/review/ and routes findings into the rnd-start pipeline. The clarification helps users pick the right tool for the task instead of treating the two as overlapping.
+
 ## 5.4.2 — 2026-05-28
 
 ### Add disallowed-tools: [Edit, Write] to the read-only diagnostic commands

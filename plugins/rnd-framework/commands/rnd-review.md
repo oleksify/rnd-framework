@@ -8,6 +8,8 @@ effort: high
 
 Review code changes using structured review criteria — single-pass, thorough inline analysis.
 
+**Distinct from Claude Code's native `/code-review`** (correctness + reuse/simplification cleanups at a chosen effort level, with an optional `--fix` to apply findings to the working tree). This pipeline-style review covers **six categories** (architecture, security, correctness, testing, KISS, style), writes a **persistent report** under `$RND_DIR/review/`, and offers `/rnd-framework:rnd-start` as the recommended next step so findings flow into the full plan → build → verify pipeline. Reach for native `/code-review` when you want a focused single-pass diff scan; reach for this when you want a broader audit that produces an artifact and integrates with the framework.
+
 ## Setup
 
 ```bash

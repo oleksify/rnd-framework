@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.5.0 — 2026-05-28
+
+### Add outside-view injector for the Planner spawn
+
+Adds lib/outside-view.sh, which queries the DuckDB per-shape fail-rate view over the historical .rnd corpus and renders a calibrated reference-class block. The block is written to $RND_DIR/outside-view.md and injected into the Planner spawn prompt during Phase 1 of rnd-start.md, BEFORE estimation.
+
+The block carries a framing-constraint section that states shape base rate is a calibration anchor, NOT a license to pack more assertions and NOT a trigger for theater-decomposition — the FM6 countermeasure. When the corpus has fewer than n_total < 5 total verdicts, the injector emits Mode: thin-corpus and suppresses per-shape numbers to avoid precision illusion on a thin dataset.
+
+Adds lib/outside-view-emit.sh, which appends one outside_view_injected audit event (fields: mode, n_total, shapes, framing_constraint_emitted, timestamp) to $RND_DIR/audit.jsonl after each injection. Adds skills/outside-view/SKILL.md, which documents the mechanism and its operational definitions for the Planner. Updates agents/rnd-planner.md with an additive instruction to treat the block as a calibration anchor.
+
 ## 5.4.4 — 2026-05-28
 
 ### Replace general-purpose+haiku premortem fan-out with restricted-tool rnd-premortem-imaginer agent

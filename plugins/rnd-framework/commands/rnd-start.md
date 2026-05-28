@@ -182,6 +182,41 @@ Where `framings_csv` is the comma-joined list of framing labels used and `failur
 
 ---
 
+### Phase 1 pre-step: Outside-view injection
+
+Before spawning the Planner, query the historical session corpus for per-shape FAIL rates and inject the result into the Planner's context as a calibration anchor.
+
+Run the injector to populate `$RND_DIR/outside-view.md` and capture the rendered block:
+
+```bash
+OUTSIDE_VIEW_BLOCK="$("${CLAUDE_PLUGIN_ROOT}/lib/outside-view.sh")"
+```
+
+After the block is rendered, emit the audit event:
+
+```bash
+_ov_mode="$(grep -m1 '^- Mode:' "$RND_DIR/outside-view.md" | sed 's/^- Mode: //')"
+_ov_n_total="$(grep -m1 '^- n_total:' "$RND_DIR/outside-view.md" | sed 's/^- n_total: //')"
+_ov_shapes="$(grep '^- Shape:' "$RND_DIR/outside-view.md" | \
+  awk '{
+    for (i=1;i<=NF;i++) {
+      if ($i~/^Shape:/) shape=$(i+1)
+      if ($i~/^task_count=/) tc=substr($i,12)
+      if ($i~/^fail_count=/) fc=substr($i,12)
+      if ($i~/^fail_rate=/) fr=substr($i,11)
+    }
+    printf "{\"shape\":\"%s\",\"task_count\":%s,\"fail_count\":%s,\"fail_rate\":%s}\n", shape,tc,fc,fr
+  }' | jq -sc '.' 2>/dev/null || printf '[]')"
+_ov_framing="$(grep -q '^## Framing constraint' "$RND_DIR/outside-view.md" && printf true || printf false)"
+"${CLAUDE_PLUGIN_ROOT}/lib/outside-view-emit.sh" \
+  "${_ov_mode:-unavailable}" \
+  "${_ov_n_total:-0}" \
+  "${_ov_shapes:-[]}" \
+  "${_ov_framing:-false}"
+```
+
+---
+
 **Spawn a Planner agent** to decompose the task.
 
 ```
@@ -189,7 +224,7 @@ Agent({
   description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "acceptEdits",
-  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md (address/dismiss each FM<k> in protocol.md's ## Premortem Responses)\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md (address/dismiss each FM<k> in protocol.md's ## Premortem Responses)\n${OUTSIDE_VIEW_BLOCK}\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 

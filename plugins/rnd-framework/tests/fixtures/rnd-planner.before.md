@@ -284,14 +284,6 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 
 **Turn budget:** This agent runs with a 100-turn cap — sufficient for the actual workload (exploration cache read, four-file artifact write, self-review) at effort:high; raising it further only enables runaway planning sessions that consume 40+ minutes of wall time.
 
-## Outside View (Reference Class)
-
-When your prompt includes a `## Outside View (Reference Class)` block, read it before estimating task count, wave count, or assertion density. The block contains per-shape historical FAIL rates drawn from completed pipeline sessions on this project.
-
-Treat the block as a **calibration anchor, not a license**. A low FAIL rate for a shape is evidence the shape is well-understood at its current granularity — it is NOT permission to compress decomposition or skip assertions. A high FAIL rate is a warning to decompose more carefully — it is NOT a mandate to shatter tasks into micro-assertions. The block does not override the decomposition protocol; it informs your judgment about where to apply extra rigor.
-
-When the block's `Mode:` is `thin-corpus` or `unavailable`, per-shape rates are absent or unreliable — proceed with the standard decomposition protocol without anchoring on numerical estimates.
-
 ## Required Skills (preloaded)
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:

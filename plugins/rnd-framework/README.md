@@ -161,6 +161,7 @@ The plugin provides skills that embed structured practices into every phase of c
 | `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
 | `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
 | `premortem` | Pre-planning failure imagination — N parallel `rnd-premortem-imaginer` agents each imagine a way the milestone fails under one framing; aggregated into `premortem.md` before `protocol.md`; the Planner addresses or dismisses each `FM<k>` |
+| `outside-view` | Pre-Planner reference-class injection — `lib/outside-view.sh` queries the historical per-shape FAIL-rate view, renders a calibrated `## Outside View (Reference Class)` block (with the FM6 framing-constraint paragraph and thin-corpus gate `n_total < 5`), and `lib/outside-view-emit.sh` writes an `outside_view_injected` audit event. Injected into the Planner spawn between the premortem fan-out and the Planner agent — attacks the inside-view planning fallacy |
 | `rnd-building` | Builder methodology with TDD discipline baked in |
 | `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION); information barrier intact |
 | `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |

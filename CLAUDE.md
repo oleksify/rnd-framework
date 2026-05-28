@@ -43,6 +43,7 @@ plugins/rnd-framework/
 │   ├── event-schema.json               # JSON Schema SSOT for the per-(session,assertion) fact grain; `x-shape-vocab` (13 values incl. `behaviour`, `misc`) + confidence enum (high|medium|stretch) sourced by planner-emit-gate.sh
 │   ├── verdict-map-schema.json         # Canonical definition of the verifier verdict-map evidence-array shape (JSON Schema). Sourced at runtime by evidence-locking-gate.sh via jq — `x-trivial-tokens` (19-item denylist), `x-min-evidence-length` (40), and `x-evidence-citation-markers` (5 markers) live here.
 │   ├── stats/*.sql                      # Stateless DuckDB view module over session JSONL in place (tolerant `read_csv` raw-line + `json_valid`, no persistence): shape distribution, per-shape verifier-FAIL rate, iteration depth, builder-self-fail-vs-verdict gap, FAIL-rate drift, sycophancy flip rate (over `*/sycophancy-probe.jsonl`, per-`artifact_basis` hard/soft split), + backfill.sql; segment via inline `dogfood_slugs` CTE; run out-of-band by /rnd-framework:rnd-stats (Section 6 = sycophancy)
+│   ├── remeasurement.sh                 # M7 re-measurement harness: subcommands `corpus_count <sha>` (counts dogfood session dirs newer than the M5 ship commit) and `gate_met <sha>` (exit 0 at N≥10, exit 1 below); `memo <out_path> <sha>` writes a pending stub when the gate is unmet or queries stats/per_shape_fail_rate + self_fail_vs_verdict_gap + iteration_depth and emits a markdown memo with M3-baseline-recall + current-snapshot + delta + M4+M5 confound disclosure + follow-up signals sections. Read-only over the existing M1 substrate; invoked by /rnd-framework:rnd-remeasure.
 │   ├── audit-event.sh                  # Single-line {event,task_id,tool,timestamp} emitter to $RND_DIR/audit.jsonl
 │   ├── premortem-emit.sh               # Emits the premortem_generated event {event,n,framings[],failure_mode_count,timestamp}; n derived from the framings CSV (separate from audit-event.sh because the payload schema differs)
 │   ├── outside-view.sh                 # Outside-view injector: queries stats/per_shape_fail_rate via duckdb, applies the N_THIN_CORPUS=5 gate, renders the `## Outside View (Reference Class)` block (header + framing-constraint paragraph + per-shape rows when n_total≥5, or `Mode: thin-corpus`/`Mode: unavailable` sentinels otherwise), writes $RND_DIR/outside-view.md and stdout. Invoked from commands/rnd-start.md Phase 1 between premortem fan-out and Planner spawn.
@@ -196,7 +197,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`, `rnd-stats`.
+Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`, `rnd-stats`, `rnd-remeasure`.
 
 ## Key Conventions
 

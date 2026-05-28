@@ -150,6 +150,7 @@ Use `/rnd-framework:rnd-start` to launch the pipeline.
 | `/rnd-framework:rnd-debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
 | `/rnd-framework:rnd-roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
 | `/rnd-framework:rnd-scan` | Scan the project environment and build a persistent project-facts.md |
+| `/rnd-framework:rnd-remeasure` | M7 re-measurement harness — snapshot per-shape FAIL rate, builder-self-fail-vs-verdict gap, and iteration-depth distribution against the M3 baseline (gated on ≥10 post-M5 dogfood sessions) |
 
 ## Skills
 

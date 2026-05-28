@@ -211,10 +211,8 @@ render_memo() {
     local seg shape tc fc fr
     while IFS='|' read -r seg shape tc fc fr; do
       [[ "$seg" == "dogfood" ]] || continue
-      # M3 baseline is 0.0 for all shapes (bootstrap floor)
-      local delta
-      delta="$(printf '%s - 0.0000' "$fr")"
-      delta_table="${delta_table}| ${shape} | 0.0000 (M3 floor) | ${fr} | ${delta} |\n"
+      # M3 baseline is 0.0 for all shapes (bootstrap floor); delta == current.
+      delta_table="${delta_table}| ${shape} | 0.0000 (M3 floor) | ${fr} | ${fr} |\n"
     done <<< "$fail_rate_rows"
   fi
 
@@ -254,7 +252,7 @@ M3 session: \`${M3_SESSION}\`
 
 **Iteration-depth baseline:** ${M3_ITER_NOTE}
 
-The M3 baseline values are uniformly absent — the M2.5 producers had fired for
+The M3 baseline values are uniformly absent — the stat producers had fired for
 the first time on M3's own activity (n=1 bootstrap). Zero rates are a floor,
 not a signal: the first non-zero reading establishes the true empirical baseline.
 

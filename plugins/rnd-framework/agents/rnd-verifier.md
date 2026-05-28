@@ -66,6 +66,22 @@ After completing all tasks in the wave, save the verdict map to `$RND_DIR/verifi
 - `feedback` — string; non-empty for any non-PASS verdict; names the failing assertion ID verbatim; empty string (`""`) for PASS
 - `task_id` — string; the task ID (`M<N>.T<NN>.<slug>`) that declared the `fulfills` field containing this assertion
 
+#### Verdict-map evidence structure
+
+The evidence array schema SSOT is `lib/verdict-map-schema.json`. An evidence item is **non-trivial** when it satisfies at least one of the following predicates: (a) its length exceeds `x-min-evidence-length` (40 characters); (b) it contains any `x-evidence-citation-markers` substring (`:`, `/`, `` ` ``, `"`, `<`); (c) it cites a specific file path or line range; (d) it quotes verbatim command output with a result value.
+
+`evidence-locking-gate.sh` will reject the verdict-map Write on any single trivial evidence item; the gate is **form-only** and does not substance-check citations.
+
+Example valid evidence array with mixed shapes:
+
+```json
+"evidence": [
+  "agents/rnd-verifier.md:63 — evidence array field present, type array",
+  "grep -c 'form-only' agents/rnd-verifier.md returned 2",
+  "jq '. | has(\"x-trivial-tokens\")' lib/verdict-map-schema.json → true"
+]
+```
+
 The orchestrator aggregates per-task results at Gate 3 by grouping entries by `task_id`. If you are verifying a single task (not a wave), still emit the assertion-keyed verdict map. For every verdict, write a `T<id>-verification.md` full prose report enumerating each assertion with its verdict and evidence.
 
 See `rnd-framework:rnd-verification` for the full verification protocol (information barrier rules, two-stage evaluation table, process steps 1–6, tool discipline).

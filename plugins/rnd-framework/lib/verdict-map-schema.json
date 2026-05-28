@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rnd-framework/verdict-map-schema.json",
+  "title": "Verdict-Map Evidence Array Shape",
+  "description": "Schema for the evidence array entries in the per-wave verdict map. Carries the trivial-token denylist, minimum length threshold, and citation markers used by the evidence-array gate. This gate is form-only verification — substance check deferred to a future milestone. The top-level x-* extension fields are the load-bearing SSO for gate consumers — hooks source them via jq rather than re-parsing nested definitions, mirroring the x-disallowed-fields convention in manifest-schema.json.",
+  "x-trivial-tokens": [
+    "",
+    "n/a",
+    "na",
+    "none",
+    "ok",
+    "passed",
+    "fail",
+    "true",
+    "false",
+    "yes",
+    "no",
+    "done",
+    "ran tests",
+    "compiles",
+    "no errors",
+    "looks good",
+    "lgtm",
+    "tbd",
+    "todo"
+  ],
+  "x-min-evidence-length": 40,
+  "x-evidence-citation-markers": [
+    ":",
+    "/",
+    "`",
+    "\"",
+    "<"
+  ],
+  "type": "object",
+  "properties": {
+    "evidence": {
+      "type": "array",
+      "description": "Per-assertion evidence strings. Each entry must be non-trivial: either longer than x-min-evidence-length or containing at least one x-evidence-citation-marker substring.",
+      "items": {
+        "type": "string",
+        "description": "A single evidence item. Non-trivial when it exceeds the minimum length threshold or contains a citation marker (path separator, backtick quote, angle bracket, etc.)."
+      }
+    }
+  }
+}

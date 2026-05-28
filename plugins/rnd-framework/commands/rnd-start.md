@@ -197,7 +197,7 @@ After the block is rendered, emit the audit event:
 ```bash
 _ov_mode="$(grep -m1 '^- Mode:' "$RND_DIR/outside-view.md" | sed 's/^- Mode: //')"
 _ov_n_total="$(grep -m1 '^- n_total:' "$RND_DIR/outside-view.md" | sed 's/^- n_total: //')"
-_ov_shapes="$(grep '^- Shape:' "$RND_DIR/outside-view.md" | \
+_ov_shapes="$({ grep '^- Shape:' "$RND_DIR/outside-view.md" || true; } | \
   awk '{
     for (i=1;i<=NF;i++) {
       if ($i~/^Shape:/) shape=$(i+1)
@@ -206,7 +206,8 @@ _ov_shapes="$(grep '^- Shape:' "$RND_DIR/outside-view.md" | \
       if ($i~/^fail_rate=/) fr=substr($i,11)
     }
     printf "{\"shape\":\"%s\",\"task_count\":%s,\"fail_count\":%s,\"fail_rate\":%s}\n", shape,tc,fc,fr
-  }' | jq -sc '.' 2>/dev/null || printf '[]')"
+  }' | jq -sc '.' 2>/dev/null)"
+[[ -n "$_ov_shapes" ]] || _ov_shapes='[]'
 _ov_framing="$(grep -q '^## Framing constraint' "$RND_DIR/outside-view.md" && printf true || printf false)"
 "${CLAUDE_PLUGIN_ROOT}/lib/outside-view-emit.sh" \
   "${_ov_mode:-unavailable}" \

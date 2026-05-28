@@ -1,0 +1,1802 @@
+{
+  "M6.wave1.assertion000": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion001": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion002": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion003": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion004": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion005": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion006": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion007": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion008": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion009": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion010": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion011": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion012": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion013": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion014": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion015": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion016": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion017": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion018": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion019": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion020": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion021": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion022": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion023": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion024": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion025": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion026": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion027": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion028": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion029": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion030": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion031": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion032": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion033": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion034": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion035": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion036": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion037": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion038": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion039": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion040": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion041": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion042": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion043": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion044": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion045": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion046": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion047": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion048": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion049": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion050": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion051": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion052": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion053": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion054": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion055": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion056": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion057": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion058": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion059": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion060": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion061": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion062": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion063": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion064": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion065": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion066": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion067": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion068": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion069": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion070": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion071": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion072": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion073": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion074": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion075": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion076": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion077": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion078": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion079": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion080": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion081": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion082": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion083": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion084": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion085": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion086": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion087": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion088": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion089": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion090": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion091": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion092": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion093": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion094": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion095": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion096": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion097": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion098": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion099": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion100": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion101": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion102": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion103": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion104": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion105": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion106": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion107": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion108": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion109": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion110": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion111": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion112": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion113": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion114": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion115": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion116": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion117": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion118": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion119": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion120": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion121": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion122": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion123": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion124": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion125": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion126": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion127": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion128": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion129": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion130": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion131": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion132": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion133": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion134": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion135": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion136": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion137": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion138": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion139": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion140": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion141": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion142": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion143": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion144": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion145": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion146": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion147": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion148": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion149": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion150": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion151": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion152": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion153": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion154": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion155": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion156": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion157": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion158": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion159": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion160": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion161": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion162": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion163": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion164": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion165": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion166": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion167": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion168": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion169": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion170": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion171": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion172": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion173": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion174": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion175": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion176": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion177": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion178": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion179": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion180": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion181": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion182": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion183": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion184": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion185": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion186": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion187": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion188": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion189": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion190": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion191": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion192": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion193": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion194": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion195": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion196": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion197": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion198": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  },
+  "M6.wave1.assertion199": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/perf-200.json:1 \u2014 fixture file loaded and parsed",
+      "bash tests/run-tests.sh returned exit 0 for all assertions in this wave"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  }
+}

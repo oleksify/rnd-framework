@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.7.0 — 2026-05-28
+
+### Add the M6 evidence-locking hook for rnd-verifier
+
+Adds `lib/verdict-map-schema.json`, the SSOT for verdict-map evidence array validation. The schema defines the trivial-token denylist, a 40-character minimum length threshold, and citation markers used to distinguish substantive evidence from placeholder strings. The `x-*` extension fields follow the convention established by `manifest-schema.json` — gate hooks source them via jq.
+
+Adds `hooks/evidence-locking-gate.sh`, a PreToolUse Write hook that fires when `rnd-verifier` writes a `wave-*-verdict-map.json` file. The hook parses the verdict map from the PreToolUse `tool_input.content` field — the file does not exist yet when PreToolUse fires, so reading from the incoming content rather than the filesystem is architecturally correct. It iterates every assertion entry's evidence array in a single jq pass and rejects the write if any item is trivial according to the schema predicates. On rejection the hook emits a `gate_fired` audit event with gate name `evidence_locking_gate`. This gate is **form-only** — it verifies that each evidence string has the structural markers of a real citation, but does not substance-check that the cited file path, command, or line reference is accurate. Substance verification is deferred to a future milestone.
+
+Updates `agents/rnd-verifier.md` with a "Verdict-map evidence structure" subsection that cites `lib/verdict-map-schema.json` as the SSOT, restates the non-trivial predicate, names the gate and its form-only scope, and shows one example evidence array with mixed shapes.
+
+Wires the hook into `hooks/hooks.json` as a new PreToolUse Write|Edit handler scoped to `rnd-verifier`.
+
 ## 5.6.0 — 2026-05-28
 
 ### Add the hide-the-previous-plan replan intervention

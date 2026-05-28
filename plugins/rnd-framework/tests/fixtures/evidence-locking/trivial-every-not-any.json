@@ -1,0 +1,8 @@
+{
+  "M6.hook.blocks-trivial-evidence": {
+    "verdict": "PASS",
+    "evidence": ["ran tests", "compiles", "no errors"],
+    "feedback": "",
+    "task_id": "T02"
+  }
+}

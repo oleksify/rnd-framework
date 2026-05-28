@@ -1,0 +1,12 @@
+{
+  "M6.hook.passes-valid-evidence": {
+    "verdict": "PASS",
+    "evidence": [
+      "tests/fixtures/evidence-locking/valid-evidence.json:1 — file exists and parses",
+      "bash tests/evidence-locking-gate.test.sh returned exit 0 with all assertions green",
+      "<schema>plugins/rnd-framework/lib/verdict-map-schema.json declares x-trivial-tokens with 19 entries"
+    ],
+    "feedback": "",
+    "task_id": "T02"
+  }
+}

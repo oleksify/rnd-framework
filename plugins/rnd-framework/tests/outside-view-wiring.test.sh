@@ -145,8 +145,9 @@ assert_eq \
 
 # ---------------------------------------------------------------------------
 # M4.changelog.entry-exists-with-version-bump
-# plugin.json version is 5.5.0; CHANGELOG top entry starts with ## 5.5.0 —
-# and contains a ### headline that names "outside-view" and "Planner" together.
+# CHANGELOG contains a ## 5.5.0 — entry (anywhere in the file — later releases
+# push it down but it must still exist), and the M4-scoped section contains a
+# ### headline naming "outside-view" and "Planner" together.
 # ---------------------------------------------------------------------------
 
 printf '\n--- changelog-entry-exists-with-version-bump ---\n'
@@ -157,21 +158,23 @@ CHANGELOG="${PLUGIN_ROOT}/CHANGELOG.md"
 plugin_version="$(jq -r .version "$PLUGIN_JSON" 2>/dev/null || printf '')"
 
 assert_eq \
-  "plugin.json version is 5.5.0" \
-  "5.5.0" \
-  "$plugin_version"
+  "plugin.json version is parseable" \
+  "pass" \
+  "$(printf '%s' "$plugin_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' && printf pass || printf fail)"
 
 changelog_header_count="$(grep -cE '^## 5\.5\.0 — ' "$CHANGELOG" || true)"
 
 assert_eq \
-  "CHANGELOG top entry starts with ## 5.5.0 — " \
+  "CHANGELOG contains a ## 5.5.0 — entry" \
   "1" \
   "$changelog_header_count"
 
-headline_count="$(head -20 "$CHANGELOG" | grep -cE '^### .*[Oo]utside.?[Vv]iew.*[Pp]lanner|^### .*[Pp]lanner.*[Oo]utside.?[Vv]iew' || true)"
+# Extract the M4-scoped section (lines between ## 5.5.0 and the next ## N.N.N).
+m4_section="$(awk '/^## 5\.5\.0/{found=1; next} found && /^## [0-9]+\.[0-9]/{exit} found{print}' "$CHANGELOG" || true)"
+headline_count="$(printf '%s' "$m4_section" | grep -cE '^### .*[Oo]utside.?[Vv]iew.*[Pp]lanner|^### .*[Pp]lanner.*[Oo]utside.?[Vv]iew' || true)"
 
 assert_eq \
-  "CHANGELOG headline names outside-view and Planner together" \
+  "M4 section headline names outside-view and Planner together" \
   "1" \
   "$headline_count"
 
@@ -292,7 +295,7 @@ assert_eq \
 # Run the emitter (mirrors the Phase 1 emitter bash block).
 _ov_mode="$(grep -m1 '^- Mode:' "$SANDBOX_DIR/outside-view.md" | sed 's/^- Mode: //' || printf 'unavailable')"
 _ov_n_total="$(grep -m1 '^- n_total:' "$SANDBOX_DIR/outside-view.md" | sed 's/^- n_total: //' || printf '0')"
-_ov_shapes="$(grep '^- Shape:' "$SANDBOX_DIR/outside-view.md" | \
+_ov_shapes="$({ grep '^- Shape:' "$SANDBOX_DIR/outside-view.md" || true; } | \
   awk '{
     for (i=1;i<=NF;i++) {
       if ($i~/^Shape:/) shape=substr($i,7)
@@ -301,7 +304,8 @@ _ov_shapes="$(grep '^- Shape:' "$SANDBOX_DIR/outside-view.md" | \
       if ($i~/^fail_rate=/) fr=substr($i,11)
     }
     printf "{\"shape\":\"%s\",\"task_count\":%s,\"fail_count\":%s,\"fail_rate\":%s}\n", shape,tc,fc,fr
-  }' | jq -sc '.' 2>/dev/null || printf '[]')"
+  }' | jq -sc '.' 2>/dev/null)"
+[[ -n "$_ov_shapes" ]] || _ov_shapes='[]'
 _ov_framing="$(grep -q '^## Framing constraint' "$SANDBOX_DIR/outside-view.md" && printf true || printf false)"
 
 emitter_exit=0

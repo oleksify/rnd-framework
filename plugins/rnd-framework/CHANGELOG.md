@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.4.1 — 2026-05-28
+
+### Set the phase-aware session title on SessionStart, not just on UserPromptSubmit
+
+session-start.sh now emits hookSpecificOutput.sessionTitle alongside additionalContext, mirroring session-title.sh's RND:<phase>|<project> computation so the terminal tab title is correct immediately on startup/resume/clear/compact instead of only after the first prompt submission. Honored on Claude Code >= 2.1.152 per the 2.1.152 release note; silently ignored on older versions, so no regression for users on the plugin's stated minimum (2.1.139). Test coverage in tests/session-start.test.sh asserts the new field is present and the title starts with the 'RND:' prefix.
+
 ## 5.4.0 — 2026-05-28
 
 ### Add the M3 sycophancy-delta probe: harness, flip-rate view, and rnd-stats Section 6

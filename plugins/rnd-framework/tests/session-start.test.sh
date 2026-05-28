@@ -53,6 +53,17 @@ assert_contains "session-start JSON contains hookSpecificOutput" '"hookSpecificO
 # Must contain additionalContext
 assert_contains "session-start JSON contains additionalContext" '"additionalContext"' "$HOOK_STDOUT"
 
+# sessionTitle is set on startup/resume so the terminal title is phase-aware
+# immediately, not only after the first prompt. Honored on Claude Code ≥ 2.1.152.
+assert_contains "session-start JSON contains sessionTitle field" '"sessionTitle"' "$HOOK_STDOUT"
+
+session_title_val="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+if [[ "$session_title_val" == RND:* ]]; then
+  assert_eq "session-start sessionTitle starts with 'RND:'" "ok" "ok"
+else
+  assert_eq "session-start sessionTitle starts with 'RND:'" "ok" "missing-or-malformed: $session_title_val"
+fi
+
 # ---------------------------------------------------------------------------
 # strips frontmatter — skill content should not contain raw --- delimiters
 # from the frontmatter block

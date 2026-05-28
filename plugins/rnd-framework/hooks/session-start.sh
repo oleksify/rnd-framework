@@ -152,8 +152,26 @@ ${skill_content}${rnd_line}${version_warning}${cc_version_warning}
 
 </EXTREMELY_IMPORTANT>")"
 
+# ---------------------------------------------------------------------------
+# Session title — phase-aware, mirroring session-title.sh's UserPromptSubmit
+# computation so the title is correct immediately on startup/resume (not only
+# after the first prompt submission). Honored on Claude Code ≥ 2.1.152;
+# older versions silently ignore the field.
+# ---------------------------------------------------------------------------
+
+session_dir_for_title="$(active_session_dir 2>/dev/null || true)"
+phase_for_title="$(detect_pipeline_phase "$session_dir_for_title" 2>/dev/null || echo Idle)"
+project_for_title="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+
+if [[ "$phase_for_title" == "Idle" ]]; then
+  session_title="RND: ${project_for_title}"
+else
+  session_title="RND: ${phase_for_title} | ${project_for_title}"
+fi
+
 jq -cn \
   --arg ctx "$ctx" \
-  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
+  --arg title "$session_title" \
+  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx,sessionTitle:$title}}'
 
 exit 0

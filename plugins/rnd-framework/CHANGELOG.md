@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.4.4 — 2026-05-28
+
+### Replace general-purpose+haiku premortem fan-out with restricted-tool rnd-premortem-imaginer agent
+
+Replace the general-purpose+haiku premortem fan-out with a restricted-tool rnd-premortem-imaginer agent so N parallel spawns no longer overflow haiku's context in MCP-heavy repos.
+
 ## 5.4.3 — 2026-05-28
 
 ### Document how rnd-review relates to Claude Code's native /code-review

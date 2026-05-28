@@ -12,6 +12,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${SCRIPT_DIR}/test-helpers.sh"
 
 RND_START="${PLUGIN_ROOT}/commands/rnd-start.md"
+IMAGINER_AGENT="${PLUGIN_ROOT}/agents/rnd-premortem-imaginer.md"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,14 +35,14 @@ first_line() {
 printf '\n--- rnd-start Phase 1: premortem fan-out content ---\n'
 
 assert_grep \
-  "Phase 1 mentions general-purpose agent type" \
-  "general-purpose" \
+  "Phase 1 mentions rnd-premortem-imaginer agent type" \
+  "rnd-premortem-imaginer" \
   "$RND_START"
 
 assert_grep \
-  "Phase 1 mentions haiku model" \
-  "haiku" \
-  "$RND_START"
+  "rnd-premortem-imaginer agent frontmatter specifies haiku model" \
+  "^model:[[:space:]]*haiku" \
+  "$IMAGINER_AGENT"
 
 assert_grep \
   "Phase 1 references premortem artifact or skill" \

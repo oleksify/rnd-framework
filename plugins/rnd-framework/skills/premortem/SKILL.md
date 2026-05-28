@@ -23,7 +23,7 @@ Five fixed framings. The orchestrator may add up to 2 task-generated framings de
 
 ## Per-Agent Prompt Template
 
-The orchestrator pastes this template verbatim into each `general-purpose` (`model: "haiku"`) spawn. Replace `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` before dispatching.
+The orchestrator pastes this template verbatim into each `rnd-premortem-imaginer` spawn. Replace `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` before dispatching.
 
 ```
 You are performing a premortem for a software task.

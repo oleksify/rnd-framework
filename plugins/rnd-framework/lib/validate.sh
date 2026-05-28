@@ -239,6 +239,12 @@ validate_skills() {
 
 check_tools_field() {
   local agent_name="$1" tools_val="$2"
+
+  if [[ "$tools_val" == "[]" ]]; then
+    record_pass "agent '${agent_name}' tools are valid: [] (explicit empty list)"
+    return 0
+  fi
+
   local all_valid=true
   local IFS_SAVE="$IFS"
   IFS=', '

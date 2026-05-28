@@ -15,7 +15,7 @@ lib/plugin-dir-base.sh                  # Canonical shared artifact-dir logic (e
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json          # Plugin manifest
-├── agents/                             # 9 specialized pipeline agents
+├── agents/                             # 10 agents (9 pipeline-phase + 1 premortem fan-out helper)
 ├── commands/                           # /rnd-framework:* slash commands
 ├── skills/                             # One dir per skill, each with SKILL.md
 ├── output-styles/                      # scientific, rigorous, pipeline
@@ -155,7 +155,7 @@ Artifacts live in a centralized directory outside the project tree, computed by 
     ├── roadmap.md                         # Multi-session roadmap (lazy-inherited from default branch)
     ├── project-facts.md                   # Persistent project scan (lazy-inherited from default branch)
     └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   # $RND_DIR (one per pipeline run)
-        ├── premortem.md                   # Orchestrator-owned, immutable; written BEFORE protocol.md from N parallel haiku failure-imagination spawns; one FM<k> per failure mode; Planner addresses/dismisses each in protocol.md's ## Premortem Responses
+        ├── premortem.md                   # Orchestrator-owned, immutable; written BEFORE protocol.md from N parallel rnd-premortem-imaginer failure-imagination spawns; one FM<k> per failure mode; Planner addresses/dismisses each in protocol.md's ## Premortem Responses
         ├── protocol.md                    # Scope + goals; carries Heuristic ceiling integer on line 2
         ├── validation-contract.md         # One M<N>.<area>.<slug> assertion per heading; orchestrator slices per-task sets via assertionIds[] in features.json
         ├── features.json                  # Machine-readable task manifest: M<N>.T<NN>.<slug> IDs, dependsOn[], assertionIds[], criticality, status

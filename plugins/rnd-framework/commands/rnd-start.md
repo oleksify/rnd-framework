@@ -156,15 +156,15 @@ Otherwise:
 
 ### Phase 1 pre-step: Premortem fan-out
 
-Before spawning the Planner, run a premortem: spawn N parallel `general-purpose` agents with `model: "haiku"`, each imagining one failure framing. Aggregate their narratives into `$RND_DIR/premortem.md`.
+Before spawning the Planner, run a premortem: spawn N parallel `rnd-premortem-imaginer` agents, each imagining one failure framing. Aggregate their narratives into `$RND_DIR/premortem.md`.
 
 **Determine framings.** Start with the 5 core framings from `rnd-framework:premortem`. Derive up to 2 task-specific framings from the task description. Bounds: `3 ≤ N ≤ 7`, default `N = 5`. See the `rnd-framework:premortem` skill for the framing labels, framing prompts, and per-agent prompt template.
 
 **Spawn N agents in ONE message**, one per framing. Fill in `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` from the per-agent prompt template in the `rnd-framework:premortem` skill:
 
 ```
-Agent({ subagent_type: "general-purpose", model: "haiku", prompt: "<framing 1 prompt from premortem skill>" })
-Agent({ subagent_type: "general-purpose", model: "haiku", prompt: "<framing 2 prompt from premortem skill>" })
+Agent({ subagent_type: "rnd-premortem-imaginer", prompt: "<framing 1 prompt from premortem skill>" })
+Agent({ subagent_type: "rnd-premortem-imaginer", prompt: "<framing 2 prompt from premortem skill>" })
 ... (repeat for each framing up to N)
 ```
 

@@ -70,14 +70,14 @@ After completing all tasks in the wave, save the verdict map to `$RND_DIR/verifi
 
 The evidence array schema SSOT is `lib/verdict-map-schema.json`. An evidence item is **non-trivial** when it satisfies at least one of the following predicates: (a) its length exceeds `x-min-evidence-length` (40 characters); (b) it contains any `x-evidence-citation-markers` substring (`:`, `/`, `` ` ``, `"`, `<`); (c) it cites a specific file path or line range; (d) it quotes verbatim command output with a result value.
 
-`evidence-locking-gate.sh` will reject the verdict-map Write on any single trivial evidence item; the gate is **form-only** and does not substance-check citations.
+`evidence-locking-gate.sh` validates evidence in two passes: (1) a form pass that rejects any trivial evidence item; (2) a substance pass that extracts a citable token from each form-passing item and confirms it appears in the union corpus (session dir + project repo root, excluding barrier dirs). Evidence items with no extractable token are exempt from the substance pass.
 
 Example valid evidence array with mixed shapes:
 
 ```json
 "evidence": [
   "agents/rnd-verifier.md:63 — evidence array field present, type array",
-  "grep -c 'form-only' agents/rnd-verifier.md returned 2",
+  "grep -c 'x-trivial-tokens' lib/verdict-map-schema.json returned 1",
   "jq '. | has(\"x-trivial-tokens\")' lib/verdict-map-schema.json → true"
 ]
 ```

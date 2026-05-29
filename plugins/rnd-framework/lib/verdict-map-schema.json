@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://rnd-framework/verdict-map-schema.json",
   "title": "Verdict-Map Evidence Array Shape",
-  "description": "Schema for the evidence array entries in the per-wave verdict map. Carries the trivial-token denylist, minimum length threshold, and citation markers used by the evidence-array gate. This gate is form-only verification — substance check deferred to a future milestone. The top-level x-* extension fields are the load-bearing SSO for gate consumers — hooks source them via jq rather than re-parsing nested definitions, mirroring the x-disallowed-fields convention in manifest-schema.json.",
+  "description": "Schema for the evidence array entries in the per-wave verdict map. Carries the trivial-token denylist, minimum length threshold, citation markers, and substance-pass tuning knobs used by the evidence-array gate. The gate runs two passes: (1) form — verifies each evidence string has the structural markers of a real citation; (2) substance — extracts a citable token from each form-passing item (longest backtick span, then longest double-quoted span, then longest contiguous run containing '/') and confirms that token appears in at least one file under the union corpus (session dir + project repo root), excluding the barrier dirs listed in x-substance-exclude-dirs. Evidence items with no extractable token are exempt from the substance pass. The top-level x-* extension fields are the load-bearing SSOT for gate consumers — hooks source them via jq rather than re-parsing nested definitions, mirroring the x-disallowed-fields convention in manifest-schema.json.",
   "x-trivial-tokens": [
     "",
     "n/a",
@@ -31,6 +31,12 @@
     "`",
     "\"",
     "<"
+  ],
+  "x-substance-exclude-dirs": [
+    "verifications",
+    "builds",
+    "briefs",
+    "cleanup"
   ],
   "type": "object",
   "properties": {

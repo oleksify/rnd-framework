@@ -262,6 +262,185 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Substance cases
+# ---------------------------------------------------------------------------
+
+# A runtime-unique tag. Because it is assembled at runtime from PID + $RANDOM,
+# the contiguous string never appears as a literal in any git-tracked file or
+# committed fixture, so "absent token" cases stay absent from the substance
+# corpus regardless of whether this test file (or its fixtures) is committed.
+# (The corpus is built from `git ls-files` over the repo plus the session dir.)
+SUBST_TAG="M9SUBST${$}X${RANDOM}${RANDOM}"
+
+# Build a single-entry verdict map inline (no committed fixture) so absent
+# tokens never leak into the tracked corpus. The evidence item carries a `/`
+# citation marker, so it passes the form pass and reaches the substance pass.
+make_substance_map() {
+  local assertion_id="$1"
+  local evidence_item="$2"
+  jq -nc \
+    --arg id "$assertion_id" \
+    --arg ev "$evidence_item" \
+    '{($id): {verdict: "PASS", evidence: [$ev], feedback: "", task_id: "T01"}}'
+}
+
+# ---------------------------------------------------------------------------
+# Case (i): substance-miss — citable token absent from corpus → exit 2
+# The cited path token is built from SUBST_TAG, so it exists nowhere on disk.
+
+MISS_TOKEN="${SUBST_TAG}/nonexistent.ts"
+miss_map="$(make_substance_map "M9.substance.miss-test" "observed timeout referencing ${MISS_TOKEN} during the run")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$miss_map")"
+assert_exit "case (i): substance-miss → exit 2" 2
+assert_stderr_contains "case (i): substance-miss → stderr contains SUBSTANCE FAILURE" "SUBSTANCE FAILURE"
+assert_stderr_contains "case (i): substance-miss → stderr names offender ID" "M9.substance.miss-test"
+assert_stderr_contains "case (i): substance-miss → stderr names missing token" "$MISS_TOKEN"
+
+# ---------------------------------------------------------------------------
+# Case (j): substance-hit-session — token present in a session artifact (outside excluded dirs)
+
+mkdir -p "${FAKE_SESSION}/evidence/${SUBST_TAG}"
+printf '{"result": "ok"}' > "${FAKE_SESSION}/evidence/${SUBST_TAG}/hit.json"
+
+session_token="evidence/${SUBST_TAG}/hit.json"
+session_map="$(make_substance_map "M9.substance.hit-session" "structured result written to ${session_token} confirmed")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$session_map")"
+assert_exit "case (j): substance-hit-session → exit 0" 0
+assert_stderr_empty "case (j): substance-hit-session → no stderr"
+
+# ---------------------------------------------------------------------------
+# Case (k): substance-hit-source — token cites a real (git-tracked) repo file → exit 0
+
+source_token="plugins/rnd-framework/lib/verdict-map-schema.json"
+source_map="$(make_substance_map "M9.substance.hit-source" "schema sourced from ${source_token} confirmed present")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$source_map")"
+assert_exit "case (k): substance-hit-source → exit 0" 0
+assert_stderr_empty "case (k): substance-hit-source → no stderr"
+
+# FM4 canary: the unchanged valid-evidence.json and perf-200.json still pass with substance active.
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$(read_fixture valid-evidence.json)")"
+assert_exit "case (k): FM4 canary — valid-evidence.json still exits 0 with substance active" 0
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$(read_fixture perf-200.json)")"
+assert_exit "case (k): FM4 canary — perf-200.json still exits 0 with substance active" 0
+
+# ---------------------------------------------------------------------------
+# Case (l): longest-span — extraction prefers the full /path run, not a fragment
+
+# The evidence item embeds a path inside prose; extraction must pick the whole
+# contiguous /-run (/src/<tag>/retry-handler.ts), never /src or /<tag>.
+span_path="/src/${SUBST_TAG}/retry-handler.ts"
+span_map="$(make_substance_map "M9.substance.longest-span" "timeout in ${span_path} module observed")"
+
+# Sub-case (l-present): plant the file so the full path resolves in the session corpus → exit 0.
+mkdir -p "${FAKE_SESSION}/src/${SUBST_TAG}"
+printf 'retry handler stub' > "${FAKE_SESSION}/src/${SUBST_TAG}/retry-handler.ts"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$span_map")"
+assert_exit "case (l-present): longest-span token present → exit 0" 0
+assert_stderr_empty "case (l-present): longest-span token present → no stderr"
+
+# Sub-case (l-absent): remove the file → exit 2, stderr names the FULL path, not a fragment.
+rm -rf "${FAKE_SESSION}/src/${SUBST_TAG}"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$span_map")"
+assert_exit "case (l-absent): longest-span token absent → exit 2" 2
+assert_stderr_contains "case (l-absent): longest-span → SUBSTANCE FAILURE" "SUBSTANCE FAILURE"
+assert_stderr_contains "case (l-absent): longest-span → stderr names full path not fragment" "$span_path"
+
+# ---------------------------------------------------------------------------
+# Case (m): prose-only — >=40-char item with no backtick/quote/slash → exempt → exit 0
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$(read_fixture prose-only-evidence.json)")"
+assert_exit "case (m): prose-only evidence → exit 0" 0
+assert_stderr_empty "case (m): prose-only evidence → no stderr"
+
+# ---------------------------------------------------------------------------
+# Case (n): verifications-self-ref — token planted ONLY in the excluded verifications/ dir
+# Proves exclusion: the same setup under a non-excluded dir (case j) passes, but here it blocks.
+
+verif_token="verifications/${SUBST_TAG}V/marker.json"
+mkdir -p "${FAKE_SESSION}/verifications/${SUBST_TAG}V"
+printf '{"marker": "ok"}' > "${FAKE_SESSION}/${verif_token}"
+verif_map="$(make_substance_map "M9.substance.verif-self-ref" "verdict recorded at ${verif_token} in this wave")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$verif_map")"
+assert_exit "case (n): verifications-self-ref → exit 2 (excluded dir)" 2
+assert_stderr_contains "case (n): verifications-self-ref → SUBSTANCE FAILURE" "SUBSTANCE FAILURE"
+
+# ---------------------------------------------------------------------------
+# Case (o): barrier-dir — token planted ONLY in the excluded builds/ dir; barrier content must not leak
+
+barrier_token="builds/${SUBST_TAG}B/self-assessment.md"
+barrier_content="${SUBST_TAG}B builder uncertainty prose that must never reach gate stderr"
+mkdir -p "${FAKE_SESSION}/builds/${SUBST_TAG}B"
+printf '%s' "$barrier_content" > "${FAKE_SESSION}/${barrier_token}"
+barrier_map="$(make_substance_map "M9.substance.barrier-dir" "self-assessment stored at ${barrier_token} for this task")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$barrier_map")"
+assert_exit "case (o): barrier-dir → exit 2 (excluded dir)" 2
+assert_stderr_contains "case (o): barrier-dir → SUBSTANCE FAILURE" "SUBSTANCE FAILURE"
+
+# Barrier-protected content must not leak into stderr.
+if [[ "$HOOK_STDERR" != *"builder uncertainty prose"* ]]; then
+  pass "case (o): barrier-dir → barrier content absent from stderr"
+else
+  fail "case (o): barrier-dir → barrier content leaked into stderr"
+fi
+
+# ---------------------------------------------------------------------------
+# Case (p): substance gate_fired audit event — exactly one, with offender ID
+
+printf '' > "$FAKE_AUDIT"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$miss_map")"
+assert_exit "case (p): substance-miss gate_fired → exit 2" 2
+
+sub_event_count=0
+if [[ -f "$FAKE_AUDIT" ]]; then
+  sub_event_count="$(grep -c '"gate_fired"' "$FAKE_AUDIT" 2>/dev/null || true)"
+fi
+
+if [[ "$sub_event_count" -eq 1 ]]; then
+  pass "case (p): substance block → exactly one gate_fired event"
+else
+  fail "case (p): substance block → expected 1 gate_fired event, found $sub_event_count"
+fi
+
+if grep -q '"evidence_locking_gate"' "$FAKE_AUDIT" 2>/dev/null; then
+  pass "case (p): gate_fired event has tool: evidence_locking_gate"
+else
+  fail "case (p): gate_fired event missing 'evidence_locking_gate' in audit.jsonl"
+fi
+
+if grep -q '"M9.substance.miss-test"' "$FAKE_AUDIT" 2>/dev/null; then
+  pass "case (p): gate_fired event carries substance offender assertion ID"
+else
+  fail "case (p): gate_fired event missing substance offender assertion ID in audit.jsonl"
+fi
+
+# ---------------------------------------------------------------------------
+# Case (q): path:line citation — a real file cited as path:42 must resolve to
+# the path core and PASS; an absent path cited as path:line must BLOCK naming
+# the stripped path. (':' is a citation marker, so file:line is legitimate.)
+
+pathline_present="$(make_substance_map "M9.substance.pathline-present" "guard confirmed at plugins/rnd-framework/lib/verdict-map-schema.json:5 during the run")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$pathline_present")"
+assert_exit "case (q-present): path:line citing a real file → exit 0" 0
+assert_stderr_empty "case (q-present): path:line present → no stderr"
+
+pathline_absent="$(make_substance_map "M9.substance.pathline-absent" "observed at ${SUBST_TAG}/missing-file.ts:42 during the run")"
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "$pathline_absent")"
+assert_exit "case (q-absent): path:line for an absent path → exit 2" 2
+assert_stderr_contains "case (q-absent): path:line absent → SUBSTANCE FAILURE" "SUBSTANCE FAILURE"
+assert_stderr_contains "case (q-absent): path:line absent → stderr names stripped path (no :42)" "${SUBST_TAG}/missing-file.ts"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

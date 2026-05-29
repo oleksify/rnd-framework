@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.9.0 — 2026-05-29
+
+### Add substance verification pass to evidence-locking gate
+
+Extends `hooks/evidence-locking-gate.sh` with a second validation pass that runs after the form pass (introduced in 5.7.0 / M6) finds no offender. The form pass verified that each evidence string had the structural markers of a real citation; it was explicitly form-only, with substance checking deferred to a future milestone. This release closes that gap.
+
+The substance pass extracts a **citable token** from each form-passing evidence item using a deterministic longest-span rule: backtick-quoted span wins over double-quoted span, which wins over the longest contiguous run of characters containing `/`. A path-like token has a trailing line/column reference (`file:42`, `file:42:7`) and one trailing sentence-punctuation character stripped before lookup, so a legitimate `path:line` citation resolves to its path core (`:` is itself a citation marker, so `path:line` is a form the gate accepts). Evidence items with no extractable token are exempt and never block. The extracted token is then looked up against a **union corpus** built once per hook invocation from two roots: (1) the active session directory (via `active_session_dir` from lib.sh) and (2) the git-tracked files under the project repo root (`git rev-parse --show-toplevel`). Both file paths and file contents are included in the corpus so that path-like tokens resolve against real on-disk artifacts. The first assertion entry whose token is absent from the corpus blocks the write with a `SUBSTANCE FAILURE` stderr message naming the assertion ID and the missing token, and emits exactly one `gate_fired` audit event — mirroring the form-failure path.
+
+Four directories are excluded from the corpus at both roots to preserve the information barrier and prevent tautological self-matches: `verifications/`, `builds/`, `briefs/`, `cleanup/`. Excluding `verifications/` means a token can never tautologically match the verdict-map text being written. Excluding the barrier dirs ensures barrier-protected content (self-assessments, briefs, cleanup reports) never reaches the gate's stderr or influences substance verdicts.
+
+The excluded-dir list is now a first-class schema knob: `x-substance-exclude-dirs` has been added to `lib/verdict-map-schema.json` alongside the existing `x-trivial-tokens`, `x-min-evidence-length`, and `x-evidence-citation-markers` fields. The hook sources it via the established jq-with-fallback idiom. The schema `description` has been updated to document both passes and drop the "form-only … deferred to a future milestone" language.
+
 ## 5.8.1 — 2026-05-28
 
 ### M8 re-sycophancy probe over the post-M2.5 schema-rich corpus (measurement)

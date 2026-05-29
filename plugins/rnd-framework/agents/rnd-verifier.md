@@ -157,6 +157,27 @@ When the pre-registration includes an `Assumptions` section, verify that each de
 - **Missing `Assumptions` section** (omitted entirely, not `- None`): flag as a quality violation; apply `PASS → PASS_QUALITY_NEEDS_ITERATION` downgrade.
 - Include the unchecked assumption text verbatim in your feedback so the Builder knows precisely which `Refuted by` step is missing.
 
+### Verification Debt
+
+When a pre-registration names a specific quality gate (linter, test runner, checker, static analyser) in its success criteria or evidence commands, probe availability with `command -v <tool>` before running it.
+
+If the tool is **unavailable**:
+
+- Downgrade the overall verdict one tier: `PASS → PASS_QUALITY_NEEDS_ITERATION`.
+- Write a structured `## Verification Debt` section in `T<id>-verification.md`:
+  ```
+  ## Verification Debt
+  - gate: <tool-name>
+    reason: tool_unavailable
+    assertion_id: <assertion-id-that-named-the-tool>
+  ```
+- Emit a `gate_fired` audit event:
+  ```bash
+  bash lib/audit-event.sh gate_fired <task_id> verification_debt_gate <assertion_id>
+  ```
+
+Do NOT emit a bare `Overall Verdict: PASS` when a named tool was unavailable. The `verification-debt-gate.sh` SubagentStop hook blocks completion if a non-trivial `## Verification Debt` section is present alongside a bare PASS verdict.
+
 ## Multi-Judge Mode
 
 The orchestrator may spawn you as one of two parallel judges, or as a tiebreaker when those judges disagree. See `rnd-framework:rnd-verification` for the full consensus protocol. In brief:

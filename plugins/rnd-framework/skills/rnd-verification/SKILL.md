@@ -83,6 +83,30 @@ For each assumption declared in the pre-registration's `Assumptions` section:
 
 **Enforcement decision:** unchecked assumptions are a NEEDS_ITERATION trigger, not a hard FAIL, because a missing refutation step is recoverable. Only a concrete spec defect (contradictory or impossible criteria) warrants FAIL.
 
+#### Verification Debt
+
+When a pre-registration names a specific quality gate (linter, test runner, checker, static analyser) in its success criteria or evidence commands, probe its availability before running it:
+
+1. Run `command -v <tool>` (or equivalent). If the tool is present, proceed normally.
+
+2. If the tool is **unavailable**, you MUST NOT emit a bare PASS resting on substitute evidence. Apply the following downgrade rule:
+
+   **Downgrade rule (one tier):**
+   - Downgrade the overall verdict: `PASS → PASS_QUALITY_NEEDS_ITERATION`. Do not downgrade below `PASS_QUALITY_NEEDS_ITERATION` for unavailability alone.
+   - Write a structured `## Verification Debt` section in `T<id>-verification.md`, naming each unavailable gate:
+     ```
+     ## Verification Debt
+     - gate: <tool-name>
+       reason: tool_unavailable
+       assertion_id: <assertion-id-that-named-the-tool>
+     ```
+   - Emit a `gate_fired` audit event via `lib/audit-event.sh`:
+     ```bash
+     bash lib/audit-event.sh gate_fired <task_id> verification_debt_gate <assertion_id>
+     ```
+
+3. The `verification-debt-gate.sh` SubagentStop hook enforces this: it fires if a `## Verification Debt` section is present AND the Overall Verdict is the bare `PASS`. A correctly-downgraded `PASS_QUALITY_NEEDS_ITERATION` does NOT trigger the gate.
+
 ### 2. Write Independent Experiment Tests
 Before reading Builder code or tests, write one experiment test per assertion ID using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<assertion-id>.test.<ext>` (e.g., `exp-M1.verifier.verdict-map-shape.test.ts`).
 

@@ -300,4 +300,55 @@ rc_old="$(resolve_commit_for_session "$RC_MAP" "$RC_REPO")"
 assert_eq "resolve: old mtime selects the earliest commit after it (root)" "$RC_ROOT_COMMIT" "$rc_old"
 
 # ---------------------------------------------------------------------------
+# 10. INGEST: rationale field passthrough
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- ingest: rationale field passthrough ---'
+
+RATIONALE_JSONL="${TMP_DIR}/rationale-probe.jsonl"
+
+# (a) record-file WITH rationale → emitted record carries the rationale text
+RATIONALE_INPUT="${TMP_DIR}/rationale-with.json"
+jq -n \
+  --arg ar "M1.fix.real-path" \
+  --arg sid "20260101-120000-aabbccdd" \
+  --arg sha "$commit_sha_val" \
+  --arg ab "pinned_commit" \
+  --arg nv "FAIL" \
+  --arg rat "The artifact no longer contains the expected function." \
+  '{assertion_ref: $ar, session_id: $sid, commit_sha: $sha, artifact_basis: $ab, new_verdict: $nv, rationale: $rat}' \
+  > "$RATIONALE_INPUT"
+
+bash "$HARNESS" ingest \
+  --jsonl-path "${RATIONALE_JSONL}" \
+  --record-file "${RATIONALE_INPUT}" \
+  2>/dev/null
+
+rat_record="$(tail -1 "${RATIONALE_JSONL}")"
+has_rationale="$(printf '%s' "$rat_record" | jq -r 'if has("rationale") then "true" else "false" end')"
+assert_eq "ingest: record has rationale field" "true" "$has_rationale"
+
+rationale_val="$(printf '%s' "$rat_record" | jq -r '.rationale')"
+assert_eq "ingest: rationale value passed through" "The artifact no longer contains the expected function." "$rationale_val"
+
+# (b) record-file WITHOUT rationale → emitted record has rationale:""
+RATIONALE_ABSENT="${TMP_DIR}/rationale-absent.json"
+jq -n \
+  --arg ar "M1.fix.bogus-path" \
+  --arg sid "20260101-120000-aabbccdd" \
+  --arg sha "$commit_sha_val" \
+  --arg ab "head_fallback" \
+  --arg nv "PASS" \
+  '{assertion_ref: $ar, session_id: $sid, commit_sha: $sha, artifact_basis: $ab, new_verdict: $nv}' \
+  > "$RATIONALE_ABSENT"
+
+bash "$HARNESS" ingest \
+  --jsonl-path "${RATIONALE_JSONL}" \
+  --record-file "${RATIONALE_ABSENT}" \
+  2>/dev/null
+
+absent_record="$(tail -1 "${RATIONALE_JSONL}")"
+absent_rationale="$(printf '%s' "$absent_record" | jq -r '.rationale')"
+assert_eq "ingest: absent rationale defaults to empty string" "" "$absent_rationale"
+
+# ---------------------------------------------------------------------------
 report

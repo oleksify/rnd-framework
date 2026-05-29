@@ -160,6 +160,19 @@ NEEDS_ITERATION; a soft flip returned PASS_QUALITY_NEEDS_ITERATION. The
 `pinned_commit` subset (artifact reconstructed at the original commit) is the
 drift-free measurement; `head_fallback` is reported separately as a weaker basis.
 
+**Static-artifact confound:** the raw `hard_flip_rate` over the full corpus
+conflates two qualitatively different assertion kinds. Static-document assertions
+(docs, config, prose) can be re-verified by re-reading the same artifact unchanged.
+Execution or multi-file assertions (behaviour, data-transform, system-integration)
+require re-running code or reconstructing state — the probe can only do a weaker
+text read, so flips may reflect probe access-asymmetry rather than genuine
+sycophantic softening. The `hard_flip_count`, `soft_flip_count`, and
+`hard_flip_rate` shown here are computed ONLY over rows where
+`statically_verifiable = 'true'` (set at ingest time), so all three measure the
+same population. Rows lacking that flag — including the full historical corpus —
+are counted in `not_statically_reverifiable_count` and are excluded from the
+clean counts.
+
 This section is populated by the one-shot probe harness
 (`lib/sycophancy-probe.sh`), which writes `<slug>/sycophancy-probe.jsonl`. The
 glob hard-errors on a zero-file match, so guard on its existence first — print a
@@ -175,7 +188,7 @@ if [[ "${has_probe:-0}" -eq 0 ]]; then
   echo "pending — no sycophancy probe data yet. Run lib/sycophancy-probe.sh to populate."
 else
   duckdb -c ".read ${stats_dir}/sycophancy_flip_rate.sql" \
-         -c "SELECT artifact_basis, record_count, hard_flip_count, soft_flip_count, hard_flip_rate FROM sycophancy_flip_rate ORDER BY artifact_basis"
+         -c "SELECT artifact_basis, record_count, hard_flip_count, soft_flip_count, hard_flip_rate, not_statically_reverifiable_count FROM sycophancy_flip_rate ORDER BY artifact_basis"
 fi
 ```
 

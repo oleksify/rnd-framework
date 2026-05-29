@@ -2,13 +2,15 @@
 # sycophancy-probe.sh — Harness for the sycophancy delta probe.
 #
 # RECORD SCHEMA (sycophancy-probe.jsonl):
-#   assertion_ref  string  — the verdict-map entry key (assertion id or legacy task key)
-#   session_id     string  — resolved from the verdict-map file path
-#   commit_sha     string  — resolved commit for the session (or HEAD as fallback)
-#   artifact_basis string  — "pinned_commit" | "head_fallback"
-#   new_verdict    string  — PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
-#   hard_flip      bool    — true when new_verdict ∈ {FAIL, NEEDS_ITERATION}
-#   soft_flip      bool    — true when new_verdict = PASS_QUALITY_NEEDS_ITERATION
+#   assertion_ref        string  — the verdict-map entry key (assertion id or legacy task key)
+#   session_id           string  — resolved from the verdict-map file path
+#   commit_sha           string  — resolved commit for the session (or HEAD as fallback)
+#   artifact_basis       string  — "pinned_commit" | "head_fallback"
+#   new_verdict          string  — PASS | PASS_QUALITY_NEEDS_ITERATION | NEEDS_ITERATION | FAIL
+#   hard_flip            bool    — true when new_verdict ∈ {FAIL, NEEDS_ITERATION}
+#   soft_flip            bool    — true when new_verdict = PASS_QUALITY_NEEDS_ITERATION
+#   rationale            string  — re-reviewer's feedback/reasoning text (default "" when absent)
+#   statically_verifiable string|null — "true"|"false" when set by caller; null for older records
 #
 # Subcommands:
 #   prepare --slug-root <dir> --repo-root <dir> --output-dir <dir>
@@ -319,20 +321,21 @@ cmd_ingest() {
   hard_flip="$(printf '%s' "$flip_fields" | cut -d' ' -f1)"
   soft_flip="$(printf '%s' "$flip_fields" | cut -d' ' -f2)"
 
-  # Build the record — exactly the locked schema, no extra fields.
-  # -c (compact) produces a single line, required for JSONL.
+  # Build the record — -c (compact) produces a single line, required for JSONL.
   jq -cn \
     --argjson rec   "$(cat "$record_file")" \
     --argjson hard  "$hard_flip" \
     --argjson soft  "$soft_flip" \
     '{
-      assertion_ref:  $rec.assertion_ref,
-      session_id:     $rec.session_id,
-      commit_sha:     $rec.commit_sha,
-      artifact_basis: $rec.artifact_basis,
-      new_verdict:    $rec.new_verdict,
-      hard_flip:      $hard,
-      soft_flip:      $soft
+      assertion_ref:        $rec.assertion_ref,
+      session_id:           $rec.session_id,
+      commit_sha:           $rec.commit_sha,
+      artifact_basis:       $rec.artifact_basis,
+      new_verdict:          $rec.new_verdict,
+      hard_flip:            $hard,
+      soft_flip:            $soft,
+      rationale:            ($rec.rationale // ""),
+      statically_verifiable: ($rec.statically_verifiable // null)
     }' >> "$jsonl_path"
 }
 

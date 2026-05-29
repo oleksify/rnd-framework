@@ -245,6 +245,28 @@ If the user selects "Approve plan and auto-continue", set **auto-continue mode =
 
 Once approved, create a `TaskCreate` entry for each task.
 
+### Phase 1 post-step: Assertion paraphrase hop
+
+Once Gate 1 has passed and the validation contract is final, decorrelate the Verifier's read of the assertions from the Planner's exact phrasing. This is a single intervention: spawn ONE paraphraser that rewords the natural-language framing of every assertion into alternate wording with identical meaning, so that when the Verifier later reads its assertions it is not anchored on the literal phrasing the Planner chose. The paraphrased framing is consumed by the Phase 3 Verifier spawn (below), never authoritative over the exact assertions.
+
+**Spawn ONE paraphraser agent.** Slice every `### <assertion-id>` block out of `$RND_DIR/validation-contract.md` (use the same slicing convention documented in Phase 2 below — each block runs from its heading line up to but not including the next `###` heading) and concatenate ALL of them, then paste the concatenated blocks into the prompt. The agent reads no file — the orchestrator passes the assertion text in the prompt — and it writes the whole `paraphrased-assertions.md` once over all assertions.
+
+```
+Agent({
+  description: "Paraphrase pre-registered assertions",
+  subagent_type: "rnd-framework:rnd-assertion-paraphraser",
+  mode: "acceptEdits",
+  prompt: "Output path (write exactly this one file): $RND_DIR/verifications/paraphrased-assertions.md\n\nAssertion blocks to paraphrase (one ### <assertion-id> heading each — reword the prose, preserve every literal verbatim):\n<all ### <assertion-id> blocks sliced and concatenated from $RND_DIR/validation-contract.md>"
+})
+```
+
+**After the paraphraser returns — consumption-gated emit (FM2 defense).** Do NOT emit the `paraphrase_injected` event yet. The event is keyed to *consumption* of the paraphrased framing by the Verifier, NOT to the file being written. Two things must both hold before the event is emitted, and both are confirmed later in Phase 3:
+
+1. The file exists and is non-empty — verified by an absolute-path `test -s "$RND_DIR/verifications/paraphrased-assertions.md"`.
+2. Its content has been placed into the Phase 3 Verifier spawn prompt.
+
+The emit step itself lives in Phase 3, immediately after the Verifier spawn prompt is constructed (see "Consumption-gated emit" there). Emitting merely because the paraphraser wrote the file is wrong — if the file is empty, or if the content never reaches the Verifier prompt, the event must NOT fire.
+
 ## Phase 2: Build (per wave)
 
 **Before each wave:** Scan `$RND_DIR/builds/` and `$RND_DIR/verifications/` to confirm which tasks are complete. Skip tasks that already have build manifests or verification reports.
@@ -323,14 +345,30 @@ Valid verdict values per assertion entry: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`
 
 **Spawn a single Verifier agent per wave.** HIGH criticality is handled via the per-agent dispatch policy (model boost to opus/xhigh) — there is no parallel-judge mode.
 
+**Inline the paraphrased framing (additive).** When constructing the Verifier prompt, slice the same `### <assertion-id>` blocks from `$RND_DIR/verifications/paraphrased-assertions.md` (the Phase 1 post-step wrote one per assertion) for the assertions in this wave, and append them AFTER the exact assertions under a clear label. The exact assertions come first and remain authoritative; the paraphrased framing is decorrelated wording for the same claims, read IN ADDITION TO — never INSTEAD OF — the exact assertions, and never overrides them. Use the `${PARAPHRASED_BLOCK}` slot below for that labelled section.
+
 ```
 Agent({
   description: "Verify wave <N> tasks",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<for each task in wave, slice validation-contract.md by that task's assertionIds from features.json and paste the concatenated assertion blocks here>\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Wave: <N>\nRND_DIR: <path>\nTasks in wave: T<id1>, T<id2>, ...\nAll task pre-registrations:\n<for each task in wave, slice validation-contract.md by that task's assertionIds from features.json and paste the concatenated assertion blocks here>\n\nParaphrased framing (decorrelated wording, same meaning — read IN ADDITION TO the exact assertions above; the exact assertion text above remains authoritative and the paraphrase never overrides or replaces it):\n${PARAPHRASED_BLOCK}\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
+
+Where `${PARAPHRASED_BLOCK}` is the concatenation of the paraphrased `### <assertion-id>` blocks for this wave's assertions, sliced from `$RND_DIR/verifications/paraphrased-assertions.md`.
+
+**Consumption-gated emit (FM2 defense).** This is where the `paraphrase_injected` event fires — keyed to consumption, NOT to the earlier file write. Emit ONLY after BOTH of the following hold: (1) the absolute-path existence check below succeeds, AND (2) `${PARAPHRASED_BLOCK}` was actually placed into the Verifier spawn prompt above. Do NOT emit the event merely because the paraphraser wrote the file in Phase 1.
+
+```bash
+if test -s "$RND_DIR/verifications/paraphrased-assertions.md"; then
+  # Only reached when the file is non-empty AND its blocks were inlined into the
+  # Verifier prompt above. n_assertions = count of ### <assertion-id> blocks inlined.
+  "${CLAUDE_PLUGIN_ROOT}/lib/paraphrase-emit.sh" "<n_assertions>"
+fi
+```
+
+If the file is missing or empty, skip the emit and proceed — the Verifier still has the exact assertions, which are authoritative; the paraphrase hop is a best-effort decorrelation, not a hard dependency.
 
 The Verifier writes a `T<id>-pass-receipt.json` for PASS tasks, a full `T<id>-verification.md` prose report for FAIL/NEEDS_ITERATION tasks (auto-materialized), and saves the aggregate verdict map to `$RND_DIR/verifications/wave-<N>-verdict-map.json`. PASS_QUALITY_NEEDS_ITERATION tasks get both.
 

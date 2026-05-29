@@ -304,7 +304,7 @@ All pipeline agents are spawned with `mode: "acceptEdits"`:
 
 ### Do Not Spawn the `Explore` Subagent
 
-During rnd phases (Phase 0 discovery, Phase 1 planning, Phase 5 re-plan), the `Explore` subagent has been observed to return with `0 tool uses` — no work performed, no findings, the spawn slot wasted. When the orchestrator or a pipeline agent needs to search the codebase, call `Glob`, `Grep`, and `Read` **inline** in the current context. Reserve subagent spawns for pipeline roles (`rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-reality-auditor`, `rnd-cleanup`, `rnd-polisher`, `rnd-integrator`, `rnd-debugger`, `rnd-data-scientist`, `rnd-premortem-imaginer`, `rnd-replan-differ`).
+During rnd phases (Phase 0 discovery, Phase 1 planning, Phase 5 re-plan), the `Explore` subagent has been observed to return with `0 tool uses` — no work performed, no findings, the spawn slot wasted. When the orchestrator or a pipeline agent needs to search the codebase, call `Glob`, `Grep`, and `Read` **inline** in the current context. Reserve subagent spawns for pipeline roles (`rnd-planner`, `rnd-builder`, `rnd-verifier`, `rnd-reality-auditor`, `rnd-cleanup`, `rnd-polisher`, `rnd-integrator`, `rnd-debugger`, `rnd-data-scientist`, `rnd-premortem-imaginer`, `rnd-replan-differ`, `rnd-assertion-paraphraser`).
 
 ### Blocking Behavior
 

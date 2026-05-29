@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 9 specialized agents with structural isolation enforce the information barrier at the context-window level.
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 12 specialized agents (9 pipeline-phase + 3 helpers) with structural isolation enforce the information barrier at the context-window level.
 
 The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
@@ -15,7 +15,7 @@ lib/plugin-dir-base.sh                  # Canonical shared artifact-dir logic (e
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json          # Plugin manifest
-├── agents/                             # 11 agents (9 pipeline-phase + 2 helpers: premortem fan-out + replan-differ)
+├── agents/                             # 12 agents (9 pipeline-phase + 3 helpers: premortem fan-out + replan-differ + assertion paraphraser)
 ├── commands/                           # /rnd-framework:* slash commands
 ├── skills/                             # One dir per skill, each with SKILL.md
 ├── output-styles/                      # scientific, rigorous, pipeline
@@ -48,6 +48,7 @@ plugins/rnd-framework/
 │   ├── premortem-emit.sh               # Emits the premortem_generated event {event,n,framings[],failure_mode_count,timestamp}; n derived from the framings CSV (separate from audit-event.sh because the payload schema differs)
 │   ├── outside-view.sh                 # Outside-view injector: queries stats/per_shape_fail_rate via duckdb, applies the N_THIN_CORPUS=5 gate, renders the `## Outside View (Reference Class)` block (header + framing-constraint paragraph + per-shape rows when n_total≥5, or `Mode: thin-corpus`/`Mode: unavailable` sentinels otherwise), writes $RND_DIR/outside-view.md and stdout. Invoked from commands/rnd-start.md Phase 1 between premortem fan-out and Planner spawn.
 │   ├── outside-view-emit.sh            # Emits the outside_view_injected event {event,mode,n_total,shapes,framing_constraint_emitted,timestamp}; separate from audit-event.sh because the payload schema differs (mirrors the premortem-emit.sh pattern)
+│   ├── paraphrase-emit.sh              # Appends a paraphrase_injected event {event,n_assertions,timestamp} to $RND_DIR/audit.jsonl; exits 1 on missing RND_DIR, missing arg, or non-integer arg; invoked consumption-gated in rnd-start.md Phase 3 (only after the paraphrased blocks have been inlined into the Verifier prompt)
 │   ├── replan-emit.sh                  # Re-plan lifecycle emitter: subcommands `started <iteration> <archive_path>` → replan_started event; `diff_emitted <task_changes_count> <assertion_changes_count>` → replan_diff_emitted event; both append to $RND_DIR/audit.jsonl
 │   ├── replan-archive.sh               # Re-plan archive helper: moves the four canonical plan artifacts (protocol.md, validation-contract.md, features.json, AGENTS.md) into $RND_DIR/prior-plans/replan-<k>/ where <k> is the next-available counter; prints archive path on stdout. Invoked by commands/rnd-start.md Phase 5 re-plan flow before the fresh Planner spawn.
 │   ├── audit-scan.sh                   # Subcommands: `verdict_history <task>` (prints FLIP_DETECTED on PASS/FAIL/PASS or FAIL/PASS/FAIL)
@@ -62,7 +63,7 @@ plugins/rnd-framework/
 
 ### Execution Model
 
-Nine specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
+Twelve specialized agents (9 pipeline-phase + 3 helpers) handle pipeline work in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|

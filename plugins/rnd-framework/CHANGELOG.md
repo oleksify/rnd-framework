@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.11.0 — 2026-05-29
+
+### Add assertion paraphrase hop: a Write-only haiku paraphraser that decorrelates the Verifier's read from the Planner's exact phrasing
+
+Adds agents/rnd-assertion-paraphraser.md (tools: Write, model: haiku, no skills), a Write-only agent that receives all validation-contract assertion blocks in its prompt and writes a single paraphrased-assertions.md file with reworded natural-language framing — every literal, path, identifier, command, and numeric value is preserved verbatim; only the surrounding prose is reworded. Adds lib/paraphrase-emit.sh, which appends a paraphrase_injected event {event, n_assertions, timestamp} to $RND_DIR/audit.jsonl, exiting 1 on missing RND_DIR, missing argument, or non-integer argument. Wires the hop into commands/rnd-start.md as a Phase 1 post-step (after Gate 1 passes) that spawns the paraphraser with all assertion blocks inline; the Verifier spawn in Phase 3 reads the paraphrased framing as an additive decorrelated view (exact assertions remain authoritative and come first); the paraphrase_injected event is consumption-gated — it fires in Phase 3 only when the file is non-empty AND its blocks have been inlined into the Verifier prompt, guarded by test -s. Adds a one-line note to agents/rnd-verifier.md describing the additive paraphrase context it receives. M11 is the single behavior-changing intervention in this milestone; the per-shape FAIL-rate delta vs the M9 baseline is a deferred re-measurement pending at least 10 paraphrase-on pipeline sessions.
+
 ## 5.10.0 — 2026-05-29
 
 ### Add the drift-watch stats view and rnd-stats Section 7 tracking iteration-count and replan-frequency trends over rolling 10-session windows

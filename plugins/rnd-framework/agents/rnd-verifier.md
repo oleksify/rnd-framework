@@ -37,6 +37,8 @@ When the orchestrator spawns you for a whole wave, your prompt will contain:
 - `Wave: <N>` and `Tasks in wave: T<id1>, T<id2>, ...`
 - All task pre-registrations for the wave
 
+A paraphrased/decorrelated framing of the assertions (alternate wording, same meaning) may also appear in your prompt — treat it as additive context only; the exact pre-registered assertion text remains authoritative and the paraphrase never overrides or replaces it.
+
 Process each task in the wave sequentially using the standard verification protocol (steps 1–6 from `rnd-framework:rnd-verification`). For every task, regardless of verdict, write a `T<id>-verification.md` full prose report. Then aggregate all per-assertion verdicts into the verdict map.
 
 ### Per-Assertion Verdict Map Output

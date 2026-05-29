@@ -178,3 +178,40 @@ else
          -c "SELECT artifact_basis, record_count, hard_flip_count, soft_flip_count, hard_flip_rate FROM sycophancy_flip_rate ORDER BY artifact_basis"
 fi
 ```
+
+### Section 7 — Drift watch
+
+Rolling-window linear regression over per-session iteration load (`iter_metric`) and
+replan frequency (`replan_count`), ordered by session ordinal within each segment.
+Slopes are computed over a 10-session window (`window_n`); a full window requires
+exactly 10 sessions (`window_n = 10`). Falling `iter_slope` and `replan_slope` over
+time indicate the pipeline is converging — tasks and waves are clearing with fewer
+cycles. The signal to watch for is a divergence: `iter_slope` and `replan_slope`
+falling (or holding near zero) while the quality signal in Section 1 (per-shape FAIL
+rate) and Section 4 (FAIL-rate drift) does NOT improve in proportion — that pattern
+is the success-induced verifier-softening signal, where the verifier grades more
+leniently as familiarity grows rather than because the work genuinely improved.
+
+The audit glob (`*/**/audit.jsonl`) hard-errors on a zero-file match — guard its
+existence before invoking the view, mirroring the Section 6 probe guard.
+
+```bash
+echo ""
+echo "=== Drift watch ==="
+has_audit=$(duckdb -noheader -list -c "SELECT count(*) FROM glob('*/**/audit.jsonl')" 2>/dev/null)
+
+if [[ "${has_audit:-0}" -eq 0 ]]; then
+  echo "pending — N=0"
+else
+  max_window=$(duckdb -noheader -list \
+    -c ".read ${stats_dir}/drift_watch.sql" \
+    -c "SELECT COALESCE(MAX(window_n), 0) FROM drift_watch" \
+    2>/dev/null)
+  if [[ "${max_window:-0}" -lt 10 ]]; then
+    echo "pending — N=${max_window:-0}"
+  else
+    duckdb -c ".read ${stats_dir}/drift_watch.sql" \
+           -c "SELECT segment, session_ordinal, session_id, iter_metric, replan_count, iter_slope, replan_slope, window_n FROM drift_watch ORDER BY segment, session_ordinal"
+  fi
+fi
+```

@@ -5,3 +5,10 @@
 {"taskId":"M1.T-e.wiring","sessionId":"s-df-2","verdict":"PASS","criticality":"NORMAL","iterationCount":1,"timestamp":"2026-05-10T15:10:00Z","falseVerdictFlag":null}
 {"taskId":"M1.T-b.crud","sessionId":"s-df-1","correction":"FALSE_PASS","reason":"manual ground-truth correction; must be excluded from verdict-rate aggregation","timestamp":"2026-05-02T10:00:00Z"}
 {"taskId":"M0.T-h.setup","sessionId":"s-df-hist","verdict":"PASS","criticality":"LOW","iterationCount":0,"timestamp":"2026-03-15T08:30:00Z","falseVerdictFlag":null}
+{"taskId":"M3.T-01.drift","sessionId":"s-df-3","verdict":"PASS","criticality":"NORMAL","iterationCount":8,"timestamp":"2026-05-15T12:00:00Z"}
+{"taskId":"M3.T-02.drift","session_id":"s-df-4","verdict":"PASS","criticality":"NORMAL","iterationCount":7,"timestamp":"2026-05-17T12:00:00Z"}
+{"taskId":"M3.T-03.drift","session_id":"s-df-5","verdict":"PASS","criticality":"NORMAL","iterationCount":6,"timestamp":"2026-05-18T12:00:00Z"}
+{"taskId":"M3.T-04.drift","sessionId":"s-df-6","verdict":"PASS","criticality":"NORMAL","iterationCount":5,"timestamp":"2026-05-20T12:00:00Z"}
+{"taskId":"M3.T-05.drift","session_id":"s-df-7","verdict":"PASS","criticality":"NORMAL","iterationCount":3,"timestamp":"2026-05-22T12:00:00Z"}
+{"taskId":"M3.T-06.drift","sessionId":"s-df-8","verdict":"PASS","criticality":"NORMAL","iterationCount":2,"timestamp":"2026-05-24T12:00:00Z"}
+{"taskId":"M3.T-07.drift","session_id":"s-df-9","verdict":"PASS","criticality":"NORMAL","iterationCount":1,"timestamp":"2026-05-26T12:00:00Z"}

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.10.0 — 2026-05-29
+
+### Add the drift-watch stats view and rnd-stats Section 7 tracking iteration-count and replan-frequency trends over rolling 10-session windows
+
+Adds `lib/stats/drift_watch.sql`, a read-only DuckDB view computing per-segment rolling 10-session regr_slope of the per-session iteration metric and `replan_started` frequency. The view uses `session_id_from_path` to join replan events from the audit log, COALESCE-to-0 for sessions with no replan events, and emits float NaN for windows with fewer than the minimum fill. Adds a guarded Section 7 in `commands/rnd-stats.md` that queries the new view with an audit-glob + thin-window pending guard (`N=<k>` indicator), frames diverging slopes as pointing at Sections 1 and 4 for diagnosis, and mirrors the Section 6 self-guard pattern (a `glob()` existence check before the view runs, since the view raises an IO error on a zero-audit-file root). Extends `lib/stats/fixtures/` in place (additional dogfood sessions plus `replan_started` audit events, mixing snake_case and camelCase `session_id` to exercise the COALESCE) and documents the reproduced View 7 table in `lib/stats/fixtures/EXPECTED.md`, and adds `tests/drift-watch-fixture.test.sh` as a reproduction test covering the COALESCE-to-0 and float-nan-for-underfilled-window invariants. This is a MEASUREMENT milestone (M10) — instrumentation only; no agent, schema, or producer change.
+
 ## 5.9.0 — 2026-05-29
 
 ### Add substance verification pass to evidence-locking gate

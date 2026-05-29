@@ -28,6 +28,7 @@ duckdb -c ".read ../iteration_reasons.sql"         -c "SELECT * FROM iteration_r
 duckdb -c ".read ../self_fail_vs_verdict_gap.sql"  -c "SELECT * FROM self_fail_vs_verdict_gap ORDER BY segment"
 duckdb -c ".read ../fail_rate_over_time.sql"       -c "SELECT * FROM fail_rate_over_time ORDER BY segment, week"
 duckdb -c ".read ../backfill.sql"                  -c "SELECT * FROM backfill ORDER BY segment, task_id"
+duckdb -c ".read ../drift_watch.sql"               -c "SELECT segment, session_ordinal, session_id, iter_metric, replan_count, iter_slope, replan_slope, window_n FROM drift_watch ORDER BY segment, session_ordinal"
 ```
 
 The audit views glob `*/**/audit.jsonl` (a single recursive glob that matches
@@ -45,10 +46,15 @@ Two source slugs exercise the segment dimension, each laid out like a real
 on-disk layouts):
 
 - `claude-130cb64f` — the dogfood slug (in the inline allowlist) → segment `dogfood`
-  - `claude-130cb64f/calibration.jsonl` — its verdicts (incl. the correction record)
+  - `claude-130cb64f/calibration.jsonl` — its verdicts (incl. the correction record and 7 drift-watch sessions)
   - `claude-130cb64f/sessions/s-df-1/audit.jsonl` — legacy layout
   - `claude-130cb64f/branches/main/sessions/s-df-2/audit.jsonl` — branch-partitioned layout
   - `claude-130cb64f/sessions/s-df-hist/audit.jsonl` — legacy layout (historical)
+  - `claude-130cb64f/sessions/s-df-3/audit.jsonl` — legacy layout (2 replan_started events; no shape/self-assessment facts)
+  - `claude-130cb64f/branches/main/sessions/s-df-4/audit.jsonl` — branch-partitioned layout (2 replan_started events)
+  - `claude-130cb64f/sessions/s-df-5/audit.jsonl` — legacy layout (1 replan_started event)
+  - `claude-130cb64f/branches/main/sessions/s-df-6/audit.jsonl` — branch-partitioned layout (1 replan_started event)
+  - sessions s-df-7, s-df-8, s-df-9 — calibration records only; no audit.jsonl (replan_count = 0)
 - `acme-widgets-7f3a1b2c` — a downstream feature project (not in the allowlist) → segment `feature`
   - `acme-widgets-7f3a1b2c/calibration.jsonl` — its verdicts
   - `acme-widgets-7f3a1b2c/branches/release/v2/sessions/s-ft-1/audit.jsonl` — branch-partitioned layout with a SLASH in the branch name (`release/v2`), proving the recursive glob and first-component slug extraction handle nested branch dirs
@@ -80,6 +86,18 @@ Historical tasks (no shape/confidence in audit; backfill view returns NULL for t
 |---------------|-------------------------|---------|-------------------------|-------|----------------------|------------------|----------------|-----------------------|
 | M0.T-h.setup  | claude-130cb64f         | dogfood | s-df-hist (legacy)      | —     | —                    | PASS             | 0              | 2026-03-15T08:30:00Z  |
 | M0.T-i.setup  | acme-widgets-7f3a1b2c   | feature | s-ft-hist (legacy)      | —     | —                    | FAIL             | 2              | 2026-03-20T10:30:00Z  |
+
+Drift-watch sessions (calibration records only; no shape/self-assessment events in audit so Views 1–4 are unaffected). Sessions s-df-3/s-df-4/s-df-5/s-df-6 carry `replan_started` events; s-df-7/s-df-8/s-df-9 have no audit.jsonl (replan_count = 0 via COALESCE). `session_id` spelling is mixed intentionally — some records use camelCase `sessionId`, others use snake_case `session_id` — to exercise the COALESCE in drift_watch.sql:
+
+| task_id       | slug            | segment | session  | session_id key | iterationCount | replan_count | verdict timestamp    |
+|---------------|-----------------|---------|----------|----------------|----------------|--------------|----------------------|
+| M3.T-01.drift | claude-130cb64f | dogfood | s-df-3   | sessionId      | 8              | 2            | 2026-05-15T12:00:00Z |
+| M3.T-02.drift | claude-130cb64f | dogfood | s-df-4   | session_id     | 7              | 2            | 2026-05-17T12:00:00Z |
+| M3.T-03.drift | claude-130cb64f | dogfood | s-df-5   | session_id     | 6              | 1            | 2026-05-18T12:00:00Z |
+| M3.T-04.drift | claude-130cb64f | dogfood | s-df-6   | sessionId      | 5              | 1            | 2026-05-20T12:00:00Z |
+| M3.T-05.drift | claude-130cb64f | dogfood | s-df-7   | session_id     | 3              | 0            | 2026-05-22T12:00:00Z |
+| M3.T-06.drift | claude-130cb64f | dogfood | s-df-8   | sessionId      | 2              | 0            | 2026-05-24T12:00:00Z |
+| M3.T-07.drift | claude-130cb64f | dogfood | s-df-9   | session_id     | 1              | 0            | 2026-05-26T12:00:00Z |
 
 One **correction record** (`M1.T-b.crud`, `correction: FALSE_PASS`, no `verdict`
 field) is present in `claude-130cb64f/calibration.jsonl` and MUST be excluded
@@ -133,12 +151,20 @@ records up to and including the first PASS in chronological order.
 Historical tasks contribute to the histogram: `M0.T-h.setup` (dogfood, count=0)
 adds to dogfood/0; `M0.T-i.setup` (feature, count=2) adds a new feature/2 bucket.
 
+The 7 drift-watch sessions (M3.T-01 through M3.T-07) also contribute to the
+dogfood histogram with iterationCount values 8, 7, 6, 5, 3, 2, 1. These extend
+the histogram into high-count buckets.
+
 | segment | iteration_count | task_count |
 |---------|-----------------|------------|
 | dogfood | 0               | 2          |
-| dogfood | 1               | 2          |
-| dogfood | 2               | 1          |
-| dogfood | 3               | 1          |
+| dogfood | 1               | 3          |
+| dogfood | 2               | 2          |
+| dogfood | 3               | 2          |
+| dogfood | 5               | 1          |
+| dogfood | 6               | 1          |
+| dogfood | 7               | 1          |
+| dogfood | 8               | 1          |
 | feature | 0               | 1          |
 | feature | 1               | 1          |
 | feature | 2               | 1          |
@@ -192,12 +218,18 @@ by segment. Historical tasks add two new week buckets:
 - Week `2026-03-16` (Monday before 2026-03-20): feature `M0.T-i.setup` (FAIL)
 - Week `2026-04-27` contains the 2026-05-01 verdicts.
 - Week `2026-05-04` contains the 2026-05-05 (feature) and 2026-05-10 (dogfood) verdicts.
+- Week `2026-05-11` contains the 2026-05-15 and 2026-05-17 drift-watch verdicts (s-df-3, s-df-4).
+- Week `2026-05-18` contains the 2026-05-18, 2026-05-20, 2026-05-22, and 2026-05-24 drift-watch verdicts (s-df-5, s-df-6, s-df-7, s-df-8).
+- Week `2026-05-25` contains the 2026-05-26 drift-watch verdict (s-df-9).
 
 | segment | week                | task_count | fail_count | fail_rate |
 |---------|---------------------|------------|------------|-----------|
 | dogfood | 2026-03-09 00:00:00 | 1          | 0          | 0.0       |
 | dogfood | 2026-04-27 00:00:00 | 3          | 1          | 0.3333    |
 | dogfood | 2026-05-04 00:00:00 | 2          | 1          | 0.5       |
+| dogfood | 2026-05-11 00:00:00 | 2          | 0          | 0.0       |
+| dogfood | 2026-05-18 00:00:00 | 4          | 0          | 0.0       |
+| dogfood | 2026-05-25 00:00:00 | 1          | 0          | 0.0       |
 | feature | 2026-03-16 00:00:00 | 1          | 1          | 1.0       |
 | feature | 2026-05-04 00:00:00 | 2          | 0          | 0.0       |
 
@@ -229,6 +261,13 @@ Full expected output (`ORDER BY segment, task_id`):
 | M1.T-c.docs   | s-df-1     | PASS    | 1               | LOW         | dogfood | NULL  | NULL       | iter-pass      |
 | M1.T-d.schema | s-df-2     | FAIL    | 3               | HIGH        | dogfood | NULL  | NULL       | abandoned      |
 | M1.T-e.wiring | s-df-2     | PASS    | 1               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-01.drift | s-df-3     | PASS    | 8               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-02.drift | NULL       | PASS    | 7               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-03.drift | NULL       | PASS    | 6               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-04.drift | s-df-6     | PASS    | 5               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-05.drift | NULL       | PASS    | 3               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-06.drift | s-df-8     | PASS    | 2               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
+| M3.T-07.drift | NULL       | PASS    | 1               | NORMAL      | dogfood | NULL  | NULL       | iter-pass      |
 | M0.T-i.setup  | s-ft-hist  | FAIL    | 2               | NORMAL      | feature | NULL  | NULL       | abandoned      |
 | M2.T-f.crud   | s-ft-1     | PASS    | 0               | NORMAL      | feature | NULL  | NULL       | first-try-pass |
 | M2.T-g.docs   | s-ft-1     | PASS    | 1               | LOW         | feature | NULL  | NULL       | iter-pass      |
@@ -236,6 +275,55 @@ Full expected output (`ORDER BY segment, task_id`):
 Historical records are `M0.T-h.setup` (dogfood) and `M0.T-i.setup` (feature).
 Both have `shape = NULL` and `confidence = NULL` because their sessions contain
 no planner-emitted shape/confidence audit events.
+
+The 7 drift-watch tasks (M3.T-01 through M3.T-07) also have `shape = NULL` and
+`confidence = NULL` for the same reason — their sessions carry only calibration
+and replan_started records, no planner-emitted shape/confidence events.
+`session_id` is NULL for the four records that use the snake_case `session_id`
+key in calibration.jsonl: `backfill.sql` reads only `$.sessionId` (camelCase),
+so the snake_case records produce NULL in this column. This is expected behavior
+— only `drift_watch.sql` COALESCEs both spellings.
+
+---
+
+## View 7 — `drift_watch`
+
+Per-session iteration load and replan frequency, with 10-row rolling linear
+regression slopes (`regr_slope` over `ROWS BETWEEN 9 PRECEDING AND CURRENT ROW`).
+`iter_slope` and `replan_slope` are `nan` (not NULL) when the window contains
+fewer than 2 rows; they are non-NULL, non-nan starting from the second row where
+two distinct x values exist.
+
+The dogfood segment has 10 sessions (s-df-hist + s-df-1 + s-df-2 + s-df-3
+through s-df-9) so `window_n = 10` for the last row (s-df-9, ordinal 10), which
+is the first row with a full-window slope. The `iter_metric` values peak at
+ordinal 4 (s-df-3, iter=8) then fall through ordinal 10 (s-df-9, iter=1),
+producing a negative `iter_slope` at ordinal 10. Similarly, `replan_count` rises
+at ordinals 4–5 then falls to 0, producing a negative `replan_slope` at
+ordinal 10.
+
+The feature segment has 2 sessions (s-ft-hist and s-ft-1) and therefore has no
+full-window row (max window_n = 2).
+
+Sessions s-df-4, s-df-5, s-df-7, s-df-9 use snake_case `session_id` in their
+calibration records. `drift_watch.sql` COALESCEs both spellings, so these
+sessions are identified correctly and their `session_id` values appear in the
+output as expected.
+
+| segment | session_ordinal | session_id | iter_metric | replan_count |     iter_slope      |     replan_slope      | window_n |
+|---------|----------------:|------------|------------:|-------------:|--------------------:|----------------------:|---------:|
+| dogfood | 1               | s-df-hist  | 0.0         | 0            | nan                 | nan                   | 1        |
+| dogfood | 2               | s-df-1     | 3.0         | 0            | 3.0                 | 0.0                   | 2        |
+| dogfood | 3               | s-df-2     | 4.0         | 0            | 2.0                 | 0.0                   | 3        |
+| dogfood | 4               | s-df-3     | 8.0         | 2            | 2.5                 | 0.6                   | 4        |
+| dogfood | 5               | s-df-4     | 7.0         | 2            | 1.9                 | 0.6                   | 5        |
+| dogfood | 6               | s-df-5     | 6.0         | 1            | 1.3142857142857145  | 0.37142857142857144   | 6        |
+| dogfood | 7               | s-df-6     | 5.0         | 1            | 0.8571428571428571  | 0.25                  | 7        |
+| dogfood | 8               | s-df-7     | 3.0         | 0            | 0.42857142857142855 | 0.09523809523809523   | 8        |
+| dogfood | 9               | s-df-8     | 2.0         | 0            | 0.13333333333333333 | 0.01666666666666667   | 9        |
+| dogfood | 10              | s-df-9     | 1.0         | 0            | -0.0787878787878788 | -0.024242424242424235 | 10       |
+| feature | 1               | s-ft-hist  | 2.0         | 0            | nan                 | nan                   | 1        |
+| feature | 2               | s-ft-1     | 1.0         | 0            | -1.0                | 0.0                   | 2        |
 
 ---
 

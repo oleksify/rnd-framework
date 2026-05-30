@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.15.0 — 2026-05-30
+
+### Add post-review finding categories and the theory-loss-share readout (Roadmap 2 M2 measurement)
+
+Roadmap 2 M2 (hold the theory), measurement-first per the M12 instrument-then-decide discipline. Before building any theory-holder role, make the signal visible: does the post-SHIP review actually surface architecture/conceptual-integrity issues that local verification misses, or only local nitpicks? Adds x-review-category-vocab to lib/event-schema.json (the seven code-review categories — architecture, security, correctness, testing, kiss, style, pipeline-hygiene — SSOT-d as a top-level array mirroring x-shape-vocab). lib/post-review-writer.sh gains an optional --category flag (finding mode) validated against the vocab by reusing the --clean-shape validation pattern (invalid exits non-zero with no record) and records a category field; when absent the field is omitted, backward-compatible with pre-M2 rows. Phase 8 in commands/rnd-start.md passes --category per finding from the seven-category review report. New lib/stats/post_review_categories.sql mirrors post_review_findings.sql idiom-for-idiom (raw-line read_csv, json_valid, TRY, dogfood_slugs CTE, slug regexp, CREATE OR REPLACE VIEW), counts review_found=true rows per (segment,category), and COALESCEs a null/absent category to the uncategorized bucket so legacy rows never drop or error. rnd-stats Section 9 surfaces the per-category breakdown and the theory-loss share = the architecture-plus-kiss fraction of categorized findings (uncategorized excluded from the denominator, NULLIF-guarded against divide-by-zero). The decision is deferred: once enough Phase-8-categorized sessions accrue, a high architecture-plus-kiss share justifies building the theory-holder (M3); a low share argues to cancel it per the M12 precedent. Extends the stats fixtures and EXPECTED.md and adds tests/post-review-categories-fixture.test.sh; validate.sh (373 checks) and run-tests.sh stay green. Measurement-only, additive, no agent behavior change.
+
 ## 5.14.1 — 2026-05-30
 
 ### Fix post-review attribution: deterministic co-owned-file ownership and writer-derived verifier_said_PASS

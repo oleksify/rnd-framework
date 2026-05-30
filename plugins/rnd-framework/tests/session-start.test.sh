@@ -30,6 +30,44 @@ run_session_start() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: run session-start with multiple env vars set
+# ---------------------------------------------------------------------------
+run_session_start_env() {
+  local -a env_args=("$@")
+  HOOK_EXIT=0
+  local tmp_out tmp_err
+  tmp_out="$(mktemp)"
+  tmp_err="$(mktemp)"
+  env "${env_args[@]}" "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+  HOOK_STDOUT="$(cat "$tmp_out")"
+  HOOK_STDERR="$(cat "$tmp_err")"
+  rm -f "$tmp_out" "$tmp_err"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: build an active-session fixture in a tmp config dir.
+# Sets up:
+#   ${tmp_config}/.rnd/.active-base-dir  → base_dir
+#   ${base_dir}/.current-session         → session_id
+#   ${base_dir}/sessions/${session_id}/  (directory)
+# Prints the session dir path.
+# ---------------------------------------------------------------------------
+make_active_fixture() {
+  local tmp_config="$1"
+  local base_dir="${tmp_config}/.rnd/testslug/branches/main"
+  local session_id="20260101-120000-abcd1234"
+  local session_dir="${base_dir}/sessions/${session_id}"
+
+  mkdir -p "$session_dir"
+  printf '%s' "$session_id" > "${base_dir}/.current-session"
+
+  mkdir -p "${tmp_config}/.rnd"
+  printf '%s' "$base_dir" > "${tmp_config}/.rnd/.active-base-dir"
+
+  printf '%s' "$session_dir"
+}
+
+# ---------------------------------------------------------------------------
 # outputs SessionStart JSON
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- session-start: basic output ---'
@@ -86,26 +124,252 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# includes RND_DIR when a session is active
+# Active session: full block with active RND_DIR
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- session-start: RND_DIR in output ---'
+printf '\n%s\n' '--- session-start: active session (full block) ---'
 
-# Create a temporary config dir with an active session to exercise the RND_DIR path
-tmp_config="$(mktemp -d)"
-tmp_base="${tmp_config}/.rnd/claude-testslug"
-mkdir -p "${tmp_base}/sessions/20260101-120000-test"
-printf '20260101-120000-test' > "${tmp_base}/.current-session"
+tmp_config_active="$(mktemp -d)"
+session_dir_active="$(make_active_fixture "$tmp_config_active")"
 
-run_session_start "CLAUDE_CONFIG_DIR=${tmp_config}"
-assert_exit_code "session-start with active session exits 0" 0
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_active}"
+assert_exit_code "active session: exits 0" 0
 
-ctx_with_rnd="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
-assert_contains "session-start context includes RND_DIR label" "RND_DIR" "$ctx_with_rnd"
+ctx_active="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
 
-rm -rf "$tmp_config"
+# Full block must contain EXTREMELY_IMPORTANT
+assert_contains "active session: additionalContext contains EXTREMELY_IMPORTANT" "<EXTREMELY_IMPORTANT>" "$ctx_active"
+
+# Full block must contain skill body (rnd-framework content)
+assert_contains "active session: additionalContext contains skill body" "rnd-framework" "$ctx_active"
+
+# Full block must contain RND_DIR pointing to the active sessions/<id> path
+assert_contains "active session: additionalContext contains RND_DIR label" "RND_DIR" "$ctx_active"
+assert_contains "active session: RND_DIR ends in sessions/<id> path" "sessions/20260101-120000-abcd1234" "$ctx_active"
+
+# sessionTitle should start with RND:
+title_active="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+if [[ "$title_active" == RND:* ]]; then
+  assert_eq "active session: sessionTitle starts with RND:" "ok" "ok"
+else
+  assert_eq "active session: sessionTitle starts with RND:" "ok" "malformed: $title_active"
+fi
+
+rm -rf "$tmp_config_active"
 
 # ---------------------------------------------------------------------------
-# Claude Code version check
+# Inactive session: stub — no EXTREMELY_IMPORTANT, no RND_DIR, no skill body
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: inactive session (stub) ---'
+
+tmp_config_inactive="$(mktemp -d)"
+# No .current-session or .active-base-dir — no active pipeline
+
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_inactive}"
+assert_exit_code "inactive session: exits 0" 0
+
+ctx_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+
+# Stub must NOT contain EXTREMELY_IMPORTANT
+if [[ "$ctx_inactive" == *"<EXTREMELY_IMPORTANT>"* ]]; then
+  assert_eq "inactive session: no EXTREMELY_IMPORTANT in stub" "absent" "present"
+else
+  assert_eq "inactive session: no EXTREMELY_IMPORTANT in stub" "absent" "absent"
+fi
+
+# Stub must NOT contain RND_DIR
+if [[ "$ctx_inactive" == *"RND_DIR"* ]]; then
+  assert_eq "inactive session: no RND_DIR in stub" "absent" "present"
+else
+  assert_eq "inactive session: no RND_DIR in stub" "absent" "absent"
+fi
+
+# Stub must mention rnd-framework, rnd-start, using-rnd-framework
+assert_contains "inactive session: stub mentions rnd-framework" "rnd-framework" "$ctx_inactive"
+assert_contains "inactive session: stub mentions /rnd-framework:rnd-start" "/rnd-framework:rnd-start" "$ctx_inactive"
+assert_contains "inactive session: stub mentions using-rnd-framework" "using-rnd-framework" "$ctx_inactive"
+
+# sessionTitle inactive → RND: <project>, no | segment
+title_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+if [[ "$title_inactive" == RND:* ]]; then
+  assert_eq "inactive session: sessionTitle starts with RND:" "ok" "ok"
+else
+  assert_eq "inactive session: sessionTitle starts with RND:" "ok" "malformed: $title_inactive"
+fi
+
+if [[ "$title_inactive" == *"|"* ]]; then
+  assert_eq "inactive session: sessionTitle has no | phase segment" "no-pipe" "has-pipe: $title_inactive"
+else
+  assert_eq "inactive session: sessionTitle has no | phase segment" "no-pipe" "no-pipe"
+fi
+
+rm -rf "$tmp_config_inactive"
+
+# ---------------------------------------------------------------------------
+# Stale pointer: .current-session points to missing session dir → stub
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: stale .current-session (dir-exists gate) ---'
+
+tmp_config_stale="$(mktemp -d)"
+stale_base="${tmp_config_stale}/.rnd/stale-slug/branches/main"
+mkdir -p "$stale_base"
+# Write .current-session pointing to a session dir that does NOT exist
+printf 'ghost-session-id' > "${stale_base}/.current-session"
+# Also write .active-base-dir so the fast path is taken (and the -d gate is exercised)
+mkdir -p "${tmp_config_stale}/.rnd"
+printf '%s' "$stale_base" > "${tmp_config_stale}/.rnd/.active-base-dir"
+
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_stale}"
+assert_exit_code "stale pointer: exits 0" 0
+
+ctx_stale="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+
+# Stale pointer should fall through to stub — no full block
+if [[ "$ctx_stale" == *"<EXTREMELY_IMPORTANT>"* ]]; then
+  assert_eq "stale pointer: falls through to stub (no EXTREMELY_IMPORTANT)" "stub" "full-block"
+else
+  assert_eq "stale pointer: falls through to stub (no EXTREMELY_IMPORTANT)" "stub" "stub"
+fi
+
+if [[ "$ctx_stale" == *"RND_DIR"* ]]; then
+  assert_eq "stale pointer: no RND_DIR in stub" "absent" "present"
+else
+  assert_eq "stale pointer: no RND_DIR in stub" "absent" "absent"
+fi
+
+rm -rf "$tmp_config_stale"
+
+# ---------------------------------------------------------------------------
+# No eager session: no sessions/<id> dir created after a clean-config run
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: no eager session created ---'
+
+tmp_config_eager="$(mktemp -d)"
+
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_eager}"
+assert_exit_code "no-eager-session: exits 0" 0
+
+# Check that no sessions/ directory was created anywhere under the tmp config
+sessions_found="$(find "$tmp_config_eager" -type d -name 'sessions' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "$sessions_found" -eq 0 ]]; then
+  assert_eq "no-eager-session: no sessions/ dir created" "0" "0"
+else
+  assert_eq "no-eager-session: no sessions/ dir created" "0" "$sessions_found"
+fi
+
+# Check the base dir exists (mkdir -p was called) and .session-git-root is written
+base_dirs_found="$(find "$tmp_config_eager" -maxdepth 5 -name '.session-git-root' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "$base_dirs_found" -ge 1 ]]; then
+  assert_eq "no-eager-session: base dir created and .session-git-root written" "ok" "ok"
+else
+  assert_eq "no-eager-session: base dir created and .session-git-root written" "ok" "not-written"
+fi
+
+rm -rf "$tmp_config_eager"
+
+# ---------------------------------------------------------------------------
+# resolve_rnd_dir -c is gone from the hook
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: no resolve_rnd_dir -c call ---'
+
+count_eager="$(grep -c 'resolve_rnd_dir -c' "${SCRIPT_DIR}/../hooks/session-start.sh" || true)"
+assert_eq "no resolve_rnd_dir -c in session-start.sh" "0" "$count_eager"
+
+# ---------------------------------------------------------------------------
+# Single emit and exit 0: exactly one JSON object in both active and inactive
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: single JSON emit + exit 0 ---'
+
+# Inactive branch
+tmp_config_single_inactive="$(mktemp -d)"
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_single_inactive}"
+assert_exit_code "single-emit inactive: exits 0" 0
+
+count_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -s 'length' 2>/dev/null || echo 0)"
+assert_eq "single-emit inactive: exactly one JSON object" "1" "$count_inactive"
+
+ctx_single_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // "null"' 2>/dev/null || true)"
+if [[ "$ctx_single_inactive" != "null" && -n "$ctx_single_inactive" ]]; then
+  assert_eq "single-emit inactive: additionalContext non-null" "ok" "ok"
+else
+  assert_eq "single-emit inactive: additionalContext non-null" "ok" "null-or-empty"
+fi
+
+title_single_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+if [[ -n "$title_single_inactive" ]]; then
+  assert_eq "single-emit inactive: sessionTitle non-empty" "ok" "ok"
+else
+  assert_eq "single-emit inactive: sessionTitle non-empty" "ok" "empty"
+fi
+
+rm -rf "$tmp_config_single_inactive"
+
+# Active branch
+tmp_config_single_active="$(mktemp -d)"
+session_dir_single="$(make_active_fixture "$tmp_config_single_active")"
+
+run_session_start "CLAUDE_CONFIG_DIR=${tmp_config_single_active}"
+assert_exit_code "single-emit active: exits 0" 0
+
+count_active="$(printf '%s' "$HOOK_STDOUT" | jq -s 'length' 2>/dev/null || echo 0)"
+assert_eq "single-emit active: exactly one JSON object" "1" "$count_active"
+
+ctx_single_active="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // "null"' 2>/dev/null || true)"
+if [[ "$ctx_single_active" != "null" && -n "$ctx_single_active" ]]; then
+  assert_eq "single-emit active: additionalContext non-null" "ok" "ok"
+else
+  assert_eq "single-emit active: additionalContext non-null" "ok" "null-or-empty"
+fi
+
+title_single_active="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+if [[ -n "$title_single_active" ]]; then
+  assert_eq "single-emit active: sessionTitle non-empty" "ok" "ok"
+else
+  assert_eq "single-emit active: sessionTitle non-empty" "ok" "empty"
+fi
+
+rm -rf "$tmp_config_single_active"
+
+# ---------------------------------------------------------------------------
+# Version warnings in both active and inactive branches (mock claude 2.1.89)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- session-start: version warnings in both branches ---'
+
+mock_bin="$(mktemp -d)"
+printf '#!/bin/sh\necho "2.1.89 (Claude Code)"\n' > "${mock_bin}/claude"
+chmod +x "${mock_bin}/claude"
+
+# Helper: run with both mock claude and CLAUDE_CONFIG_DIR
+run_with_version_mock() {
+  local cfg="$1"
+  HOOK_EXIT=0
+  local tmp_out tmp_err
+  tmp_out="$(mktemp)"
+  tmp_err="$(mktemp)"
+  PATH="${mock_bin}:${PATH}" env "CLAUDE_CONFIG_DIR=${cfg}" "$HOOK" >"$tmp_out" 2>"$tmp_err" || HOOK_EXIT=$?
+  HOOK_STDOUT="$(cat "$tmp_out")"
+  HOOK_STDERR="$(cat "$tmp_err")"
+  rm -f "$tmp_out" "$tmp_err"
+}
+
+# Inactive branch: mock claude 2.1.89
+tmp_config_warn_inactive="$(mktemp -d)"
+run_with_version_mock "$tmp_config_warn_inactive"
+ctx_warn_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+assert_contains "version warning (inactive): additionalContext contains 'below the minimum'" "below the minimum" "$ctx_warn_inactive"
+rm -rf "$tmp_config_warn_inactive"
+
+# Active branch: mock claude 2.1.89
+tmp_config_warn_active="$(mktemp -d)"
+make_active_fixture "$tmp_config_warn_active" > /dev/null
+run_with_version_mock "$tmp_config_warn_active"
+ctx_warn_active="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
+assert_contains "version warning (active): additionalContext contains 'below the minimum'" "below the minimum" "$ctx_warn_active"
+rm -rf "$tmp_config_warn_active"
+
+rm -rf "$mock_bin"
+
+# ---------------------------------------------------------------------------
+# Claude Code version check (preserved tests)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- session-start: Claude Code version check ---'
 

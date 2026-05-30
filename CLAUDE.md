@@ -142,7 +142,7 @@ Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rn
 
 ### Session Bootstrap
 
-`SessionStart` fires on `startup|resume|clear|compact` → `hooks/session-start.sh` injects the `using-rnd-framework` skill as a system reminder and emits a version warning if below v2.1.139.
+`SessionStart` fires on `startup|resume|clear|compact` → `hooks/session-start.sh` injects the full `using-rnd-framework` skill reminder (with the active `RND_DIR`) **only when a pipeline session is active** (`active_session_dir` non-empty AND the dir exists on disk — the on-disk check guards a stale `.current-session`); otherwise it emits a one-line `<system-reminder>` stub pointing at `/rnd-framework:rnd-start`, so idle sessions pay minimal context. It writes the `.session-git-root`/`.active-base-dir` caches via `resolve_rnd_dir --base` (no per-session `sessions/<id>` dir is created at SessionStart; the first `/rnd-framework:rnd-start` creates it, after which resume/compact restore the full block) and emits a version warning if below v2.1.139.
 
 `SessionEnd` fires on close/switch (including `/resume`) → `hooks/session-end.sh` calls `rnd-dir.sh --finish` to clear `.current-session`.
 

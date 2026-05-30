@@ -362,7 +362,7 @@ rnd-framework/
 │   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
 │   ├── bash-gate.sh             # Bash hook: information barrier; blocks destructive git ops, `git add .rnd/`, advisory on `git push` to main/master/production; auto-allows .rnd/ and plugin lib paths; Bash output cache advisory
 │   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
-│   ├── session-start.sh         # SessionStart hook: injects skill context + Claude Code version check
+│   ├── session-start.sh         # SessionStart hook: injects full skill context only when a pipeline is active, else a one-line stub; Claude Code version check
 │   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
 │   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit/Bash + output size advisory
 │   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory

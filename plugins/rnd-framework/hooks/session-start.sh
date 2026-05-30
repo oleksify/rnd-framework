@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # hooks/session-start.sh — SessionStart hook for rnd-framework plugin.
-# Injects the using-rnd-framework skill content into session context and checks
-# for a version mismatch between the cached plugin and the source in the git root.
+# Injects full RND context when a pipeline session is active; emits a one-line
+# stub otherwise so idle sessions pay minimal context cost.
 #
 # Always exits 0. Outputs SessionStart JSON with hookSpecificOutput.additionalContext.
 # shellcheck source=./lib.sh
@@ -48,35 +48,41 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Get RND_DIR and record git root for cross-repo detection (cwd-changed.sh)
+# Compute the active session dir ONCE — used for both the context gate and
+# the session title. The active gate requires both a non-empty path and that
+# the directory actually exists on disk (guards against stale .current-session
+# pointers).
 # ---------------------------------------------------------------------------
 
-rnd_dir="$(resolve_rnd_dir -c 2>/dev/null || true)"
-rnd_line=""
-if [[ -n "$rnd_dir" ]]; then
-  rnd_line=$'\n\n'"**RND_DIR (pipeline artifact directory for this project):** \`${rnd_dir}\`"
+active_dir="$(active_session_dir 2>/dev/null || true)"
 
-  # Write the session's originating git root to <base_dir>/.session-git-root so
-  # that cwd-changed.sh can detect when the working directory moves to a different
-  # repository.  We use a separate file (not .current-session) so the session ID
-  # format remains stable.  Silently skip when not inside a git repo.
-  base_dir="$(resolve_rnd_dir --base 2>/dev/null || true)"
-  if [[ -n "$base_dir" ]]; then
-    git_project_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    if [[ -n "$git_project_root" ]]; then
-      printf '%s' "$git_project_root" > "${base_dir}/.session-git-root"
-    fi
+# ---------------------------------------------------------------------------
+# Cache the branch base dir for session-state files (.session-git-root and
+# .active-base-dir). resolve_rnd_dir --base is a pure path computation that
+# never creates directories, so mkdir -p must precede the writes. The cache
+# writes run unconditionally in both the active and inactive branches because
+# they are session-state maintenance, not pipeline-context logic.
+# ---------------------------------------------------------------------------
 
-    # Cache file lives at <.rnd-root>/.active-base-dir — hardcoded in lib.sh::active_session_dir.
-    # Strip /<slug>/branches/<branch> to reach <config>/.rnd.
-    if [[ "$base_dir" == */branches/* ]]; then
-      rnd_root="${base_dir%%/branches/*}"   # <config>/.rnd/<slug>
-      rnd_root="${rnd_root%/*}"             # <config>/.rnd
-    else
-      rnd_root="${base_dir%/*}"             # fallback: legacy un-partitioned <slug> → <config>/.rnd
-    fi
-    printf '%s' "$base_dir" > "${rnd_root}/.active-base-dir" 2>/dev/null || true
+base_dir="$(resolve_rnd_dir --base 2>/dev/null || true)"
+if [[ -n "$base_dir" ]]; then
+  # mkdir -p must come first: --base never creates dirs.
+  mkdir -p "$base_dir"
+
+  git_project_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$git_project_root" ]]; then
+    printf '%s' "$git_project_root" > "${base_dir}/.session-git-root"
   fi
+
+  # Cache file lives at <.rnd-root>/.active-base-dir — hardcoded in lib.sh::active_session_dir.
+  # Strip /<slug>/branches/<branch> to reach <config>/.rnd.
+  if [[ "$base_dir" == */branches/* ]]; then
+    rnd_root="${base_dir%%/branches/*}"   # <config>/.rnd/<slug>
+    rnd_root="${rnd_root%/*}"             # <config>/.rnd
+  else
+    rnd_root="${base_dir%/*}"             # fallback: legacy un-partitioned <slug> → <config>/.rnd
+  fi
+  printf '%s' "$base_dir" > "${rnd_root}/.active-base-dir" 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------------------------
@@ -140,10 +146,14 @@ if [[ -n "$cc_version" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Build context and output JSON
+# Build context: full block when a pipeline session is active; one-line stub
+# otherwise. Version warnings are appended in both branches.
 # ---------------------------------------------------------------------------
 
-ctx="$(printf '%s' "<EXTREMELY_IMPORTANT>
+if [[ -n "$active_dir" && -d "$active_dir" ]]; then
+  rnd_line=$'\n\n'"**RND_DIR (pipeline artifact directory for this project):** \`${active_dir}\`"
+
+  ctx="$(printf '%s' "<EXTREMELY_IMPORTANT>
 You have rnd-framework.
 
 **Below is the summary of your 'rnd-framework:using-rnd-framework' skill. For all other skills, use the 'Skill' tool:**
@@ -151,6 +161,9 @@ You have rnd-framework.
 ${skill_content}${rnd_line}${version_warning}${cc_version_warning}
 
 </EXTREMELY_IMPORTANT>")"
+else
+  ctx="$(printf '%s' "<system-reminder>rnd-framework is active. Use /rnd-framework:rnd-start to begin a pipeline. The using-rnd-framework skill is available via the Skill tool.${version_warning}${cc_version_warning}</system-reminder>")"
+fi
 
 # ---------------------------------------------------------------------------
 # Session title — phase-aware, mirroring session-title.sh's UserPromptSubmit
@@ -159,8 +172,7 @@ ${skill_content}${rnd_line}${version_warning}${cc_version_warning}
 # older versions silently ignore the field.
 # ---------------------------------------------------------------------------
 
-session_dir_for_title="$(active_session_dir 2>/dev/null || true)"
-phase_for_title="$(detect_pipeline_phase "$session_dir_for_title" 2>/dev/null || echo Idle)"
+phase_for_title="$(detect_pipeline_phase "$active_dir" 2>/dev/null || echo Idle)"
 project_for_title="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
 
 if [[ "$phase_for_title" == "Idle" ]]; then

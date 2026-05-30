@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.13.0 — 2026-05-30
+
+### Make SessionStart injection lazy — full context only when a pipeline is active, a one-line stub otherwise
+
+Rewrites hooks/session-start.sh so an idle session pays ~one line of context and zero per-session disk, while an active pipeline still restores full context on resume/compact. The hook computes the active session dir once via active_session_dir and gates on it being non-empty AND existing on disk (`[[ -d ]]`, guarding a stale .current-session left by a crashed pipeline). When active it injects the full <EXTREMELY_IMPORTANT> using-rnd-framework block with RND_DIR set to the active session dir (never --base, never a fresh -c); when inactive it injects a one-line <system-reminder> stub naming the plugin and /rnd-framework:rnd-start, with no skill body and no RND_DIR line. Version warnings, the phase-aware sessionTitle, the single jq -cn emit, and exit 0 are preserved in both branches. The eager resolve_rnd_dir -c (which created a sessions/<id> dir on every SessionStart) is replaced with resolve_rnd_dir --base; mkdir -p precedes the .session-git-root/.active-base-dir cache writes because --base never creates directories, so at most one branch base dir is created (reused across sessions, never per-session). The first /rnd-framework:rnd-start creates the session, after which resume/compact see .current-session and the full block returns. Extends tests/session-start.test.sh to 47 assertions covering active/inactive/stale-pointer/no-eager-session/single-emit/version-warning cases; validate.sh (371 checks), validate-xrefs.sh, and run-tests.sh stay green; shellcheck -S warning clean. Updates the CLAUDE.md Session Bootstrap description and the README hook-tree line.
+
 ## 5.12.0 — 2026-05-29
 
 ### Add the verification-debt gate and segment the sycophancy flip rate to statically-verifiable assertions

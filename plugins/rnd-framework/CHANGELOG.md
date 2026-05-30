@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.273 — 2026-05-30
+
+### Key the self-fail-vs-verdict gap on (session_id, task_id) to stop cross-session task_id contamination
+
+Section 2 of rnd-stats (self_fail_vs_verdict_gap) joined builder self-assessment to verifier verdict on bare task_id, and deduped each side by bare task_id alone. Under-qualified IDs that recur across sessions (T01 appears in 24 distinct audit sessions but 1 calibration session; also T1, M1.T01, M1.T03, M1.T04) made the bare join pair one session's self-assessment with an unrelated session's verdict — gross cross-session contamination of the gap count. Both payloads already carry session_id (verified: 0 records missing it on either side), so the fix threads session_id through audit_events, both QUALIFY dedup partitions, and the paired join (ON v.session_id = a.session_id AND v.task_id = a.task_id), aligning Section 2's grain with Section 1 (per_shape_fail_rate) which already partitions by (session_id, taskId). On live data the corrected grain drops the spurious matches: dogfood 12→11 paired tasks, feature 33→30. One legitimate cross-session task (M9.T01.schema-and-substance-pass, built and verified in different resumed sessions) is no longer paired — an acceptable rare cost of the stricter, consistent grain. SQL-only; validate.sh (372) and the two view-touching tests (phase0-producers-e2e, calibration-producer) stay green. The underlying under-qualified-task_id leak from some producers is a separate data-quality issue, not addressed here.
+
 ## 0.15.272 — 2026-05-30
 
 ### Fix per-shape FAIL rate, self-fail-vs-verdict gap, and drift views to count non-PASS verdicts instead of the retired FAIL string

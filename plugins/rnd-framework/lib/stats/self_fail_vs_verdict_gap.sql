@@ -13,11 +13,15 @@
 --     reads zero on all modern data.
 --
 -- Builder self-verdict comes from the builder_self_assessment audit event;
--- verifier verdict comes from per-slug calibration.jsonl, whose slug (and thus
--- segment) is the first path component of the calibration filename — no session
--- join is needed. A task contributes one row only when both signals exist.
--- Both signals are deduped to the LATEST record per task (an iterated task emits
--- multiple of each) so the gap is a clean per-task count, never per-attempt.
+-- verifier verdict comes from per-slug calibration.jsonl. The segment is the
+-- first path component of the calibration filename (no join needed for segment),
+-- but the builder↔verifier pairing IS keyed on (session_id, task_id): both
+-- payloads carry session_id, and a bare-task_id join would merge unrelated tasks
+-- that share an ID across sessions (e.g. a re-plan reusing M1.T01.<slug>). A
+-- (session, task) pair contributes one row only when both signals exist. Both
+-- signals are deduped to the LATEST record per (session, task) — an iterated task
+-- emits multiple of each within a session — so the gap is a clean
+-- per-(session,task) count, never per-attempt and never cross-session-merged.
 --
 -- Both audit.jsonl and calibration.jsonl are read as RAW physical lines (one
 -- VARCHAR per line), then filtered with json_valid and projected with
@@ -49,6 +53,7 @@ WITH
 
   audit_events AS (
     SELECT
+      TRY(json_extract_string(j, '$.session_id'))   AS session_id,
       TRY(json_extract_string(j, '$.task_id'))      AS task_id,
       TRY(json_extract_string(j, '$.event'))        AS event,
       TRY(json_extract_string(j, '$.self_verdict')) AS self_verdict,
@@ -68,16 +73,17 @@ WITH
 
   -- Builder's own pass/fail call per task — latest attempt only.
   self_assessment AS (
-    SELECT task_id, self_verdict
+    SELECT session_id, task_id, self_verdict
     FROM audit_events
     WHERE event = 'builder_self_assessment' AND task_id IS NOT NULL
-    QUALIFY row_number() OVER (PARTITION BY task_id ORDER BY ts DESC) = 1
+    QUALIFY row_number() OVER (PARTITION BY session_id, task_id ORDER BY ts DESC) = 1
   ),
 
   -- Per-slug calibration: slug is the first path component of the filename.
   verdicts AS (
     SELECT
       regexp_extract(filename, '^\.?/?([^/]+)/', 1) AS slug,
+      TRY(json_extract_string(j, '$.session_id'))   AS session_id,
       TRY(json_extract_string(j, '$.taskId'))       AS task_id,
       TRY(json_extract_string(j, '$.verdict'))      AS verdict
     FROM read_csv(
@@ -93,7 +99,8 @@ WITH
     WHERE json_valid(j)
       AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL  -- drop correction records (they carry no verdict)
     QUALIFY row_number() OVER (
-      PARTITION BY TRY(json_extract_string(j, '$.taskId'))
+      PARTITION BY TRY(json_extract_string(j, '$.session_id')),
+                   TRY(json_extract_string(j, '$.taskId'))
       ORDER BY TRY(json_extract_string(j, '$.timestamp')) DESC
     ) = 1
   ),
@@ -105,7 +112,8 @@ WITH
       (a.self_verdict = 'FAIL')              AS self_fail,
       (v.verdict <> 'PASS')                  AS verifier_fail
     FROM verdicts v
-    JOIN self_assessment a ON v.task_id = a.task_id
+    JOIN self_assessment a
+      ON v.session_id = a.session_id AND v.task_id = a.task_id
   )
 
 SELECT

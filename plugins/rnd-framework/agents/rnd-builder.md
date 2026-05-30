@@ -50,7 +50,7 @@ You receive ONE task with its pre-registration document. You implement it, write
    - Type specs / interface definitions
    - An edge case list: inputs or scenarios that are tricky
 
-5. **Write an honest self-assessment** and save to `$RND_DIR/builds/T<id>-self-assessment.md`. See rnd-building skill for the format (minimal one-line form for plain DONE; full template otherwise).
+5. **Write an honest self-assessment** and save to `$RND_DIR/builds/<id>-self-assessment.md`, where `<id>` is the task's canonical `features.json` id `M<N>.T<NN>.<slug>` copied verbatim (e.g. `M1.T01.add-authentication-flow-self-assessment.md`) — NOT a bare `T<NN>`. The stem becomes the audit `task_id`, so it must carry the `M<N>.T<NN>` prefix to join the verdict map. See rnd-building skill for the format (minimal one-line form for plain DONE; full template otherwise).
 
 6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose. Every manifest **must** include a `## Files written` section listing each modified or created file at one path per line (no bullets, no backticks) — this section is machine-parsed by the surgical-revert helper.
 

@@ -53,7 +53,7 @@ Build a correction record and append it to `$CALIB_FILE`:
 
 ```json
 {
-  "taskId": "<task-id>",
+  "task_id": "<task-id>",
   "sessionId": "<session-id>",
   "correction": "<FALSE_PASS or FALSE_FAIL>",
   "reason": "<reason>",

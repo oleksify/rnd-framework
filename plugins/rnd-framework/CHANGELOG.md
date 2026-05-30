@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.274 — 2026-05-31
+
+### Resolve self-assessment task_id to the canonical features.json id and unify the task identifier to snake_case task_id
+
+Fixes the under-qualified task_id leak at its source (self-assessment-producer.sh) and unifies the task-identifier casing. The producer derived task_id from the self-assessment filename stem, which builders named with a bare T<NN> (per the old skill/agent instruction) — so the builder_self_assessment audit records carried T01/T1 instead of the canonical M<N>.T<NN>.<slug>, corrupting the self_fail_vs_verdict gap join. New resolve_canonical_task_id() resolves the stem against features.json via the M<N>.T<NN> structural prefix (exact-id match -> unique-prefix match -> raw-stem fallback); the prefix is the only key that is unique within a plan (T<NN> resets per milestone) and immune to slug truncation (id-gen caps slugs at 32 chars), slug drift, and a null/absent uuid. The rnd-building skill and rnd-builder agent now instruct the canonical M<N>.T<NN>.<slug>-self-assessment.md filename so the common path exact-matches. Separately, the task identifier is unified to snake_case task_id across audit, verdict-map, AND calibration: calibration-producer.sh now emits task_id (was camelCase taskId), and the five calibration-reading views (per_shape_fail_rate, self_fail_vs_verdict_gap, iteration_depth, drift_watch, backfill) read COALESCE(task_id, taskId) so historical camelCase records still join. Skill docs (rnd-calibration, rnd-calibrate, rnd-reality-auditing), CLAUDE.md, and the producer tests are updated; bare-T example ids in the calibration schema doc are bumped to canonical form. Deliberately did NOT migrate task_id to a pure M<N>.T<NN> key — the resolver already closes the join bug and stripping the slug would cost readability for marginal gain. Adds 4 resolver test cases; run-tests.sh and validate.sh (372) stay green. Latent, unaddressed: uuid is null in many features.json plans (post-review-writer uuid attribution no-ops there); sessionId/session_id has the same casing split.
+
 ## 0.15.273 — 2026-05-30
 
 ### Key the self-fail-vs-verdict gap on (session_id, task_id) to stop cross-session task_id contamination

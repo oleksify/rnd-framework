@@ -22,8 +22,11 @@
 # time-series). The view per_shape_fail_rate.sql deduplicates latest-per-task
 # via QUALIFY, mirroring self_fail_vs_verdict_gap.sql's existing pattern.
 #
-# Record schema (camelCase taskId — load-bearing for view JOIN):
-#   {taskId, verdict, timestamp, session_id}
+# Record schema (snake_case task_id — the single task-identifier casing across
+# audit, verdict-map, and calibration; load-bearing for the view JOIN). The
+# stats views read COALESCE(task_id, taskId) so historical camelCase records
+# still join:
+#   {task_id, verdict, timestamp, session_id}
 #
 # Non-blocking: always exits 0.
 # shellcheck source=./lib.sh
@@ -114,7 +117,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
           verdicts: [ .[] | .verdict ]
         }
       | {
-          taskId: .task_id,
+          task_id: .task_id,
           verdict: (
             if (.verdicts | any(. == "FAIL" or . == "NEEDS_ITERATION"))
             then "NEEDS_ITERATION"
@@ -137,7 +140,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
       '
       to_entries[]
       | {
-          taskId:     .key,
+          task_id:    .key,
           verdict:    .value.verdict,
           timestamp:  $ts,
           session_id: $session_id

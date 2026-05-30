@@ -61,7 +61,7 @@ WITH
         TRY(json_extract_string(j, '$.sessionId')),
         ''
       )                                                                AS session_id,
-      TRY(json_extract_string(j, '$.taskId'))                          AS task_id,
+      COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId'))) AS task_id,
       TRY(json_extract_string(j, '$.verdict'))                         AS verdict,
       TRY(json_extract_string(j, '$.timestamp'))                       AS ts,
       CAST(TRY(json_extract_string(j, '$.iterationCount')) AS INTEGER) AS stored_iter
@@ -77,7 +77,7 @@ WITH
     )
     WHERE json_valid(j)
       AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL
-      AND TRY(json_extract_string(j, '$.taskId')) IS NOT NULL
+      AND COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId'))) IS NOT NULL
   ),
 
   ranked AS (

@@ -118,7 +118,7 @@ The `## Files written` section is **required** in every manifest. List one file 
 
 ### 5. Write Honest Self-Assessment
 
-Save to `$RND_DIR/builds/T<id>-self-assessment.md` (Verifier will NOT see this — be honest). The format depends on your build status.
+Save to `$RND_DIR/builds/<id>-self-assessment.md`, where `<id>` is the task's **canonical `features.json` id** `M<N>.T<NN>.<slug>` copied verbatim (e.g. `M1.T01.add-authentication-flow-self-assessment.md`) — NOT a bare `T<NN>`. The filename stem becomes the audit `task_id`, so it must carry the `M<N>.T<NN>` prefix or the self-assessment will not join the verifier's verdict. (Verifier will NOT see this — be honest.) The format depends on your build status.
 
 **For plain `DONE` status (no concerns, all criteria met with HIGH confidence, no deviations, no unverified assumptions):** write a minimal one-line file. No sections, no boilerplate.
 

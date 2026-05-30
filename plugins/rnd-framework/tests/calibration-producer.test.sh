@@ -102,22 +102,22 @@ assert_eq "session-dir calibration.jsonl not created" "" \
   "$([ -f "${SESSION}/calibration.jsonl" ] && echo "exists" || true)"
 
 # ---------------------------------------------------------------------------
-# Test 3: camelCase taskId field; never snake_case task_id
+# Test 3: snake_case task_id field; never camelCase taskId (unified casing)
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- calibration-producer: camelCase taskId field ---'
+printf '\n%s\n' '--- calibration-producer: snake_case task_id field ---'
 
 CALIB_CONTENT="$(cat "$CALIB_PATH")"
 
 while IFS= read -r line; do
   [[ -n "$line" ]] || continue
 
-  HAS_TASKID="$(printf '%s' "$line" | jq 'has("taskId")' 2>/dev/null || echo false)"
+  HAS_SNAKE="$(printf '%s' "$line" | jq 'has("task_id")' 2>/dev/null || echo false)"
   HAS_VERDICT="$(printf '%s' "$line" | jq 'has("verdict")' 2>/dev/null || echo false)"
-  HAS_SNAKE="$(printf '%s' "$line" | jq 'has("task_id")' 2>/dev/null || echo true)"
+  HAS_CAMEL="$(printf '%s' "$line" | jq 'has("taskId")' 2>/dev/null || echo true)"
 
-  assert_eq "record has taskId: ${line:0:60}" "true" "$HAS_TASKID"
+  assert_eq "record has task_id: ${line:0:60}" "true" "$HAS_SNAKE"
   assert_eq "record has verdict: ${line:0:60}" "true" "$HAS_VERDICT"
-  assert_eq "record has no task_id: ${line:0:60}" "false" "$HAS_SNAKE"
+  assert_eq "record has no camelCase taskId: ${line:0:60}" "false" "$HAS_CAMEL"
 
 done <<< "$CALIB_CONTENT"
 
@@ -126,7 +126,7 @@ done <<< "$CALIB_CONTENT"
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- calibration-producer: Gate 3 aggregation rule ---'
 
-RECORD_COUNT="$(grep -c '"taskId"' "$CALIB_PATH" 2>/dev/null || echo 0)"
+RECORD_COUNT="$(grep -c '"task_id"' "$CALIB_PATH" 2>/dev/null || echo 0)"
 assert_eq "exactly 2 records for 2-task fixture" "2" "$RECORD_COUNT"
 
 TASK_A_VERDICT="$(grep '"M1.T01.task-a"' "$CALIB_PATH" | jq -r '.verdict' 2>/dev/null || true)"
@@ -189,12 +189,12 @@ rm -f "$CALIB_PATH"
 # First fire
 run_producer "$VERDICT_MAP_PATH"
 
-AFTER_FIRST="$(grep -c '"taskId"' "$CALIB_PATH" 2>/dev/null || echo 0)"
+AFTER_FIRST="$(grep -c '"task_id"' "$CALIB_PATH" 2>/dev/null || echo 0)"
 
 # Second fire (simulating re-verify rewriting the map)
 run_producer "$VERDICT_MAP_PATH"
 
-AFTER_SECOND="$(grep -c '"taskId"' "$CALIB_PATH" 2>/dev/null || echo 0)"
+AFTER_SECOND="$(grep -c '"task_id"' "$CALIB_PATH" 2>/dev/null || echo 0)"
 
 # View-side dedup (QUALIFY in per_shape_fail_rate.sql) is the authoritative guard.
 # Verify the QUALIFY exists in the SQL as part of idempotency coverage.
@@ -233,7 +233,7 @@ run_producer "$LEGACY_MAP"
 
 assert_exit_code "legacy map → exit 0" 0
 
-LEGACY_COUNT="$(grep -c '"taskId"' "$CALIB_PATH" 2>/dev/null || echo 0)"
+LEGACY_COUNT="$(grep -c '"task_id"' "$CALIB_PATH" 2>/dev/null || echo 0)"
 assert_eq "legacy map → 2 records" "2" "$LEGACY_COUNT"
 
 LEGACY_T5_VERDICT="$(grep '"T5"' "$CALIB_PATH" | jq -r '.verdict' 2>/dev/null || true)"

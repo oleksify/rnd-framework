@@ -240,4 +240,62 @@ assert_contains "inline MEDIUM token → FAIL verdict" '"self_verdict":"FAIL"' "
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
+# Test 9–12: canonical task_id resolution against features.json.
+# The stem is resolved to the canonical features.json id via the M<N>.T<NN>
+# structural prefix, so a drifted/truncated slug still emits the joinable id.
+# ---------------------------------------------------------------------------
+FEATURES="${SESSION}/features.json"
+printf '%s' '{
+  "tasks": [
+    {"id": "M1.T01.add-authentication-flow"},
+    {"id": "M2.T01.unrelated-other-task"}
+  ]
+}' > "$FEATURES"
+
+# Test 9: exact canonical filename → emits the id unchanged.
+printf '\n%s\n' '--- self-assessment-producer: canonical filename → exact-match id ---'
+ASSESSMENT_PATH="${SESSION}/builds/M1.T01.add-authentication-flow-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+printf '%s' 'All criteria met with HIGH confidence.' > "$ASSESSMENT_PATH"
+run_producer "$ASSESSMENT_PATH"
+assert_exit_code "canonical filename → exit 0" 0
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "exact id emitted" '"task_id":"M1.T01.add-authentication-flow"' "$AUDIT_LINE"
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# Test 10: drifted/truncated slug → M<N>.T<NN> prefix resolves to the full id.
+printf '\n%s\n' '--- self-assessment-producer: drifted slug → prefix self-heals to canonical id ---'
+ASSESSMENT_PATH="${SESSION}/builds/M1.T01.add-au-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+printf '%s' 'All criteria met with HIGH confidence.' > "$ASSESSMENT_PATH"
+run_producer "$ASSESSMENT_PATH"
+assert_exit_code "drifted slug → exit 0" 0
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "drifted slug resolved to canonical id" '"task_id":"M1.T01.add-authentication-flow"' "$AUDIT_LINE"
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# Test 11: milestone-less bare slot → unresolvable, falls back to raw stem.
+printf '\n%s\n' '--- self-assessment-producer: bare T-slot (no milestone) → raw-stem fallback ---'
+ASSESSMENT_PATH="${SESSION}/builds/T01-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+printf '%s' 'All criteria met with HIGH confidence.' > "$ASSESSMENT_PATH"
+run_producer "$ASSESSMENT_PATH"
+assert_exit_code "bare slot → exit 0" 0
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "bare slot falls back to raw stem" '"task_id":"T01"' "$AUDIT_LINE"
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# Test 12: no features.json → raw stem fallback (never blocks).
+printf '\n%s\n' '--- self-assessment-producer: no features.json → raw-stem fallback ---'
+rm -f "$FEATURES"
+ASSESSMENT_PATH="${SESSION}/builds/M1.T01.add-au-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+printf '%s' 'All criteria met with HIGH confidence.' > "$ASSESSMENT_PATH"
+run_producer "$ASSESSMENT_PATH"
+assert_exit_code "no features.json → exit 0" 0
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "no features.json → raw stem unchanged" '"task_id":"M1.T01.add-au"' "$AUDIT_LINE"
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# ---------------------------------------------------------------------------
 report

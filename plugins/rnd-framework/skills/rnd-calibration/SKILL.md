@@ -26,7 +26,7 @@ Each completed task appends one record to `calibration.jsonl`:
 
 ```json
 {
-  "taskId": "T3",
+  "task_id": "M1.T03.example-task",
   "sessionId": "20260316-154145-1227",
   "verdict": "PASS",
   "criterionResults": [
@@ -43,7 +43,7 @@ Each completed task appends one record to `calibration.jsonl`:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `taskId` | string | Task identifier (e.g. `"T3"`) |
+| `task_id` | string | Task identifier (e.g. `"M1.T03.example-task"`) |
 | `sessionId` | string | Session that produced this verdict |
 | `verdict` | string | `"PASS"`, `"FAIL"`, `"NEEDS_ITERATION"`, or `"PASS_QUALITY_NEEDS_ITERATION"` |
 | `criticality` | string | `"LOW"`, `"NORMAL"`, or `"HIGH"` — the task's criticality tier at the time of the verdict. Used by `lib/calibration.sh` to compute per-tier rolling false-PASS rates for auto-escalation. |
@@ -115,7 +115,7 @@ Calibration lives at the slug root — above the `branches/` partition — so it
 Append a record:
 ```bash
 CALIB_FILE="${CLAUDE_PLUGIN_DATA:-$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --calibration)}"
-echo '{"taskId":...}' >> "$CALIB_FILE"
+echo '{"task_id":...}' >> "$CALIB_FILE"
 ```
 
 **Why cross-session?** Calibration data accumulates across sessions. Storing it inside a session would isolate it to one run, defeating the purpose.
@@ -139,15 +139,15 @@ Set `falseVerdictFlag: "FALSE_FAIL"` on the record.
 
 ### FALSE_PASS_PROXY Recording Rule
 
-When a task with a previous PASS verdict in the same session receives a subsequent FAIL or NEEDS_ITERATION verdict on the same `taskId`, the orchestrator appends a new record with `falseVerdictFlag: "FALSE_PASS_PROXY"` linking to the original PASS via `proxyFor: <originalRecordTimestamp>`. This is a pragmatic measurable signal for closed-loop calibration: it captures the observable evidence that an earlier PASS verdict was incorrect without requiring a post-ship bug or integration failure to confirm it.
+When a task with a previous PASS verdict in the same session receives a subsequent FAIL or NEEDS_ITERATION verdict on the same `task_id`, the orchestrator appends a new record with `falseVerdictFlag: "FALSE_PASS_PROXY"` linking to the original PASS via `proxyFor: <originalRecordTimestamp>`. This is a pragmatic measurable signal for closed-loop calibration: it captures the observable evidence that an earlier PASS verdict was incorrect without requiring a post-ship bug or integration failure to confirm it.
 
-The proxy record carries the same `taskId` and `criticality` as the original, so `lib/calibration.sh false_pass_rate <tier>` counts it alongside confirmed `FALSE_PASS` records when computing the rolling rate. T12 wires the orchestrator to follow this rule when iterating tasks.
+The proxy record carries the same `task_id` and `criticality` as the original, so `lib/calibration.sh false_pass_rate <tier>` counts it alongside confirmed `FALSE_PASS` records when computing the rolling rate. T12 wires the orchestrator to follow this rule when iterating tasks.
 
 Example proxy record:
 
 ```json
 {
-  "taskId": "T5",
+  "task_id": "M1.T05.example-task",
   "sessionId": "20260516-122648-8c7c8d3c",
   "verdict": "NEEDS_ITERATION",
   "criticality": "MEDIUM",
@@ -170,7 +170,7 @@ It writes a correction record to `calibration.jsonl`:
 
 ```json
 {
-  "taskId": "T5",
+  "task_id": "M1.T05.example-task",
   "sessionId": "20260316-154145-1227",
   "correction": "FALSE_PASS",
   "reason": "Integration test revealed missing null check",

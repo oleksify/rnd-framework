@@ -251,7 +251,7 @@ assert_eq "calibration.jsonl created at slug-root" \
 assert_eq "calibration.jsonl NOT in session dir" \
   "" "$([ -f "${SESSION}/calibration.jsonl" ] && echo exists || true)"
 
-CALIB_COUNT_FIRST="$(grep -c '"taskId"' "$CALIB" 2>/dev/null || echo 0)"
+CALIB_COUNT_FIRST="$(grep -c '"task_id"' "$CALIB" 2>/dev/null || echo 0)"
 assert_eq "2 verdict records for 2 tasks" "2" "$CALIB_COUNT_FIRST"
 
 TASK_A_VERDICT="$(grep "\"${TASK_A}\"" "$CALIB" | jq -r '.verdict' 2>/dev/null || true)"
@@ -260,8 +260,8 @@ assert_eq "Task A (all-PASS) → verdict PASS" "PASS" "$TASK_A_VERDICT"
 TASK_B_VERDICT="$(grep "\"${TASK_B}\"" "$CALIB" | jq -r '.verdict' 2>/dev/null || true)"
 assert_eq "Task B (one FAIL) → verdict NEEDS_ITERATION" "NEEDS_ITERATION" "$TASK_B_VERDICT"
 
-HAS_CAMEL="$(grep '"taskId"' "$CALIB" | wc -l | tr -d ' ')"
-assert_eq "verdict records use camelCase taskId" "2" "$HAS_CAMEL"
+HAS_CAMEL="$(grep '"task_id"' "$CALIB" | wc -l | tr -d ' ')"
+assert_eq "verdict records use snake_case task_id" "2" "$HAS_CAMEL"
 
 # ---------------------------------------------------------------------------
 # Step E: idempotency — fire calibration-producer a second time.
@@ -273,7 +273,7 @@ run_hook "${PLUGIN_ROOT}/hooks/calibration-producer.sh" "$VERDICT_MAP"
 
 assert_exit_code "second calibration fire → exit 0" 0
 
-CALIB_COUNT_SECOND="$(grep -c '"taskId"' "$CALIB" 2>/dev/null || echo 0)"
+CALIB_COUNT_SECOND="$(grep -c '"task_id"' "$CALIB" 2>/dev/null || echo 0)"
 assert_eq "raw records ≥ first count after second fire (append-only)" \
   "1" "$([ "$CALIB_COUNT_SECOND" -ge "$CALIB_COUNT_FIRST" ] && echo 1 || echo 0)"
 

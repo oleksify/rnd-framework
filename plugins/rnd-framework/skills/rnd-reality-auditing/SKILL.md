@@ -212,7 +212,7 @@ A single `MISSING` verdict halts the audit. Return status `INVALID_FOUND` and do
 
 ### Calibration Hook
 
-When the pre-pass finds a MISSING reference AND the task has a prior Builder PASS record for the same `taskId` in the same session, the orchestrator must append a `FALSE_PASS_PROXY` calibration record to `calibration.jsonl` linking to the original PASS via `proxyFor`. This surfaces the earlier incorrect PASS in closed-loop calibration metrics.
+When the pre-pass finds a MISSING reference AND the task has a prior Builder PASS record for the same `task_id` in the same session, the orchestrator must append a `FALSE_PASS_PROXY` calibration record to `calibration.jsonl` linking to the original PASS via `proxyFor`. This surfaces the earlier incorrect PASS in closed-loop calibration metrics.
 
 See `rnd-framework:rnd-calibration` for the `FALSE_PASS_PROXY` record schema and the `proxyFor` field specification.
 

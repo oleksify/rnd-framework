@@ -12,6 +12,40 @@
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# Resolve a self-assessment filename stem to the canonical features.json task id
+# (M<N>.T<NN>.<slug>) so the emitted task_id JOINs calibration and the verdict
+# map. Resolution is keyed on the M<N>.T<NN> structural prefix — the only part of
+# the id that is unique within a plan and immune to slug truncation (id-gen caps
+# slugs at 32 chars), slug drift, and a null/absent uuid. Order:
+#   1. exact id match → use it (the normal path; slug intact);
+#   2. unique M<N>.T<NN> prefix match → use that task's id (self-heals a drifted
+#      or truncated slug);
+#   3. raw stem fallback → no features.json, a bare milestone-less slot, an
+#      ambiguous prefix, or no match: never blocks, never invents a wrong id.
+resolve_canonical_task_id() {
+  local stem="$1" feats="$2"
+
+  [[ -f "$feats" ]] || { printf '%s' "$stem"; return; }
+
+  local resolved
+  resolved="$(jq -r --arg stem "$stem" '
+    (.tasks // []) as $t
+    | ($t | map(.id)) as $ids
+    | if ($ids | index($stem)) then $stem
+      elif ($stem | test("^M[0-9]+[.]T[0-9]+")) then
+        ($stem | capture("^(?<mt>M[0-9]+[.]T[0-9]+)").mt) as $mt
+        | ([ $ids[] | select(startswith($mt + ".")) ]) as $m
+        | (if ($m | length) == 1 then $m[0] else "" end)
+      else "" end
+  ' "$feats" 2>/dev/null || true)"
+
+  if [[ -n "$resolved" && "$resolved" != "null" ]]; then
+    printf '%s' "$resolved"
+  else
+    printf '%s' "$stem"
+  fi
+}
+
 {
   raw="$(cat)"
 
@@ -45,15 +79,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
     exit 0
   fi
 
-  # Derive task_id from filename: strip the directory prefix and suffix.
-  filename="${abs_path##*/}"
-  task_id="${filename%-self-assessment.md}"
-
   # Compute the session dir (parent of builds/).
   builds_dir="${abs_path%/*}"
   session_dir="${builds_dir%/*}"
 
   audit_path="${session_dir}/audit.jsonl"
+
+  # Derive the filename stem, then resolve it to the canonical features.json id
+  # so the emitted task_id JOINs calibration and the verdict map.
+  filename="${abs_path##*/}"
+  raw_stem="${filename%-self-assessment.md}"
+  task_id="$(resolve_canonical_task_id "$raw_stem" "${session_dir}/features.json")"
 
   # Read the file to infer self_verdict.
   assessment_content=""

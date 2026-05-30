@@ -84,7 +84,7 @@ WITH
     SELECT
       regexp_extract(filename, '^\.?/?([^/]+)/', 1) AS slug,
       TRY(json_extract_string(j, '$.session_id'))   AS session_id,
-      TRY(json_extract_string(j, '$.taskId'))       AS task_id,
+      COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId'))) AS task_id,
       TRY(json_extract_string(j, '$.verdict'))      AS verdict
     FROM read_csv(
       '*/calibration.jsonl',
@@ -100,7 +100,7 @@ WITH
       AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL  -- drop correction records (they carry no verdict)
     QUALIFY row_number() OVER (
       PARTITION BY TRY(json_extract_string(j, '$.session_id')),
-                   TRY(json_extract_string(j, '$.taskId'))
+                   COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId')))
       ORDER BY TRY(json_extract_string(j, '$.timestamp')) DESC
     ) = 1
   ),

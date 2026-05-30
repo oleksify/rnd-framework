@@ -1,5 +1,5 @@
 ---
-description: "Print the Phase 0 exit-criteria report: per-shape FAIL rate, builder-self-fail-vs-verdict gap, iteration depth, drift, and shape distribution — each segment-aware (dogfood vs feature). Requires duckdb on PATH; skips gracefully when absent."
+description: "Print the Phase 0 exit-criteria report: per-shape non-PASS rate, builder-self-fail-vs-verdict gap, iteration depth, drift, and shape distribution — each segment-aware (dogfood vs feature). Requires duckdb on PATH; skips gracefully when absent."
 effort: low
 disallowed-tools: ["Edit", "Write"]
 ---
@@ -78,12 +78,16 @@ stats_dir="${CLAUDE_PLUGIN_ROOT}/lib/stats"
 Run each view and display output under its named report section. The five
 sections together form the **Phase 0 exit-criteria report**:
 
-### Section 1 — Per-shape FAIL rate
+### Section 1 — Per-shape non-PASS rate
 
-Which assertion shapes fail most often, by segment (dogfood vs feature).
+Which assertion shapes fail to pass cleanly most often, by segment (dogfood vs
+feature). "Non-PASS" is any verdict other than a clean `PASS` —
+`NEEDS_ITERATION` or `PASS_QUALITY_NEEDS_ITERATION` (the legacy `FAIL` string is
+retired). `fail_count`/`fail_rate` keep their names: a non-PASS verdict is a
+failure to pass verification.
 
 ```bash
-echo "=== Per-shape FAIL rate ==="
+echo "=== Per-shape non-PASS rate ==="
 duckdb -c ".read ${stats_dir}/per_shape_fail_rate.sql" \
        -c "SELECT segment, shape, task_count, fail_count, fail_rate FROM per_shape_fail_rate ORDER BY segment, shape"
 ```
@@ -128,14 +132,14 @@ duckdb -c ".read ${stats_dir}/iteration_reasons.sql" \
        -c "SELECT segment, reason_verdict, occurrences FROM iteration_reasons ORDER BY segment, reason_verdict"
 ```
 
-### Section 4 — Drift (FAIL rate over time)
+### Section 4 — Drift (non-PASS rate over time)
 
-Verifier-FAIL rate bucketed by ISO week, by segment. Rising rates signal
-verification quality degradation.
+Verifier non-PASS rate (any verdict other than a clean `PASS`) bucketed by ISO
+week, by segment. Rising rates signal verification quality degradation.
 
 ```bash
 echo ""
-echo "=== Drift (FAIL rate over time) ==="
+echo "=== Drift (non-PASS rate over time) ==="
 duckdb -c ".read ${stats_dir}/fail_rate_over_time.sql" \
        -c "SELECT segment, week, task_count, fail_count, fail_rate FROM fail_rate_over_time ORDER BY segment, week"
 ```

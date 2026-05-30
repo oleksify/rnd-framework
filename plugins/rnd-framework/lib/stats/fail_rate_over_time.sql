@@ -1,6 +1,11 @@
--- FAIL-rate over time (drift): verifier-FAIL rate bucketed by ISO week,
--- split by segment. Surfaces whether verification quality is drifting up or
--- down across the project's history.
+-- Non-PASS rate over time (drift): the fraction of verifier verdicts that were
+-- not a clean PASS — NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or the
+-- legacy FAIL string — bucketed by ISO week, split by segment. Surfaces whether
+-- verification quality is drifting up or down across the project's history. PASS
+-- is the only success terminal; the literal FAIL string was retired (Gate 3
+-- collapses it into NEEDS_ITERATION), so a `verdict = 'FAIL'` filter reads zero
+-- on all modern data. The fail_count/fail_rate columns keep their names (a
+-- non-PASS verdict IS a failure to pass verification).
 --
 -- Verdicts and their timestamps come from per-slug calibration.jsonl; the
 -- segment is derived DIRECTLY from the calibration filename's slug (first path
@@ -67,7 +72,7 @@ SELECT
   segment,
   week,
   count(*)                                              AS task_count,
-  count(*) FILTER (WHERE verdict = 'FAIL')              AS fail_count,
-  round(count(*) FILTER (WHERE verdict = 'FAIL') * 1.0 / count(*), 4) AS fail_rate
+  count(*) FILTER (WHERE verdict <> 'PASS')             AS fail_count,
+  round(count(*) FILTER (WHERE verdict <> 'PASS') * 1.0 / count(*), 4) AS fail_rate
 FROM classified
 GROUP BY ALL;

@@ -4,6 +4,14 @@
 -- who pass work the verifier fails (over-confident) or fail work the verifier
 -- passes (under-confident).
 --
+-- The two sides use DIFFERENT failure vocabularies and must not be unified:
+--   * Builder self_verdict is a binary PASS|FAIL field, so self_fail is
+--     literally `self_verdict = 'FAIL'`.
+--   * Verifier verdict is PASS | NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION
+--     (the literal FAIL string is retired). A verifier "fail" is therefore any
+--     non-PASS verdict — `verdict <> 'PASS'` — NOT `verdict = 'FAIL'`, which
+--     reads zero on all modern data.
+--
 -- Builder self-verdict comes from the builder_self_assessment audit event;
 -- verifier verdict comes from per-slug calibration.jsonl, whose slug (and thus
 -- segment) is the first path component of the calibration filename — no session
@@ -95,7 +103,7 @@ WITH
       CASE WHEN v.slug IN (SELECT slug FROM dogfood_slugs)
            THEN 'dogfood' ELSE 'feature' END AS segment,
       (a.self_verdict = 'FAIL')              AS self_fail,
-      (v.verdict = 'FAIL')                   AS verifier_fail
+      (v.verdict <> 'PASS')                  AS verifier_fail
     FROM verdicts v
     JOIN self_assessment a ON v.task_id = a.task_id
   )

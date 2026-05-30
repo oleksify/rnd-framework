@@ -1,5 +1,12 @@
--- Per-shape verifier-FAIL rate: for each (segment, shape), the fraction of
--- tasks whose verifier verdict was FAIL.
+-- Per-shape verifier non-PASS rate: for each (segment, shape), the fraction of
+-- tasks whose latest verifier verdict was anything other than a clean PASS —
+-- NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, or the legacy FAIL string. A
+-- non-PASS verdict is a verification cycle that did not terminate cleanly: the
+-- work failed to pass and had to iterate. PASS is the only success terminal in
+-- the current vocabulary; the literal FAIL string was retired when Gate 3 began
+-- collapsing it into NEEDS_ITERATION, so a `verdict = 'FAIL'` filter reads zero
+-- on all modern data. The fail_count/fail_rate columns keep their names (a
+-- non-PASS verdict IS a failure to pass verification).
 --
 -- Verdicts come from per-slug calibration.jsonl files; the segment is derived
 -- DIRECTLY from the calibration filename's slug (first path component) — no
@@ -106,7 +113,7 @@ SELECT
   segment,
   shape,
   count(*)                                              AS task_count,
-  count(*) FILTER (WHERE verdict = 'FAIL')              AS fail_count,
-  round(count(*) FILTER (WHERE verdict = 'FAIL') * 1.0 / count(*), 4) AS fail_rate
+  count(*) FILTER (WHERE verdict <> 'PASS')             AS fail_count,
+  round(count(*) FILTER (WHERE verdict <> 'PASS') * 1.0 / count(*), 4) AS fail_rate
 FROM classified
 GROUP BY ALL;

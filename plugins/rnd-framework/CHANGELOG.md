@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.272 — 2026-05-30
+
+### Fix per-shape FAIL rate, self-fail-vs-verdict gap, and drift views to count non-PASS verdicts instead of the retired FAIL string
+
+The verifier no longer emits the literal verdict string FAIL — Gate 3 collapses failing assertions into NEEDS_ITERATION, and quality shortfalls into PASS_QUALITY_NEEDS_ITERATION. Three stats views still filtered on verdict = 'FAIL', a string that reads zero on all modern calibration data, so rnd-stats Sections 1 (per_shape_fail_rate), 2 (self_fail_vs_verdict_gap, verifier side), and 4 (fail_rate_over_time) reported a flat 0.0 fail rate even when builds had visibly iterated — contradicting Sections 3/3a, which already surfaced the same NEEDS_ITERATION events. The fix replaces the verifier-side predicate verdict = 'FAIL' with verdict <> 'PASS' (PASS is the only clean-success terminal), matching the sibling iteration_reasons.sql exactly; <> 'PASS' subsumes NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and any legacy FAIL. The builder side of the gap view keeps self_verdict = 'FAIL' (the builder DOES emit a binary PASS|FAIL self-assessment). Column names fail_count/fail_rate are retained — a non-PASS verdict is a failure to pass verification — with headers and comments updated to say so. Section 4 now sums to exactly the 9 non-PASS records present (5 NEEDS_ITERATION + 4 PASS_QUALITY_NEEDS_ITERATION); Section 2 stays 0 by design because every completed task's final verdict is PASS. commands/rnd-stats.md Section 1/4 labels and the command description renamed FAIL rate to non-PASS rate. SQL-only change, no agent behavior change.
+
 ## 0.15.271 — 2026-05-30
 
 ### Reset to 0.x: rejoining ZeroVer to reflect experimental R&D status

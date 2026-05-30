@@ -1,3 +1,6 @@
 {"shape":"crud","severity":"major","verifier_said_PASS":true,"review_found":true,"session_id":"s-df-rev-1","timestamp":"2026-05-28T10:00:00Z"}
 {"shape":"crud","severity":"minor","verifier_said_PASS":true,"review_found":true,"session_id":"s-df-rev-1","timestamp":"2026-05-28T10:01:00Z"}
 {"shape":"crud","severity":"info","verifier_said_PASS":false,"review_found":false,"session_id":"s-df-rev-2","timestamp":"2026-05-29T09:00:00Z"}
+{"shape":"crud","severity":"major","verifier_said_PASS":true,"review_found":true,"session_id":"s-df-rev-3","timestamp":"2026-05-30T10:00:00Z","category":"architecture"}
+{"shape":"wiring","severity":"minor","verifier_said_PASS":true,"review_found":true,"session_id":"s-df-rev-4","timestamp":"2026-05-30T11:00:00Z","category":"correctness"}
+{"shape":"wiring","severity":"major","verifier_said_PASS":true,"review_found":true,"session_id":"s-df-rev-4","timestamp":"2026-05-30T11:01:00Z","category":"kiss"}

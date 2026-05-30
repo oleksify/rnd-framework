@@ -686,18 +686,20 @@ After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchan
 5. **For each finding**, call the post-review record writer (`lib/post-review-writer.sh`) to append one record to the slug-root `post-review.jsonl`:
 
    ```bash
-   # For each finding <file> <severity>:
+   # For each finding <file> <severity> <category>:
    bash "${CLAUDE_PLUGIN_ROOT}/lib/post-review-writer.sh" \
      --session-dir    "$RND_DIR" \
      --session-id     "$(basename "$RND_DIR")" \
      --touched-file   "<touched_file>" \
      --severity       "<severity>" \
-     --review-found   "true"
+     --review-found   "true" \
+     --category       "<category>"
    ```
 
    Where:
    - `<touched_file>` — the repo-relative path to the file the finding concerns
    - `<severity>` — one of: `critical`, `major`, `minor`, `info`
+   - `<category>` — the finding's review category from the seven-category review report (`post-ship-review.md`): one of `architecture`, `security`, `correctness`, `testing`, `kiss`, `style`, `pipeline-hygiene`. Each finding in the review report appears under a named category heading — use that heading's slug as the `--category` value. The writer validates the value against `x-review-category-vocab` in `lib/event-schema.json` and rejects unknown slugs.
    - `--review-found` is hardcoded `"true"` here — every finding row is a real finding
    - `--verifier-said-pass` is now OPTIONAL for attributed findings. The writer resolves the finding's owning task and DERIVES `verifier_said_PASS` from that task's aggregated verdict in `$RND_DIR/verifications/wave-*-verdict-map.json` (true iff no entry for the task is `FAIL`/`NEEDS_ITERATION`), so the shape and the verdict come from the SAME owning task. Pass `--verifier-said-pass <bool>` only as a FALLBACK for an unattributable finding (one whose touched file maps to no owning task, where no verdict-map entry exists to derive from); for an attributed finding the derived value wins and an explicit flag is ignored.
 

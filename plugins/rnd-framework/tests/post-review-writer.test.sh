@@ -495,4 +495,152 @@ CLAUDE_PLUGIN_DATA="$F3D_SLUG" "$WRITER" \
 f3d_pass="$(jq -r '.verifier_said_PASS' "${F3D_SLUG}/post-review.jsonl")"
 assert_eq "F3: attributed finding with no map entry for its task → flag fallback (false)" "false" "$f3d_pass"
 
+# ============================================================
+# Test 8 — --category: valid category recorded on finding row
+# ============================================================
+
+printf '\n--- post-review-writer: category recorded on finding ---\n'
+
+TMP8_DIR="${TMP_DIR}/test8"
+SESSION8_DIR="${TMP8_DIR}/session"
+BUILDS8_DIR="${SESSION8_DIR}/builds"
+SLUG8_DIR="${TMP8_DIR}/slug-root"
+mkdir -p "$SLUG8_DIR" "$BUILDS8_DIR"
+
+cat > "${BUILDS8_DIR}/M01-T01-aaaa0008-manifest.md" <<'MD'
+# Build Manifest: M01-T01-aaaa0008
+
+## Files written
+lib/target.sh
+MD
+
+cat > "${SESSION8_DIR}/features.json" <<'JSON'
+{
+  "tasks": [
+    {
+      "id": "M1.T01.target-task",
+      "uuid": "aaaa0008",
+      "assertionIds": ["M1.area.assertion-cat"]
+    }
+  ]
+}
+JSON
+
+cat > "${SESSION8_DIR}/audit.jsonl" <<'JSONL'
+{"event":"assertion_shape","task_id":"M1.T01.target-task","assertion_id":"M1.area.assertion-cat","shape":"wiring","timestamp":"2026-05-30T08:00:00Z"}
+JSONL
+
+POST_REVIEW8="${SLUG8_DIR}/post-review.jsonl"
+
+CLAUDE_PLUGIN_DATA="$SLUG8_DIR" "$WRITER" \
+  --session-dir  "$SESSION8_DIR" \
+  --session-id   "20260530-090000-cat00001" \
+  --touched-file "lib/target.sh" \
+  --severity     "minor" \
+  --review-found "true" \
+  --category     "architecture"
+
+cat8_count="$(wc -l < "$POST_REVIEW8" | tr -d ' ')"
+assert_eq "category: exactly one record written" "1" "$cat8_count"
+
+cat8_category="$(jq -r '.category' "$POST_REVIEW8")"
+assert_eq "category: .category == architecture" "architecture" "$cat8_category"
+
+# All 6 prior fields must still be intact
+cat8_fields="$(jq -e '.shape and .severity and (.verifier_said_PASS != null) and (.review_found != null) and .session_id and .timestamp' "$POST_REVIEW8")"
+assert_eq "category: all 6 prior fields intact" "true" "$cat8_fields"
+
+# ============================================================
+# Test 9 — --category: invalid slug → exit non-zero, no record
+# ============================================================
+
+printf '\n--- post-review-writer: invalid category rejected ---\n'
+
+TMP9_DIR="${TMP_DIR}/test9"
+SESSION9_DIR="${TMP9_DIR}/session"
+BUILDS9_DIR="${SESSION9_DIR}/builds"
+SLUG9_DIR="${TMP9_DIR}/slug-root"
+mkdir -p "$SLUG9_DIR" "$BUILDS9_DIR"
+
+cat > "${BUILDS9_DIR}/M01-T01-aaaa0009-manifest.md" <<'MD'
+# Build Manifest: M01-T01-aaaa0009
+
+## Files written
+lib/other.sh
+MD
+
+cat > "${SESSION9_DIR}/features.json" <<'JSON'
+{ "tasks": [{ "id": "M1.T01.other-task", "uuid": "aaaa0009", "assertionIds": [] }] }
+JSON
+
+cat > "${SESSION9_DIR}/audit.jsonl" <<'JSONL'
+{"event":"assertion_shape","task_id":"M1.T01.other-task","assertion_id":"M1.area.x","shape":"wiring","timestamp":"2026-05-30T08:00:00Z"}
+JSONL
+
+POST_REVIEW9="${SLUG9_DIR}/post-review.jsonl"
+
+set +e
+CLAUDE_PLUGIN_DATA="$SLUG9_DIR" "$WRITER" \
+  --session-dir  "$SESSION9_DIR" \
+  --session-id   "20260530-091000-bogus001" \
+  --touched-file "lib/other.sh" \
+  --severity     "minor" \
+  --review-found "true" \
+  --category     "bogus" 2>/dev/null
+bogus_exit=$?
+set -e
+
+assert_eq "invalid-category: exits non-zero" "1" "$bogus_exit"
+
+bogus_written="0"
+[[ -f "$POST_REVIEW9" ]] && bogus_written="$(wc -l < "$POST_REVIEW9" | tr -d ' ')"
+assert_eq "invalid-category: zero records written" "0" "$bogus_written"
+
+# ============================================================
+# Test 10 — no --category → record emitted, .category null/absent,
+#           all 6 prior fields intact
+# ============================================================
+
+printf '\n--- post-review-writer: no category field backward-compatible ---\n'
+
+TMP10_DIR="${TMP_DIR}/test10"
+SESSION10_DIR="${TMP10_DIR}/session"
+BUILDS10_DIR="${SESSION10_DIR}/builds"
+SLUG10_DIR="${TMP10_DIR}/slug-root"
+mkdir -p "$SLUG10_DIR" "$BUILDS10_DIR"
+
+cat > "${BUILDS10_DIR}/M01-T01-aaaa0010-manifest.md" <<'MD'
+# Build Manifest: M01-T01-aaaa0010
+
+## Files written
+lib/nocat.sh
+MD
+
+cat > "${SESSION10_DIR}/features.json" <<'JSON'
+{ "tasks": [{ "id": "M1.T01.nocat-task", "uuid": "aaaa0010", "assertionIds": ["M1.area.nc"] }] }
+JSON
+
+cat > "${SESSION10_DIR}/audit.jsonl" <<'JSONL'
+{"event":"assertion_shape","task_id":"M1.T01.nocat-task","assertion_id":"M1.area.nc","shape":"data-transform","timestamp":"2026-05-30T08:00:00Z"}
+JSONL
+
+POST_REVIEW10="${SLUG10_DIR}/post-review.jsonl"
+
+CLAUDE_PLUGIN_DATA="$SLUG10_DIR" "$WRITER" \
+  --session-dir  "$SESSION10_DIR" \
+  --session-id   "20260530-092000-nocat001" \
+  --touched-file "lib/nocat.sh" \
+  --severity     "info" \
+  --review-found "true"
+
+nocat_count="$(wc -l < "$POST_REVIEW10" | tr -d ' ')"
+assert_eq "no-category: record emitted" "1" "$nocat_count"
+
+# .category should be null or absent (jq -r returns "null" for either)
+nocat_category="$(jq -r '.category // null' "$POST_REVIEW10")"
+assert_eq "no-category: .category null" "null" "$nocat_category"
+
+nocat_fields="$(jq -e '.shape and .severity and (.verifier_said_PASS != null) and (.review_found != null) and .session_id and .timestamp' "$POST_REVIEW10")"
+assert_eq "no-category: all 6 prior fields intact" "true" "$nocat_fields"
+
 report

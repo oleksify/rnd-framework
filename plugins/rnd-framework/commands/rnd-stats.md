@@ -257,3 +257,40 @@ else
          -c "SELECT segment, shape, review_count, finding_count, gap_count FROM post_review_findings ORDER BY segment, shape"
 fi
 ```
+
+### Section 9 — Theory-loss share (category breakdown)
+
+Per-category finding counts and the theory-loss share: the fraction of
+categorized findings (excluding the 'uncategorized' bucket) whose category is
+'architecture' or 'kiss'. A high share is the signal that would justify building
+the theory-holder (M3); a low share argues to cancel it (per the M12 precedent).
+
+The `*/post-review.jsonl` glob hard-errors on a zero-file match — guard its
+existence first, mirroring the Section 8 probe guard.
+
+```bash
+echo ""
+echo "=== Theory-loss share (category breakdown) ==="
+has_pr9=$(duckdb -noheader -list -c "SELECT count(*) FROM glob('*/post-review.jsonl')" 2>/dev/null)
+
+if [[ "${has_pr9:-0}" -eq 0 ]]; then
+  echo "pending — no post-pipeline review data yet. Run a full pipeline to Phase 8 to populate."
+else
+  duckdb -c ".read ${stats_dir}/post_review_categories.sql" \
+         -c "SELECT segment, category, finding_count FROM post_review_categories ORDER BY segment, category"
+  echo ""
+  echo "--- theory-loss share (architecture+kiss / categorized findings) ---"
+  duckdb -c ".read ${stats_dir}/post_review_categories.sql" \
+         -c "SELECT segment,
+               COALESCE(sum(finding_count) FILTER (WHERE category IN ('architecture','kiss')), 0) AS theory_loss_count,
+               COALESCE(sum(finding_count) FILTER (WHERE category != 'uncategorized'), 0)         AS categorized_count,
+               round(
+                 COALESCE(sum(finding_count) FILTER (WHERE category IN ('architecture','kiss')), 0) * 1.0
+                 / NULLIF(COALESCE(sum(finding_count) FILTER (WHERE category != 'uncategorized'), 0), 0),
+                 4
+               ) AS theory_loss_share
+             FROM post_review_categories
+             GROUP BY segment
+             ORDER BY segment"
+fi
+```

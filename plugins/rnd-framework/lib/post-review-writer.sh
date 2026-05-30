@@ -88,6 +88,7 @@ severity=""
 verifier_said_pass=""
 review_found=""
 clean_shape=""
+category=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -98,6 +99,7 @@ while [[ $# -gt 0 ]]; do
     --verifier-said-pass) verifier_said_pass="$2"; shift 2 ;;
     --review-found)       review_found="$2";       shift 2 ;;
     --clean-shape)        clean_shape="$2";        shift 2 ;;
+    --category)           category="$2";           shift 2 ;;
     *) printf 'post-review-writer.sh: unknown argument: %s\n' "$1" >&2; exit 1 ;;
   esac
 done
@@ -119,28 +121,50 @@ _post_review_file() {
 }
 
 _emit_record() {
-  # $1 shape  $2 severity  $3 verifier_said_PASS(json)  $4 review_found(json)
+  # $1 shape  $2 severity  $3 verifier_said_PASS(json)  $4 review_found(json)  $5 category (optional, empty → omit field)
   local out_file
   out_file="$(_post_review_file)"
 
   local ts
   ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
-  jq -nc \
-    --arg shape             "$1" \
-    --arg severity          "$2" \
-    --argjson verifier_pass "$3" \
-    --argjson review_found  "$4" \
-    --arg session_id        "$session_id" \
-    --arg timestamp         "$ts" \
-    '{
-      shape:             $shape,
-      severity:          $severity,
-      verifier_said_PASS: $verifier_pass,
-      review_found:      $review_found,
-      session_id:        $session_id,
-      timestamp:         $timestamp
-    }' >> "$out_file"
+  local cat_arg="${5:-}"
+
+  if [[ -n "$cat_arg" ]]; then
+    jq -nc \
+      --arg shape             "$1" \
+      --arg severity          "$2" \
+      --argjson verifier_pass "$3" \
+      --argjson review_found  "$4" \
+      --arg session_id        "$session_id" \
+      --arg timestamp         "$ts" \
+      --arg category          "$cat_arg" \
+      '{
+        shape:              $shape,
+        severity:           $severity,
+        verifier_said_PASS: $verifier_pass,
+        review_found:       $review_found,
+        session_id:         $session_id,
+        timestamp:          $timestamp,
+        category:           $category
+      }' >> "$out_file"
+  else
+    jq -nc \
+      --arg shape             "$1" \
+      --arg severity          "$2" \
+      --argjson verifier_pass "$3" \
+      --argjson review_found  "$4" \
+      --arg session_id        "$session_id" \
+      --arg timestamp         "$ts" \
+      '{
+        shape:              $shape,
+        severity:           $severity,
+        verifier_said_PASS: $verifier_pass,
+        review_found:       $review_found,
+        session_id:         $session_id,
+        timestamp:          $timestamp
+      }' >> "$out_file"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -179,6 +203,22 @@ fi
 
 # --verifier-said-pass is OPTIONAL: it is now a FALLBACK, used only when the
 # owning task has no verdict-map entry to derive from. Default false.
+
+# Validate --category against x-review-category-vocab when present.
+if [[ -n "$category" ]]; then
+  schema_file="${_SCRIPT_DIR}/event-schema.json"
+
+  [[ -f "$schema_file" ]] || { printf 'post-review-writer.sh: event-schema.json not found at %s\n' "$schema_file" >&2; exit 1; }
+
+  is_valid_category="$(jq -r --arg c "$category" '
+    (."x-review-category-vocab" // []) | index($c) != null
+  ' "$schema_file" 2>/dev/null || true)"
+
+  [[ "$is_valid_category" == "true" ]] || {
+    printf 'post-review-writer.sh: --category %q is not in x-review-category-vocab\n' "$category" >&2
+    exit 1
+  }
+fi
 
 # ---------------------------------------------------------------------------
 # Attribution: touched-file → owning task → first shape in audit.jsonl
@@ -352,4 +392,5 @@ _emit_record \
   "$shape" \
   "$severity" \
   "$verifier_pass_json" \
-  "$(_to_bool "$review_found")"
+  "$(_to_bool "$review_found")" \
+  "$category"

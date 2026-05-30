@@ -3,6 +3,15 @@
   "$id": "https://rnd-framework/event-schema.json",
   "title": "Per-(Session, Assertion) Fact Grain",
   "description": "Schema for the per-(session, assertion) instrumentation fact. Carries shape (task character classification) and confidence (planner certainty). The top-level x-shape-vocab array is the load-bearing SSOT for the controlled shape vocabulary — gates and downstream consumers source it via jq rather than re-parsing the nested enum, mirroring the x-disallowed-fields convention in manifest-schema.json.",
+  "x-review-category-vocab": [
+    "architecture",
+    "security",
+    "correctness",
+    "testing",
+    "kiss",
+    "style",
+    "pipeline-hygiene"
+  ],
   "x-shape-vocab": [
     "crud",
     "schema-migration",

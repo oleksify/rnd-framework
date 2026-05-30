@@ -21,14 +21,16 @@ not reproduce. Set the env var first:
 ```sh
 export RND_DOGFOOD_SLUGS="claude-130cb64f"
 
-duckdb -c ".read ../shape_distribution.sql"        -c "SELECT * FROM shape_distribution ORDER BY segment, shape"
-duckdb -c ".read ../per_shape_fail_rate.sql"       -c "SELECT * FROM per_shape_fail_rate ORDER BY segment, shape"
-duckdb -c ".read ../iteration_depth.sql"           -c "SELECT * FROM iteration_depth ORDER BY segment, iteration_count"
-duckdb -c ".read ../iteration_reasons.sql"         -c "SELECT * FROM iteration_reasons ORDER BY segment, reason_verdict"
-duckdb -c ".read ../self_fail_vs_verdict_gap.sql"  -c "SELECT * FROM self_fail_vs_verdict_gap ORDER BY segment"
-duckdb -c ".read ../fail_rate_over_time.sql"       -c "SELECT * FROM fail_rate_over_time ORDER BY segment, week"
-duckdb -c ".read ../backfill.sql"                  -c "SELECT * FROM backfill ORDER BY segment, task_id"
-duckdb -c ".read ../drift_watch.sql"               -c "SELECT segment, session_ordinal, session_id, iter_metric, replan_count, iter_slope, replan_slope, window_n FROM drift_watch ORDER BY segment, session_ordinal"
+duckdb -c ".read ../shape_distribution.sql"          -c "SELECT * FROM shape_distribution ORDER BY segment, shape"
+duckdb -c ".read ../per_shape_fail_rate.sql"         -c "SELECT * FROM per_shape_fail_rate ORDER BY segment, shape"
+duckdb -c ".read ../iteration_depth.sql"             -c "SELECT * FROM iteration_depth ORDER BY segment, iteration_count"
+duckdb -c ".read ../iteration_reasons.sql"           -c "SELECT * FROM iteration_reasons ORDER BY segment, reason_verdict"
+duckdb -c ".read ../self_fail_vs_verdict_gap.sql"    -c "SELECT * FROM self_fail_vs_verdict_gap ORDER BY segment"
+duckdb -c ".read ../fail_rate_over_time.sql"         -c "SELECT * FROM fail_rate_over_time ORDER BY segment, week"
+duckdb -c ".read ../backfill.sql"                    -c "SELECT * FROM backfill ORDER BY segment, task_id"
+duckdb -c ".read ../drift_watch.sql"                 -c "SELECT segment, session_ordinal, session_id, iter_metric, replan_count, iter_slope, replan_slope, window_n FROM drift_watch ORDER BY segment, session_ordinal"
+duckdb -c ".read ../post_review_findings.sql"        -c "SELECT * FROM post_review_findings ORDER BY segment, shape"
+duckdb -c ".read ../post_review_categories.sql"      -c "SELECT * FROM post_review_categories ORDER BY segment, category"
 ```
 
 The audit views glob `*/**/audit.jsonl` (a single recursive glob that matches
@@ -47,6 +49,7 @@ on-disk layouts):
 
 - `claude-130cb64f` — the dogfood slug (in the inline allowlist) → segment `dogfood`
   - `claude-130cb64f/calibration.jsonl` — its verdicts (incl. the correction record and 7 drift-watch sessions)
+  - `claude-130cb64f/post-review.jsonl` — post-review findings: s-df-rev-1 (2 rows, uncategorized), s-df-rev-2 (clean), s-df-rev-3 (architecture), s-df-rev-4 (correctness + kiss)
   - `claude-130cb64f/sessions/s-df-1/audit.jsonl` — legacy layout
   - `claude-130cb64f/branches/main/sessions/s-df-2/audit.jsonl` — branch-partitioned layout
   - `claude-130cb64f/sessions/s-df-hist/audit.jsonl` — legacy layout (historical)
@@ -57,6 +60,7 @@ on-disk layouts):
   - sessions s-df-7, s-df-8, s-df-9 — calibration records only; no audit.jsonl (replan_count = 0)
 - `acme-widgets-7f3a1b2c` — a downstream feature project (not in the allowlist) → segment `feature`
   - `acme-widgets-7f3a1b2c/calibration.jsonl` — its verdicts
+  - `acme-widgets-7f3a1b2c/post-review.jsonl` — post-review findings: s-ft-rev-1 (uncategorized), s-ft-rev-2 (style)
   - `acme-widgets-7f3a1b2c/branches/release/v2/sessions/s-ft-1/audit.jsonl` — branch-partitioned layout with a SLASH in the branch name (`release/v2`), proving the recursive glob and first-component slug extraction handle nested branch dirs
   - `acme-widgets-7f3a1b2c/sessions/s-ft-hist/audit.jsonl` — legacy layout (historical)
 
@@ -365,26 +369,87 @@ Fixture facts:
     → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
   - Session `s-df-rev-2`: one row on `crud`, `verifier_said_PASS:false, review_found:false` (clean)
     → collapses to one (session,shape) row: has_finding=false, pass_but_found=false
-  → dogfood/crud: review_count=2, finding_count=1 (one dirty session), gap_count=1
+  - Session `s-df-rev-3`: one finding on `crud`, `verifier_said_PASS:true, review_found:true`, category=`architecture`
+    → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
+  - Session `s-df-rev-4`: two findings on `wiring`, both `verifier_said_PASS:true, review_found:true`
+    → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
+  → dogfood/crud: review_count=3, finding_count=2 (s-df-rev-1 and s-df-rev-3 dirty), gap_count=2
+  → dogfood/wiring: review_count=1, finding_count=1, gap_count=1
 
 - `acme-widgets-7f3a1b2c/post-review.jsonl` (feature):
   - Session `s-ft-rev-1`: one finding on `docs`, `verifier_said_PASS:true, review_found:true`
     → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
-  → feature/docs: review_count=1, finding_count=1, gap_count=1
+  - Session `s-ft-rev-2`: one finding on `docs`, `verifier_said_PASS:true, review_found:true`, category=`style`
+    → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
+  → feature/docs: review_count=2, finding_count=2, gap_count=2
 
-FM2 proof: s-df-rev-1 has 2 finding rows → `finding_count = 1` (one dirty session),
-not 2. `count(*) FROM post_review_findings` = 2, which equals the distinct
-(segment, shape) pair count — never inflated by the per-finding input grain.
+FM2 proof: s-df-rev-1 has 2 finding rows and s-df-rev-4 has 2 finding rows → each
+collapses to `finding_count = 1` (one dirty session per shape), not 2 or 3.
 
 ```sh
 export RND_DOGFOOD_SLUGS="claude-130cb64f"
 duckdb -c ".read ../post_review_findings.sql" -c "SELECT * FROM post_review_findings ORDER BY segment, shape"
 ```
 
-| segment | shape | review_count | finding_count | gap_count |
-|---------|-------|--------------|---------------|-----------|
-| dogfood | crud  | 2            | 1             | 1         |
-| feature | docs  | 1            | 1             | 1         |
+| segment | shape  | review_count | finding_count | gap_count |
+|---------|--------|--------------|---------------|-----------|
+| dogfood | crud   | 3            | 2             | 2         |
+| dogfood | wiring | 1            | 1             | 1         |
+| feature | docs   | 2            | 2             | 2         |
+
+---
+
+---
+
+## View 9 — `post_review_categories`
+
+Per-category post-pipeline-review finding counts, by segment. Reads
+`*/post-review.jsonl`. Counts only finding rows (`review_found = true`), grouped
+per (segment, category). Legacy rows without a `category` field bucket as
+`'uncategorized'` via COALESCE.
+
+Fixture facts (updated from View 8 additions):
+
+- `claude-130cb64f/post-review.jsonl` (dogfood):
+  - s-df-rev-1 row 1: `review_found:true`, no category → uncategorized
+  - s-df-rev-1 row 2: `review_found:true`, no category → uncategorized
+  - s-df-rev-2: `review_found:false` → excluded (not a finding)
+  - s-df-rev-3: `review_found:true`, category=`architecture`
+  - s-df-rev-4 row 1: `review_found:true`, category=`correctness`
+  - s-df-rev-4 row 2: `review_found:true`, category=`kiss`
+
+- `acme-widgets-7f3a1b2c/post-review.jsonl` (feature):
+  - s-ft-rev-1: `review_found:true`, no category → uncategorized
+  - s-ft-rev-2: `review_found:true`, category=`style`
+
+```sh
+export RND_DOGFOOD_SLUGS="claude-130cb64f"
+duckdb -c ".read ../post_review_categories.sql" -c "SELECT * FROM post_review_categories ORDER BY segment, category"
+```
+
+| segment | category      | finding_count |
+|---------|---------------|---------------|
+| dogfood | architecture  | 1             |
+| dogfood | correctness   | 1             |
+| dogfood | kiss          | 1             |
+| dogfood | uncategorized | 2             |
+| feature | style         | 1             |
+| feature | uncategorized | 1             |
+
+### Theory-loss share
+
+Categorized findings (excluding `uncategorized`):
+- dogfood: architecture=1, correctness=1, kiss=1 → total=3
+- feature: style=1 → total=1
+
+Theory-loss (architecture + kiss):
+- dogfood: 1+1=2 → share = 2/3 = 0.6667
+- feature: 0 → share = 0/1 = 0.0
+
+| segment | theory_loss_count | categorized_count | theory_loss_share |
+|---------|--------------------|-------------------|-------------------|
+| dogfood | 2                  | 3                 | 0.6667            |
+| feature | 0                  | 1                 | 0.0               |
 
 ---
 

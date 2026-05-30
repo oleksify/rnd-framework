@@ -161,4 +161,98 @@ JSONL
 orphan_shape="$(attribute "$ORPHAN_SESSION" "${TMP_DIR}/orphan/slug" "src/orphan.ts")"
 assert_eq "unmatched-uuid: file in manifest but uuid not in features → unattributable" "unattributable" "$orphan_shape"
 
+# ============================================================
+# Test 4 — co-owned file → LATEST pipeline stage (F2).
+#
+# Two conforming manifests BOTH list the same file X:
+#   M01-T01-<u1> (shape A via task A)  and  M02-T01-<u2> (shape B via task B).
+# The finding on X must attribute to M02-T01 (latest stage, higher milestone),
+# i.e. shape B — never the lexicographically-first or glob-first manifest.
+# The result must be invariant under manifest-creation order AND features.json
+# task order.
+#
+# $1 = manifest write order: "m1-then-m2" or "m2-then-m1".
+# $2 = features.json task order: "m1-first" or "m2-first".
+# Echoes the session dir.
+# ============================================================
+
+build_coowned_fixture() {
+  local manifest_order="$1" feature_order="$2"
+  local root="${TMP_DIR}/coowned/${manifest_order}-${feature_order}"
+  local session="${root}/session"
+  local builds="${session}/builds"
+  mkdir -p "$builds"
+
+  write_m1() {
+    cat > "${builds}/M01-T01-aaaa1111-manifest.md" <<'MD'
+# Build Manifest: M01-T01-aaaa1111
+
+## Files written
+src/shared.ts
+MD
+  }
+
+  write_m2() {
+    cat > "${builds}/M02-T01-bbbb2222-manifest.md" <<'MD'
+# Build Manifest: M02-T01-bbbb2222
+
+## Files written
+src/shared.ts
+MD
+  }
+
+  if [[ "$manifest_order" == "m2-then-m1" ]]; then
+    write_m2
+    write_m1
+  else
+    write_m1
+    write_m2
+  fi
+
+  if [[ "$feature_order" == "m2-first" ]]; then
+    cat > "${session}/features.json" <<'JSON'
+{
+  "tasks": [
+    { "id": "M2.T01.beta-task",  "uuid": "bbbb2222", "assertionIds": ["M2.area.b"] },
+    { "id": "M1.T01.alpha-task", "uuid": "aaaa1111", "assertionIds": ["M1.area.a"] }
+  ]
+}
+JSON
+  else
+    cat > "${session}/features.json" <<'JSON'
+{
+  "tasks": [
+    { "id": "M1.T01.alpha-task", "uuid": "aaaa1111", "assertionIds": ["M1.area.a"] },
+    { "id": "M2.T01.beta-task",  "uuid": "bbbb2222", "assertionIds": ["M2.area.b"] }
+  ]
+}
+JSON
+  fi
+
+  cat > "${session}/audit.jsonl" <<'JSONL'
+{"event":"assertion_shape","task_id":"M1.T01.alpha-task","assertion_id":"M1.area.a","shape":"wiring","timestamp":"2026-05-30T08:00:00Z"}
+{"event":"assertion_shape","task_id":"M2.T01.beta-task","assertion_id":"M2.area.b","shape":"data-transform","timestamp":"2026-05-30T08:00:01Z"}
+JSONL
+
+  printf '%s' "$session"
+}
+
+printf '\n--- attribution-collision: co-owned file → latest stage (F2) ---\n'
+
+CO1="$(build_coowned_fixture m1-then-m2 m1-first)"
+co_shape1="$(attribute "$CO1" "${TMP_DIR}/coowned/slug-1" "src/shared.ts")"
+assert_eq "co-owned: shared file → data-transform (M02-T01, latest stage)" "data-transform" "$co_shape1"
+
+CO2="$(build_coowned_fixture m2-then-m1 m1-first)"
+co_shape2="$(attribute "$CO2" "${TMP_DIR}/coowned/slug-2" "src/shared.ts")"
+assert_eq "co-owned: invariant under reverse manifest-creation order" "data-transform" "$co_shape2"
+
+CO3="$(build_coowned_fixture m1-then-m2 m2-first)"
+co_shape3="$(attribute "$CO3" "${TMP_DIR}/coowned/slug-3" "src/shared.ts")"
+assert_eq "co-owned: invariant under reversed features.json task order" "data-transform" "$co_shape3"
+
+CO4="$(build_coowned_fixture m2-then-m1 m2-first)"
+co_shape4="$(attribute "$CO4" "${TMP_DIR}/coowned/slug-4" "src/shared.ts")"
+assert_eq "co-owned: invariant under both orders reversed" "data-transform" "$co_shape4"
+
 report

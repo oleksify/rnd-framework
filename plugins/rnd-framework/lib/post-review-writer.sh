@@ -21,6 +21,24 @@
 # contributes NO attribution — it is skipped. Better an honest unattributable
 # than a substring-guessed wrong shape: there is no legacy substring fallback.
 #
+# Co-owned files: when a touched file appears in MORE THAN ONE conforming
+# manifest, the owning task is the one at the LATEST pipeline stage — highest
+# milestone number, then highest task number (the <NN> integers parsed from the
+# filename), tie-broken by lexicographically-largest uuid (an impossible tie,
+# since uuids make filenames unique, but kept for total determinism). The choice
+# is independent of glob order and features.json ordering — a co-owned finding
+# attributes to the most-recent stage that touched the file, not whichever
+# manifest the glob happened to enumerate first.
+#
+# verifier_said_PASS is DERIVED from the owning task's aggregated verdict in
+# $session_dir/verifications/wave-*-verdict-map.json (keyed by assertion ID;
+# each entry {verdict, evidence[], feedback, task_id}). Aggregating the entries
+# whose task_id == owning_task: PASS iff none is FAIL or NEEDS_ITERATION. This
+# keeps the verdict and the shape derived from the SAME owning task. The
+# --verifier-said-pass flag is an OPTIONAL override used only as a FALLBACK when
+# no verdict-map entry exists for the owning task (unattributable findings, or
+# no verdict maps present). Clean-row mode is unaffected (it hardcodes true).
+#
 # Multi-shape tie-break: when a task has multiple distinct assertion shapes,
 # the FIRST shape encountered in audit.jsonl for that task_id is used.
 # audit.jsonl is append-only and the shape-producer writes shapes in assertion
@@ -157,8 +175,10 @@ fi
 [[ -n "$session_dir" ]]       || { printf 'post-review-writer.sh: --session-dir required\n' >&2; exit 1; }
 [[ -n "$touched_file" ]]      || { printf 'post-review-writer.sh: --touched-file required\n' >&2; exit 1; }
 [[ -n "$severity" ]]          || { printf 'post-review-writer.sh: --severity required\n' >&2; exit 1; }
-[[ -n "$verifier_said_pass" ]] || { printf 'post-review-writer.sh: --verifier-said-pass required\n' >&2; exit 1; }
 [[ -n "$review_found" ]]      || { printf 'post-review-writer.sh: --review-found required\n' >&2; exit 1; }
+
+# --verifier-said-pass is OPTIONAL: it is now a FALLBACK, used only when the
+# owning task has no verdict-map entry to derive from. Default false.
 
 # ---------------------------------------------------------------------------
 # Attribution: touched-file → owning task → first shape in audit.jsonl
@@ -170,10 +190,54 @@ audit_file="${session_dir}/audit.jsonl"
 
 shape="unattributable"
 
+# Does a manifest's ## Files written section list the touched file?
+# Reads the block between "## Files written" and the next "## " heading and
+# component-aligned-matches each entry against touched_file. Returns 0 on match.
+_manifest_lists_touched() {
+  local manifest="$1"
+
+  local norm_touched="${touched_file#./}"; norm_touched="${norm_touched#/}"
+
+  local in_section=0 line trimmed norm_entry
+  while IFS= read -r line; do
+    if [[ "$line" == "## Files written" ]]; then
+      in_section=1
+      continue
+    fi
+
+    if [[ $in_section -eq 1 ]]; then
+      [[ "$line" == "##"* ]] && break
+
+      trimmed="${line#"${line%%[![:space:]]*}"}"
+      trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+
+      norm_entry="${trimmed#./}"; norm_entry="${norm_entry#/}"
+
+      # Match exact OR component-aligned suffix, so an absolute or
+      # differently-rooted touched file still matches the repo-relative form
+      # manifests list. The "*/" prefix keeps the match component-aligned (so
+      # "ab.sh" never matches "cab.sh").
+      if [[ "$norm_entry" == "$norm_touched" \
+         || "$norm_entry" == */"$norm_touched" \
+         || "$norm_touched" == */"$norm_entry" ]]; then
+        return 0
+      fi
+    fi
+  done < "$manifest"
+
+  return 1
+}
+
 if [[ -d "$builds_dir" ]] && [[ -f "$features_file" ]] && [[ -f "$audit_file" ]]; then
-  # Find the owning task: scan each conforming manifest's ## Files written
-  # section for touched_file, then resolve via the manifest's exact uuid.
+  # Find the owning task: among ALL conforming manifests whose ## Files written
+  # lists touched_file, pick the one at the LATEST pipeline stage (highest
+  # milestone, then highest task, then lexicographically-largest uuid). This is
+  # deterministic and independent of glob order and features.json ordering —
+  # a co-owned file attributes to the most-recent stage that touched it.
   owning_task=""
+  best_milestone=-1
+  best_task=-1
+  best_uuid=""
 
   for manifest in "${builds_dir}"/*-manifest.md; do
     [[ -f "$manifest" ]] || continue
@@ -183,60 +247,35 @@ if [[ -d "$builds_dir" ]] && [[ -f "$features_file" ]] && [[ -f "$audit_file" ]]
     manifest_base="$(basename "$manifest")"
     manifest_key="${manifest_base%-manifest.md}"
 
-    manifest_uuid=""
-    if [[ "$manifest_key" =~ ^M[0-9]+-T[0-9]+-(.+)$ ]]; then
-      manifest_uuid="${BASH_REMATCH[1]}"
+    [[ "$manifest_key" =~ ^M([0-9]+)-T([0-9]+)-(.+)$ ]] || continue
+    m_num=$((10#${BASH_REMATCH[1]}))
+    t_num=$((10#${BASH_REMATCH[2]}))
+    manifest_uuid="${BASH_REMATCH[3]}"
+
+    _manifest_lists_touched "$manifest" || continue
+
+    # Keep this manifest only if it is at a strictly later stage than the best
+    # seen so far. Order: milestone, then task, then uuid (the uuid tie-break is
+    # unreachable since uuids are unique, but kept for total determinism).
+    if (( m_num > best_milestone )) \
+       || { (( m_num == best_milestone )) && (( t_num > best_task )); } \
+       || { (( m_num == best_milestone )) && (( t_num == best_task )) && [[ "$manifest_uuid" > "$best_uuid" ]]; }; then
+      best_milestone=$m_num
+      best_task=$t_num
+      best_uuid="$manifest_uuid"
     fi
-
-    [[ -n "$manifest_uuid" ]] || continue
-
-    # Extract the ## Files written block: lines after the heading up to the
-    # next ## heading or end-of-file. Check if touched_file appears there.
-    in_section=0
-    while IFS= read -r line; do
-      if [[ "$line" == "## Files written" ]]; then
-        in_section=1
-        continue
-      fi
-
-      if [[ $in_section -eq 1 ]]; then
-        if [[ "$line" == "##"* ]]; then
-          break
-        fi
-
-        # Strip leading/trailing whitespace for comparison
-        trimmed="${line#"${line%%[![:space:]]*}"}"
-        trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
-
-        # Normalize both sides (strip leading "./" and "/") and match exact OR
-        # component-aligned suffix, so an absolute or differently-rooted touched
-        # file still matches the repo-relative form manifests list. The "*/"
-        # prefix keeps the match component-aligned (so "ab.sh" never matches
-        # "cab.sh"). Fixes a silent unattributable on path-format drift (F1).
-        norm_entry="${trimmed#./}";        norm_entry="${norm_entry#/}"
-        norm_touched="${touched_file#./}"; norm_touched="${norm_touched#/}"
-
-        if [[ "$norm_entry" == "$norm_touched" \
-           || "$norm_entry" == */"$norm_touched" \
-           || "$norm_touched" == */"$norm_entry" ]]; then
-          # The canonical uuid (resolved above from the conforming filename) is
-          # the task's globally-unique join key. Match it EXACTLY against
-          # features.json .uuid — never a substring on T<NN>, which repeats
-          # across milestones (M1.T01 and M2.T01 collide). Order-independent,
-          # no head -1 ambiguity.
-          owning_task="$(jq -r --arg u "$manifest_uuid" '
-            .tasks[]
-            | select(.uuid == $u)
-            | .id
-          ' "$features_file" 2>/dev/null || true)"
-
-          break
-        fi
-      fi
-    done < "$manifest"
-
-    [[ -n "$owning_task" ]] && break
   done
+
+  if [[ -n "$best_uuid" ]]; then
+    # Resolve the owning task from the winning manifest's uuid. Match EXACTLY
+    # against features.json .uuid — never a substring on T<NN>, which repeats
+    # across milestones (M1.T01 and M2.T01 collide).
+    owning_task="$(jq -r --arg u "$best_uuid" '
+      .tasks[]
+      | select(.uuid == $u)
+      | .id
+    ' "$features_file" 2>/dev/null || true)"
+  fi
 
   if [[ -n "$owning_task" ]]; then
     # Resolve first assertion_shape for this task in audit.jsonl
@@ -250,7 +289,17 @@ if [[ -d "$builds_dir" ]] && [[ -f "$features_file" ]] && [[ -f "$audit_file" ]]
 fi
 
 # ---------------------------------------------------------------------------
-# Emit record
+# Derive verifier_said_PASS from the owning task's aggregated verdict
+#
+# The verdict maps ($session_dir/verifications/wave-*-verdict-map.json) are
+# keyed by assertion ID; each entry is {verdict, evidence[], feedback, task_id}.
+# Aggregate the entries whose task_id == owning_task: PASS iff NONE of them is
+# FAIL or NEEDS_ITERATION. This derives the verdict from the SAME owning task
+# that produced the shape, closing the prior caller↔writer coupling.
+#
+# The --verifier-said-pass flag is the FALLBACK, used only when no verdict-map
+# entry exists for the owning task (unattributable findings, or no maps present).
+# For an attributed finding with a verdict-map entry, the DERIVED value wins.
 # ---------------------------------------------------------------------------
 
 # Normalize boolean strings to JSON booleans
@@ -261,8 +310,46 @@ _to_bool() {
   esac
 }
 
+verifier_pass_json="$(_to_bool "$verifier_said_pass")"
+
+if [[ -n "${owning_task:-}" ]]; then
+  verdict_glob=("${session_dir}"/verifications/wave-*-verdict-map.json)
+
+  # `count` is the number of entries for this task across all maps; `bad` the
+  # number that are FAIL or NEEDS_ITERATION. Derive PASS iff count>0 and bad==0.
+  task_count=0
+  task_bad=0
+
+  for vmap in "${verdict_glob[@]}"; do
+    [[ -f "$vmap" ]] || continue
+
+    counts="$(jq -r --arg tid "$owning_task" '
+      [ .[] | select(.task_id == $tid) ] as $entries
+      | "\($entries | length) \($entries | map(select(.verdict == "FAIL" or .verdict == "NEEDS_ITERATION")) | length)"
+    ' "$vmap" 2>/dev/null || true)"
+
+    [[ -n "$counts" ]] || continue
+
+    read -r c b <<< "$counts"
+    task_count=$(( task_count + c ))
+    task_bad=$(( task_bad + b ))
+  done
+
+  if (( task_count > 0 )); then
+    if (( task_bad == 0 )); then
+      verifier_pass_json="true"
+    else
+      verifier_pass_json="false"
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Emit record
+# ---------------------------------------------------------------------------
+
 _emit_record \
   "$shape" \
   "$severity" \
-  "$(_to_bool "$verifier_said_pass")" \
+  "$verifier_pass_json" \
   "$(_to_bool "$review_found")"

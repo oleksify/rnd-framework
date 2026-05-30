@@ -364,4 +364,135 @@ invalid_written="0"
 [[ -f "$POST_REVIEW6" ]] && invalid_written="$(wc -l < "$POST_REVIEW6" | tr -d ' ')"
 assert_eq "clean-shape: invalid shape writes no record" "0" "$invalid_written"
 
+# ============================================================
+# Test 7 — verifier_said_PASS is DERIVED from the owning task's verdict (F3).
+#
+# The writer aggregates the owning task's entries in
+# verifications/wave-*-verdict-map.json (PASS iff none is FAIL/NEEDS_ITERATION)
+# and the derived value WINS over the --verifier-said-pass flag for an
+# attributed finding. An unattributable finding (no owning task / no verdict
+# map) falls back to the flag.
+# ============================================================
+
+printf '\n--- post-review-writer: verifier_said_PASS derived from verdict (F3) ---\n'
+
+# Shared fixture: M01-T07 owns lib/derived.sh, shape wiring.
+make_f3_fixture() {
+  local root="$1"
+  local session="${root}/session"
+  local builds="${session}/builds"
+  local verif="${session}/verifications"
+  mkdir -p "$builds" "$verif"
+
+  cat > "${builds}/M01-T07-cccc0007-manifest.md" <<'MD'
+# Build Manifest: M01-T07-cccc0007
+
+## Files written
+lib/derived.sh
+MD
+
+  cat > "${session}/features.json" <<'JSON'
+{
+  "tasks": [
+    { "id": "M1.T07.derived-task", "uuid": "cccc0007", "assertionIds": ["M1.area.d1", "M1.area.d2"] }
+  ]
+}
+JSON
+
+  cat > "${session}/audit.jsonl" <<'JSONL'
+{"event":"assertion_shape","task_id":"M1.T07.derived-task","assertion_id":"M1.area.d1","shape":"wiring","timestamp":"2026-05-30T08:00:00Z"}
+JSONL
+
+  printf '%s' "$session"
+}
+
+# --- 7a: owning task aggregates to NEEDS_ITERATION → false, even with flag true ---
+F3A_DIR="${TMP_DIR}/f3a"
+F3A_SESSION="$(make_f3_fixture "$F3A_DIR")"
+cat > "${F3A_SESSION}/verifications/wave-1-verdict-map.json" <<'JSON'
+{
+  "M1.area.d1": { "verdict": "PASS",            "evidence": ["x"], "feedback": "", "task_id": "M1.T07.derived-task" },
+  "M1.area.d2": { "verdict": "NEEDS_ITERATION", "evidence": ["y"], "feedback": "", "task_id": "M1.T07.derived-task" }
+}
+JSON
+
+F3A_SLUG="${F3A_DIR}/slug"
+mkdir -p "$F3A_SLUG"
+CLAUDE_PLUGIN_DATA="$F3A_SLUG" "$WRITER" \
+  --session-dir "$F3A_SESSION" \
+  --session-id  "20260530-086000-f3a00001" \
+  --touched-file "lib/derived.sh" \
+  --severity    "major" \
+  --verifier-said-pass "true" \
+  --review-found "true"
+
+f3a_pass="$(jq -r '.verifier_said_PASS' "${F3A_SLUG}/post-review.jsonl")"
+assert_eq "F3: NEEDS_ITERATION owning task → false even when flag true" "false" "$f3a_pass"
+
+# --- 7b: owning task all-PASS → true (regardless of flag) ---
+F3B_DIR="${TMP_DIR}/f3b"
+F3B_SESSION="$(make_f3_fixture "$F3B_DIR")"
+cat > "${F3B_SESSION}/verifications/wave-1-verdict-map.json" <<'JSON'
+{
+  "M1.area.d1": { "verdict": "PASS",                          "evidence": ["x"], "feedback": "", "task_id": "M1.T07.derived-task" },
+  "M1.area.d2": { "verdict": "PASS_QUALITY_NEEDS_ITERATION",  "evidence": ["y"], "feedback": "", "task_id": "M1.T07.derived-task" }
+}
+JSON
+
+F3B_SLUG="${F3B_DIR}/slug"
+mkdir -p "$F3B_SLUG"
+CLAUDE_PLUGIN_DATA="$F3B_SLUG" "$WRITER" \
+  --session-dir "$F3B_SESSION" \
+  --session-id  "20260530-086100-f3b00001" \
+  --touched-file "lib/derived.sh" \
+  --severity    "minor" \
+  --verifier-said-pass "false" \
+  --review-found "true"
+
+f3b_pass="$(jq -r '.verifier_said_PASS' "${F3B_SLUG}/post-review.jsonl")"
+assert_eq "F3: all-PASS owning task → true even when flag false" "true" "$f3b_pass"
+
+# --- 7c: unattributable finding (no owning task, no map entry) → flag fallback ---
+F3C_DIR="${TMP_DIR}/f3c"
+F3C_SESSION="$(make_f3_fixture "$F3C_DIR")"
+# No verdict map at all; finding touches a file in no manifest.
+F3C_SLUG="${F3C_DIR}/slug"
+mkdir -p "$F3C_SLUG"
+CLAUDE_PLUGIN_DATA="$F3C_SLUG" "$WRITER" \
+  --session-dir "$F3C_SESSION" \
+  --session-id  "20260530-086200-f3c00001" \
+  --touched-file "some/unowned-file.ts" \
+  --severity    "info" \
+  --verifier-said-pass "true" \
+  --review-found "true"
+
+f3c_shape="$(jq -r '.shape' "${F3C_SLUG}/post-review.jsonl")"
+assert_eq "F3: unattributable finding stays unattributable" "unattributable" "$f3c_shape"
+
+f3c_pass="$(jq -r '.verifier_said_PASS' "${F3C_SLUG}/post-review.jsonl")"
+assert_eq "F3: unattributable finding falls back to flag (true)" "true" "$f3c_pass"
+
+# --- 7d: attributed finding but owning task has NO verdict-map entry → flag fallback ---
+F3D_DIR="${TMP_DIR}/f3d"
+F3D_SESSION="$(make_f3_fixture "$F3D_DIR")"
+# Verdict map present but for a DIFFERENT task — no entry for M1.T07.derived-task.
+cat > "${F3D_SESSION}/verifications/wave-1-verdict-map.json" <<'JSON'
+{
+  "M9.area.z": { "verdict": "FAIL", "evidence": ["z"], "feedback": "", "task_id": "M9.T99.other-task" }
+}
+JSON
+
+F3D_SLUG="${F3D_DIR}/slug"
+mkdir -p "$F3D_SLUG"
+CLAUDE_PLUGIN_DATA="$F3D_SLUG" "$WRITER" \
+  --session-dir "$F3D_SESSION" \
+  --session-id  "20260530-086300-f3d00001" \
+  --touched-file "lib/derived.sh" \
+  --severity    "minor" \
+  --verifier-said-pass "false" \
+  --review-found "true"
+
+f3d_pass="$(jq -r '.verifier_said_PASS' "${F3D_SLUG}/post-review.jsonl")"
+assert_eq "F3: attributed finding with no map entry for its task → flag fallback (false)" "false" "$f3d_pass"
+
 report

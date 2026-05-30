@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.14.1 — 2026-05-30
+
+### Fix post-review attribution: deterministic co-owned-file ownership and writer-derived verifier_said_PASS
+
+Resolves the two findings the post-SHIP review of 5.14.0 raised in lib/post-review-writer.sh. F2: a finding on a file co-owned by multiple conforming manifests now attributes to the latest pipeline stage (highest milestone number, then task number, parsed from the M<NN>-T<NN>-<uuid> filename and uuid-tie-broken) — deterministic and independent of glob order and features.json ordering, replacing the arbitrary lexicographically-first first-match break. F3: verifier_said_PASS is now derived from the owning task aggregated verdict in verifications/wave-*-verdict-map.json (true iff no entry for that task_id is FAIL or NEEDS_ITERATION; PASS_QUALITY_NEEDS_ITERATION counts as said-pass), so shape and verdict derive from the SAME owning task; --verifier-said-pass is demoted to an optional fallback used only when no verdict-map entry exists (unattributable findings, or legacy/absent maps), and the Phase 8 caller in commands/rnd-start.md documents it as optional. The derivation degrades gracefully (valid JSON, exit 0, flag fallback) on legacy task-keyed or garbage verdict maps rather than crashing or mis-deriving. Adds F2 and F3 fixtures across tests/attribution-collision.test.sh and tests/post-review-writer.test.sh; validate.sh (373 checks) and run-tests.sh stay green.
+
 ## 5.14.0 — 2026-05-30
 
 ### Add validity-gated expertise: post-SHIP review, per-shape validity ledger, and fast-path dispatch gate

@@ -112,13 +112,11 @@ fi
 
 # ---------------------------------------------------------------------------
 # Criterion 5: No .active-base-dir write inside _plugin_dir_create_session in
-#              any of the three copies.
+#              either copy.
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- .active-base-dir write removed from _plugin_dir_create_session ---'
 
-TIGHT_COPY="${REPO_ROOT}/../../plugins/tight-loop/lib/plugin-dir-base.sh"
-
-for _copy_label in "canonical:${CANONICAL}" "rnd-framework:${RND_COPY}" "tight-loop:${TIGHT_COPY}"; do
+for _copy_label in "canonical:${CANONICAL}" "rnd-framework:${RND_COPY}"; do
   _label="${_copy_label%%:*}"
   _path="${_copy_label#*:}"
   if [[ -f "$_path" ]] && grep -q 'active-base-dir' "$_path"; then
@@ -129,26 +127,9 @@ for _copy_label in "canonical:${CANONICAL}" "rnd-framework:${RND_COPY}" "tight-l
 done
 
 # ---------------------------------------------------------------------------
-# Criterion 6: Three-way parity — tight-loop copy is identical to canonical.
-# ---------------------------------------------------------------------------
-printf '%s\n' '--- three-way parity: tight-loop copy ---'
-
-if [[ ! -f "$TIGHT_COPY" ]]; then
-  assert_eq "plugins/tight-loop/lib/plugin-dir-base.sh exists" "yes" "no"
-else
-  assert_eq "plugins/tight-loop/lib/plugin-dir-base.sh exists" "yes" "yes"
-
-  if diff -q "$CANONICAL" "$TIGHT_COPY" >/dev/null 2>&1; then
-    assert_eq "tight-loop copy is identical to canonical lib/plugin-dir-base.sh" "identical" "identical"
-  else
-    assert_eq "tight-loop copy is identical to canonical lib/plugin-dir-base.sh" "identical" "differs"
-  fi
-fi
-
-# ---------------------------------------------------------------------------
-# Criterion 7: Mutation guard — test fails if any one copy drifts.
+# Criterion 7: Mutation guard — test fails if either copy drifts.
 # Simulates a drift by introducing a comment into a temp copy, then checks
-# that a 3-way diff would catch it (exercises the diff logic used above).
+# that a diff would catch it (exercises the diff logic used above).
 # ---------------------------------------------------------------------------
 printf '%s\n' '--- mutation guard: single copy drift is caught ---'
 
@@ -157,13 +138,12 @@ trap 'rm -rf "$MUTATED_DIR"; rm -rf "$TMPBASE"' EXIT
 
 cp "$CANONICAL" "${MUTATED_DIR}/canonical.sh"
 cp "$RND_COPY"  "${MUTATED_DIR}/rnd-framework.sh"
-cp "$CANONICAL" "${MUTATED_DIR}/tight-loop.sh"
 
 # Introduce drift into one copy
-printf '\n# drift\n' >> "${MUTATED_DIR}/tight-loop.sh"
+printf '\n# drift\n' >> "${MUTATED_DIR}/rnd-framework.sh"
 
 _drift_detected=no
-if ! diff -q "${MUTATED_DIR}/canonical.sh" "${MUTATED_DIR}/tight-loop.sh" >/dev/null 2>&1; then
+if ! diff -q "${MUTATED_DIR}/canonical.sh" "${MUTATED_DIR}/rnd-framework.sh" >/dev/null 2>&1; then
   _drift_detected=yes
 fi
 

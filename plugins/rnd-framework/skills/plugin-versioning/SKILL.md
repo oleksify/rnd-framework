@@ -42,6 +42,16 @@ Optional longer description
 - Test-only changes (no user-facing behavior change)
 - Work-in-progress commits during a pipeline run (bump once at the end)
 
+## Versioning Policy
+
+### 0.x by Design
+
+rnd-framework stays on `0.x` while it is an experimental R&D system. This is a deliberate stance following ZeroVer (0ver.org): a `0.` major signals that the interfaces, protocols, and quality gates are actively evolving and that no stability guarantee has been made. The major version will not advance to `1` until the design has stabilised and a compatibility commitment is warranted. Attempting `bump.sh --major` while the version is `0.x` is refused at the script level.
+
+### Bump on Meaningful Releases, Not Every Commit
+
+Bump the version when a release represents a coherent, user-visible change — a new feature, a behaviour fix, a protocol update, or a milestone. Do not bump for every commit, every pipeline run, or every minor editorial edit. The goal is a CHANGELOG that a reader can skim to understand what changed and why, not a log of every file touch.
+
 ## Validation
 
 ### Usage

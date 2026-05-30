@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.271 — 2026-05-30
+
+### Reset to 0.x: rejoining ZeroVer to reflect experimental R&D status
+
+Versions 1.0 through 5.15 were premature majors. rnd-framework is an experimental R&D orchestration system — its interfaces, protocols, and quality gates are actively evolving. Following ZeroVer (0ver.org), the project stays on 0.x until the design stabilises. The reset is a deliberate stance, not an apology: 0.x signals that breaking changes may occur and that the framework is not yet ready for a stability commitment. The patch number 271 is a point-in-time memorial counting the total version tags ever stamped — an honest record, not a restart from zero.
+
 ## 5.15.0 — 2026-05-30
 
 ### Add post-review finding categories and the theory-loss-share readout (Roadmap 2 M2 measurement)

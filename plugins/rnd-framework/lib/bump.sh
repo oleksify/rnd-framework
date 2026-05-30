@@ -78,6 +78,14 @@ if ! [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+# ZeroVer guard: while the major is 0 the project is experimental by design.
+# Advancing to 1.0.0 is an out-of-band decision, not a routine bump.
+if [[ "$BUMP_TYPE" == "major" && "$MAJOR" == "0" ]]; then
+  echo "error: refusing --major: project is 0.x under ZeroVer (0ver.org) — this is an experimental R&D framework; advancing to 1.0.0 requires an explicit out-of-band decision, not a routine bump" >&2
+  exit 1
+fi
+
 case "$BUMP_TYPE" in
   major) NEW_VERSION="$(( MAJOR + 1 )).0.0" ;;
   minor) NEW_VERSION="${MAJOR}.$(( MINOR + 1 )).0" ;;

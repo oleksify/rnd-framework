@@ -170,20 +170,33 @@ fi
 # computation so the title is correct immediately on startup/resume (not only
 # after the first prompt submission). Honored on Claude Code ≥ 2.1.152;
 # older versions silently ignore the field.
+#
+# The title is gated on the SAME active-session check as the context block
+# above: only a live pipeline session (active_dir present on disk) earns an
+# "RND:" title. With no active pipeline, sessionTitle is omitted entirely so
+# Claude Code keeps its own auto-generated title — the RND: prefix exists to
+# make genuine pipeline sessions findable in /resume, not to brand every
+# session opened in this project.
 # ---------------------------------------------------------------------------
 
-phase_for_title="$(detect_pipeline_phase "$active_dir" 2>/dev/null || echo Idle)"
-project_for_title="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+if [[ -n "$active_dir" && -d "$active_dir" ]]; then
+  phase_for_title="$(detect_pipeline_phase "$active_dir" 2>/dev/null || echo Idle)"
+  project_for_title="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
 
-if [[ "$phase_for_title" == "Idle" ]]; then
-  session_title="RND: ${project_for_title}"
+  if [[ "$phase_for_title" == "Idle" ]]; then
+    session_title="RND: ${project_for_title}"
+  else
+    session_title="RND: ${phase_for_title} | ${project_for_title}"
+  fi
+
+  jq -cn \
+    --arg ctx "$ctx" \
+    --arg title "$session_title" \
+    '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx,sessionTitle:$title}}'
 else
-  session_title="RND: ${phase_for_title} | ${project_for_title}"
+  jq -cn \
+    --arg ctx "$ctx" \
+    '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
 fi
-
-jq -cn \
-  --arg ctx "$ctx" \
-  --arg title "$session_title" \
-  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx,sessionTitle:$title}}'
 
 exit 0

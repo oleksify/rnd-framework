@@ -42,8 +42,9 @@ else
   assert_eq "outputs valid JSON" "0" "1"
 fi
 
-title="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
-assert_contains "title starts with RND:" "RND:" "$title"
+# sessionTitle presence is conditional on an active pipeline session and is
+# asserted deterministically in the idle/planning fixtures below — not here,
+# where the run uses the ambient config and the active-session state is unknown.
 
 hook_event="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.hookEventName // ""' 2>/dev/null || true)"
 assert_eq "hookEventName is UserPromptSubmit" "UserPromptSubmit" "$hook_event"
@@ -60,14 +61,10 @@ tmp_idle="$(mktemp -d)"
 run_title "CLAUDE_CONFIG_DIR=${tmp_idle}"
 assert_exit_code "no session → exits 0" 0
 
-title_idle="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
-assert_contains "no session → title has RND:" "RND:" "$title_idle"
-# Idle titles should NOT have " | " separator (no phase prefix)
-if [[ "$title_idle" != *" | "* ]]; then
-  assert_eq "no session → no phase separator" "0" "0"
-else
-  assert_eq "no session → no phase separator" "0" "1"
-fi
+# No active pipeline → sessionTitle field omitted (no "RND:" branding); Claude
+# Code keeps its own auto-generated title.
+has_title_idle="$(printf '%s' "$HOOK_STDOUT" | jq '.hookSpecificOutput | has("sessionTitle")' 2>/dev/null || true)"
+assert_eq "no session → sessionTitle field omitted" "false" "$has_title_idle"
 rm -rf "$tmp_idle"
 
 # ---------------------------------------------------------------------------

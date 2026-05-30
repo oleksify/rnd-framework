@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.13.1 — 2026-05-30
+
+### Gate the RND: session title on an active pipeline
+
+session-start.sh and session-title.sh now omit the sessionTitle field when no pipeline session is active, so a fresh session in a project no longer shows an RND: <project> badge; the title gate matches the context-block gate and only a live pipeline earns an RND: <phase> | <project> title.
+
 ## 5.13.0 — 2026-05-30
 
 ### Make SessionStart injection lazy — full context only when a pipeline is active, a one-line stub otherwise

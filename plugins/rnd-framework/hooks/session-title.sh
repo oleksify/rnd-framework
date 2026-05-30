@@ -12,12 +12,20 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 set +e
 
 session_dir="$(active_session_dir 2>/dev/null || true)"
-phase="$(detect_pipeline_phase "$session_dir")"
 
-# Extract project name from git root or cwd basename.
+# No active pipeline session → no "RND:" title. Omit sessionTitle so Claude Code
+# keeps its own auto-generated title; the RND: prefix is for making live pipeline
+# sessions findable in /resume, not for branding every prompt in this project.
+# active_session_dir only succeeds when the session dir exists on disk, so a
+# non-empty session_dir means a genuine live pipeline. Mirrors session-start.sh.
+if [[ -z "$session_dir" ]]; then
+  jq -cn '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:""}}'
+  exit 0
+fi
+
+phase="$(detect_pipeline_phase "$session_dir")"
 project_name="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
 
-# Compose session title.
 if [[ "$phase" == "Idle" ]]; then
   title="RND: ${project_name}"
 else

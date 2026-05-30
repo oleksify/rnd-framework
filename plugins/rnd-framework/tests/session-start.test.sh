@@ -91,16 +91,9 @@ assert_contains "session-start JSON contains hookSpecificOutput" '"hookSpecificO
 # Must contain additionalContext
 assert_contains "session-start JSON contains additionalContext" '"additionalContext"' "$HOOK_STDOUT"
 
-# sessionTitle is set on startup/resume so the terminal title is phase-aware
-# immediately, not only after the first prompt. Honored on Claude Code ≥ 2.1.152.
-assert_contains "session-start JSON contains sessionTitle field" '"sessionTitle"' "$HOOK_STDOUT"
-
-session_title_val="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
-if [[ "$session_title_val" == RND:* ]]; then
-  assert_eq "session-start sessionTitle starts with 'RND:'" "ok" "ok"
-else
-  assert_eq "session-start sessionTitle starts with 'RND:'" "ok" "missing-or-malformed: $session_title_val"
-fi
+# sessionTitle presence is now conditional on an active pipeline session and is
+# asserted deterministically in the active/inactive fixtures below — not here,
+# where the run uses the ambient config and the active-session state is unknown.
 
 # ---------------------------------------------------------------------------
 # strips frontmatter — skill content should not contain raw --- delimiters
@@ -188,19 +181,10 @@ assert_contains "inactive session: stub mentions rnd-framework" "rnd-framework" 
 assert_contains "inactive session: stub mentions /rnd-framework:rnd-start" "/rnd-framework:rnd-start" "$ctx_inactive"
 assert_contains "inactive session: stub mentions using-rnd-framework" "using-rnd-framework" "$ctx_inactive"
 
-# sessionTitle inactive → RND: <project>, no | segment
-title_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
-if [[ "$title_inactive" == RND:* ]]; then
-  assert_eq "inactive session: sessionTitle starts with RND:" "ok" "ok"
-else
-  assert_eq "inactive session: sessionTitle starts with RND:" "ok" "malformed: $title_inactive"
-fi
-
-if [[ "$title_inactive" == *"|"* ]]; then
-  assert_eq "inactive session: sessionTitle has no | phase segment" "no-pipe" "has-pipe: $title_inactive"
-else
-  assert_eq "inactive session: sessionTitle has no | phase segment" "no-pipe" "no-pipe"
-fi
+# sessionTitle inactive → field omitted entirely, so Claude Code keeps its own
+# auto-generated title. No "RND:" branding for a session with no active pipeline.
+has_title_inactive="$(printf '%s' "$HOOK_STDOUT" | jq '.hookSpecificOutput | has("sessionTitle")' 2>/dev/null || true)"
+assert_eq "inactive session: sessionTitle field omitted" "false" "$has_title_inactive"
 
 rm -rf "$tmp_config_inactive"
 
@@ -294,12 +278,8 @@ else
   assert_eq "single-emit inactive: additionalContext non-null" "ok" "null-or-empty"
 fi
 
-title_single_inactive="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
-if [[ -n "$title_single_inactive" ]]; then
-  assert_eq "single-emit inactive: sessionTitle non-empty" "ok" "ok"
-else
-  assert_eq "single-emit inactive: sessionTitle non-empty" "ok" "empty"
-fi
+has_title_single_inactive="$(printf '%s' "$HOOK_STDOUT" | jq '.hookSpecificOutput | has("sessionTitle")' 2>/dev/null || true)"
+assert_eq "single-emit inactive: sessionTitle omitted" "false" "$has_title_single_inactive"
 
 rm -rf "$tmp_config_single_inactive"
 

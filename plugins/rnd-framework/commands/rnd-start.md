@@ -273,6 +273,32 @@ The emit step itself lives in Phase 3, immediately after the Verifier spawn prom
 
 **For each task in the wave, spawn a Builder agent.**
 
+**Shape-validity fast-path gate (pre-spawn, per build task).** Before building each task's Builder prompt, run the gate documented in `rnd-framework:rnd-orchestration` under "Shape-Validity Fast Path" to decide whether to emit a **fast profile**. Mirror the should_promote gate structure — call the helper, branch on its exit code:
+
+```bash
+# Criticality is a HARD FLOOR — checked FIRST. HIGH NEVER fast-paths regardless of validity.
+if [[ "$criticality" != "HIGH" ]] \
+   && "${CLAUDE_PLUGIN_ROOT}/lib/calibration.sh" validity "<task-shape>"; then
+  : # expert (exit 0) AND criticality ∈ {LOW, NORMAL} → emit the FAST PROFILE
+else
+  : # novice, OR criticality == HIGH → FULL PATH
+fi
+```
+
+The `<task-shape>` is the task's dominant assertion shape — read the task's `assertionIds[]` from `features.json`, look up each assertion's `Shape:` in `validation-contract.md`, and take the first assertion's shape (the same shape the post-review attribution chain and the validity ledger use).
+
+| Shape validity | Criticality | Dispatch |
+|----------------|-------------|----------|
+| non-expert | LOW / NORMAL / HIGH | full path |
+| expert | LOW / NORMAL | **fast profile** |
+| expert | HIGH | full path (HIGH is a hard floor — never fast-paths) |
+
+**Under the fast profile, all three imperatives still hold (the no-slop floor):** (a) the Builder STILL writes a `## Files written` manifest (named by the `M<NN>-T<NN>-<uuid>` convention) — load-bearing for post-review attribution; (b) verification ALWAYS runs — the Verifier is still spawned, lighter (prose / reduced-experiment) but never absent; (c) iteration collapses to a single build-verify pass. The fast profile reduces builder ceremony (recognition + lightweight self-check) and verifier rigor; it NEVER skips the manifest or the verifier. **Models stay at the criticality tier** — no tier drop.
+
+**Models stay at the criticality tier** — the fast path adjusts the Builder/Verifier spawn prompts (less ceremony, lighter verification), it does NOT change model selection, which still follows the criticality-driven dispatch table.
+
+Because the gate reads `calibration.sh validity` live on every dispatch, **one-strike demotion is real via recomputation**: a new post-review finding for a shape drops its consecutive-clean streak below 5, so the very next dispatch reads `novice` and takes the full path — no separate demotion or shadow record is written.
+
 **Slicing convention:** To assemble the pre-registration prose for task `T<id>`, read `$RND_DIR/features.json` with `jq` to get that task's `assertionIds` array. Then open `$RND_DIR/validation-contract.md` and extract the `### <assertion-id>` heading block for each ID (the block runs from the heading line up to but not including the next `###` heading or end of file). Concatenate the extracted blocks in order. This concatenated text is the `<pre-registration>` to paste into the spawn prompt.
 
 ```
@@ -295,7 +321,7 @@ Do NOT build tasks yourself. The Builder agent handles implementation, TDD, mani
 | `NEEDS_CONTEXT` | `AskUserQuestion` to get missing info. Re-spawn Builder with the answer. |
 | `BLOCKED` | `AskUserQuestion`: "Re-plan this task (Recommended)", "Provide a workaround", "Skip this task". |
 
-**Gate 2:** Verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty (use Bash `test -s`). If missing, report via `AskUserQuestion`. `TaskUpdate` each passing task to `completed`.
+**Gate 2:** Verify the build manifest exists and is non-empty (use Bash `test -s`). Manifests are named by the task's canonical unique reference `M<NN>-T<NN>-<uuid>` — `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` (e.g. `M02-T03-f6d3915b-manifest.md`), where `<uuid>` is the task's `uuid` from `features.json`. The `uuid` makes the filename globally unique so two tasks sharing a `T<NN>` slot across milestones never overwrite each other's manifest, and it is the join key the post-review writer matches exactly for attribution. If missing, report via `AskUserQuestion`. `TaskUpdate` each passing task to `completed`.
 
 **After Gate 2:** If **auto-continue mode is ON**, proceed directly to Phase 2.5. Otherwise, `AskUserQuestion`:
 - "Proceed to verification (Recommended)"
@@ -310,7 +336,7 @@ Agent({
   description: "Audit external contracts",
   subagent_type: "rnd-framework:rnd-reality-auditor",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/T<id>-manifest.md\nExternal dependencies: <External Dependencies field from the pre-registration document for T<id> in $RND_DIR/protocol.md under the ## Pre-Registration Documents section>\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nManifest: $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md (canonical unique reference; <uuid> from features.json)\nExternal dependencies: <External Dependencies field from the pre-registration document for T<id> in $RND_DIR/protocol.md under the ## Pre-Registration Documents section>\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -434,7 +460,7 @@ Agent({
   description: "Cleanup task T<id>",
   subagent_type: "rnd-framework:rnd-cleanup",
   mode: "acceptEdits",
-  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <assertions sliced from validation-contract.md via features.json assertionIds for T<id>>\nBuild manifest: $RND_DIR/builds/T<id>-manifest.md\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Task: T<id>\nRND_DIR: <path>\nPre-registration: <assertions sliced from validation-contract.md via features.json assertionIds for T<id>>\nBuild manifest: $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md (canonical unique reference; <uuid> from features.json)\nVerifier artifact: $RND_DIR/verifications/T<id>-pass-receipt.json (PASS) or $RND_DIR/verifications/T<id>-verification.md (FAIL/NEEDS_ITERATION)\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -631,3 +657,94 @@ When the user picks "More options…", follow up with a second `AskUserQuestion`
 When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/protocol.md`, `$RND_DIR/validation-contract.md`, `$RND_DIR/features.json`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
 After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchanged.
+
+## Phase 8: Post-SHIP Code Review
+
+**Trigger:** Run automatically after the final wave SHIPs (Gate 5 on the last wave returns SHIP). This is a closing phase run by the pipeline, not the user.
+
+**Opt-out flag:** `--skip-post-review` (mirrors `--skip-reality-checks`). If the user passed `--skip-post-review` in `$ARGUMENTS` or otherwise indicated opt-out:
+
+1. Emit a skip audit event so skip frequency is measurable:
+
+   ```bash
+   RND_DIR="$RND_DIR" bash "${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh" \
+     post-review-skip "pipeline" "Phase8"
+   ```
+
+2. Skip Phase 8 entirely and proceed to session close.
+
+**When opt-out is not set**, run the review automatically:
+
+1. **Determine the scope.** The review covers all changes shipped in the pipeline. Resolve the commit range: compare the current `HEAD` against the git state at the start of the session (read `$RND_DIR/protocol.md` or use `git log` to find the first commit on this pipeline run). Use `git diff <base>..HEAD` as the scope, or default to `HEAD` against the session's starting SHA if available.
+
+2. **Load review criteria.** Invoke `rnd-framework:code-review` to load the seven review categories, severity levels, verdict taxonomy, and report template.
+
+3. **Systematically review the diff** against the seven categories (architecture, security, correctness, testing, KISS compliance, style, pipeline-context hygiene). For each category, examine every changed file. Use Read/Grep to inspect surrounding context. Produce findings with severity levels (critical, major, minor, info).
+
+4. **Write the review report** to `$RND_DIR/review/post-ship-review.md` with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line. This reuses the same report format as `rnd-review.md` — do NOT duplicate the seven-category logic, load it via `rnd-framework:code-review`.
+
+5. **For each finding**, call the post-review record writer (`lib/post-review-writer.sh`) to append one record to the slug-root `post-review.jsonl`:
+
+   ```bash
+   # For each finding <file> <severity> <verifier_said_pass>:
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/post-review-writer.sh" \
+     --session-dir    "$RND_DIR" \
+     --session-id     "$(basename "$RND_DIR")" \
+     --touched-file   "<touched_file>" \
+     --severity       "<severity>" \
+     --verifier-said-pass "<verifier_said_PASS>" \
+     --review-found   "true"
+   ```
+
+   Where:
+   - `<touched_file>` — the repo-relative path to the file the finding concerns
+   - `<severity>` — one of: `critical`, `major`, `minor`, `info`
+   - `<verifier_said_PASS>` — `true` if the verifier passed the owning task; `false` otherwise
+   - `--review-found` is hardcoded `"true"` here — every finding row is a real finding
+
+   When the verdict is CLEAN (no findings), emit one clean record **per distinct in-scope shape** so the clean run credits exactly the shapes this session exercised — never more (false expertise), never fewer (starvation). The per-shape validity ledger counts consecutive clean runs PER SHAPE, so a single shapeless sentinel cannot credit any specific shape.
+
+   Derive the session's distinct in-scope shapes from its own `audit.jsonl` `assertion_shape` events (the shapes actually exercised this session), then call the writer's `--clean-shape` mode once per distinct shape. The writer validates the shape against `x-shape-vocab`, runs no attribution, and records `{shape, review_found:false, severity:"none", ...}`:
+
+   ```bash
+   # Enumerate distinct in-scope shapes and emit one clean row per shape.
+   # `sort -u` collapses duplicate shapes; `while read` avoids a hanging
+   # bash for-loop. This is orchestrator-executed markdown, not a hook.
+   jq -r 'select(.event == "assertion_shape") | .shape' "$RND_DIR/audit.jsonl" \
+     | sort -u \
+     | while IFS= read -r shape; do
+         [[ -n "$shape" ]] || continue
+         bash "${CLAUDE_PLUGIN_ROOT}/lib/post-review-writer.sh" \
+           --session-id  "$(basename "$RND_DIR")" \
+           --clean-shape "$shape"
+       done
+   ```
+
+   The clean path emits NO shapeless `unattributable` sentinel — `unattributable` stays reserved for genuine findings (`review_found:true`) whose touched file maps to no task. The Section 8 view keys dirtiness off `review_found`, not `severity`, so the clean-distinct `"none"` severity is safe and never conflates a clean run with an `info` finding.
+
+   **Degenerate fallback:** if the session's `audit.jsonl` carries zero `assertion_shape` events (no enumerable in-scope shapes), the loop emits nothing. In that rare case a single shapeless clean row is an acceptable fallback so the stats view still records that a clean review ran:
+
+   ```bash
+   if ! jq -e 'select(.event == "assertion_shape")' "$RND_DIR/audit.jsonl" >/dev/null 2>&1; then
+     bash "${CLAUDE_PLUGIN_ROOT}/lib/post-review-writer.sh" \
+       --session-dir    "$RND_DIR" \
+       --session-id     "$(basename "$RND_DIR")" \
+       --touched-file   "clean" \
+       --severity       "none" \
+       --verifier-said-pass "true" \
+       --review-found   "false"
+   fi
+   ```
+
+6. **Surface the report.** Print the path `$RND_DIR/review/post-ship-review.md` and its complete contents verbatim — per the Report Surfacing Protocol in your active output style — before presenting next steps.
+
+7. **Present next steps** via `AskUserQuestion`:
+   - If **CLEAN**: "Review complete — no issues found." Options:
+     - "Finish session (Recommended)"
+     - "Review report details"
+   - If **ISSUES_FOUND** or **CRITICAL_ISSUES**:
+     - "Track as future work (Recommended)"
+     - "Fix with /rnd-framework:rnd-start"
+     - "Review report details"
+
+**Status/resume safety:** Phase 8 writes only to `$RND_DIR/review/` and the slug-root `post-review.jsonl`. Neither `commands/rnd-status.md` nor `commands/rnd-resume.md` scan these paths for phase-detection. Both commands classify pipeline completion by "All waves SHIP" via `integration/wave-*-report.md` — a Phase 8 artifact does not affect that determination. No edit is needed to either command.

@@ -220,6 +220,54 @@ Before spawning any adaptive agent (planner, builder, verifier, debugger), the o
 
 Rationale: auto-escalation closes the calibration loop on model-quality drift. `FALSE_PASS_PROXY` records (see `rnd-framework:rnd-calibration` skill) feed the false-pass rate; when the rolling rate reaches 20%, the next spawn upgrades one tier automatically.
 
+### Shape-Validity Fast Path
+
+The framework earns the right to move fast in a task-shape only after a feedback-confirmed track record proves it is reliably good there. Before spawning a **Builder** for a build task, the orchestrator runs a pre-spawn gate that decides whether to emit a **fast profile**. Speed is the *output* of demonstrated expertise — never a lever pulled against quality.
+
+**Determining the task's shape.** The shape is the dominant assertion shape of the task: read the task's `assertionIds[]` from `features.json`, look up each assertion's `Shape:` field in `validation-contract.md` (equivalently, the `assertion_shape` events in `audit.jsonl`), and take the first assertion's shape as the task-shape (ties broken by document order). This is the **same** shape used by the post-review attribution chain and the validity ledger, so the gate, the ledger, and the immune system all agree on one shape per task.
+
+**The gate (mirrors the should_promote gate: call helper → branch on exit code):**
+
+```bash
+# 1. Criticality is a HARD FLOOR — check it FIRST, before consulting validity.
+#    HIGH NEVER fast-paths regardless of validity.
+if [[ "$criticality" == "HIGH" ]]; then
+  : # full path — do NOT consult the validity ledger
+else
+  # 2. LOW/NORMAL only: consult the live validity ledger for the task-shape.
+  if "${CLAUDE_PLUGIN_ROOT}/lib/calibration.sh" validity "<task-shape>"; then
+    : # exit 0 + "expert" → emit the FAST PROFILE
+  else
+    : # exit non-zero + "novice <n>" → full path
+  fi
+fi
+```
+
+- **Exit 0 (expert) AND criticality ∈ {LOW, NORMAL}:** emit the **fast profile** for this task's Builder and Verifier spawns.
+- **Exit non-zero (novice), OR criticality == HIGH:** use the **full path** (standard Builder TDD ceremony + standard Verifier rigor + normal iteration budget).
+- **Models stay at the criticality tier.** The fast path does NOT drop the model a tier — model selection still follows the criticality-driven dispatch table above. The fast profile reduces *ceremony*, never model strength.
+
+**Skip-condition table (every combination):**
+
+| Shape validity | Criticality | Dispatch |
+|----------------|-------------|----------|
+| non-expert (novice) | LOW | full path |
+| non-expert (novice) | NORMAL | full path |
+| non-expert (novice) | HIGH | full path |
+| expert | LOW | **fast profile** |
+| expert | NORMAL | **fast profile** |
+| expert | HIGH | full path (HIGH is a hard floor — never fast-paths) |
+
+**The fast profile — three explicit imperatives (the no-slop floor):**
+
+1. **The builder STILL writes a `## Files written` manifest** (named by the `M<NN>-T<NN>-<uuid>` convention). This is load-bearing: post-review attribution maps each finding back to its owning task through this manifest, so a skipped manifest would silently orphan every finding for the task. The fast profile reduces builder ceremony to *recognition + a lightweight self-check* but NEVER skips the manifest write.
+2. **Verification ALWAYS runs.** The Verifier is ALWAYS spawned — lighter (prose / reduced-experiment rigor), never absent. The fast profile lowers verifier *rigor*, it does NOT skip verification.
+3. **Iteration collapses to a SINGLE build-verify pass.** No multi-round iteration budget under the fast profile — one build, one verify.
+
+The fast profile reduces ceremony and rigor; it NEVER skips the manifest or the verifier. That is the inviolable no-slop floor.
+
+**One-strike demotion is real — via recomputation, not a shadow record.** The gate reads `calibration.sh validity` **live on every dispatch**. The validity subcommand recomputes the consecutive-clean streak directly from `post-review.jsonl` each call with no persisted/cached streak state. So the moment a new post-review finding lands for a shape (a dirty session), the next dispatch's recomputation mechanically drops that shape's streak below 5, and the shape reads `novice` again — without writing any separate demotion or shadow record. The reset falls out of the stateless ledger: a shape at 5 consecutive clean (expert) plus one appended dirty row reads `novice 0` at the very next gate read. There is no stale-state window, because nothing is persisted to go stale.
+
 ## Stop Conditions
 
 Two post-hoc checks guard against pathological pipeline trajectories. Both fire after a Verifier wave completes or after the Planner writes `plan.md` — not in PreToolUse hooks, because they require LLM interpretation of context.
@@ -349,8 +397,10 @@ Task status is derived from artifact files — no separate state file is needed.
 | `$RND_DIR/integration/wave-<N>-report.md` contains SHIP | integrated |
 | `$RND_DIR/verifications/T<id>-verification.md` contains `Overall Verdict: PASS` | verified |
 | `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS_ITERATION | iterating |
-| `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty | built |
+| `$RND_DIR/builds/<ref>-manifest.md` exists and is non-empty | built |
 | Task in plan.md but no build artifact | planned |
+
+**Build-manifest naming.** Build manifests are named by the task's canonical unique reference `M<NN>-T<NN>-<uuid>` — `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` (e.g. `M02-T03-f6d3915b-manifest.md`). The `uuid` (from `features.json`) makes the filename globally unique, so two tasks that share a `T<NN>` slot across milestones (`M1.T01` and `M2.T01`) produce DISTINCT manifest files and never overwrite each other. The filename is the canonical attribution key: the post-review writer extracts the `uuid` from it and matches `features.json .uuid` exactly, never a substring on the bare `T<NN>` slot.
 
 **At each gate**, validate the expected artifact exists and is non-empty (use Bash `test -s`). If missing, report to the user via `AskUserQuestion` and do not proceed with that task.
 

@@ -228,3 +228,32 @@ else
   fi
 fi
 ```
+
+### Section 8 — Post-pipeline review findings
+
+Per-shape ground-truth: how many post-pipeline review sessions ran, how many
+surfaced at least one real finding, and how many sessions where the verifier said
+PASS but the post-review found an issue (the verifier-said-PASS-vs-review-found
+gap). Populated by the Phase 8 auto-review writer (`lib/post-review-writer.sh`).
+
+Input grain is per-finding (`post-review.jsonl`); the view aggregates to
+per-(session, shape) before counting so a session with multiple findings for the
+same shape is counted once, not inflated.
+
+The `*/post-review.jsonl` glob hard-errors on a zero-file match — guard its
+existence first, mirroring the Section 6 probe guard. The glob is tight
+(`*/post-review.jsonl`, never `*-review.jsonl`) to avoid colliding with other
+similarly-named files.
+
+```bash
+echo ""
+echo "=== Post-pipeline review findings ==="
+has_pr=$(duckdb -noheader -list -c "SELECT count(*) FROM glob('*/post-review.jsonl')" 2>/dev/null)
+
+if [[ "${has_pr:-0}" -eq 0 ]]; then
+  echo "pending — no post-pipeline review data yet. Run a full pipeline to Phase 8 to populate."
+else
+  duckdb -c ".read ${stats_dir}/post_review_findings.sql" \
+         -c "SELECT segment, shape, review_count, finding_count, gap_count FROM post_review_findings ORDER BY segment, shape"
+fi
+```

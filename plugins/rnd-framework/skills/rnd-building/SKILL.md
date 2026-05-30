@@ -67,7 +67,7 @@ For EACH success criterion, output in your response (not in thinking) — **SCAN
 
 ### 4. Produce Verification Artifacts
 
-Save the build manifest to `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose — describe what was built, what decisions were made, and why. Manifest depth scales with task Criticality.
+Save the build manifest to `$RND_DIR/builds/<ref>-manifest.md`, where `<ref>` is the task's canonical unique reference `M<NN>-T<NN>-<uuid>` (zero-padded milestone + task + the task's `uuid` from `features.json` — e.g. `M02-T03-f6d3915b-manifest.md`). The `uuid` makes the filename globally unique: two tasks that share a `T<NN>` slot across milestones (`M1.T01` and `M2.T01`) produce DISTINCT manifest files and never overwrite each other. The filename is the canonical attribution key — downstream consumers extract the `uuid` from it to resolve the owning task exactly, never by substring-matching the bare `T<NN>` slot. Write in full narrative prose — describe what was built, what decisions were made, and why. Manifest depth scales with task Criticality.
 
 **For `Criticality: LOW` tasks (config changes, doc edits, renaming, log lines, style fixes) — skinny manifest:**
 

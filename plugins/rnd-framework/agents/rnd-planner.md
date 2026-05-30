@@ -209,6 +209,7 @@ Machine-readable task manifest. The orchestrator reads this with `jq` to enumera
       "id": "M<N>.T<NN>.<slug>",
       "slug": "<slug>",
       "milestone": "M<N>",
+      "uuid": "<8-hex>",
       "dependsOn": ["M<N>.T<NN>.<slug>"],
       "assertionIds": ["M<N>.<area>.<slug>"],
       "criticality": "LOW | NORMAL | HIGH",
@@ -219,6 +220,8 @@ Machine-readable task manifest. The orchestrator reads this with `jq` to enumera
 ```
 
 All `id`, `dependsOn`, and `assertionIds` values must match IDs minted via `id-gen.sh` in Process step 3.5.
+
+Every task MUST carry a `uuid` — a stable, globally-unique 8-hex string (e.g. `a1f03c7e`). The `T<NN>` slot repeats across milestones (`M1.T01` and `M2.T01` both exist), so the `uuid` is the unambiguous join key downstream consumers use for attribution. The canonical artifact task-reference is `M<NN>-T<NN>-<uuid>` (zero-padded milestone + task + uuid) — readable AND globally unique — and is the basis for build-manifest filenames (`M<NN>-T<NN>-<uuid>-manifest.md`), so two tasks sharing a `T<NN>` slot never produce colliding artifact names. Generate each uuid independently (e.g. `openssl rand -hex 4` or the first 8 hex of a `uuidgen`); never reuse one across tasks.
 
 ### AGENTS.md
 

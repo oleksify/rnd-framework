@@ -351,6 +351,43 @@ non-allowlisted (`acme-widgets-7f3a1b2c`) rows. Worked example on `shape_distrib
 
 ---
 
+## View 8 — `post_review_findings`
+
+Per-shape post-pipeline-review findings, by segment. Reads `*/post-review.jsonl`
+(one file per slug root). Input grain is per-finding; the view aggregates to
+per-(session, shape) before counting so a session with multiple findings on the
+same shape is counted once, not inflated.
+
+Fixture facts:
+
+- `claude-130cb64f/post-review.jsonl` (dogfood):
+  - Session `s-df-rev-1`: two findings on `crud`, both `verifier_said_PASS:true, review_found:true`
+    → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
+  - Session `s-df-rev-2`: one row on `crud`, `verifier_said_PASS:false, review_found:false` (clean)
+    → collapses to one (session,shape) row: has_finding=false, pass_but_found=false
+  → dogfood/crud: review_count=2, finding_count=1 (one dirty session), gap_count=1
+
+- `acme-widgets-7f3a1b2c/post-review.jsonl` (feature):
+  - Session `s-ft-rev-1`: one finding on `docs`, `verifier_said_PASS:true, review_found:true`
+    → collapses to one (session,shape) row: has_finding=true, pass_but_found=true
+  → feature/docs: review_count=1, finding_count=1, gap_count=1
+
+FM2 proof: s-df-rev-1 has 2 finding rows → `finding_count = 1` (one dirty session),
+not 2. `count(*) FROM post_review_findings` = 2, which equals the distinct
+(segment, shape) pair count — never inflated by the per-finding input grain.
+
+```sh
+export RND_DOGFOOD_SLUGS="claude-130cb64f"
+duckdb -c ".read ../post_review_findings.sql" -c "SELECT * FROM post_review_findings ORDER BY segment, shape"
+```
+
+| segment | shape | review_count | finding_count | gap_count |
+|---------|-------|--------------|---------------|-----------|
+| dogfood | crud  | 2            | 1             | 1         |
+| feature | docs  | 1            | 1             | 1         |
+
+---
+
 ## Real-tree layout (assertion `matches-real-tree-layout`)
 
 The views must resolve the slug correctly against the REAL `~/.claude/.rnd/`

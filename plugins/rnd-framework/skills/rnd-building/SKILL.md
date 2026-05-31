@@ -120,10 +120,14 @@ The `## Files written` section is **required** in every manifest. List one file 
 
 Save to `$RND_DIR/builds/<id>-self-assessment.md`, where `<id>` is the task's **canonical `features.json` id** `M<N>.T<NN>.<slug>` copied verbatim (e.g. `M1.T01.add-authentication-flow-self-assessment.md`) — NOT a bare `T<NN>`. The filename stem becomes the audit `task_id`, so it must carry the `M<N>.T<NN>` prefix or the self-assessment will not join the verifier's verdict. (Verifier will NOT see this — be honest.) The format depends on your build status.
 
-**For plain `DONE` status (no concerns, all criteria met with HIGH confidence, no deviations, no unverified assumptions):** write a minimal one-line file. No sections, no boilerplate.
+The **`Status:`** line is mandatory and machine-read into the audit trail. The status maps to a builder self-verdict: `DONE` and `DONE_WITH_CONCERNS` both record a self-**PASS** (criteria met; concerns are advisory, not a failure); `NEEDS_CONTEXT` and `BLOCKED` record a self-**FAIL** (you could not complete the task). Do not omit the line — an unlabelled file defaults to `DONE`.
+
+**For plain `DONE` status (no concerns, all criteria met with HIGH confidence, no deviations, no unverified assumptions):** write a minimal one-line file (plus the status line). No sections, no boilerplate.
 
 ```markdown
 # Self-Assessment: T<id>
+
+**Status:** DONE
 
 All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 ```
@@ -132,6 +136,8 @@ All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 
 ```markdown
 # Self-Assessment: T<id>
+
+**Status:** DONE_WITH_CONCERNS   <!-- DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED -->
 
 ## Confidence per criterion
 - [criterion 1]: HIGH / MEDIUM / LOW — [brief reason]

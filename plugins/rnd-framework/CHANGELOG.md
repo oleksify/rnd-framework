@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.278 — 2026-05-31
+
+### Record raw builder build_status in the self-assessment audit event instead of inferring PASS/FAIL from markdown shape
+
+self-assessment-producer.sh now reads the builder's explicit `**Status:**` line and emits the raw 4-valued build_status (DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED) into the builder_self_assessment audit record; the pass/fail collapse moves to the consumer. The prior heuristic inferred FAIL from full-template shape (section headings, MEDIUM/LOW tokens), which could not distinguish a pass-with-caveats from a true block — all three full-template statuses emit the identical template — and so recorded every DONE_WITH_CONCERNS build as a builder self-FAIL, inflating the self-fail-vs-verdict gap (stats Section 2) with false FAILs. self_fail_vs_verdict_gap.sql now collapses build_status (NEEDS_CONTEXT/BLOCKED → self-fail; DONE/DONE_WITH_CONCERNS → not) with a COALESCE fallback to the legacy self_verdict field so historical records still read correctly. skills/rnd-building adds the mandatory Status line to both self-assessment template forms with the status→verdict mapping (missing line defaults to DONE). Producer and e2e tests updated to assert build_status; the e2e exercises the new build_status SQL path end-to-end while the committed fixtures exercise the legacy fallback.
+
 ## 0.15.277 — 2026-05-31
 
 ### Migrate hooks off retired plan.md to protocol.md and standardize emitted JSON keys to snake_case

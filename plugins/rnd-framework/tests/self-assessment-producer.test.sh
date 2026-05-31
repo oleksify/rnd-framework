@@ -43,15 +43,18 @@ run_producer() {
 }
 
 # ---------------------------------------------------------------------------
-# Test 1: full-template self-assessment → self_verdict=FAIL, path-derived ids
+# Test 1: full-template + DONE_WITH_CONCERNS → build_status=DONE_WITH_CONCERNS
+#         (a pass-with-caveats is NOT a failure), path-derived ids
 # ---------------------------------------------------------------------------
-printf '%s\n' '--- self-assessment-producer: full-template → FAIL, path-derived task_id ---'
+printf '%s\n' '--- self-assessment-producer: full-template + DONE_WITH_CONCERNS → that status, path-derived task_id ---'
 
 ASSESSMENT_PATH="${SESSION}/builds/M2.T02.my-task-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
 
 printf '%s' \
 '# Self-Assessment: M2.T02.my-task
+
+**Status:** DONE_WITH_CONCERNS
 
 ## Confidence per criterion
 - criterion 1: MEDIUM — some uncertainty about edge cases
@@ -76,20 +79,22 @@ AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/nul
 assert_contains "audit line emitted" "builder_self_assessment" "$AUDIT_LINE"
 assert_contains "task_id is snake_case" '"task_id":"M2.T02.my-task"' "$AUDIT_LINE"
 assert_contains "session_id derived from path" "\"session_id\":\"${SESSION_ID}\"" "$AUDIT_LINE"
-assert_contains "self_verdict is FAIL for full-template" '"self_verdict":"FAIL"' "$AUDIT_LINE"
+assert_contains "build_status is DONE_WITH_CONCERNS (pass-with-caveats, not a fail)" '"build_status":"DONE_WITH_CONCERNS"' "$AUDIT_LINE"
 
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
-# Test 2: minimal one-liner self-assessment → self_verdict=PASS
+# Test 2: minimal one-liner with Status: DONE → build_status=DONE
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- self-assessment-producer: minimal one-liner → PASS ---'
+printf '\n%s\n' '--- self-assessment-producer: minimal one-liner + DONE → build_status DONE ---'
 
 ASSESSMENT_PATH="${SESSION}/builds/M2.T03.another-task-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
 
 printf '%s' \
 '# Self-Assessment: M2.T03.another-task
+
+**Status:** DONE
 
 All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 ' > "$ASSESSMENT_PATH"
@@ -99,7 +104,7 @@ run_producer "$ASSESSMENT_PATH"
 assert_exit_code "minimal → exit 0" 0
 
 AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
-assert_contains "self_verdict PASS for minimal" '"self_verdict":"PASS"' "$AUDIT_LINE"
+assert_contains "build_status DONE for minimal" '"build_status":"DONE"' "$AUDIT_LINE"
 assert_contains "task_id snake_case for minimal" '"task_id":"M2.T03.another-task"' "$AUDIT_LINE"
 
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
@@ -118,9 +123,13 @@ ASSESS1="${SESSION}/builds/M2.T02.task-a-self-assessment.md"
 ASSESS2="${SESSION2}/builds/M2.T05.task-b-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "${SESSION2}/audit.jsonl" "$ASSESS1" "$ASSESS2"
 
-printf '%s' 'All criteria met with HIGH confidence. No deviations. No unverified assumptions.' > "$ASSESS1"
+printf '%s' '**Status:** DONE
+
+All criteria met with HIGH confidence. No deviations. No unverified assumptions.' > "$ASSESS1"
 printf '%s' \
-'## Confidence per criterion
+'**Status:** BLOCKED
+
+## Confidence per criterion
 - criterion 1: LOW — cannot verify without live system' > "$ASSESS2"
 
 # Fire for ASSESS1 — should write to SESSION1's audit.jsonl with task-a
@@ -128,14 +137,14 @@ run_producer "$ASSESS1"
 assert_exit_code "session1 path → exit 0" 0
 LINE1="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
 assert_contains "session1 task attributed to task-a" '"task_id":"M2.T02.task-a"' "$LINE1"
-assert_contains "session1 self_verdict PASS" '"self_verdict":"PASS"' "$LINE1"
+assert_contains "session1 build_status DONE" '"build_status":"DONE"' "$LINE1"
 
 # Fire for ASSESS2 — should write to SESSION2's audit.jsonl with task-b
 run_producer "$ASSESS2"
 assert_exit_code "session2 path → exit 0" 0
 LINE2="$(grep 'builder_self_assessment' "${SESSION2}/audit.jsonl" 2>/dev/null || true)"
 assert_contains "session2 task attributed to task-b" '"task_id":"M2.T05.task-b"' "$LINE2"
-assert_contains "session2 self_verdict FAIL" '"self_verdict":"FAIL"' "$LINE2"
+assert_contains "session2 build_status BLOCKED" '"build_status":"BLOCKED"' "$LINE2"
 
 # Confirm no cross-contamination
 CROSS="$(grep 'task-b' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
@@ -158,9 +167,11 @@ EMITTED="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null |
 assert_eq "non-artifact path → nothing emitted" "" "$EMITTED"
 
 # ---------------------------------------------------------------------------
-# Test 5: LOW keyword in self-assessment → self_verdict=FAIL
+# Test 5: LOW confidence under DONE_WITH_CONCERNS → that status (NOT a fail).
+#         A low-confidence criterion is no longer a failure on its own — the
+#         status line is authoritative, the confidence token is not.
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- self-assessment-producer: LOW keyword → FAIL ---'
+printf '\n%s\n' '--- self-assessment-producer: LOW confidence + DONE_WITH_CONCERNS → that status (not a fail) ---'
 
 ASSESSMENT_PATH="${SESSION}/builds/M2.T06.low-task-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
@@ -168,16 +179,18 @@ rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
 printf '%s' \
 '# Self-Assessment: M2.T06.low-task
 
+**Status:** DONE_WITH_CONCERNS
+
 ## Confidence per criterion
 - criterion 1: LOW — cannot verify without live deployment
 ' > "$ASSESSMENT_PATH"
 
 run_producer "$ASSESSMENT_PATH"
 
-assert_exit_code "LOW keyword → exit 0" 0
+assert_exit_code "LOW confidence → exit 0" 0
 
 AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
-assert_contains "LOW keyword → FAIL verdict" '"self_verdict":"FAIL"' "$AUDIT_LINE"
+assert_contains "LOW confidence under DONE_WITH_CONCERNS → that status" '"build_status":"DONE_WITH_CONCERNS"' "$AUDIT_LINE"
 
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
@@ -195,11 +208,10 @@ EMITTED="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null |
 assert_eq "no /sessions/ → nothing emitted" "" "$EMITTED"
 
 # ---------------------------------------------------------------------------
-# Test 7: minimal PASS one-liner containing ordinary words with the "low"
-#         substring ("follows", "below") must NOT be misclassified FAIL.
-#         Regression for the non-portable `grep -qi "MEDIUM\|LOW"` substring bug.
+# Test 7: a file with NO Status line (legacy / forgotten) defaults to DONE.
+#         Body words like "follows"/"below" must not flip it off the default.
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- self-assessment-producer: PASS one-liner with "follows"/"below" stays PASS ---'
+printf '\n%s\n' '--- self-assessment-producer: no Status line → defaults DONE ---'
 
 ASSESSMENT_PATH="${SESSION}/builds/M2.T07.pass-oneliner-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
@@ -210,18 +222,18 @@ printf '%s' \
 
 run_producer "$ASSESSMENT_PATH"
 
-assert_exit_code "PASS one-liner → exit 0" 0
+assert_exit_code "no-Status one-liner → exit 0" 0
 
 AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
-assert_contains "one-liner with follows/below → PASS verdict (no substring false-match)" '"self_verdict":"PASS"' "$AUDIT_LINE"
+assert_contains "no Status line → defaults DONE" '"build_status":"DONE"' "$AUDIT_LINE"
 
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 
 # ---------------------------------------------------------------------------
-# Test 8: inline MEDIUM/LOW confidence token WITHOUT section headings still
-#         classifies FAIL (the word-anchored grep branch fires on the real token).
+# Test 8: an inline MEDIUM/LOW confidence token WITHOUT a Status line no longer
+#         implies failure — shape/keyword alone is not a status. Defaults DONE.
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- self-assessment-producer: inline MEDIUM confidence (no headings) → FAIL ---'
+printf '\n%s\n' '--- self-assessment-producer: inline MEDIUM token, no Status line → DONE (no shape inference) ---'
 
 ASSESSMENT_PATH="${SESSION}/builds/M2.T08.inline-medium-self-assessment.md"
 rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
@@ -235,7 +247,59 @@ run_producer "$ASSESSMENT_PATH"
 assert_exit_code "inline MEDIUM → exit 0" 0
 
 AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
-assert_contains "inline MEDIUM token → FAIL verdict" '"self_verdict":"FAIL"' "$AUDIT_LINE"
+assert_contains "inline MEDIUM token, no Status → DONE (formatting no longer implies failure)" '"build_status":"DONE"' "$AUDIT_LINE"
+
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# ---------------------------------------------------------------------------
+# Test 8a: explicit Status: BLOCKED → build_status=BLOCKED (a self-FAIL path).
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- self-assessment-producer: explicit BLOCKED → build_status BLOCKED ---'
+
+ASSESSMENT_PATH="${SESSION}/builds/M2.T09.blocked-task-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+
+printf '%s' \
+'# Self-Assessment: M2.T09.blocked-task
+
+**Status:** BLOCKED
+
+## Confidence per criterion
+- criterion 1: LOW — external API unreachable, could not complete
+' > "$ASSESSMENT_PATH"
+
+run_producer "$ASSESSMENT_PATH"
+
+assert_exit_code "explicit BLOCKED → exit 0" 0
+
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "explicit BLOCKED → build_status BLOCKED" '"build_status":"BLOCKED"' "$AUDIT_LINE"
+
+rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
+
+# ---------------------------------------------------------------------------
+# Test 8b: explicit Status: NEEDS_CONTEXT → build_status=NEEDS_CONTEXT (a self-FAIL path).
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- self-assessment-producer: explicit NEEDS_CONTEXT → build_status NEEDS_CONTEXT ---'
+
+ASSESSMENT_PATH="${SESSION}/builds/M2.T10.needs-context-self-assessment.md"
+rm -f "${SESSION}/audit.jsonl" "$ASSESSMENT_PATH"
+
+printf '%s' \
+'# Self-Assessment: M2.T10.needs-context
+
+**Status:** NEEDS_CONTEXT
+
+## Uncertainties & risks
+- Ambiguous requirement: cannot tell which schema version is authoritative
+' > "$ASSESSMENT_PATH"
+
+run_producer "$ASSESSMENT_PATH"
+
+assert_exit_code "explicit NEEDS_CONTEXT → exit 0" 0
+
+AUDIT_LINE="$(grep 'builder_self_assessment' "${SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "explicit NEEDS_CONTEXT → build_status NEEDS_CONTEXT" '"build_status":"NEEDS_CONTEXT"' "$AUDIT_LINE"
 
 rm -f "$ASSESSMENT_PATH" "${SESSION}/audit.jsonl"
 

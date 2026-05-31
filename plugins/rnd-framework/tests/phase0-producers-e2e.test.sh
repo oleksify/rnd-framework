@@ -191,6 +191,8 @@ ASSESS_PATH="${BUILDS}/${TASK_A}-self-assessment.md"
 printf '%s' \
 "# Self-Assessment: ${TASK_A}
 
+**Status:** DONE
+
 All criteria met with HIGH confidence. No deviations. No unverified assumptions.
 " > "$ASSESS_PATH"
 
@@ -206,8 +208,8 @@ assert_contains "builder_self_assessment event landed in audit" \
 assert_contains "builder_self_assessment task_id = TASK_A (snake_case)" \
   "\"task_id\":\"${TASK_A}\"" "$SA_LINE"
 
-assert_contains "self_verdict = PASS (minimal form)" \
-  '"self_verdict":"PASS"' "$SA_LINE"
+assert_contains "build_status = DONE (explicit Status line)" \
+  '"build_status":"DONE"' "$SA_LINE"
 
 # ---------------------------------------------------------------------------
 # Step D: write verdict-map, fire calibration-producer.

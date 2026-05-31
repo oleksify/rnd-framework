@@ -5,8 +5,18 @@
 -- passes (under-confident).
 --
 -- The two sides use DIFFERENT failure vocabularies and must not be unified:
---   * Builder self_verdict is a binary PASS|FAIL field, so self_fail is
---     literally `self_verdict = 'FAIL'`.
+--   * Builder build_status is a raw 4-valued code: DONE | DONE_WITH_CONCERNS |
+--     NEEDS_CONTEXT | BLOCKED (emitted by self-assessment-producer.sh). The
+--     pass/fail collapse lives HERE, not in the producer: a builder "fail" is a
+--     status of NEEDS_CONTEXT or BLOCKED (the builder could not complete the
+--     task). DONE_WITH_CONCERNS is NOT a failure — criteria are met and concerns
+--     are advisory; folding it into FAIL (as the pre-build_status producer did
+--     by inferring FAIL from full-template *shape*) inflated this gap with false
+--     builder self-FAILs.
+--   * Legacy fallback: records emitted before the build_status migration carry a
+--     binary `self_verdict` (PASS|FAIL) instead. Such a record self-fails iff
+--     `self_verdict = 'FAIL'`. self_fail COALESCEs build_status first, then the
+--     legacy field, so old and new corpora both read correctly.
 --   * Verifier verdict is PASS | NEEDS_ITERATION | PASS_QUALITY_NEEDS_ITERATION
 --     (the literal FAIL string is retired). A verifier "fail" is therefore any
 --     non-PASS verdict — `verdict <> 'PASS'` — NOT `verdict = 'FAIL'`, which
@@ -56,6 +66,7 @@ WITH
       TRY(json_extract_string(j, '$.session_id'))   AS session_id,
       TRY(json_extract_string(j, '$.task_id'))      AS task_id,
       TRY(json_extract_string(j, '$.event'))        AS event,
+      TRY(json_extract_string(j, '$.build_status')) AS build_status,
       TRY(json_extract_string(j, '$.self_verdict')) AS self_verdict,
       TRY(json_extract_string(j, '$.timestamp'))    AS ts
     FROM read_csv(
@@ -71,9 +82,10 @@ WITH
     WHERE json_valid(j)
   ),
 
-  -- Builder's own pass/fail call per task — latest attempt only.
+  -- Builder's own status per task — latest attempt only. Carries both the new
+  -- build_status and the legacy self_verdict; the collapse happens in `paired`.
   self_assessment AS (
-    SELECT session_id, task_id, self_verdict
+    SELECT session_id, task_id, build_status, self_verdict
     FROM audit_events
     WHERE event = 'builder_self_assessment' AND task_id IS NOT NULL
     QUALIFY row_number() OVER (PARTITION BY session_id, task_id ORDER BY ts DESC) = 1
@@ -109,7 +121,10 @@ WITH
     SELECT
       CASE WHEN v.slug IN (SELECT slug FROM dogfood_slugs)
            THEN 'dogfood' ELSE 'feature' END AS segment,
-      (a.self_verdict = 'FAIL')              AS self_fail,
+      COALESCE(
+        a.build_status IN ('NEEDS_CONTEXT', 'BLOCKED'),  -- new records
+        a.self_verdict = 'FAIL'                          -- legacy fallback
+      )                                      AS self_fail,
       (v.verdict <> 'PASS')                  AS verifier_fail
     FROM verdicts v
     JOIN self_assessment a

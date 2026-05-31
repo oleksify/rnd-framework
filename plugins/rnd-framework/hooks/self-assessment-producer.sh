@@ -4,13 +4,53 @@
 #
 # Fires when an agent writes a .../sessions/<id>/builds/<task>-self-assessment.md
 # file. Derives session_id and task_id from the file path (never from
-# active_session_dir or .current-session), infers PASS/FAIL from the file
-# content, and appends one builder_self_assessment record to the session
-# audit.jsonl co-located with the builds/ directory.
+# active_session_dir or .current-session), reads the builder's explicit
+# build_status from the file, and appends one builder_self_assessment record to
+# the session audit.jsonl co-located with the builds/ directory.
+#
+# The record carries the RAW 4-valued build_status (DONE | DONE_WITH_CONCERNS |
+# NEEDS_CONTEXT | BLOCKED). The pass/fail collapse is deliberately deferred to
+# the consumer (lib/stats/self_fail_vs_verdict_gap.sql): a pass-with-caveats
+# (DONE_WITH_CONCERNS) and a true block (BLOCKED) are distinct facts, and only
+# the consumer should decide which count as a failure. The prior implementation
+# inferred PASS/FAIL from markdown *shape* — which could not distinguish
+# DONE_WITH_CONCERNS from BLOCKED (they emit the identical full template) and so
+# mislabelled every full-template self-assessment FAIL.
 #
 # Non-blocking: always exits 0.
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+# Read the builder's explicit build-status declaration from the self-assessment
+# file body. The builder writes a `**Status:** <CODE>` line (see
+# skills/rnd-building); <CODE> is one of the four status codes. We return the RAW
+# code — the consumer collapses it to pass/fail.
+#
+# Status is structural, not inferable from layout: DONE_WITH_CONCERNS,
+# NEEDS_CONTEXT, and BLOCKED all emit the identical full template, so no
+# markdown-shape test can separate a caveat from a block. Only an explicit token
+# carries the distinction.
+#
+# Order matters: DONE_WITH_CONCERNS must be tested before DONE (it contains the
+# substring "DONE"). Fallback (no status line — legacy or forgotten): DONE. An
+# unlabelled file is treated as a clean pass; shape alone no longer implies a
+# status.
+infer_build_status() {
+  local content="$1" line
+
+  line="$(printf '%s\n' "$content" \
+    | grep -iE '^[[:space:]]*[*]*status[*]*[[:space:]]*:' \
+    | head -n1 \
+    | tr '[:lower:]' '[:upper:]')"
+
+  case "$line" in
+    *BLOCKED*)            printf 'BLOCKED' ;;
+    *NEEDS_CONTEXT*)      printf 'NEEDS_CONTEXT' ;;
+    *DONE_WITH_CONCERNS*) printf 'DONE_WITH_CONCERNS' ;;
+    *DONE*)              printf 'DONE' ;;
+    *)                   printf 'DONE' ;;
+  esac
+}
 
 # Resolve a self-assessment filename stem to the canonical features.json task id
 # (M<N>.T<NN>.<slug>) so the emitted task_id JOINs calibration and the verdict
@@ -91,29 +131,14 @@ resolve_canonical_task_id() {
   raw_stem="${filename%-self-assessment.md}"
   task_id="$(resolve_canonical_task_id "$raw_stem" "${session_dir}/features.json")"
 
-  # Read the file to infer self_verdict.
+  # Read the file to extract the explicit build_status.
   assessment_content=""
   if [[ -f "$abs_path" ]]; then
     assessment_content="$(< "$abs_path")"
   fi
 
-  # Infer self_verdict:
-  # FAIL: full-template form (has section headings, MEDIUM/LOW confidence).
-  # PASS: minimal one-liner form (none of the above markers present).
-  self_verdict="PASS"
-
-  if printf '%s' "$assessment_content" | grep -q "^## Confidence per criterion"; then
-    self_verdict="FAIL"
-  elif printf '%s' "$assessment_content" | grep -q "^## Uncertainties"; then
-    self_verdict="FAIL"
-  elif printf '%s' "$assessment_content" | grep -q "^## Deviations"; then
-    self_verdict="FAIL"
-  elif printf '%s' "$assessment_content" | grep -qiE '(^|[^A-Za-z])(MEDIUM|LOW)([^A-Za-z]|$)'; then
-    # Portable ERE (BSD + GNU) + non-alphanumeric boundaries: matches the
-    # MEDIUM/LOW confidence tokens the template emits, without false-matching
-    # ordinary words that merely contain "low" (follows, below, allow, flow).
-    self_verdict="FAIL"
-  fi
+  # Emit the RAW build status; the stats consumer collapses it to pass/fail.
+  build_status="$(infer_build_status "$assessment_content")"
 
   ts="$(iso_timestamp)"
 
@@ -121,9 +146,9 @@ resolve_canonical_task_id() {
     --arg event "builder_self_assessment" \
     --arg session_id "$session_id" \
     --arg task_id "$task_id" \
-    --arg self_verdict "$self_verdict" \
+    --arg build_status "$build_status" \
     --arg ts "$ts" \
-    '{event:$event, session_id:$session_id, task_id:$task_id, self_verdict:$self_verdict, timestamp:$ts}' \
+    '{event:$event, session_id:$session_id, task_id:$task_id, build_status:$build_status, timestamp:$ts}' \
     >> "$audit_path" 2>/dev/null || true
 
 } || true

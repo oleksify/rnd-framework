@@ -44,7 +44,9 @@ Add to `.claude/settings.local.json` (per-machine) or `.claude/settings.json` (s
 
 ## Docs
 
-See the [plugin README](plugins/rnd-framework/README.md) for the full reference: commands, agents, skills, artifact layout, and customization.
+**[rndf.tngl.io](https://rndf.tngl.io)** — the documentation site: concepts, getting started, commands, agents, skills, artifacts, and the information barrier.
+
+Or read the [plugin README](plugins/rnd-framework/README.md) for the same reference in the repo.
 
 ## License
 

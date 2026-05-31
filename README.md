@@ -16,7 +16,7 @@ If you want a fast, cheap, lightweight assistant, this isn't it. If you want max
 ## Install
 
 ```
-/plugin marketplace add https://tangled.org/oleksify.me/rnd-framework
+/plugin marketplace add https://tangled.org/oleksify.me/rnd-framework.git
 /plugin install rnd-framework@oleksify-plugins
 ```
 

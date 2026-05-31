@@ -2,7 +2,16 @@
 
 A multi-agent orchestration plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It structures coding around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition.
 
-> Experimental (0.x). Interfaces and quality gates change between releases.
+## ⚠️ Before you install
+
+This is a **highly experimental personal project**, built and dogfooded for my own workflow. No support, no stability promise, and it may not behave the way you expect.
+
+- **It burns a lot of tokens.** Every task fans out across multiple agents — planning, building, verifying, cleanup, integration — each in its own context window. A single run can cost many times what one Claude session would. This is the point of the design, not a bug, but budget accordingly.
+- **It's slow.** Sequential agent spawns and independent verification add real wall-clock time. It trades speed for rigor.
+- **It's opinionated.** The pipeline imposes pre-registration, information barriers, and quality gates whether or not your task needs them. Small tasks get heavy ceremony.
+- **It changes without notice.** Versioned 0.x on purpose — interfaces, protocols, and quality gates shift between releases, and things break.
+
+If you want a fast, cheap, lightweight assistant, this isn't it. If you want maximum verification rigor and don't mind paying for it, read on.
 
 ## Install
 

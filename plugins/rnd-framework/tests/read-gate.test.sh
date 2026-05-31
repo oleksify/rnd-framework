@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/read-gate.sh"
 

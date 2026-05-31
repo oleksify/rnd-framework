@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AGENT_FILE="$PLUGIN_ROOT/agents/rnd-replan-differ.md"
 

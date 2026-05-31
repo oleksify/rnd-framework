@@ -107,8 +107,11 @@ parse_input() {
   if [[ -n "$parsed" ]]; then
     IFS=$'\t' read -r TOOL_NAME TOOL_INPUT AGENT_TYPE <<< "$parsed"
   else
+    # shellcheck disable=SC2034  # Set in caller's scope; sourcing hooks consume all three.
     TOOL_NAME=""
+    # shellcheck disable=SC2034  # Set in caller's scope; sourcing hooks consume all three.
     TOOL_INPUT=""
+    # shellcheck disable=SC2034  # Set in caller's scope; sourcing hooks consume all three.
     AGENT_TYPE=""
   fi
 }
@@ -143,6 +146,7 @@ _resolve_config_dir() {
 # Calls rnd-dir.sh relative to the lib.sh location and prints the path.
 # Accepts optional flags (e.g. -c, --base) passed through to rnd-dir.sh.
 # Prints nothing and returns 1 on failure.
+# shellcheck disable=SC2120  # "$@" forwarded to rnd-dir.sh; session-start.sh/session-end.sh pass --base/--finish.
 resolve_rnd_dir() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

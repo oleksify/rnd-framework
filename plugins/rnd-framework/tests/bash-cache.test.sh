@@ -5,6 +5,10 @@
 # Exits 0 if all tests pass, 1 if any fail.
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POST_HOOK="${SCRIPT_DIR}/../hooks/post-dispatch.sh"
 PRE_HOOK="${SCRIPT_DIR}/../hooks/bash-gate.sh"

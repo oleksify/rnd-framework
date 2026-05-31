@@ -174,6 +174,7 @@ _path_matches_globs() {
   fi
   local glob basename
   basename="${path##*/}"
+  # shellcheck disable=SC2053  # Unquoted RHS is intentional: glob patterns must expand for matching.
   for glob in "${TOOL_GLOBS[@]}"; do
     case "$glob" in
       */*) [[ "$path" == $glob ]] && return 0 ;;

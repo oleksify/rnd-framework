@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="${SCRIPT_DIR}/.."
 AGENT_FILE="${PLUGIN_DIR}/agents/rnd-cleanup.md"

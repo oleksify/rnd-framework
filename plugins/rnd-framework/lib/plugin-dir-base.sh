@@ -32,6 +32,7 @@
 
 # --- Arguments ---
 _pdb_artifact_dir="$1"
+# shellcheck disable=SC2034  # FLAG is consumed by sourcing wrappers for flag dispatch.
 FLAG="$2"
 
 # --- Derive Claude config directory ---

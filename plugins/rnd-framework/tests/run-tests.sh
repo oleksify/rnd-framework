@@ -7,7 +7,7 @@ failed_files=()
 for test_file in *.test.sh; do
   [[ -f "$test_file" ]] || continue
   printf '=== %s ===\n' "$test_file"
-  if bash "$test_file"; then
+  if env -i PATH="$PATH" HOME="$(mktemp -d)" bash "$test_file"; then
     : # tests passed
   else
     failed_files+=("$test_file")

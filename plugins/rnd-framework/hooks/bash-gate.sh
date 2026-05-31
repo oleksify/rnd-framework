@@ -93,7 +93,8 @@ check_segment() {
       fi
 
       local _undo_hint="Use \${CLAUDE_PLUGIN_ROOT}/lib/rnd-undo.sh <task_id> for surgical task-scoped reverts."
-      local _audit_event_sh="$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh"
+      local _audit_event_sh
+      _audit_event_sh="$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh"
 
       # Emit one gate_fired audit event with the specific op name in the tool slot
       # so downstream analytics can discriminate which destructive op was blocked.

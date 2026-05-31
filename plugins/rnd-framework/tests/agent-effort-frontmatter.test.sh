@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 AGENTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/agents"
 
 pass=0

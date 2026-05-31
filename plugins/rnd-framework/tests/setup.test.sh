@@ -2,6 +2,10 @@
 # tests/setup.test.sh — Unit tests for hooks/setup.sh
 set -euo pipefail
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOKS_DIR="${SCRIPT_DIR}/../hooks"
 SETUP_SH="${HOOKS_DIR}/setup.sh"

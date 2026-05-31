@@ -2,6 +2,14 @@
 # tests/test-helpers.sh — Test helpers for bash hook testing.
 # Source from any test script: source "$(dirname "$0")/test-helpers.sh"
 
+# Isolation preamble: scrub env-sensitive variables unconditionally so a dirty
+# ambient environment (live session CLAUDE_CONFIG_DIR, stale RND_DIR) cannot
+# leak into tests that source this file. A test's own later explicit export
+# overrides this default — assignment order: preamble first, test body second.
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+unset RND_DIR
+
 TESTS_PASSED=0
 TESTS_FAILED=0
 TESTS_TOTAL=0

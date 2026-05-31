@@ -141,7 +141,7 @@ Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rn
 
 **Shadowing:** Personal skills in user's `.claude/skills/` override rnd-framework skills unless explicitly prefixed with `rnd-framework:`.
 
-**Plugin freshness (v2.1.81+):** ref-tracked plugins re-clone on every load, so the cached version is always current. The mismatch warning from `session-start.sh` should be rare in modern setups.
+**Plugin freshness (v2.1.81+):** ref-tracked (remote) plugins re-clone on every load, so their cached version stays current and `session-start.sh`'s cached-vs-source mismatch warning is rare. A locally-installed plugin — like this repo, dogfooded through the local marketplace — is the exception: its cache lags the working tree until the next `/plugin update rnd-framework@rnd-framework-plugins`, so the mismatch warning is *expected* after every in-tree version bump and is informational, not a problem to fix.
 
 ### Session Bootstrap
 

@@ -1,455 +1,216 @@
 # R&D Framework Plugin for Claude Code
 
-A Claude Code plugin that applies the scientific method to software engineering. It replaces ad-hoc coding with structured pipeline orchestration built on principles drawn directly from scientific methodology. Uses a **multi-agent** execution model: specialized agents per pipeline phase with structural information barriers enforced at the context-window level.
+Multi-agent coding orchestration. Specialized agents handle each pipeline phase in isolated context windows, with structural information barriers enforced at the context-window level — the verifier literally cannot read the builder's reasoning.
 
-| Scientific Method | Framework Principle | Role |
-|---|---|---|
-| Hypothesis declaration | **Pre-registration** | Declare intent and testable success criteria before coding |
-| Structured experimentation | **Decomposition** | Break tasks into hierarchical sub-tasks with paired verification |
-| Blinded peer review | **Independent verification** | Separate verifier with strict information barriers |
-| Reproducible evidence | **Evidence-based gates** | Quality checkpoints requiring reproducible evidence, not assertions |
-| Dependency analysis | **Parallel scheduling** | Identify parallel vs sequential work for concurrent execution |
+The design borrows from scientific method and systems engineering:
 
-## Installation
+| Principle | What it means |
+|---|---|
+| **Pre-registration** | Declare intent and testable success criteria before coding |
+| **Decomposition** | Break tasks into hierarchical sub-tasks with paired verification |
+| **Independent verification** | A separate verifier checks the work behind an information barrier |
+| **Evidence-based gates** | Quality checkpoints require reproducible evidence, not assertions |
+| **Wave scheduling** | Identify parallel vs sequential work for concurrent execution |
 
-Add the marketplace and install:
+> Experimental (0.x). Interfaces, protocols, and quality gates change between releases.
+
+## Install
 
 ```
 /plugin marketplace add https://tangled.org/oleksify.me/rnd-framework
 /plugin install rnd-framework@oleksify-plugins
 ```
 
-Update to the latest version:
+Update with `/plugin update rnd-framework@oleksify-plugins`.
 
-```
-/plugin update rnd-framework@oleksify-plugins
-```
+### Inline declaration (v2.1.80+)
 
-### Inline declaration via settings.json (v2.1.80+)
-
-Claude Code v2.1.80 added support for declaring plugins directly in `settings.json` without going through the marketplace. This is useful for local development or pinning a specific directory.
-
-Add to `.claude/settings.json` (project-level) or `~/.claude/settings.json` (global):
+Declare the plugin directly in `.claude/settings.json` without the marketplace — useful for local development:
 
 ```json
 {
   "enabledPlugins": {
-    "rnd-framework": {
-      "source": "settings",
-      "path": "./plugins/rnd-framework"
-    }
+    "rnd-framework": { "source": "settings", "path": "./plugins/rnd-framework" }
   }
 }
 ```
 
-The `path` is resolved relative to the settings file's location. Use an absolute path if the plugin lives outside the project tree.
+`path` is resolved relative to the settings file.
 
-## Organization-Wide Seeding
-
-For teams that want to pre-install the plugin across all machines, set `CLAUDE_CODE_PLUGIN_SEED_DIR` to a directory containing the plugin. Multiple seed directories can be separated by `:` (Unix) or `;` (Windows):
-
-```bash
-export CLAUDE_CODE_PLUGIN_SEED_DIR="/shared/plugins:/team/plugins"
-```
-
-Claude Code will discover and register plugins from all listed directories on startup.
-
-## Per-Project Plugin Configuration
-
-To control which plugins are active per-project, use Claude Code's `enabledPlugins` setting.
-
-Add to your project's `.claude/settings.local.json` (not committed to git) or `.claude/settings.json` (shared with team):
+### Disable per project
 
 ```json
-{
-  "enabledPlugins": {
-    "plugin-name@source": false
-  }
-}
+{ "enabledPlugins": { "rnd-framework@oleksify-plugins": false } }
 ```
 
-### How settings precedence works
+Add to `.claude/settings.local.json` (per-machine) or `.claude/settings.json` (shared). Only plugins explicitly set to `false` at a more specific scope are disabled.
 
-Settings are merged with more specific scopes winning:
-
-1. **`.claude/settings.local.json`** (per-machine, not committed) — highest priority
-2. **`.claude/settings.json`** (per-project, committed) — overrides user settings
-3. **`~/.claude/settings.json`** (global) — fallback
-
-Only plugins explicitly set to `false` at a more specific scope are disabled. Plugins not mentioned inherit from the parent scope.
-
-### Verify active plugins
-
-After configuring, start a Claude Code session in the project and check:
-- The session should show `rnd-framework` in the startup context
-- `/rnd-framework:rnd-status` should work
-
-### Permission rules
-
-Claude Code v2.1.139+ supports wildcard prefix matching on `Skill(...)` permission rules. To whitelist every skill the plugin provides without enumerating them, add to `.claude/settings.json`:
+### Allow every skill in one rule (v2.1.139+)
 
 ```json
-{
-  "permissions": {
-    "allow": [
-      "Skill(rnd-framework:*)"
-    ]
-  }
-}
+{ "permissions": { "allow": ["Skill(rnd-framework:*)"] } }
 ```
 
-This matches `rnd-framework:rnd-start`, `rnd-framework:rnd-orchestration`, and every other namespaced skill in one rule.
+Run `claude plugin details rnd-framework` for per-component token estimates.
 
-### Token cost
-
-Run `claude plugin details rnd-framework` to see per-component token estimates. Current always-on context cost (skills with frontmatter only, before any are invoked): **~4,577 tokens per session**. On-invoke costs are paid only when a skill or agent actually runs.
-
-## v5.0 Highlights
-
-Three structural changes shipped in v5.0.0:
-
-- **Stable hierarchical IDs + four-artifact planner output.** The Planner emits four narrowly-scoped artifacts: `protocol.md` (scope + heuristic ceiling), `validation-contract.md` (one `M<N>.<area>.<slug>` heading per testable assertion), `features.json` (machine-readable task manifest with `M<N>.T<NN>.<slug>` IDs and `assertionIds[]`), and `AGENTS.md` (per-agent work assignments). IDs are stable across re-plans of the same milestone, so `audit.jsonl` records compose across sessions rather than colliding on session-local integers.
-
-- **Verifier per-assertion verdict map.** The Verifier emits `wave-<N>-verdict-map.json` keyed by assertion ID rather than task ID, giving per-assertion traceability from code change to audit record. Each entry carries `{verdict, evidence[], feedback, task_id}`. Gate 3 in `commands/rnd-start.md` aggregates per-task using the rule: any FAIL → NEEDS_ITERATION; any PASS_QUALITY_NEEDS_ITERATION without FAIL → PASS_QUALITY_NEEDS_ITERATION; all PASS → PASS.
-
-- **Session-local skill injection.** The orchestrator reads `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`, injects their content under `## Session Context` / `## Session Skills` sections in every Agent() spawn, and records a `skill_injected` audit event per injected session-local skill. This lets a pipeline carry session-specific guidance (custom agents, domain context, project-specific patterns) without modifying global plugin files.
-
-## Execution Model
-
-The framework uses a **multi-agent** execution model. Specialized agents handle each pipeline phase in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — agents literally cannot see each other's internal reasoning.
+## Pipeline
 
 ```
-Plan → Schedule → Build → Reality Audit → Verify → Iterate? → Integrate
+Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate
 ```
 
-Additional pipeline phases:
-- **Reality Audit** — `rnd-reality-auditor` runs on every task (mandatory). Reads the Builder's `## External References` manifest section, then diff-scans all changed files for undeclared references (URLs, emails, addresses, APIs, schemas, env vars, package names). Blocking — INVALID routes back to build.
-
-Use `/rnd-framework:rnd-start` to launch the pipeline.
+Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each phase to an agent and aggregates results. Reality Audit runs only when a task declares external dependencies; Iterate runs only on a non-PASS verdict.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate (supports mode selection) |
-| `/rnd-framework:rnd-plan <task>` | Planning only — decompose and produce task specifications |
-| `/rnd-framework:rnd-build <T3\|wave-2\|next>` | Build a specific task or wave |
-| `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification with information barriers |
-| `/rnd-framework:rnd-integrate <wave-2\|final>` | Merge verified outputs, run integration tests |
-| `/rnd-framework:rnd-status` | Show pipeline status dashboard |
-| `/rnd-framework:rnd-history` | Browse past pipeline sessions for this project |
-| `/rnd-framework:rnd-resume` | Resume a partially-completed pipeline from where it left off |
-| `/rnd-framework:rnd-validate` | Validate plugin structure: frontmatter, hooks, cross-references |
-| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics: CLI tools, hooks, RND_DIR, version sync, Julia MCP |
-| `/rnd-framework:rnd-bump` | Bump patch version, prepend CHANGELOG entry, stage and commit |
-| `/rnd-framework:rnd-review` | Review code changes with evidence-based rigor |
-| `/rnd-framework:rnd-audit` | Full codebase audit against project standards |
-| `/rnd-framework:rnd-brainstorm` | Conversational idea exploration — funnels vague ideas into focused plans |
-| `/rnd-framework:rnd-narrative` | Generate a development narrative for a pipeline session |
-| `/rnd-framework:rnd-calibrate` | Record manual ground-truth verdict corrections for calibration |
-| `/rnd-framework:rnd-debug <bug>` | Debug pipeline: reproduce, diagnose root cause, fix, verify |
-| `/rnd-framework:rnd-roadmap <goal>` | Create or continue a multi-session roadmap for large tasks |
-| `/rnd-framework:rnd-scan` | Scan the project environment and build a persistent project-facts.md |
-| `/rnd-framework:rnd-remeasure` | M7 re-measurement harness — snapshot per-shape FAIL rate, builder-self-fail-vs-verdict gap, and iteration-depth distribution against the M3 baseline (gated on ≥10 post-M5 dogfood sessions) |
-
-## Skills
-
-The plugin provides skills that embed structured practices into every phase of coding:
-
-| Skill | Purpose |
-|---|---|
-| `using-rnd-framework` | Session bootstrap — injected on startup, lists all available skills and commands |
-| `rnd-orchestration` | Pipeline overview, agent roles, information barriers, gate criteria |
-| `rnd-decomposition` | Hierarchical task decomposition, pre-registration, dependency analysis |
-| `premortem` | Pre-planning failure imagination — N parallel `rnd-premortem-imaginer` agents each imagine a way the milestone fails under one framing; aggregated into `premortem.md` before `protocol.md`; the Planner addresses or dismisses each `FM<k>` |
-| `outside-view` | Pre-Planner reference-class injection — `lib/outside-view.sh` queries the historical per-shape FAIL-rate view, renders a calibrated `## Outside View (Reference Class)` block (with the FM6 framing-constraint paragraph and thin-corpus gate `n_total < 5`), and `lib/outside-view-emit.sh` writes an `outside_view_injected` audit event. Injected into the Planner spawn between the premortem fan-out and the Planner agent — attacks the inside-view planning fallacy |
-| `rnd-building` | Builder methodology with TDD discipline baked in |
-| `rnd-verification` | Wave-batched independent verification: one Verifier spawn per wave returns a per-task verdict map; writes T<id>-verification.md full prose report for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION); information barrier intact |
-| `rnd-debugging` | Systematic root cause analysis (no fixes without investigation) |
-| `rnd-scheduling` | Dependency-based wave scheduling, parallel agent dispatch |
-| `rnd-scaling` | Pipeline scaling rules: trivial → small → medium → large → high-stakes |
-| `rnd-iteration` | Wave-level build-verify feedback loops; budget = highest-criticality task's per-task budget; single Builder spawn per failing wave receives full verdict map |
-| `rnd-integration` | Merge verified outputs, integration/system validation |
-| `rnd-completion` | Post-SHIP workflow: branch management, PR creation, cleanup |
-| `rnd-formatting` | Pre-commit formatting — detects project formatter (biome, prettier, mix format, cargo fmt, etc.) and runs it on pipeline-changed files |
-| `rnd-doc-polish` | Post-SHIP documentation check — updates CLAUDE.md, README.md, project docs, and stale inline comments |
-| `prefer-system-tools` | Check if a native CLI tool can do the job before writing a script |
-| `bun-scripting` | Prefer Bun (TypeScript) over Python for helper scripts when available |
-| `committing` | Commit message style, length limits, and user confirmation before committing |
-| `writing-skills` | Meta-skill for extending the framework with new skills |
-| `rnd-data-science` | Numerical analysis, financial calculations, CSV/XLS handling, chart generation, and insight extraction using Julia |
-| `rnd-local-experts` | Discover project-local agents and skills in `.claude/` for Planner reference |
-| `rnd-design` | Architectural exploration before planning — generates 2-3 alternatives with trade-offs, produces a design spec, gates on user approval |
-| `rnd-failure-modes` | Verification anti-pattern catalog — known failure modes, red-flag phrases, and guidance for avoiding false PASSes |
-| `kiss-practices` | Language-specific KISS rules to prevent over-engineering — general rules plus language files for Bash, Markdown, Elixir/Phoenix/Ecto, JS/TS/CSS/HTML, Tailwind, Svelte, PostgreSQL, DuckDB, Koka |
-| `fp-practices` | Language-specific FP patterns loaded via detection table (9 languages) — pure functions, data transformations, composition, CQS, immutability |
-| `code-review` | Review categories, severity levels, verdict taxonomy (CLEAN/ISSUES_FOUND/CRITICAL_ISSUES), and structured report format |
-| `rnd-experiments` | Experiment protocol — how verifiers write independent tests from specs to catch real bugs |
-| `rnd-calibration` | Verdict accuracy tracking — JSONL-based calibration stats with automatic false-verdict detection |
-| `rnd-debug-pipeline` | Debug pipeline flow — 4-phase diagnosis-to-fix workflow, diagnosis report format, escalation criteria |
-| `rnd-roadmapping` | Multi-session roadmap format, milestone statuses (NOT_STARTED → DONE), and update protocol |
-| `rnd-learning` | Auto-capture pipeline-discovered gotchas from iteration cycles to the Learning Library; inject known pitfalls into builder prompts |
-| `rnd-reality-auditing` | Conditional per-task audit (runs when task declares `External dependencies`) — manifest cross-check, diff-based discovery, adversarial experiments, evidence chains for declared external references |
-| `bash-hook-testing` | Test framework patterns for hook scripts — test-helpers.sh, run_hook, assertions, environment mocking |
-| `hook-authoring` | Hook anatomy, exit code protocol, stdin parsing, fast-path patterns, hooks.json registration |
-| `lib-sh-patterns` | Shared lib.sh utilities — path predicates, response functions, stdin parsing |
-| `plugin-architecture` | Plugin structure — config dir detection, path matching, hooks.json, hook events |
-| `plugin-versioning` | Version bumping, changelog entries, validation, and the release workflow |
+| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
+| `/rnd-framework:rnd-plan <task>` | Planning only — decompose into task specs |
+| `/rnd-framework:rnd-build <T3\|wave-2\|next>` | Build a task or wave |
+| `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification |
+| `/rnd-framework:rnd-integrate <wave-2\|final>` | Merge outputs, run integration tests |
+| `/rnd-framework:rnd-status` | Pipeline status dashboard |
+| `/rnd-framework:rnd-resume` | Resume a partial pipeline |
+| `/rnd-framework:rnd-history` | Browse past sessions |
+| `/rnd-framework:rnd-debug <bug>` | Reproduce, diagnose, fix, verify |
+| `/rnd-framework:rnd-roadmap <goal>` | Multi-session roadmap |
+| `/rnd-framework:rnd-scan` | Scan the project, build `project-facts.md` |
+| `/rnd-framework:rnd-stats` | Per-shape non-PASS rate, drift, and gap report |
+| `/rnd-framework:rnd-remeasure` | Compare current metrics against the baseline |
+| `/rnd-framework:rnd-review` | Evidence-based review of recent changes |
+| `/rnd-framework:rnd-audit` | Full codebase audit |
+| `/rnd-framework:rnd-brainstorm` | Funnel a vague idea into a focused plan |
+| `/rnd-framework:rnd-narrative` | Development narrative for a session |
+| `/rnd-framework:rnd-calibrate` | Record a ground-truth verdict correction |
+| `/rnd-framework:rnd-validate` | Validate plugin structure |
+| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics |
+| `/rnd-framework:rnd-bump` | Bump version, update CHANGELOG |
 
 ## Agents
 
-Nine specialized agents for the multi-agent execution mode. All have persistent memory (`memory: user`), skills preloaded at startup, distinct UI colors, and KISS rules. The verifier has `disallowedTools: Edit` as defense-in-depth (Write is allowed for experiment files in `$RND_DIR` only).
+13 agents — 9 pipeline-phase plus 4 helpers. All preload skills, carry persistent memory, and use narrow tool grants. The orchestrator overrides the model per task based on its `Criticality` field; the models below are the defaults.
 
-| Agent | Model | Color | Role |
-|---|---|---|---|
-| `rnd-framework:rnd-planner` | sonnet (high effort) | blue | Decomposes tasks, writes pre-registration documents, builds dependency matrix |
-| `rnd-framework:rnd-builder` | sonnet | green | Implements one task with TDD, produces build manifest + self-assessment |
-| `rnd-framework:rnd-verifier` | sonnet (high effort) | amber | Independent verification against pre-registered criteria with information barrier |
-| `rnd-framework:rnd-cleanup` | sonnet (medium effort) | — | Per-task dead-code sweep after PASS; rolls back if cleanup breaks re-verification |
-| `rnd-framework:rnd-polisher` | sonnet (medium effort) | — | Wave-level cross-task seam fixer: cross-task duplication, naming drift, shared-location lifting; runs after all per-task cleanup; rolls back if re-verification breaks |
-| `rnd-framework:rnd-integrator` | sonnet | purple | Merges verified outputs, runs integration/system tests, SHIP/NO-SHIP verdicts |
-| `rnd-framework:rnd-debugger` | sonnet (high effort) | orange | Reproduces bugs, identifies root causes, produces diagnosis report for Builder |
-| `rnd-framework:rnd-reality-auditor` | sonnet | teal | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when task declares `External dependencies` |
-| `rnd-framework:rnd-data-scientist` | sonnet | cyan | Standalone specialist for numerical/analytical work |
-
-The orchestrator dispatches work to these agents, each running in its own context window with structural isolation.
-
-## Pipeline Scaling
-
-Every task goes through the pipeline, scaled to complexity:
-
-| Complexity | Entry Point | What Happens |
+| Agent | Model | Role |
 |---|---|---|
-| Bug (reported symptom) | `/rnd-framework:rnd-debug` | Debugger diagnoses → Builder fixes → Verifier confirms |
-| Trivial to small | `/rnd-framework:rnd-start` | Planner + Builder + Verifier (minimal wave) |
-| Medium (1-4hr) | `/rnd-framework:rnd-start` | Planner + N Builders + N Verifiers + Integrator |
-| Large (multi-day) | `/rnd-framework:rnd-start` | Full pipeline + design review gate |
-| High-stakes | `/rnd-framework:rnd-start` | Full pipeline + dual independent verification |
+| `rnd-planner` | opus / high | Decomposes tasks; emits the four plan artifacts |
+| `rnd-builder` | sonnet / high | Implements one task with TDD; writes a manifest + self-assessment |
+| `rnd-reality-auditor` | sonnet / low | Audits declared external references (URLs, APIs, schemas, env vars) |
+| `rnd-verifier` | sonnet / high | Independent verification behind the information barrier |
+| `rnd-cleanup` | sonnet / medium | Per-task dead-code sweep after PASS; rolls back if it breaks re-verification |
+| `rnd-polisher` | opus / high | Wave-level cross-task seam fixer (duplication, naming drift) |
+| `rnd-integrator` | haiku / low | Merges verified outputs, runs integration tests, SHIP/NO-SHIP |
+| `rnd-debugger` | sonnet / high | Root-cause analysis for failing tasks |
+| `rnd-data-scientist` | sonnet / medium | On-demand numerical/analytical work (Julia, DuckDB) |
 
-## Roadmapping (Multi-Session Tasks)
+**Helpers:** `rnd-premortem-imaginer` (parallel failure imagination), `rnd-replan-differ` (old-vs-new plan diff), `rnd-assertion-paraphraser` (decorrelates the verifier's read from the planner's phrasing), `rnd-explorer` (read-only fan-out search).
 
-For tasks that span multiple days or sessions, use `/rnd-framework:rnd-roadmap` to decompose the work into milestones before starting any pipeline session.
+## Skills
 
-```
-> /rnd-framework:rnd-roadmap Add full authentication system with OAuth, RBAC, and audit logging
-  [Planner decomposes into milestones and writes roadmap.md at the project base]
-  [Shows milestone list with statuses]
+Skills embed structured practices into each phase. Notable ones:
 
-> /rnd-framework:rnd-roadmap   # run again to continue
-  [Identifies next NOT_STARTED milestone, transitions to IN_PROGRESS]
-  [Routes to /rnd-framework:rnd-start with milestone scope]
-```
+| Skill | Purpose |
+|---|---|
+| `using-rnd-framework` | Session bootstrap — lists available skills and commands |
+| `rnd-orchestration` | Pipeline overview, agent roles, gate criteria |
+| `rnd-decomposition` | Hierarchical decomposition and pre-registration |
+| `premortem` | Pre-planning failure imagination, aggregated into `premortem.md` |
+| `outside-view` | Injects historical per-shape FAIL rates as a calibration anchor |
+| `rnd-building` | Builder methodology with TDD discipline |
+| `rnd-verification` | Wave-batched independent verification, per-assertion verdict map |
+| `rnd-debugging` | Systematic root-cause analysis |
+| `rnd-scheduling` | Dependency-based wave scheduling |
+| `rnd-scaling` | How much ceremony a task needs |
+| `rnd-iteration` | Build-verify feedback loops and budgets |
+| `rnd-integration` | Merge and system validation |
+| `rnd-completion` | Post-SHIP branch management, PR creation |
+| `rnd-formatting` | Detect and run the project formatter pre-commit |
+| `rnd-doc-polish` | Update docs and stale comments after SHIP |
+| `rnd-reality-auditing` | Adversarial external-contract verification |
+| `rnd-calibration` | Verdict-accuracy tracking |
+| `rnd-roadmapping` | Multi-session roadmap format and lifecycle |
+| `rnd-learning` | Capture pipeline gotchas to the Learning Library |
+| `code-review` | Review categories, severities, verdicts, report format |
+| `kiss-practices` / `fp-practices` | Language-specific simplicity and FP rules |
+| `prefer-system-tools` / `bun-scripting` / `committing` | Tooling and commit discipline |
+| `hook-authoring` / `lib-sh-patterns` / `plugin-architecture` / `plugin-versioning` / `bash-hook-testing` | Working on the plugin itself |
 
-**Milestone lifecycle:** `NOT_STARTED` → `IN_PROGRESS` → `DONE` (or `SKIPPED`)
+## Information barrier
 
-Each milestone is one `/rnd-framework:rnd-start` session. After a SHIP verdict, the `rnd-completion` skill marks the milestone DONE and records the session ID. The `/rnd-start` command detects an existing roadmap in Phase 0 and scopes the session to the current milestone.
+The verifier never sees the builder's self-assessment or reasoning. Two layers enforce this:
 
-See the `rnd-roadmapping` skill for the roadmap.md format and update protocol.
+1. **Structural isolation** — agents run in separate context windows.
+2. **PreToolUse hooks** — `read-gate.sh`, `glob-grep-gate.sh`, and `bash-gate.sh` block any read of barrier-protected paths (`self-assessment`, `briefs/`, `cleanup/`) by the verifier or polisher.
 
-## Typical Workflow
+Without it, the verifier anchors on the builder's framing and verification degrades into rubber-stamping.
 
-### Big feature
+## Artifacts
 
-```
-> /rnd-framework:rnd-start Add OAuth2 login with Google provider
-  [Phase 0: Discovery — requirements gathering]
-  [Phase 0.5: Design Exploration — 2-3 architectural alternatives with trade-offs, user approves design spec]
-  [Planner produces task tree, pre-registrations, dependency matrix from approved design]
-  [Review the plan, adjust if needed]
-
-> /rnd-framework:rnd-build wave-1
-  [Builder agents work on Wave 1 tasks in parallel]
-
-> /rnd-framework:rnd-verify wave-1
-  [Independent Verifier checks each task against criteria]
-
-> /rnd-framework:rnd-build wave-2
-  [...continues through waves...]
-
-> /rnd-framework:rnd-integrate final
-  [System validation, regression check, SHIP/NO-SHIP]
-```
-
-### Small task
-
-```
-> /rnd-framework:rnd-start Fix the race condition in token refresh
-  [Plan → build → independent verify → done]
-```
-
-### Check progress
+Artifacts live in a central directory outside the project (computed by `lib/rnd-dir.sh`), so no `.gitignore` entry is needed. Each project gets an isolated slug; each run gets a unique session ID.
 
 ```
-> /rnd-framework:rnd-status
+~/.claude/.rnd/<dirname>-<hash>/          # Project slug
+├── calibration.jsonl                     # Verdict-accuracy tracking (project-wide)
+├── post-review.jsonl                     # Post-SHIP review ledger
+└── branches/<branch>/
+    ├── project-facts.md                  # Persistent project scan
+    ├── roadmap.md                        # Multi-session roadmap
+    └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   # One per run ($RND_DIR)
+        ├── premortem.md                  # Failure imagination
+        ├── outside-view.md               # Reference-class calibration block
+        ├── protocol.md                   # Scope + goals
+        ├── validation-contract.md        # One assertion per heading
+        ├── features.json                 # Task manifest (IDs, deps, criticality)
+        ├── AGENTS.md                      # Per-agent work assignments
+        ├── builds/                       # Manifests + self-assessments
+        ├── verifications/                # Verdict maps, reports, experiments, evidence
+        ├── cleanup/ · polish/            # Cleanup and polish reports
+        ├── integration/                  # Integration results, SHIP/NO-SHIP
+        ├── briefs/                       # Barrier-protected builder narratives
+        ├── audit.jsonl                   # Shared audit log
+        └── iteration-log.md              # Build-verify cycle tracking
 ```
 
-## How Information Barriers Work
+**`lib/rnd-dir.sh` flags:** `-c` (create session), `--finish` (clear session), `--base` (branch-scoped base), `--roadmap` / `--facts` (lazy-inherit from default branch), `--calibration` (slug-root path). Branch is resolved from `HEAD`; detached HEAD → `detached-<sha7>`, non-git → `no-git`.
 
-The Verifier never sees the Builder's self-assessment or reasoning. Enforcement is two-layered:
+## Output styles
 
-1. **Structural isolation** — agents run in separate context windows, so the Verifier literally cannot see the Builder's internal reasoning
-2. **PreToolUse hooks** — three hooks enforce the barrier across all file-reading tools: `read-gate.sh` blocks Read calls, `glob-grep-gate.sh` blocks Grep/Glob calls, and `bash-gate.sh` blocks Bash commands targeting files with `self-assessment` in the path (defense-in-depth)
-
-Without this barrier:
-- The Verifier gets anchored by the Builder's framing
-- Known issues get "verified" as acceptable rather than caught
-- Verification becomes rubber-stamping
-
-## Project Artifacts
-
-The framework stores pipeline artifacts in a centralized directory outside the project tree, computed by `lib/rnd-dir.sh`. The path is based on a hash of the git common directory (`git rev-parse --git-common-dir`, canonicalized), so each project gets its own isolated artifact space. Multiple clones of the same repo share the same base directory. Falls back to `pwd` when not in a git repo.
-
-**Helper script:** `lib/rnd-dir.sh`
-- Called as `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` from hooks and agents
-- Outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/branches/<branch>/sessions/<YYYYMMDD-HHMMSS-XXXX>`
-- Use `-c` flag to create the directory structure on first use
-- Use `--finish` to clear the session ID after a pipeline run
-- Use `--base` to get the branch-scoped project base dir (without session path)
-- Use `--roadmap` / `--facts` for branch-scoped roadmap.md / project-facts.md paths (lazy-inherit from default branch on first access)
-- Use `--calibration` for the un-partitioned calibration.jsonl path at the slug root
-- Branch is resolved at each invocation via `git symbolic-ref --short HEAD`; detached HEAD → `detached-<sha7>`; non-git → `no-git`; slashes preserve as nested dirs; `..` traversal is rejected
-
-Each pipeline run gets a unique session ID. Previous sessions remain on disk and can be browsed with `/rnd-framework:rnd-history`.
-
-**Artifact layout** (`$RND_DIR`):
-
-```
-~/.claude/.rnd/<dirname>-<hash>/         # Project slug (un-partitioned at top)
-├── .active-base-dir                    # Cache: path to active branch-scoped base
-├── calibration.jsonl                   # Verdict accuracy tracking (project-wide, un-partitioned); stored in CLAUDE_PLUGIN_DATA when set
-└── branches/<branch>/                  # Branch-scoped partition (resolved from HEAD; detached-<sha7> / no-git fallbacks; nested for slash-names)
-    ├── .current-session                # Active session ID
-    ├── .session-git-root               # Git root of the project that started the session
-    ├── project-facts.md                # Persistent project environment scan (lazy-inherits from default branch)
-    ├── roadmap.md                      # Multi-session roadmap (lazy-inherits from default branch)
-    └── sessions/
-        └── <YYYYMMDD-HHMMSS-XXXX>/     # One session per pipeline run
-        ├── protocol.md                 # Strategic scope, milestones, environment, worker guidelines, pre-registration documents (carries `Heuristic ceiling: <N>` on line 2)
-        ├── validation-contract.md      # One `### M<N>.<area>.<slug>` heading per atomic assertion (orchestrator slices per-task by `assertionIds[]`)
-        ├── features.json               # Machine-readable task manifest: `{tasks: [{id, slug, milestone, dependsOn, assertionIds, criticality, status}]}`
-        ├── AGENTS.md                   # Session-local agent guidance authored from scratch each session
-        ├── skills/<name>/SKILL.md      # Session-local skills the orchestrator injects under `## Session Skills` on every Agent() spawn
-        ├── design-spec.md              # Approved architectural design spec (Design phase output)
-        ├── diagnosis/
-        │   └── T1-diagnosis.md         # Debugger's root cause analysis (debug pipeline only)
-        ├── builds/
-        │   ├── T1-manifest.md          # What the builder produced
-        │   └── T1-self-assessment.md   # Builder's uncertainties (Verifier cannot read)
-        ├── verifications/
-        │   ├── wave-1-verdict-map.json # Per-wave verdict map keyed by task_id (one Verifier spawn per wave)
-        │   ├── T1-verification.md      # Full prose report written for every verdict (PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION)
-        │   ├── T1-experiments/         # Verifier-written independent experiment tests
-        │   └── T1-evidence/            # Per-VAL-assertion evidence files (raw command output)
-        ├── evidence/
-        │   └── T<id>/                  # Evidence pack: manifest.json, stdout.txt, stderr.txt (written by run-tool.sh when RND_EVIDENCE_PACK=1)
-        ├── integration/
-        │   └── wave-1-report.md        # Integration test results, SHIP/NO-SHIP
-        └── iteration-log.md            # Build-verify cycle tracking
-```
-
-Since artifacts live outside the project directory, no `.gitignore` changes are needed.
-
-## Plugin Structure
-
-```
-rnd-framework/
-├── .claude-plugin/plugin.json   # Plugin manifest
-├── agents/                      # 13 agents (9 pipeline-phase + 4 helpers: premortem fan-out + replan-differ + assertion paraphraser + read-only explorer)
-├── commands/                    # 19 pipeline commands
-├── hooks/
-│   ├── hooks.json               # Hook routing: SessionStart/End, Setup, InstructionsLoaded, PreToolUse, PostToolUse, PreCompact/PostCompact, StopFailure, CwdChanged, FileChanged, TaskCreated, SubagentStart/Stop, PermissionDenied
-│   ├── lib.sh                   # Shared bash utilities (input parsing, path checks, decision output incl. defer)
-│   ├── read-gate.sh             # Read hook: information barrier + .rnd/, plugin cache, and learnings auto-allow
-│   ├── bash-gate.sh             # Bash hook: information barrier; blocks destructive git ops, `git add .rnd/`, advisory on `git push` to main/master/production; auto-allows .rnd/ and plugin lib paths; Bash output cache advisory
-│   ├── glob-grep-gate.sh        # Glob/Grep hook: auto-allows .rnd/ path operations
-│   ├── session-start.sh         # SessionStart hook: injects full skill context only when a pipeline is active, else a one-line stub; Claude Code version check
-│   ├── session-end.sh           # SessionEnd hook: clears active RND session on close/switch
-│   ├── post-dispatch.sh         # PostToolUse hook: audit logging for Write/Edit/Bash + output size advisory
-│   ├── stop-failure.sh          # StopFailure hook: logs API errors to stop-failures.jsonl, emits advisory
-│   ├── setup.sh                 # Setup hook: validates plugin structure and dependencies
-│   ├── instructions-loaded.sh   # InstructionsLoaded hook: reminds to extract project standards
-│   ├── pre-compact.sh           # PreCompact hook: saves pipeline state before context compaction
-│   ├── post-compact.sh          # PostCompact hook: restores pipeline state after compaction
-│   ├── cwd-changed.sh           # CwdChanged hook: warns on cross-repo directory change
-│   ├── file-changed.sh          # FileChanged hook: advises on external .rnd/ artifact edits
-│   ├── task-created.sh          # TaskCreated hook: logs task creation to audit.jsonl
-│   ├── permission-denied.sh     # PermissionDenied hook: logs auto-mode denials to audit.jsonl, returns {retry: true}
-│   ├── format-on-save.sh        # PostToolUse hook: auto-formats code files after Write/Edit using detected project formatter
-│   ├── subagent-lifecycle.sh    # SubagentStart/SubagentStop hook: logs agent lifecycle to audit.jsonl
-│   ├── coverage-gaps-gate.sh    # SubagentStop hook scoped to rnd-verifier: blocks missing/trivial ## Coverage Gaps section in T<id>-verification.md
-│   └── statusline.sh            # Statusline script: rate limit usage + pipeline phase
-├── output-styles/               # 3 custom output styles (scientific, rigorous, pipeline)
-├── skills/                      # Skills (rnd-* namespace)
-├── lib/
-│   ├── rnd-dir.sh               # Artifact directory path computation + session management
-│   ├── plugin-dir-base.sh       # Local copy of shared artifact dir logic (cache-compatible)
-│   ├── bump.sh                  # Patch version increment + CHANGELOG entry + git stage
-│   ├── validate.sh              # Plugin structure validation (frontmatter, hooks, cross-references)
-│   ├── validate-xrefs.sh        # Cross-reference and content parity validation (sourced by validate.sh)
-│   └── audit-scan.sh            # audit.jsonl scanner: `verdict_history <task_id>` returns verdict sequence with FLIP_DETECTED on pathological flips
-├── tests/                       # Bash test suite for hooks and lib scripts
-└── README.md
-```
-
-## Output Styles
-
-Three custom output styles optimized for R&D pipeline work. Source files live in `output-styles/` within the plugin.
+Three styles in `output-styles/`. Register by symlinking into `.claude/output-styles/`, then `/output-style <name>`.
 
 | Style | Purpose |
 |---|---|
-| **Scientific** | Hypothesis-driven reasoning — every change framed as experiment → evidence → conclusion |
-| **Rigorous** | Maximum precision, zero ambiguity — explicit assumptions, rationale chains, audit-trail quality |
-| **Pipeline** | Minimal narrative — structured status blocks, tables, next actions only |
+| **scientific** | Hypothesis → evidence → conclusion framing |
+| **rigorous** | Maximum precision, explicit assumptions, audit-trail quality |
+| **pipeline** | Minimal narrative — status blocks, tables, next actions |
 
-### Registration
+All three carry the **Report Surfacing Protocol**: the orchestrator prints report artifacts (plans, verdict maps, reality reports, diagnoses, audits, narratives) verbatim before any next-step prompt.
 
-Output styles must be in `~/.claude/output-styles/` (user-level) or `.claude/output-styles/` (project-level) to appear in `/output-style`. Symlink from your project:
+## Plugin structure
 
-```bash
-mkdir -p .claude/output-styles
-ln -sf path/to/rnd-framework/output-styles/scientific.md .claude/output-styles/
-ln -sf path/to/rnd-framework/output-styles/rigorous.md .claude/output-styles/
-ln -sf path/to/rnd-framework/output-styles/pipeline.md .claude/output-styles/
 ```
-
-Then switch with `/output-style scientific`, `/output-style rigorous`, or `/output-style pipeline`.
-
-### Report Surfacing Protocol
-
-All three output styles include an identical "Report Surfacing Protocol" section. When an agent or skill produces a report artifact (`protocol.md`, `validation-contract.md`, `features.json`, `AGENTS.md`, `design-spec.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json` (per-assertion), `T<id>-reality-report.md`, `T<id>-diagnosis.md`, `wave-<N>-report.md`, `iteration-log.md`, audit/review reports, narratives, `brainstorm.md`), the orchestrator MUST print the file path followed by the file's complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn, including in autonomous/loop mode. No length cap, no truncation, no summary substitution. Routine builder artifacts (`T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`), cleanup reports, and persistent state files (`project-facts.md`, `calibration.jsonl`, `audit.jsonl`) are excluded. The rule lives in the output styles rather than per-command, so it covers every current and future report-producing command.
+rnd-framework/
+├── .claude-plugin/plugin.json   # Manifest
+├── agents/                      # 13 agents (9 pipeline + 4 helpers)
+├── commands/                    # Pipeline commands
+├── skills/                      # rnd-* skills
+├── hooks/                       # hooks.json + gate/lifecycle scripts
+├── lib/                         # rnd-dir.sh, bump.sh, validate.sh, stats/, schemas
+├── output-styles/               # scientific, rigorous, pipeline
+└── tests/                       # Bash test suite (run via tests/run-tests.sh)
+```
 
 ## Customization
 
-### Change agent models
+- **Agent models** — edit each agent's `model:` frontmatter, or rely on criticality-driven dispatch.
+- **Iteration budget** — edit the limit in `/rnd-framework:rnd-start` (default 3).
+- **New skills** — use the `writing-skills` skill.
 
-In each agent's YAML frontmatter, change the `model:` field:
+## Requirements & limits
 
-- Planner: `sonnet` with `effort: high` (strong reasoning for decomposition)
-- Builder: `sonnet` (speed + quality for implementation)
-- Verifier: `sonnet` with `effort: high` (strong reasoning to catch subtle issues)
-- Integrator: `sonnet` (mostly mechanical merge + test running)
-
-### Adjust iteration budget
-
-Edit the iteration limit in the `/rnd-framework:rnd-start` command (default: 3).
-
-### Create new skills
-
-Use the `writing-skills` skill for guidance on creating new skills that plug into the framework.
-
-## Limitations
-
-- **Hook enforcement is best-effort.** The PreToolUse hook blocks self-assessment reads but can't prevent indirect access (e.g., via inline code execution). Hook discipline is the primary enforcement.
-- **No persistent state across sessions.** The `.rnd/` directory provides continuity, but session context resets. Use `/rnd-framework:rnd-status` to re-orient.
-- **Token cost.** Plugin always-on overhead is ~4,577 tokens per session. The full multi-agent pipeline (Planner + Builders + Verifiers + Integrator) adds substantially more on top via on-invoke skills and per-agent context. Use the pipeline scaling tiers to right-size the number of agents for the task complexity.
-- **Information barrier is path-based.** Hooks block reads of files with `self-assessment` in the path. The `read-gate.sh` hook checks the file path to prevent verification phases from reading build-phase reasoning.
+- **Minimum Claude Code:** v2.1.139 (`session-start.sh` warns when below). `--bare` mode skips all hooks, so the framework does not function there.
+- **Best-effort enforcement** — the information barrier is path-based; hooks block direct reads but can't catch every indirect access.
+- **No persistent session memory** — `.rnd/` provides continuity, but context resets between sessions; use `/rnd-framework:rnd-status` to re-orient.
 
 ## Acknowledgements
 
-Some ideas in this framework were drawn from established engineering and scientific methodologies:
-
-- [V-Model](https://en.wikipedia.org/wiki/V-model) — hierarchical decomposition with paired verification at each level
-- [Design Structure Matrix (DSM)](https://en.wikipedia.org/wiki/Design_structure_matrix) — dependency analysis and parallel scheduling
-- [NASA Independent Verification & Validation (IV&V)](https://www.nasa.gov/about-nasas-ivv-program/) — independent verification with strict information barriers
-- [Stage-Gate](https://en.wikipedia.org/wiki/Phase-gate_process) — quality checkpoints between phases
-- [Pre-Registration](https://en.wikipedia.org/wiki/Preregistration_(science)) — declaring intent and success criteria before execution
+Ideas drawn from the [V-Model](https://en.wikipedia.org/wiki/V-model), [Design Structure Matrix](https://en.wikipedia.org/wiki/Design_structure_matrix), [NASA IV&V](https://www.nasa.gov/about-nasas-ivv-program/), [Stage-Gate](https://en.wikipedia.org/wiki/Phase-gate_process), and [Pre-Registration](https://en.wikipedia.org/wiki/Preregistration_(science)).

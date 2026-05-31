@@ -2,1827 +2,1097 @@
 
 ## 0.15.278 — 2026-05-31
 
-### Record raw builder build_status in the self-assessment audit event instead of inferring PASS/FAIL from markdown shape
-
-self-assessment-producer.sh now reads the builder's explicit `**Status:**` line and emits the raw 4-valued build_status (DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED) into the builder_self_assessment audit record; the pass/fail collapse moves to the consumer. The prior heuristic inferred FAIL from full-template shape (section headings, MEDIUM/LOW tokens), which could not distinguish a pass-with-caveats from a true block — all three full-template statuses emit the identical template — and so recorded every DONE_WITH_CONCERNS build as a builder self-FAIL, inflating the self-fail-vs-verdict gap (stats Section 2) with false FAILs. self_fail_vs_verdict_gap.sql now collapses build_status (NEEDS_CONTEXT/BLOCKED → self-fail; DONE/DONE_WITH_CONCERNS → not) with a COALESCE fallback to the legacy self_verdict field so historical records still read correctly. skills/rnd-building adds the mandatory Status line to both self-assessment template forms with the status→verdict mapping (missing line defaults to DONE). Producer and e2e tests updated to assert build_status; the e2e exercises the new build_status SQL path end-to-end while the committed fixtures exercise the legacy fallback.
+- Builder self-assessments now record their explicit status (done / done-with-concerns / needs-context / blocked) instead of guessing pass/fail from the report's shape.
+- Fixes a stat that wrongly counted every "done with concerns" build as a builder failure.
 
 ## 0.15.277 — 2026-05-31
 
-### Migrate hooks off retired plan.md to protocol.md and standardize emitted JSON keys to snake_case
-
-detect_pipeline_phase, pre-compact, post-compact, and file-changed now recognize protocol.md (the v5 main-pipeline plan artifact), with plan.md retained for the debug pipeline. compact-state.json (plan_summary, current_task_id, iteration_count, saved_at, verification_needle) and calibration.sh (false_verdict_flag) emit snake_case keys with backward-compatible reads of legacy camelCase records. Also fixes bump.sh single-bracket tests, a coverage-gaps-gate comment, and sweeps stale plan.md prose to protocol.md across agents, commands, skills, and output-styles.
+- Hooks now recognize the current `protocol.md` plan file; the old `plan.md` is kept only for the debug pipeline.
+- Saved pipeline state and calibration records now use snake_case keys, still reading older camelCase records.
 
 ## 0.15.276 — 2026-05-31
 
-### Add rnd-explorer, a narrow-grant read-only search agent replacing the built-in Explore in MCP-heavy sessions
-
-The built-in Explore and general-purpose agents are granted the full tool surface, so in a session with many connected MCP servers their spawn-time prompt (every server's tool schema, materialized eagerly because spawned subagents do not inherit the main session's ToolSearch deferral) exceeds the context budget and the spawn fails immediately with "Prompt is too long" — verified by a deterministic reproduction where an Explore spawn returned the error before executing any tool. This is not an rnd-framework defect (its only SubagentStart hook is a no-stdout audit logger, its context injections target the main session not spawned subagents, its own agents use narrow explicit grants and spawn fine, and it ships no MCP servers) but the framework can offer the fix: new agents/rnd-explorer.md is a read-only fan-out search agent with a deliberately narrow grant (Read, Grep, Glob, Bash) that spawns reliably and returns the search conclusion rather than file dumps. The using-rnd-framework skill gains an Exploration & Search section instructing the orchestrator to spawn rnd-explorer and never the built-in Explore/general-purpose; it sits above the Data Science Tasks header so session-start.sh's skill trim preserves it in the injected orchestrator context. Agent count references in CLAUDE.md and README.md move 12 to 13 (3 to 4 helpers). validate.sh (377) stays green.
+- Adds `rnd-explorer`, a read-only search agent that spawns reliably in sessions with many MCP servers — where the built-in Explore agent fails with "Prompt is too long".
+- The orchestrator now uses it for searches instead of Explore.
 
 ## 0.15.275 — 2026-05-31
 
-### Make the bash test suite hermetic against ambient session env and zero out production shellcheck warnings
-
-A full-codebase audit found the 90-file bash test suite was not hermetic: run inside a live rnd-framework session (or with CLAUDE_CONFIG_DIR exported to the developer's real config), 12 test files failed by reading the live .current-session and audit.jsonl instead of their fixtures, while the same suite passed under env -i. Notably 27 files already exported their own CLAUDE_CONFIG_DIR yet still leaked, because a := default-assignment guard is a no-op when the variable is already set to the dirty value. Fix is defense-in-depth with unconditional overrides: run-tests.sh now runs each test under env -i PATH HOME=mktemp (the harness chokepoint); test-helpers.sh gained an on-source preamble that unconditionally re-points CLAUDE_CONFIG_DIR and HOME to fresh mktemp dirs and unsets RND_DIR; and the 22 non-sourcing test files each carry the same explicit guard. A new tests/hermeticity.test.sh is a standing regression guard — a control/treatment A/B proving the preamble is load-bearing (not vacuously passing), a structural check that every non-sourcing test is guarded, and a behavioural check that a guarded test passes under a dirty env. Separately, the production-script shellcheck warning count is driven to zero: one genuine refactor (bash-gate.sh declare-then-assign split for SC2155) plus five documented shellcheck disable directives for verified false positives (lib.sh SC2034 caller-scope vars and SC2120 $@ passthrough, both plugin-dir-base.sh byte-twins SC2034, run-tool.sh SC2053 intentional glob), none deleting live behaviour. The suite (now 91 files) passes both hermetically and under a dirty CLAUDE_CONFIG_DIR/RND_DIR, and validate.sh (372) stays green.
+- The bash test suite no longer reads a live session's state, so it passes whether or not a pipeline is running.
+- Clears all shellcheck warnings in production scripts.
 
 ## 0.15.274 — 2026-05-31
 
-### Resolve self-assessment task_id to the canonical features.json id and unify the task identifier to snake_case task_id
-
-Fixes the under-qualified task_id leak at its source (self-assessment-producer.sh) and unifies the task-identifier casing. The producer derived task_id from the self-assessment filename stem, which builders named with a bare T<NN> (per the old skill/agent instruction) — so the builder_self_assessment audit records carried T01/T1 instead of the canonical M<N>.T<NN>.<slug>, corrupting the self_fail_vs_verdict gap join. New resolve_canonical_task_id() resolves the stem against features.json via the M<N>.T<NN> structural prefix (exact-id match -> unique-prefix match -> raw-stem fallback); the prefix is the only key that is unique within a plan (T<NN> resets per milestone) and immune to slug truncation (id-gen caps slugs at 32 chars), slug drift, and a null/absent uuid. The rnd-building skill and rnd-builder agent now instruct the canonical M<N>.T<NN>.<slug>-self-assessment.md filename so the common path exact-matches. Separately, the task identifier is unified to snake_case task_id across audit, verdict-map, AND calibration: calibration-producer.sh now emits task_id (was camelCase taskId), and the five calibration-reading views (per_shape_fail_rate, self_fail_vs_verdict_gap, iteration_depth, drift_watch, backfill) read COALESCE(task_id, taskId) so historical camelCase records still join. Skill docs (rnd-calibration, rnd-calibrate, rnd-reality-auditing), CLAUDE.md, and the producer tests are updated; bare-T example ids in the calibration schema doc are bumped to canonical form. Deliberately did NOT migrate task_id to a pure M<N>.T<NN> key — the resolver already closes the join bug and stripping the slug would cost readability for marginal gain. Adds 4 resolver test cases; run-tests.sh and validate.sh (372) stay green. Latent, unaddressed: uuid is null in many features.json plans (post-review-writer uuid attribution no-ops there); sessionId/session_id has the same casing split.
+- Builder self-assessments now resolve to the plan's canonical task ID, fixing a join that mismatched on bare `T01`-style IDs.
+- Task IDs are now snake_case everywhere (audit, verdict map, calibration), still reading older records.
 
 ## 0.15.273 — 2026-05-30
 
-### Key the self-fail-vs-verdict gap on (session_id, task_id) to stop cross-session task_id contamination
-
-Section 2 of rnd-stats (self_fail_vs_verdict_gap) joined builder self-assessment to verifier verdict on bare task_id, and deduped each side by bare task_id alone. Under-qualified IDs that recur across sessions (T01 appears in 24 distinct audit sessions but 1 calibration session; also T1, M1.T01, M1.T03, M1.T04) made the bare join pair one session's self-assessment with an unrelated session's verdict — gross cross-session contamination of the gap count. Both payloads already carry session_id (verified: 0 records missing it on either side), so the fix threads session_id through audit_events, both QUALIFY dedup partitions, and the paired join (ON v.session_id = a.session_id AND v.task_id = a.task_id), aligning Section 2's grain with Section 1 (per_shape_fail_rate) which already partitions by (session_id, taskId). On live data the corrected grain drops the spurious matches: dogfood 12→11 paired tasks, feature 33→30. One legitimate cross-session task (M9.T01.schema-and-substance-pass, built and verified in different resumed sessions) is no longer paired — an acceptable rare cost of the stricter, consistent grain. SQL-only; validate.sh (372) and the two view-touching tests (phase0-producers-e2e, calibration-producer) stay green. The underlying under-qualified-task_id leak from some producers is a separate data-quality issue, not addressed here.
+- The self-fail-vs-verdict stat now matches builds to verdicts within the same session, fixing cross-session ID collisions that paired unrelated tasks.
 
 ## 0.15.272 — 2026-05-30
 
-### Fix per-shape FAIL rate, self-fail-vs-verdict gap, and drift views to count non-PASS verdicts instead of the retired FAIL string
-
-The verifier no longer emits the literal verdict string FAIL — Gate 3 collapses failing assertions into NEEDS_ITERATION, and quality shortfalls into PASS_QUALITY_NEEDS_ITERATION. Three stats views still filtered on verdict = 'FAIL', a string that reads zero on all modern calibration data, so rnd-stats Sections 1 (per_shape_fail_rate), 2 (self_fail_vs_verdict_gap, verifier side), and 4 (fail_rate_over_time) reported a flat 0.0 fail rate even when builds had visibly iterated — contradicting Sections 3/3a, which already surfaced the same NEEDS_ITERATION events. The fix replaces the verifier-side predicate verdict = 'FAIL' with verdict <> 'PASS' (PASS is the only clean-success terminal), matching the sibling iteration_reasons.sql exactly; <> 'PASS' subsumes NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION, and any legacy FAIL. The builder side of the gap view keeps self_verdict = 'FAIL' (the builder DOES emit a binary PASS|FAIL self-assessment). Column names fail_count/fail_rate are retained — a non-PASS verdict is a failure to pass verification — with headers and comments updated to say so. Section 4 now sums to exactly the 9 non-PASS records present (5 NEEDS_ITERATION + 4 PASS_QUALITY_NEEDS_ITERATION); Section 2 stays 0 by design because every completed task's final verdict is PASS. commands/rnd-stats.md Section 1/4 labels and the command description renamed FAIL rate to non-PASS rate. SQL-only change, no agent behavior change.
+- Stats that tracked the FAIL rate now count any non-PASS verdict, since the verifier no longer emits a literal "FAIL" — fixing several views that read a flat zero.
 
 ## 0.15.271 — 2026-05-30
 
-### Reset to 0.x: rejoining ZeroVer to reflect experimental R&D status
-
-Versions 1.0 through 5.15 were premature majors. rnd-framework is an experimental R&D orchestration system — its interfaces, protocols, and quality gates are actively evolving. Following ZeroVer (0ver.org), the project stays on 0.x until the design stabilises. The reset is a deliberate stance, not an apology: 0.x signals that breaking changes may occur and that the framework is not yet ready for a stability commitment. The patch number 271 is a point-in-time memorial counting the total version tags ever stamped — an honest record, not a restart from zero.
+- Resets the version from 5.x back to 0.x to signal the framework is still experimental and may break between releases. The patch number preserves the running count of past releases.
 
 ## 5.15.0 — 2026-05-30
 
-### Add post-review finding categories and the theory-loss-share readout (Roadmap 2 M2 measurement)
-
-Roadmap 2 M2 (hold the theory), measurement-first per the M12 instrument-then-decide discipline. Before building any theory-holder role, make the signal visible: does the post-SHIP review actually surface architecture/conceptual-integrity issues that local verification misses, or only local nitpicks? Adds x-review-category-vocab to lib/event-schema.json (the seven code-review categories — architecture, security, correctness, testing, kiss, style, pipeline-hygiene — SSOT-d as a top-level array mirroring x-shape-vocab). lib/post-review-writer.sh gains an optional --category flag (finding mode) validated against the vocab by reusing the --clean-shape validation pattern (invalid exits non-zero with no record) and records a category field; when absent the field is omitted, backward-compatible with pre-M2 rows. Phase 8 in commands/rnd-start.md passes --category per finding from the seven-category review report. New lib/stats/post_review_categories.sql mirrors post_review_findings.sql idiom-for-idiom (raw-line read_csv, json_valid, TRY, dogfood_slugs CTE, slug regexp, CREATE OR REPLACE VIEW), counts review_found=true rows per (segment,category), and COALESCEs a null/absent category to the uncategorized bucket so legacy rows never drop or error. rnd-stats Section 9 surfaces the per-category breakdown and the theory-loss share = the architecture-plus-kiss fraction of categorized findings (uncategorized excluded from the denominator, NULLIF-guarded against divide-by-zero). The decision is deferred: once enough Phase-8-categorized sessions accrue, a high architecture-plus-kiss share justifies building the theory-holder (M3); a low share argues to cancel it per the M12 precedent. Extends the stats fixtures and EXPECTED.md and adds tests/post-review-categories-fixture.test.sh; validate.sh (373 checks) and run-tests.sh stay green. Measurement-only, additive, no agent behavior change.
+- The post-SHIP review now tags each finding with a category (architecture, security, correctness, etc.).
+- Stats report how often reviews surface architecture and design issues — the signal for whether a future "theory-holder" role is worth building.
 
 ## 5.14.1 — 2026-05-30
 
-### Fix post-review attribution: deterministic co-owned-file ownership and writer-derived verifier_said_PASS
-
-Resolves the two findings the post-SHIP review of 5.14.0 raised in lib/post-review-writer.sh. F2: a finding on a file co-owned by multiple conforming manifests now attributes to the latest pipeline stage (highest milestone number, then task number, parsed from the M<NN>-T<NN>-<uuid> filename and uuid-tie-broken) — deterministic and independent of glob order and features.json ordering, replacing the arbitrary lexicographically-first first-match break. F3: verifier_said_PASS is now derived from the owning task aggregated verdict in verifications/wave-*-verdict-map.json (true iff no entry for that task_id is FAIL or NEEDS_ITERATION; PASS_QUALITY_NEEDS_ITERATION counts as said-pass), so shape and verdict derive from the SAME owning task; --verifier-said-pass is demoted to an optional fallback used only when no verdict-map entry exists (unattributable findings, or legacy/absent maps), and the Phase 8 caller in commands/rnd-start.md documents it as optional. The derivation degrades gracefully (valid JSON, exit 0, flag fallback) on legacy task-keyed or garbage verdict maps rather than crashing or mis-deriving. Adds F2 and F3 fixtures across tests/attribution-collision.test.sh and tests/post-review-writer.test.sh; validate.sh (373 checks) and run-tests.sh stay green.
+- A review finding on a file owned by several tasks now attributes to the latest one, deterministically.
+- Whether the verifier passed a finding's task is now read from the verdict map rather than a caller-supplied flag.
 
 ## 5.14.0 — 2026-05-30
 
-### Add validity-gated expertise: post-SHIP review, per-shape validity ledger, and fast-path dispatch gate
-
-Adds "earn the fast path" — the framework earns the right to move fast in a task-shape only after a feedback-confirmed track record. M-A: a new Phase 8 in commands/rnd-start.md auto-runs the post-SHIP code review after final SHIP (opt-out --skip-post-review emits a measurable post-review-skip audit event); lib/post-review-writer.sh appends per-finding ground-truth records {shape,severity,verifier_said_PASS,review_found,session_id,timestamp} to the slug-root post-review.jsonl, attributing each finding shape mechanically (touched-file → owning task via the manifest filename uuid → features.json → first assertion_shape in audit.jsonl), recording unowned findings as shape unattributable and emitting one per-in-scope-shape clean row (--clean-shape, severity none) per clean review so the ledger is self-contained; lib/stats/post_review_findings.sql + rnd-stats Section 8 report per-(segment,shape) review/finding counts and the verifier-said-PASS-vs-review-found gap at per-(session,shape) grain (bool_or so a multi-finding session is one dirty run). M-B: calibration.sh gains the per-shape validity ledger (consecutive_clean/validity subcommands — expert at N_EXPERT_CONSECUTIVE_CLEAN=5 consecutive clean runs, recomputed statelessly from post-review.jsonl so one-strike demotion falls out automatically); a Shape-Validity Fast Path gate in skills/rnd-orchestration/SKILL.md + commands/rnd-start.md (mirroring the should_promote gate) emits a fast profile only for an expert shape at LOW/NORMAL criticality — recognition-primed lighter builder, prose/reduced verifier, single build-verify pass — with the no-slop floor inviolable: verification ALWAYS runs, the fast builder STILL writes its manifest, HIGH criticality never fast-paths, models stay at the criticality tier. Adds collision-proof task references: each features.json task carries a uuid and artifacts follow the M<NN>-T<NN>-<uuid> convention (documented in rnd-planner, rnd-orchestration, rnd-building, rnd-start), with post-review-writer.sh resolving ownership by exact uuid match (no substring/head -1 ambiguity; non-conforming filenames fail safe to unattributable). Adds tests/post-review-writer, post-review-clean-enumeration, validity-ledger, attribution-collision, fast-path-gate, and phase8-post-ship-review suites plus post-review.jsonl fixtures and an EXPECTED.md Section 8 block; validate.sh (373 checks) and run-tests.sh stay green. Grounded in Kahneman-Klein (2009): fast intuition is trustworthy only in a regular environment with feedback, so speed is earned per-shape, never assumed.
+- Runs an automatic code review after the final SHIP and records its findings per task-shape.
+- A task-shape that passes review cleanly five times in a row earns a lighter, faster build-and-verify path — but only at low/normal criticality, and verification always still runs.
+- A single new review finding instantly drops the shape back to the careful path.
 
 ## 5.13.1 — 2026-05-30
 
-### Gate the RND: session title on an active pipeline
-
-session-start.sh and session-title.sh now omit the sessionTitle field when no pipeline session is active, so a fresh session in a project no longer shows an RND: <project> badge; the title gate matches the context-block gate and only a live pipeline earns an RND: <phase> | <project> title.
+- A fresh project no longer shows an "RND:" tab title; only an active pipeline sets one.
 
 ## 5.13.0 — 2026-05-30
 
-### Make SessionStart injection lazy — full context only when a pipeline is active, a one-line stub otherwise
-
-Rewrites hooks/session-start.sh so an idle session pays ~one line of context and zero per-session disk, while an active pipeline still restores full context on resume/compact. The hook computes the active session dir once via active_session_dir and gates on it being non-empty AND existing on disk (`[[ -d ]]`, guarding a stale .current-session left by a crashed pipeline). When active it injects the full <EXTREMELY_IMPORTANT> using-rnd-framework block with RND_DIR set to the active session dir (never --base, never a fresh -c); when inactive it injects a one-line <system-reminder> stub naming the plugin and /rnd-framework:rnd-start, with no skill body and no RND_DIR line. Version warnings, the phase-aware sessionTitle, the single jq -cn emit, and exit 0 are preserved in both branches. The eager resolve_rnd_dir -c (which created a sessions/<id> dir on every SessionStart) is replaced with resolve_rnd_dir --base; mkdir -p precedes the .session-git-root/.active-base-dir cache writes because --base never creates directories, so at most one branch base dir is created (reused across sessions, never per-session). The first /rnd-framework:rnd-start creates the session, after which resume/compact see .current-session and the full block returns. Extends tests/session-start.test.sh to 47 assertions covering active/inactive/stale-pointer/no-eager-session/single-emit/version-warning cases; validate.sh (371 checks), validate-xrefs.sh, and run-tests.sh stay green; shellcheck -S warning clean. Updates the CLAUDE.md Session Bootstrap description and the README hook-tree line.
+- Idle sessions now load almost no context; full pipeline context returns automatically when a run is active or resumes.
 
 ## 5.12.0 — 2026-05-29
 
-### Add the verification-debt gate and segment the sycophancy flip rate to statically-verifiable assertions
-
-Adds hooks/verification-debt-gate.sh, a SubagentStop gate scoped to rnd-verifier that blocks completion when the most-recent T<id>-verification.md carries a non-trivial ## Verification Debt section alongside a bare `Overall Verdict: PASS` — enforcing that a verifier relying on a pre-reg-named quality tool (linter/test-runner/checker) it found unavailable downgrades to PASS_QUALITY_NEEDS_ITERATION and records the debt rather than emitting a bare PASS on substitute evidence. The trigger is structural (section presence + bare-PASS verdict line via extract_section/is_trivial_section reused from lib.sh), not a tool-name substring, so a correctly-downgraded PASS_QUALITY_NEEDS_ITERATION does not fire it; the gate adds no new hooks/lib.sh function and registers as a SubagentStop object in hooks.json. Documents the verification-debt discipline (probe pre-reg-named tools with command -v, write the ## Verification Debt section naming {gate, reason: tool_unavailable, assertion_id}, downgrade one tier, emit gate_fired/verification_debt_gate) in both skills/rnd-verification/SKILL.md and agents/rnd-verifier.md. Segments lib/stats/sycophancy_flip_rate.sql so hard_flip_count, soft_flip_count, and hard_flip_rate are computed only over rows where statically_verifiable='true', with 'false'/NULL rows reclassified into a new not_statically_reverifiable_count column (never dropped, never counted as flips) — addressing the static-artifact confound where a single-static-artifact re-review cannot reproduce execution/multi-file verification; the confound is disclosed beside the retained number in both the SQL header and rnd-stats Section 6. Extends lib/sycophancy-probe.sh cmd_ingest with backfill-safe rationale (default "") and statically_verifiable (default null) fields and updates the RECORD SCHEMA doc-comment SSOT. Adds tests/verification-debt-gate.test.sh and extends tests/sycophancy-probe.test.sh; validate.sh (371 checks), validate-xrefs.sh, and run-tests.sh stay green. The historical 25-record corpus lacks statically_verifiable, so the clean rate reads NULL until future probe runs populate the flag — encoding rather than masking the finding that the existing corpus cannot be cleanly re-measured.
+- Blocks the verifier from passing a task when it relied on a quality tool it couldn't actually run — it must downgrade and record the gap instead.
+- The sycophancy flip-rate stat now measures only assertions that can be statically re-checked, separating out cases a re-review can't reproduce.
 
 ## 5.11.0 — 2026-05-29
 
-### Add assertion paraphrase hop: a Write-only haiku paraphraser that decorrelates the Verifier's read from the Planner's exact phrasing
-
-Adds agents/rnd-assertion-paraphraser.md (tools: Write, model: haiku, no skills), a Write-only agent that receives all validation-contract assertion blocks in its prompt and writes a single paraphrased-assertions.md file with reworded natural-language framing — every literal, path, identifier, command, and numeric value is preserved verbatim; only the surrounding prose is reworded. Adds lib/paraphrase-emit.sh, which appends a paraphrase_injected event {event, n_assertions, timestamp} to $RND_DIR/audit.jsonl, exiting 1 on missing RND_DIR, missing argument, or non-integer argument. Wires the hop into commands/rnd-start.md as a Phase 1 post-step (after Gate 1 passes) that spawns the paraphraser with all assertion blocks inline; the Verifier spawn in Phase 3 reads the paraphrased framing as an additive decorrelated view (exact assertions remain authoritative and come first); the paraphrase_injected event is consumption-gated — it fires in Phase 3 only when the file is non-empty AND its blocks have been inlined into the Verifier prompt, guarded by test -s. Adds a one-line note to agents/rnd-verifier.md describing the additive paraphrase context it receives. M11 is the single behavior-changing intervention in this milestone; the per-shape FAIL-rate delta vs the M9 baseline is a deferred re-measurement pending at least 10 paraphrase-on pipeline sessions.
+- Before verification, assertions are reworded (keeping every literal value exact) so the verifier reads a different phrasing than the planner wrote, reducing anchoring.
 
 ## 5.10.0 — 2026-05-29
 
-### Add the drift-watch stats view and rnd-stats Section 7 tracking iteration-count and replan-frequency trends over rolling 10-session windows
-
-Adds `lib/stats/drift_watch.sql`, a read-only DuckDB view computing per-segment rolling 10-session regr_slope of the per-session iteration metric and `replan_started` frequency. The view uses `session_id_from_path` to join replan events from the audit log, COALESCE-to-0 for sessions with no replan events, and emits float NaN for windows with fewer than the minimum fill. Adds a guarded Section 7 in `commands/rnd-stats.md` that queries the new view with an audit-glob + thin-window pending guard (`N=<k>` indicator), frames diverging slopes as pointing at Sections 1 and 4 for diagnosis, and mirrors the Section 6 self-guard pattern (a `glob()` existence check before the view runs, since the view raises an IO error on a zero-audit-file root). Extends `lib/stats/fixtures/` in place (additional dogfood sessions plus `replan_started` audit events, mixing snake_case and camelCase `session_id` to exercise the COALESCE) and documents the reproduced View 7 table in `lib/stats/fixtures/EXPECTED.md`, and adds `tests/drift-watch-fixture.test.sh` as a reproduction test covering the COALESCE-to-0 and float-nan-for-underfilled-window invariants. This is a MEASUREMENT milestone (M10) — instrumentation only; no agent, schema, or producer change.
+- Adds a stats view tracking whether iteration counts and re-plan frequency are trending up or down over recent sessions.
 
 ## 5.9.0 — 2026-05-29
 
-### Add substance verification pass to evidence-locking gate
-
-Extends `hooks/evidence-locking-gate.sh` with a second validation pass that runs after the form pass (introduced in 5.7.0 / M6) finds no offender. The form pass verified that each evidence string had the structural markers of a real citation; it was explicitly form-only, with substance checking deferred to a future milestone. This release closes that gap.
-
-The substance pass extracts a **citable token** from each form-passing evidence item using a deterministic longest-span rule: backtick-quoted span wins over double-quoted span, which wins over the longest contiguous run of characters containing `/`. A path-like token has a trailing line/column reference (`file:42`, `file:42:7`) and one trailing sentence-punctuation character stripped before lookup, so a legitimate `path:line` citation resolves to its path core (`:` is itself a citation marker, so `path:line` is a form the gate accepts). Evidence items with no extractable token are exempt and never block. The extracted token is then looked up against a **union corpus** built once per hook invocation from two roots: (1) the active session directory (via `active_session_dir` from lib.sh) and (2) the git-tracked files under the project repo root (`git rev-parse --show-toplevel`). Both file paths and file contents are included in the corpus so that path-like tokens resolve against real on-disk artifacts. The first assertion entry whose token is absent from the corpus blocks the write with a `SUBSTANCE FAILURE` stderr message naming the assertion ID and the missing token, and emits exactly one `gate_fired` audit event — mirroring the form-failure path.
-
-Four directories are excluded from the corpus at both roots to preserve the information barrier and prevent tautological self-matches: `verifications/`, `builds/`, `briefs/`, `cleanup/`. Excluding `verifications/` means a token can never tautologically match the verdict-map text being written. Excluding the barrier dirs ensures barrier-protected content (self-assessments, briefs, cleanup reports) never reaches the gate's stderr or influences substance verdicts.
-
-The excluded-dir list is now a first-class schema knob: `x-substance-exclude-dirs` has been added to `lib/verdict-map-schema.json` alongside the existing `x-trivial-tokens`, `x-min-evidence-length`, and `x-evidence-citation-markers` fields. The hook sources it via the established jq-with-fallback idiom. The schema `description` has been updated to document both passes and drop the "form-only … deferred to a future milestone" language.
+- The verifier's evidence is now checked that each cited file or token actually exists in the project or session, not just that it looks like a citation.
 
 ## 5.8.1 — 2026-05-28
 
-### M8 re-sycophancy probe over the post-M2.5 schema-rich corpus (measurement)
-
-Re-ran the M3 sycophancy delta probe (`lib/sycophancy-probe.sh`) over the post-M2.5 corpus. M3's 100 prior records were archived out of the view glob (`sycophancy-probe.m3-archive.jsonl`, preserved) so `/rnd-framework:rnd-stats` Section 6 renders the fresh number distinct from M3's. Fresh corpus: n=25 cleanly-reviewable (`pinned_commit`) post-M2.5 PASS assertions, re-reviewed by fresh adversarial `rnd-verifier`@opus reviewers under the information barrier (assertion text + reconstructed artifact only). Raw hard-flip rate rose to 36% (9/25) vs M3's 20.8%, but per-flip classification finds **0 genuine clear-FAILs** — all 9 flips are reconstruction-insufficiency (the probe reconstructed the wrong/insufficient file for an AND-conjunction or a runtime/test claim). M3's "0 clear false-PASSes" finding is **UPHELD**; the higher raw rate with zero genuine failures sharpens M3's "raw flip rate ≠ sycophancy" point. The run is **underpowered**: n=25 is below M8's ≥30 cleanly-reviewable gate (≈ M3's own 24), so it detects a large regression but not subtle softening — re-run at ≥30 once more post-M2.5 sessions accrue. The post-M2.5 corpus spans the M4+M5+M6 intervention regimes (M6 is verifier-side), so it is **not a single-regime baseline** — any delta from M3 could be intervention confound. No framework code changed; the memo is `sycophancy-reprobe-memo.md`. Patch bump (measurement, no new feature).
+- Re-ran the false-PASS probe on a newer set of tasks; the raw flip rate rose but none were genuine failures, upholding the earlier "no clear false-PASSes" finding. Underpowered — re-run later.
 
 ## 5.8.0 — 2026-05-28
 
-### Add re-measurement harness and rnd-remeasure command
-
-Adds lib/remeasurement.sh (corpus_count, gate_met, memo subcommands) and commands/rnd-remeasure.md. The harness reads the existing M1 stats substrate read-only, counts post-M5 dogfood sessions, and writes a remeasurement-memo.md comparing current per-shape FAIL rate, builder-self-fail-vs-verdict gap, and iteration-depth against the M3 baseline. When fewer than 10 sessions have accrued the harness writes a pending stub naming N and the threshold. The M4+M5 confound is documented verbatim, not disentangled.
+- Adds `/rnd-framework:rnd-remeasure`, which compares the current FAIL rate, self-fail gap, and iteration depth against the recorded baseline once enough sessions accrue.
 
 ## 5.7.3 — 2026-05-28
 
-### Strengthen Report Surfacing Protocol with concrete shape and no-fence reminder
-
-Add a Concrete-shape example to the Rendering Rule of all three output styles and an explicit no-fence reminder to rnd-brainstorm's Output Discipline that disambiguates the Phase 5 markdown-template fence as illustrative-only, fixing the recurring failure where brainstorm.md surfaced with literal ## and ** syntax instead of rendered Markdown.
+- Clarifies the report-surfacing rule with a concrete example so surfaced reports render as Markdown instead of showing raw `##` and `**`.
 
 ## 5.7.2 — 2026-05-28
 
-### Guard against Explore-subagent spawns in rnd phases and add Related Skills back-links to surface orphan skills
-
-Add an explicit do-not-spawn-Explore instruction with Glob/Grep inline guidance to skills/rnd-plan/SKILL.md Phase 1, commands/rnd-start.md Phase 0, and a new Subagent Coordination subsection in skills/rnd-orchestration/SKILL.md after observing that Explore subagent spawns return with 0 tool uses during rnd phases. Add ## Related Skills back-links from rnd-orchestration covering premortem, outside-view, rnd-design, rnd-local-experts, rnd-roadmapping, rnd-formatting, rnd-doc-polish, rnd-narrative, rnd-debug-pipeline, and rnd-doctor, plus back-links from rnd-building covering kiss-practices, fp-practices, prefer-system-tools, bun-scripting, and committing, so the 13 previously-orphan skills now have inbound cross-references. Rewrite the description frontmatter for kiss-practices, outside-view, and rnd-reality-auditing to begin with 'Use when …' per the writing-skills convention.
+- Tells the pipeline phases not to spawn the Explore subagent (it returned empty during rnd phases).
+- Adds cross-links so previously-unreferenced skills are discoverable.
 
 ## 5.7.1 — 2026-05-28
 
-### Canonicalize `behaviour` in x-shape-vocab; sharpen pipeline-context-leak guidance
-
-Adds `behaviour` (UK spelling) to `x-shape-vocab` and the nested `shape.enum` in `lib/event-schema.json`, making it a valid Planner shape rather than a gate-violating free-text value. Historical calibration data carried `behaviour` (60 records) and `behavior` (13 records) despite neither being in the controlled list — surfaced by Section 5 of `/rnd-framework:rnd-stats`. UK spelling is chosen as canonical (dominant in the corpus, fewer records to reclassify); `behavior` (US) remains rejected by `planner-emit-gate.sh`. Updates the 12-values count in `agents/rnd-planner.md`, `skills/rnd-decomposition/SKILL.md`, and root `CLAUDE.md` to 13. Updates the hardcoded vocab list in `tests/shape-producer.test.sh` to match the SSOT.
-
-Sharpens the pipeline-context-leak detection guidance after a sweep found narrative milestone tags (`# M6: …`, `# M5: …`, `# M4 …`) surviving in `CLAUDE.md` tree comments and test-comment trace tags (`# M4.wiring.foo`, `(M2.calib.bar)`) in eight test files. `skills/rnd-cleanup/SKILL.md` category 4 now lists concrete leakage patterns (narrative tags, test-trace tags, framing-mode IDs) with explicit "do not scrub" carve-outs for ID-format documentation and test fixture data. `agents/rnd-polisher.md` adds a fifth detection category for pipeline-context leakage in canonical docs (`CLAUDE.md`, `README.md`, top-level `AGENTS.md`) and shared test scaffolding, and expands the polisher's scope rule so those files are scanned even when no per-task cleanup touched them.
-
-Extends pipeline-context-hygiene detection to the audit/review/debug surfaces. `skills/code-review/SKILL.md` adds a seventh review category (**Pipeline-context hygiene**) with the same pattern catalog and "do not flag" carve-outs; severity defaults to Minor, escalating to Major when found in `CLAUDE.md`, `README.md`, or top-level `AGENTS.md`. Both `/rnd-framework:rnd-audit` and `/rnd-framework:rnd-review` automatically pick up the new category because they already load `code-review` as the SSOT — descriptions and category lists in both command files updated to seven categories. `skills/rnd-debugging/SKILL.md` adds an `## Incidental Findings` section instructing the debugger to record (not fix inline) any leakage observed during root-cause investigation, keeping bug diagnosis distinct from hygiene cleanup.
+- Adds `behaviour` as a valid planner shape (it was already in the data but rejected).
+- Expands detection of leftover pipeline tags (milestone labels, task IDs) in docs and tests, across cleanup, polish, review, and debug.
 
 ## 5.7.0 — 2026-05-28
 
-### Add the M6 evidence-locking hook for rnd-verifier
-
-Adds `lib/verdict-map-schema.json`, the SSOT for verdict-map evidence array validation. The schema defines the trivial-token denylist, a 40-character minimum length threshold, and citation markers used to distinguish substantive evidence from placeholder strings. The `x-*` extension fields follow the convention established by `manifest-schema.json` — gate hooks source them via jq.
-
-Adds `hooks/evidence-locking-gate.sh`, a PreToolUse Write hook that fires when `rnd-verifier` writes a `wave-*-verdict-map.json` file. The hook parses the verdict map from the PreToolUse `tool_input.content` field — the file does not exist yet when PreToolUse fires, so reading from the incoming content rather than the filesystem is architecturally correct. It iterates every assertion entry's evidence array in a single jq pass and rejects the write if any item is trivial according to the schema predicates. On rejection the hook emits a `gate_fired` audit event with gate name `evidence_locking_gate`. This gate is **form-only** — it verifies that each evidence string has the structural markers of a real citation, but does not substance-check that the cited file path, command, or line reference is accurate. Substance verification is deferred to a future milestone.
-
-Updates `agents/rnd-verifier.md` with a "Verdict-map evidence structure" subsection that cites `lib/verdict-map-schema.json` as the SSOT, restates the non-trivial predicate, names the gate and its form-only scope, and shows one example evidence array with mixed shapes.
-
-Wires the hook into `hooks/hooks.json` as a new PreToolUse Write|Edit handler scoped to `rnd-verifier`.
+- Blocks the verifier from saving a verdict map whose evidence entries are empty or placeholder text. (Form only; substance checking added in 5.9.0.)
 
 ## 5.6.0 — 2026-05-28
 
-### Add the hide-the-previous-plan replan intervention
-
-Adds an orchestrator-driven re-plan flow that fires when the user selects "Re-plan failing tasks" from either the Gate 3 FAIL prompt or the Phase 5 budget-exhaustion prompt. The intervention hides the prior plan from the fresh Planner so the new decomposition cannot anchor on the failed one.
-
-Adds lib/replan-archive.sh, which moves the four canonical plan artifacts (protocol.md, validation-contract.md, features.json, AGENTS.md) under $RND_DIR/prior-plans/replan-<k>/ and prints the archive path on stdout. Adds lib/replan-emit.sh with subcommands `started <iteration> <archive_path>` and `diff_emitted <task_changes_count> <assertion_changes_count>`, which append replan_started and replan_diff_emitted audit events to $RND_DIR/audit.jsonl. Adds agents/rnd-replan-differ.md, a haiku/low Read+Write agent that compares the archived plan against the new plan and writes $RND_DIR/replan-diff.md. Adds the is_replan_artifact_violation predicate in hooks/lib.sh, gated by the $RND_DIR/.replan-in-progress marker file; while a replan is in progress the predicate blocks the fresh Planner from reading the four canonical session-root plan paths ($RND_DIR/{protocol.md,validation-contract.md,features.json,AGENTS.md}), while leaving the archived copies under $RND_DIR/prior-plans/ readable so the rnd-replan-differ agent can compare them against the new plan. Wires the predicate into hooks/read-gate.sh and hooks/glob-grep-gate.sh so Read, Glob, and Grep are all covered.
-
-Updates commands/rnd-start.md with a new `### Re-plan flow` subsection inside Phase 5 documenting the trigger conditions and the ten-step protocol (archive, marker, started event, hint-block construction, Planner spawn with the FM2 MUST NOT spawn-prompt rule against inlining prior validation-contract.md or protocol.md content, differ spawn, diff_emitted event, marker removal, brief relay, resume from Phase 2). Adds a Re-plan routing paragraph after the Gate 3 dispatch table and wires the Phase 5 budget-exhaustion "Re-plan failing tasks" option to the new subsection. Updates skills/rnd-orchestration/SKILL.md with a `## Re-plan Flow` section that documents the flow at a high level and cross-references the rnd-start.md canonical step list, the lib/ helpers, the rnd-replan-differ agent, and the .replan-in-progress marker.
+- When you choose to re-plan failing tasks, the old plan is hidden from the fresh planner so the new decomposition can't anchor on the failed one.
+- A diff of the old vs new plan is written for review.
 
 ## 5.5.0 — 2026-05-28
 
-### Add outside-view injector for the Planner spawn
-
-Adds lib/outside-view.sh, which queries the DuckDB per-shape fail-rate view over the historical .rnd corpus and renders a calibrated reference-class block. The block is written to $RND_DIR/outside-view.md and injected into the Planner spawn prompt during Phase 1 of rnd-start.md, BEFORE estimation.
-
-The block carries a framing-constraint section that states shape base rate is a calibration anchor, NOT a license to pack more assertions and NOT a trigger for theater-decomposition — the FM6 countermeasure. When the corpus has fewer than n_total < 5 total verdicts, the injector emits Mode: thin-corpus and suppresses per-shape numbers to avoid precision illusion on a thin dataset.
-
-Adds lib/outside-view-emit.sh, which appends one outside_view_injected audit event (fields: mode, n_total, shapes, framing_constraint_emitted, timestamp) to $RND_DIR/audit.jsonl after each injection. Adds skills/outside-view/SKILL.md, which documents the mechanism and its operational definitions for the Planner. Updates agents/rnd-planner.md with an additive instruction to treat the block as a calibration anchor.
+- Before planning, injects the historical FAIL rate for each task-shape as a calibration anchor, with a note that it's a reference, not a license to add more assertions.
 
 ## 5.4.4 — 2026-05-28
 
-### Replace general-purpose+haiku premortem fan-out with restricted-tool rnd-premortem-imaginer agent
-
-Replace the general-purpose+haiku premortem fan-out with a restricted-tool rnd-premortem-imaginer agent so N parallel spawns no longer overflow haiku's context in MCP-heavy repos.
+- Replaces the premortem fan-out's generic agent with a restricted-tool one so parallel spawns don't overflow context in MCP-heavy repos.
 
 ## 5.4.3 — 2026-05-28
 
-### Document how rnd-review relates to Claude Code's native /code-review
-
-Adds a one-paragraph note at the top of rnd-review's body distinguishing the two: native /code-review (introduced in v2.1.147) focuses on correctness bugs + reuse/simplification cleanups with an optional --fix mode; this rnd-review is a six-category structured review (architecture, security, correctness, testing, KISS, style) that produces a persistent report under $RND_DIR/review/ and routes findings into the rnd-start pipeline. The clarification helps users pick the right tool for the task instead of treating the two as overlapping.
+- Adds a note explaining how `rnd-review` (a structured six-category report) differs from Claude Code's built-in `/code-review`.
 
 ## 5.4.2 — 2026-05-28
 
-### Add disallowed-tools: [Edit, Write] to the read-only diagnostic commands
-
-rnd-history, rnd-status, and rnd-stats are pure read-only diagnostics that should never modify state. Declaring disallowed-tools in their frontmatter (a v2.1.152 capability) makes that invariant enforcement at the model level rather than convention. The model can still Read, Bash (for duckdb/jq/git log queries), Glob, and Grep. validate.sh accepts the new field cleanly (338/0). Older Claude Code versions ignore the field silently.
+- `rnd-history`, `rnd-status`, and `rnd-stats` now declare themselves read-only so they can't modify state.
 
 ## 5.4.1 — 2026-05-28
 
-### Set the phase-aware session title on SessionStart, not just on UserPromptSubmit
-
-session-start.sh now emits hookSpecificOutput.sessionTitle alongside additionalContext, mirroring session-title.sh's RND:<phase>|<project> computation so the terminal tab title is correct immediately on startup/resume/clear/compact instead of only after the first prompt submission. Honored on Claude Code >= 2.1.152 per the 2.1.152 release note; silently ignored on older versions, so no regression for users on the plugin's stated minimum (2.1.139). Test coverage in tests/session-start.test.sh asserts the new field is present and the title starts with the 'RND:' prefix.
+- The phase-aware tab title is now set immediately on session start, not only after the first prompt.
 
 ## 5.4.0 — 2026-05-28
 
-### Add the M3 sycophancy-delta probe: harness, flip-rate view, and rnd-stats Section 6
-
-Ship the M3 measure-and-decide milestone. lib/sycophancy-probe.sh (prepare/ingest/summary) reconstructs each historical PASS assertion's artifact at its owning session's commit via guarded git show (artifact_basis pinned_commit|head_fallback), writes barrier-clean review-inputs (assertion text + artifact only, no original verdict/evidence/feedback), and aggregates fresh adversarial re-review verdicts into the slug-root sycophancy-probe.jsonl with a new_verdict enum (no collapsed flipped bool). lib/stats/sycophancy_flip_rate.sql adds a per-artifact_basis hard/soft flip-rate view over */sycophancy-probe.jsonl using the shape_distribution raw-line idiom; commands/rnd-stats.md gains Section 6 (probe-and-skip guard). The probe found 0 clear false-PASSes among the 24 cleanly-reviewable historical assertions (corpus-limited: 173 historical PASS, only 24 with both a real criterion and a reconstructable artifact); apparent flips are reconstruction/diffstat-insufficiency, not verifier sycophancy. M3 is also the producer bootstrap session (the M2.5 assertion_shape/builder_self_assessment/calibration producers fired for the first time, on M3's own pipeline).
+- Adds a probe that re-reviews past PASS assertions under the information barrier to look for false-PASSes, plus a flip-rate stat. Found no clear false-PASSes in the reviewable history.
 
 ## 5.3.0 — 2026-05-27
 
-### Wire the Phase 0 stat producers (path-driven) so the DuckDB stats substrate collects data
-
-Replace the broken builder-self-assessment-emit SubagentStop hook (mis-resolved the session via the mutable .current-session pointer; emitted 0 events across 359 sessions) with three path-driven PostToolUse Write|Edit producers that read identity off the artifact file_path: self-assessment-producer.sh ({event:builder_self_assessment} on builds/<task>-self-assessment.md writes), shape-producer.sh (one {event:assertion_shape} per assertion, mapped to its owning task via features.json, on validation-contract.md/features.json writes, both-present gated for write-order robustness), and calibration-producer.sh (per-task {taskId,verdict} collapsed via the Gate 3 rule to the slug-root calibration.jsonl on wave verdict-map writes). Lift session_id_from_path/calib_path_from_artifact/parse_contract_assertions/normalize_artifact_path into hooks/lib.sh; planner-emit-gate.sh sources the lifted parser. Add a latest-per-(session_id,taskId) QUALIFY to per_shape_fail_rate.sql so re-verify rewrites do not inflate counts. Narrow the information-barrier self-assessment match from the bare substring to self-assessment.md / self-assessment-properties so producer source files are not false-positives. Make the builder self-verdict MEDIUM/LOW heuristic portable and word-anchored.
+- Replaces a broken stats emitter (which logged zero events) with three that read identity from the artifact path, so the stats database finally collects data.
 
 ## 5.2.0 — 2026-05-27
 
-### Premortem intervention
-
-Adds a pre-planning premortem step that imagines failure modes before the Planner writes a protocol, feeding the results back into the Planner as a required `## Premortem Responses` section.
-
-**Premortem emitter (`lib/premortem-emit.sh`):** Dedicated audit-event emitter that appends a `premortem_generated` event to `audit.jsonl`, carrying `n` (number of framings aggregated), `framings` (array of framing labels), `failure_mode_count`, and `timestamp`. Kept separate from `audit-event.sh` because the payload schema differs from the single-field event shape.
-
-**Premortem skill (`skills/premortem/SKILL.md`):** Protocol SSOT for the premortem fan-out. Defines five canonical framings (wrong external-service assumption, data-model misfit, performance at scale, auth/permission edge case, user-meant-something-different), the per-agent prompt template, the `premortem.md` `FM<k>` output format, the emit invocation pattern, and the N bounds (3–7, default 5).
-
-**Phase 1 fan-out (`commands/rnd-start.md`):** New Phase 1 pre-step before protocol writing. The orchestrator spawns N parallel `general-purpose`/`haiku` agents, each imagining failures from one framing; results are aggregated into `premortem.md` (orchestrator-owned, written before `protocol.md`), and `premortem_generated` is emitted via `premortem-emit.sh`.
-
-**Planner premortem responses (`agents/rnd-planner.md`):** The Planner reads `premortem.md` when present and writes a `## Premortem Responses` section in `protocol.md`, addressing or dismissing each `FM<k>` with a brief rationale. Gracefully skipped when `premortem.md` is absent.
-
-**New tests:** `tests/premortem-emit.test.sh`, `tests/premortem-skill.test.sh`, `tests/premortem-wiring.test.sh`, `tests/premortem-planner.test.sh`.
+- Before planning, the orchestrator imagines failure modes from several angles and feeds them to the planner, which must address or dismiss each one.
 
 ## 5.1.0 — 2026-05-27
 
-### Phase 0 stats substrate
-
-Adds observability infrastructure for tracking planner shape and confidence output through the verification pipeline: a JSON Schema SSOT, a planner gate, a stateless DuckDB view module, a backfill script, a stats command, and a builder self-verdict emitter.
-
-**Event schema SSOT (`lib/event-schema.json`):** draft-07 JSON Schema defining the per-(session, assertion) fact grain. Declares `shape` (12-value enum: `crud`, `schema-migration`, `external-integration`, `pure-refactor`, `perf`, `auth`, `data-transform`, `wiring`, `cleanup`, `docs`, `test-only`, `misc`) and `confidence` (`high`, `medium`, `stretch`) as required fields alongside `session_id` and `assertion_id`. The controlled vocabularies are also surfaced in a top-level `x-shape-vocab` extension array so gate scripts can read them via a single `jq` call without re-parsing nested refs.
-
-**Planner shape+confidence output (`agents/rnd-planner.md`, `skills/rnd-decomposition/SKILL.md`):** The Validation Contract template in both the planner agent and the decomposition skill now includes `Shape:` and `Confidence:` lines under each `### M<N>.<area>.<slug>` assertion heading. Both files reference `lib/event-schema.json` `x-shape-vocab` as the SSOT for the controlled vocabularies, and forward-reference `hooks/planner-emit-gate.sh` as the enforcer.
-
-**Planner-emit gate (`hooks/planner-emit-gate.sh`):** New SubagentStop gate (registered in `hooks.json`, scoped to `rnd-planner`) that reads the session's `validation-contract.md` and blocks completion when any assertion is missing a `Shape:` line, has a `Shape:` value outside the `x-shape-vocab` vocabulary, has a `Confidence:` value outside `{high, medium, stretch}`, or is missing `Confidence:` entirely. Non-planner agents and missing sessions fast-path to exit 0. Emits a `gate_fired` / `planner_emit_gate` audit event on block.
-
-**Stateless DuckDB view module (`lib/stats/*.sql`):** Five SQL views query session `audit.jsonl` and per-slug `calibration.jsonl` in place via `read_csv` (robust raw-line read tolerating malformed legacy files) with no persistent `.duckdb` file. Views: `shape_distribution` (per-shape audit counts), `per_shape_fail_rate` (per-shape verifier-FAIL rate from calibration), `iteration_depth` (iteration-depth histogram), `fail_rate_over_time` (weekly FAIL-rate drift), and `self_fail_vs_verdict_gap` (builder self-verdict vs verifier verdict disagreement). All views run from the `.rnd` root so the `*/**/audit.jsonl` and `*/calibration.jsonl` globs span all project slugs. A committed fixture tree (`lib/stats/fixtures/`) covers both the dogfood and feature segments across legacy and branch-partitioned directory layouts, with `EXPECTED.md` documenting hand-computed expected outputs.
-
-**Mechanical SQL backfill (`lib/stats/backfill.sql`):** Standalone script that reads historical `calibration.jsonl` records and derives `shape`, `confidence`, and `segment` for pre-schema verdicts. Backfill is calibration-only (no audit join needed); segment comes from the first path component of the per-slug calibration filename. NULL `shape` and `confidence` are emitted for historical records — no back-assignment.
-
-**`/rnd-framework:rnd-stats` command (`commands/rnd-stats.md`):** Probe-and-skip command that runs all five views against the active project's `.rnd` root. Exits 0 with an informational message when `duckdb` is absent from `PATH` or when no `calibration.jsonl` files are found, guarding against the `read_json_auto` zero-match hard-error in DuckDB v1.5.3.
-
-**Builder self-verdict emitter (`hooks/builder-self-assessment-emit.sh`):** New SubagentStop hook (registered in `hooks.json`, scoped to `rnd-builder`) that reads the most recently modified `*-self-assessment.md` from the session's `builds/` directory, classifies it as `PASS` (minimal one-liner form) or `FAIL` (full template with concerns), and appends a `builder_self_assessment` audit event carrying `task_id`, `session_id`, and `self_verdict`. This event is the input to the `self_fail_vs_verdict_gap` view, which surfaces cases where the builder's self-verdict disagrees with the verifier's final verdict — a leading indicator for calibration issues. The hook is non-blocking: any internal error exits 0.
+- Adds the foundation for tracking planner shape and confidence through verification: a schema, a planner gate, read-only stats views, a backfill script, and the `rnd-stats` command.
 
 ## 5.0.3 — 2026-05-25
 
-### Remove worktree isolation
-
-The worktree infrastructure (introduced in 3.21.0 / v2.1.84) has been retired. Agents never wrote to worktree paths, and the custom `.rnd-worktrees/` directory structure bypassed Claude Code defaults while failing to create real git worktrees.
-
-**Removed:**
-- `isolation: "worktree"` from all five agent frontmatters (`rnd-builder`, `rnd-verifier`, `rnd-cleanup`, `rnd-polisher`, `rnd-debugger`)
-- `WorktreeCreate` and `WorktreeRemove` hook entries from `hooks.json`
-- `hooks/worktree-create.sh` and `hooks/worktree-remove.sh` scripts
-- Worktree sweep logic from `hooks/session-end.sh`
-- Linked-worktree guard (`in_linked_worktree()`) from `hooks/format-on-save.sh`
-- Worktree indicator from `hooks/statusline.sh`
-- `tests/worktree-hooks.test.sh` and Test 12 from `tests/format-on-save.test.sh`
-
-**Updated:**
-- `agents/rnd-integrator.md` now instructs `git add` + `git commit` of verified task files instead of fetching/merging from worktree branches
-- All skills and docs (`CLAUDE.md`, `AGENTS.md`, `README.md`, `rnd-formatting`, `rnd-decomposition`, `rnd-verification`, `rnd-orchestration`, `rnd-doctor`, `plugin-architecture`) updated to remove worktree references
-- `lib/plugin-dir-base.sh` comment updated from "worktrees" to "clones"
-
-The `bash-gate.sh` destructive-git denylist retains `git worktree remove --force` as a general safety rule, and `tests/bash-gate-destructive-git.test.sh` tests for it remain.
+- Removes the worktree infrastructure — agents never wrote to worktrees and it failed to create real ones. The integrator now commits verified files directly.
 
 ## 5.0.2 — 2026-05-23
 
-### Skip auto-format inside linked worktrees
-
-format-on-save.sh now exits before formatting when cwd is a linked git worktree, where the project's gitignored toolchain dirs (deps/, _build/, node_modules/, target/) are absent and the formatter would error or silently diverge. Formatting defers to the merge-time rnd-formatting step in the main checkout. Worktree detection compares git rev-parse --path-format=absolute --git-dir against --git-common-dir.
+- Skips formatting inside linked worktrees, where the toolchain dirs are absent and the formatter would error.
 
 ## 5.0.1 — 2026-05-21
 
-### Fix WorktreeCreate hook to mkdir the leaf path, not the parent root
-
-Every worktree-isolated agent spawn (Builder/Verifier/Cleanup/Polisher/Debugger/Integrator) failed at the harness WorktreeCreate gate with "path is not a directory" because hooks/worktree-create.sh:45 created $wt_root but echoed $wt_path. One-character fix: mkdir -p $wt_path. tests/worktree-hooks.test.sh stays green (8/8).
+- Fixes a one-character bug that aborted every worktree-isolated agent spawn.
 
 ## 5.0.0 — 2026-05-20
 
-**M2 additions:** The Verifier now emits a per-assertion verdict map (`wave-*-verdict-map.json`) that keys results by stable assertion ID (`M<N>.<area>.<slug>`) rather than task ID; `hooks/coverage-gaps-gate.sh` and `hooks/verifier-case-gate.sh` enforce the required `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections in every verification report. **M3 additions:** Session-local skill injection — the orchestrator assembles a `SESSION_SKILLS_FRAGMENT` from `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md` and interpolates it into every Agent() spawn prompt; planner decomposition and orchestration skills document the minting heuristic and injection policy; `audit-event.sh` emits a `skill_injected` record per spawn when the fragment is non-empty.
-
-### Split planner output into four stable artifacts with milestone-scoped IDs
-
-**Why this matters.** The single-file `plan.md` contract had two load-bearing problems. First, the orchestrator pasted whole-file blobs into every spawn prompt — a scaling tax that grew with plan size. Second, `T<N>` task IDs were session-local integers: no two sessions agreed on what `T3` meant, so `audit.jsonl` records from different runs were incomparable. The new contract is purpose-built around the framework's scientific-method focus — information barriers, evidence-based verification, atomic assertions, and multi-session traceability: each pipeline run produces four narrowly-scoped artifacts instead of one monolith, and every identifier is milestone-qualified so records from different runs compose without collision.
-
-**Four new Planner output artifacts** (replaces `plan.md`):
-- `protocol.md` — human-readable scope and goals; carries the heuristic-ceiling integer on line 2 (preserving the stop-condition grep contract)
-- `validation-contract.md` — one `### M<N>.<area>.<slug>` heading per testable assertion; orchestrator slices per-task assertion sets from this file using the `assertionIds[]` in `features.json`
-- `features.json` — machine-readable task manifest; each entry carries `id` (`M<N>.T<NN>.<slug>`), `milestone`, `dependsOn[]`, `assertionIds[]`, `criticality`, `status`
-- `AGENTS.md` — per-agent work assignments derived from the task list; consumed by the orchestrator's spawn-prompt builder
-
-**New stable ID scheme:** `M<N>.T<NN>.<slug>` for tasks, `M<N>.<area>.<slug>` for assertions. Minted via `lib/id-gen.sh`; never manually slugified. IDs are stable across re-plans of the same milestone — a FAIL verdict in `audit.jsonl` for `M1.T02.emits-protocol-md` refers to the same logical task in every session.
-
-**Hard-cut for pre-v5 sessions:** `commands/rnd-start.md` and `commands/rnd-resume.md` now detect a missing `protocol.md` and emit a clear error rather than silently continuing on stale `plan.md` state. In-flight sessions on 4.x finish on 4.x; new sessions land on v5.
-
-**No version bump in this milestone — bump lands in M4.**
+- The planner now emits four focused files (scope, assertions, task manifest, agent assignments) instead of one big `plan.md`.
+- Task and assertion IDs are now milestone-scoped and stable across re-plans, so audit records compare across sessions.
+- Adds the per-assertion verdict map and session-local skill injection.
 
 ## 4.2.0 — 2026-05-19
 
-### Strip stylistic tool-discipline blocks
-
-Removes the `hooks/bash-gate.sh` stylistic enforcement blocks — `sed`, `awk`, `echo`/`printf` with file redirect, inline interpreters (`python -c`, `node -e`, `bun -e`, `perl -e`, `ruby -e`), bare interpreter as pipe target, shell `for`/`while`/`until` loops, and `/tmp/` redirects — and the file-revision stop condition: `hooks/stop-condition-revisions.sh` is deleted in full along with its `hooks.json` registration, and the `lib/audit-scan.sh revisions` subcommand is removed. These were UX nudges toward dedicated Claude Code tools, but in practice they produced mid-pipeline permission prompts, forced awkward workarounds, and added no falsification rigor. The "remove the problem rather than automate around it" principle applies: deletion is cleaner than an opt-out flag. Worktree isolation, `audit.jsonl`, `rnd-undo.sh`, and the integrator merge gate remain the safety net; file-revision counts are no longer a stop trigger.
-
-The scientific core is unchanged. **Kept in `bash-gate.sh`:** information barrier (self-assessment + briefs/ + cleanup/ blocked from verifier/polisher), destructive-git denylist (`reset --hard`, `checkout .`, `checkout --`, `clean -fd`, `stash drop`/`clear`, `reflog expire`, `branch -D`, `worktree remove --force`) with `rnd-undo.sh` hint on block, `git add .rnd/` artifact-pollution block, `git push` to main/master/production advisory, `.rnd/` + plugin-lib auto-allow, Bash output cache advisory. SubagentStop quality gates (coverage-gaps, verifier-case, builder-dismissal, anomaly, cleanup-bloat), the evidence-pack manifest gate, the information-barrier read/write/glob-grep gates, and the pre-registration assumption machinery are all untouched. **Doc reconciliation:** root `CLAUDE.md`, `README.md`, `skills/using-rnd-framework`, `skills/prefer-system-tools`, `skills/committing`, `skills/rnd-calibration` gateFired Producer Registry, and the 4.0.0 "Kept" sentence in this changelog — all updated to match the new behavior.
+- Removes the bash-gate style nudges (no `sed`/`awk`/inline interpreters/loops) and the file-revision stop condition — they caused mid-pipeline prompts without adding rigor. The information barrier and destructive-git protections stay.
 
 ## 4.1.0 — 2026-05-19
 
-### Retire the Lean 4 proof gate and clean up post-4.0 doc drift
-
-Removes the rnd-proof-gate agent, the lean-proving skill, the proofs/ Lean tree, and every Proof: lean / T<id>-proof-report.md reference. The agent count drops from 10 to 9 (proof-gate was the lone consumer of Lean infrastructure and is now retired in line with the 4.0 stable-core stance — experimental advisory machinery does not belong on main). The information barrier sheds proof-gate from is_barrier_violation in hooks/lib.sh; verifier and polisher remain. Post-4.0 audit drift fixed in the same pass: CLAUDE.md / AGENTS.md / READMEs reconciled to a coherent 9-agent table (was variously claiming 11, 10, or 9); drift-report-gate.sh and T<id>-amendments.md references purged; lib/calibration.sh _usage and header stripped of the three removed advisory subcommands (mode_window, mode_false_pass_rate, collapse_eligible); lib/rnd-undo.sh::parse_files_written now refuses absolute paths and .. traversals from manifest entries before they reach git checkout / rm; lib/validate.sh::validate_lib_scripts now sweeps every lib/*.sh with a sourced-only carve-out for plugin-dir-base.sh and validate-xrefs.sh; hooks/bash-gate.sh comment corrected to match is_barrier_violation semantics (orchestrator empty agent_type is NOT restricted). 324 validation checks pass; full test suite green (18 files).
+- Removes the Lean 4 proof gate and all its infrastructure; agent count drops to 9.
 
 ## 4.0.0 — 2026-05-19
 
-### Stable scientific core
-
-Main returns to the falsifiable, evidence-driven core: pre-registration with assumptions + refuted-by, information barrier (Builder reasoning blocked from Verifier), independent Verifier experiments, plan → build → verify → integrate. Experimental machinery — advisory audit events with no consumer, opt-in dispatchers that bypass the Verifier, escalation gates layered on top of multi-judge, agents that paper over weaknesses elsewhere — was excised. From 4.0 onward, experimental work happens on alpha/beta versions; main carries only what we have empirical reason to keep.
-
-**Removed agents** (11 → 9): `rnd-amendment-arbiter` (whole agent + Phase 3.5 Amendment Flow — `NEEDS_ITERATION` covers the same ground); `rnd-drift-detector` (whole agent + `drift-report-gate.sh` hook — diagnostic with no gating consumer).
-
-**Removed verdict / dispatch machinery:** `AMEND_REQUIRED` verdict (subsumed by `NEEDS_ITERATION`); `Criticality: HIGH-PII` tier + cross-lineage dual-spawn + `cross_lineage_verifier` audit event (2× verifier cost on a tier that was never used in practice); multi-judge first-pass escalation gate + `RND_MULTI_JUDGE_ALWAYS` env var + `skills/rnd-multi-judge/` skill (consensus theater — one independent Verifier with experiments IS the scientific method); `--multi-judge` flag.
-
-**Removed dispatcher complexity:** `Phase 0.1: Pipeline Tier Selection` + `--tier=prototype|standard|high-stakes` flag + `Prototype Short-Circuit Flow` (single Standard flow only); `--verify-mode=final` flag + `lib/verify-mode-final-queue.sh` (deferred spawns but didn't eliminate them); inline-only dispatch + `lib/inline-verify.sh` + `lib/criteria-classify.sh` + `Verification level: inline|unit|system` enum (reverted to `unit|integration|system` — the inline path was fragile shell parsing); `verification_level_assigned` audit event.
-
-**Removed advisory infrastructure:** `lib/cross-phrasing-check.sh` (never wired up); `lib/calibration.sh` `mode_window` / `mode_false_pass_rate` / `collapse_eligible` subcommands + `verifier_collapse_eligible` advisory event (ADVISORY ONLY — no dispatch change); JSON-schema v2 path in `lib/run-properties.sh` with ajv/jq full-validation fork (reverted to v1 key-presence-only); builder-side property runs (Verifier's run remains verdict-of-record); task_type-aware bloat thresholds in `cleanup-bloat-gate.sh` (reverted to single global 15% threshold); `## Cognitive Style` prompt sections on `rnd-reality-auditor`/`rnd-verifier`/`rnd-cleanup` (never measured); `MEDIUM` criticality tier renamed/normalized to `NORMAL`.
-
-**Kept (validated, load-bearing):** Pre-registration with `## Assumptions` + `Refuted by` (the grounding mechanism); information barrier hooks (`read-gate`, `glob-grep-gate`, `bash-gate`); Verifier independent experiments + worktree; SubagentStop quality gates (coverage-gaps, verifier-case, builder-dismissal, anomaly, cleanup-bloat); property runner (`lib/run-properties.sh` v1 key-presence + Elixir StreamData + TS fast-check); Reality Auditor (`External dependencies` declared); Proof Gate (`Proof: lean` opt-in); rnd-polisher (validated in practice); calibration trending with task_type bucketing; destructive-git audit events with discriminators; evidence pack manifest (`RND_EVIDENCE_PACK=1` opt-in); stop conditions (verdict flip, plan size).
-
-**Breaking changes:** Pre-reg `Criticality: HIGH-PII` rejected (use `HIGH`); pre-reg `Verification level: inline` rejected (use `unit`); `AMEND_REQUIRED` removed from verifier verdict enum; `--tier=`, `--multi-judge`, `--verify-mode=final` flags on `/rnd-framework:rnd-start` rejected. Existing in-flight sessions on 3.29.0 finish on 3.29.0 (orchestrator-file caching); new sessions land on 4.0.
-
-**Calibration history preserved:** existing `amendmentData`, `escalationGate`, `multiJudge`, and `cross_lineage_verifier` records in `audit.jsonl` and `calibration.jsonl` stay as historical fact; new records will not emit these fields.
+- Strips out experimental machinery with no proven value (extra verdicts, multi-judge escalation, tier flags, advisory events) and keeps the validated core: pre-registration, information barrier, independent verification.
+- Some pre-reg flags and verdict values are removed (breaking); in-flight 3.x sessions finish on 3.x.
 
 ## 3.29.0 — 2026-05-19
 
-### Remove the flash-card priming system
-
-The cards subsystem (corpus, retrieval, injection, propose/impact tooling) is removed in full. After the 3.28.0 expansion (~143 cards across 8 role directories, parent-injection via `specializes:` ladder, cognitive-style sections, new pre-reg `Card tags:` field) agents — especially the Planner — began making obvious mistakes: skipping local-precedent scans, locking destructive scopes into pre-regs, and reaching for generic patterns instead of the project's own conventions. The priming-vs-grounding hypothesis: cards are *generic patterns*, useful when applying a known shape but actively harmful when the agent's actual job is to discover what THIS project does. The scaling shape was also wrong — useful coverage would require an ever-growing corpus or codebase-specific cards, neither of which is sustainable.
-
-**Removed:** `cards/` corpus directory; `lib/card-retrieve.sh`, `lib/rnd-cards-propose.sh`, `lib/rnd-cards-impact.sh`; `skills/rnd-cards/`; `commands/rnd-cards-propose.md`, `commands/rnd-cards-impact.md`; pre-reg `Card tags:` field in `skills/rnd-decomposition/SKILL.md`; line-1 "Cards inject at task-spec-prefix position" comments on four agent files (`rnd-reality-auditor`, `rnd-verifier`, `rnd-cleanup`, `rnd-drift-detector`); 8 cards-specific test files; barrier-test corpus-collision smoke assertions in `tests/read-gate.test.sh` and `tests/lib-is-barrier-violation.test.sh`. The orchestrator command files (`rnd-start.md`, `rnd-debug.md`) and `rnd-multi-judge` skill no longer reference card retrieval or injection.
-
-**Kept (observing):** `## Cognitive Style` sections on `rnd-reality-auditor`/`rnd-verifier`/`rnd-cleanup`/`rnd-drift-detector`, `criteria-classify` helper, inline-verify dispatch, builder-side property runs, JSON-schema reality-audit runner, task_type-aware bloat thresholds, HIGH-PII cross-lineage verifier tier, slug-root calibration trending, destructive-git audit events. Historical `card_injection` records in existing `audit.jsonl` files are preserved as historical fact.
+- Removes the flash-card system entirely; priming agents with generic patterns made them skip discovering what the actual project does.
 
 ## 3.28.0 — 2026-05-18
 
-### Consolidated-backlog roadmap: retire 18 deferred items across 7 sequential waves
-
-Aggregates work from the last 7 brainstorms (2026-05-12 → 2026-05-18) that was deferred each session and never consolidated. Two-pass execution: the main pipeline (6 waves, 15 tasks) shipped the original backlog; a continuation pass (1 wave, 4 tasks) retired the previously-deferred-deferred items.
-
-**Wave 1 — Safety closure (E1, E2):** `hooks/bash-gate.sh` now emits `gate_fired` audit events with per-op discriminators (`destructive_git_blocked:reset_hard`, `:checkout_dot`, `:checkout_path`, `:clean_force`, `:stash_drop_or_clear`, `:reflog_expire`, `:branch_force_delete`, `:worktree_remove_force`) — every block path is observable in `audit.jsonl`. `commands/rnd-status.md` documents the slug-root `calibration.jsonl` architecture (one file accumulates across all sessions; never per-session) and the "No calibration data yet" no-data fallback. New `tests/bash-gate-destructive-git.test.sh` (+91 lines, 58 assertions) and `tests/rnd-status-cross-session.test.sh` (new, 10 assertions).
-
-**Wave 2 — Cards corpus depth (B1, B2, B3, B4, B5):** `lib/card-retrieve.sh` follows the `specializes:` ladder and appends parent canon card to every specialization hit (deduplicated, score-DESC preserved). Orchestrator emits a new `parent_cards_count` field in every `card_injection` audit event across all 6 spawn sites (planner, builder, reality-auditor, verifier wave, re-verify after amendment, cleanup). 55 new cards across 9 new corpus directories: `cards/cleanup/{elixir,typescript,sql}/` (15), `cards/{amendment-arbiter,polisher,debugger}/generic/` (15), `cards/{builder,cleanup,reality-auditor}/bash/` (9), and 7 generator-depth property cards across planner/builder/verifier roles (`StreamData.tree`, `StreamData.bind` for elixir; `fc.record`, shrinking-aware generators for typescript).
-
-**Wave 3 — Verification ROI infrastructure (A4, A2):** New `lib/criteria-classify.sh` classifies pre-reg Correctness criteria as mechanical (matches `grep`, `jq`, `exit code`, `exits 0`, `file exists`, `wc -l`, `find`, `returns ≥`, `<file>.test.sh exits 0`) vs judgment, recommends `inline | unit | system` per a 80%/40% threshold. Parser accepts both `## Correctness` markdown form (fixtures) and indented `  Correctness:` form (real pre-regs). Pre-reg schema gains `Verification level: inline | unit | system` field — replaces old `unit | integration | system` enum across `agents/rnd-planner.md`, `skills/rnd-decomposition`, `skills/rnd-orchestration`, `skills/rnd-local-experts`. Orchestrator emits `verification_level_assigned {task_id, level, mechanical_pct}` per planned task.
-
-**Wave 4 — Inline + final-mode verifier dispatch (A1, A3):** New `lib/inline-verify.sh` parses the Validation Contract's VAL-AREA-NNN blocks, extracts each `Evidence: <command>` line, shells it out, emits a verdict map JSON identical in shape to a spawned-verifier output. When all wave tasks have `Verification level: inline`, the orchestrator skips the Verifier spawn and runs inline — eliminating ~200k-token spawns on grep-only criteria. Emits `verifier_spawn_avoided {task_id, reason: "inline"}` per skipped spawn. New `--verify-mode=final` flag on `/rnd-framework:rnd-start` defers all verifier spawns to post-last-wave via `lib/verify-mode-final-queue.sh`; emits `verifier_spawn_avoided {reason: "final_mode"}` at deferral time.
-
-**Wave 5 — Refutation-first v2 (C1, C3):** Builder may now execute `lib/run-properties.sh` in its own worktree, writing output to `$RND_DIR/builds/T<id>-self-assessment-properties.txt`. The `self-assessment` substring triggers the existing `is_barrier_violation` predicate in `hooks/lib.sh` — Verifier reads are mechanically blocked without any change to barrier predicates (additive only). Builder self-assessment gains `properties_run_count: <N>` field. Verifier's own property run remains the verdict of record; Builder's run is advisory. `lib/run-properties.sh schema` path extended from v1 key-presence-only to full JSON Schema validation (`$schema`, `type`, `properties`, `required`) with `ajv` preferred / `jq` fallback; counter-example shape matches the existing `{property, input, shrunk_input, seed}` Elixir/TS format. Calibration records gain `verification_mode: schema` for reality-audit verdicts.
-
-**Wave 6 — Cognitive style + cross-lineage (D1, D2, A5):** Adversarial `## Cognitive Style` sections appended to `agents/rnd-reality-auditor.md`, `rnd-verifier.md`, `rnd-cleanup.md`, `rnd-drift-detector.md` with role-tailored framing (contracts wrong until proven right; code broken until proven correct; every line is a liability; drift is the default hypothesis). Each section ≥10 lines with concrete imperative phrasing; existing prompt content untouched (purely additive). `hooks/cleanup-bloat-gate.sh` now reads `task_type:` from the cleanup report and applies per-type thresholds: `docs → skip`, `config → 5%`, `refactor → 20%`, default → 15% — eliminates `bloat_aversion_underperform` mis-fires on docs/config waves. New `Criticality: HIGH-PII` sub-tier dispatches two verifiers on different model lineages (Sonnet + Opus) for portal-to-hell tasks; unanimous PASS required, otherwise routes to the existing tiebreaker protocol; emits `cross_lineage_verifier {task_id, lineage_a, lineage_b, agreed}` per task. `lib/calibration.sh promote_tier` recognizes HIGH-PII as terminal (parallel to HIGH).
-
-**Wave 7 — Continuation: telemetry + cross-phrasing (C2/C4 advisory, A6):** `lib/calibration.sh` gains three subcommands — `mode_window <task_type> <mode> [N]`, `mode_false_pass_rate <task_type> <mode> [N]`, and `collapse_eligible <task_type>` — backed by a single jq-pass that defaults missing `verification_mode` fields to `"prose"` for backward compat with legacy records. `collapse_eligible` returns "eligible" iff property-mode false-PASS rate ≤ 50% of prose-mode AND both windows ≥10 entries; emits `verifier_collapse_eligible {task_type, prose_rate, property_rate}` advisory audit event in the eligible branch only. ADVISORY ONLY — no dispatch change yet; the flip to actual verifier-spawn elimination stays gated on ≥4 weeks of telemetry. New `lib/cross-phrasing-check.sh` paraphrases pre-reg Correctness criteria via deterministic synonym substitution (`exits 0` ↔ `returns success`, `grep X` ↔ `search for X`, etc.) and re-classifies; outputs `{original_criteria_count, paraphrased_criteria_count, structurally_equivalent, drift_score, drifted_items}` — ADVISORY, not yet consumed by any agent.
-
-**Test coverage:** 13 new test files, ~340 new assertions. `tests/run-tests.sh` exits 0 — All test files passed. No regressions on existing tests (bash-gate, read-gate, lib-is-barrier-violation, calibration, card-retrieve, branch-keying). Latent test bug in `branch-keying.test.sh` fixed (the `make_git_repo` helper created a temp repo but didn't `cd` into it before invoking `rnd-dir.sh`; previously coincidence-passing when the orchestrator's CWD was on `main`).
-
-**Out of scope (still deferred):** Direction B (dual-judge expansion to non-verifier phases) gated on Wave 6 cross-lineage validation data which doesn't exist yet; C2/C4 *gating switch* gated on ≥30 property-verified tasks per task_type with ≥4 weeks of `verification_mode` telemetry. Both are well-defined backlog items waiting on empirical data, not implementation cycles.
+- Ships a large batch of deferred work across seven waves: audit events on every blocked git op, deeper card corpus, verification-ROI tooling, inline/final verifier dispatch, cognitive-style sections, and cross-lineage verification. (Much of this is removed again in 3.29–4.0.)
 
 ## 3.27.1 — 2026-05-18
 
-### Fix Markdown rendering of surfaced reports
-
-The Report Surfacing Protocol in all three output styles (`rigorous`, `pipeline`, `scientific`) instructed agents to print report contents "verbatim", which the LLM interpreted as "wrap in a fenced code block" — causing surfaced `plan.md`, verification reports, and other artifacts to display as raw Markdown syntax (`#`, `**`, backticks) in chat instead of rendered headings, bold, and inline code. Added an explicit Rendering Rule clarifying that `verbatim` means exact content, not literal escaping, and that the body must be emitted as bare Markdown directly into the chat stream. Added a Forbidden Anti-Pattern bullet explicitly forbidding code-fence wrapping of the body.
+- Clarifies that "verbatim" report surfacing means rendered Markdown, not a fenced code block, fixing reports that displayed as raw syntax.
 
 ## 3.27.0 — 2026-05-18
 
-### Add Julia card tier covering core language idioms and Oxygen.jl framework patterns
-
-20 new cards across builder (JL1-5, OXY1-3), reality-auditor (JL-RA1-4, OXY-RA1-3), verifier (JL-V1-3, OXY-V1), and cleanup (JL-D1) roles; grounded in recorded Julia/Oxygen.jl gotchas.
+- Adds 20 flash cards covering Julia and Oxygen.jl idioms.
 
 ## 3.26.0 — 2026-05-18
 
-### Add refutation-first property verification with Elixir StreamData and TypeScript fast-check runners
-
-**New runner:** `lib/run-properties.sh` dispatches property execution by language. Probes runtimes via `command -v mix` / `command -v bun`; emits `PROPERTY_PASS`, `PROPERTY_COUNTER_EXAMPLE` (stderr JSON: `property`, `shrunk_input`, `seed`), or `PROPERTY_SKIPPED` on absent runtime. Awk parsers tuned against real ExUnit/StreamData 1.3.0 and bun 1.3.14/fast-check 3.23.2 output. Schema-as-degenerate-property dispatch for the Reality Auditor (presence-of-keys check via single jq pass; malformed-fixture inputs fail-fast with exit 2, not a false PROPERTY_PASS).
-**Pre-reg extension:** `## Properties` section in pre-regs supports three shapes — markdown bullets, embedded YAML under `## Verification`, or a sibling test file `T<id>-properties.{exs,ts}`. Documented in `rnd-decomposition` and `rnd-orchestration` skills; absence of the section means prose-mode verification as before.
-**Verifier integration:** `rnd-verification` Step 3.5 detects `## Properties`, invokes the runner, embeds counter-example JSON in `T<id>-verification.md` on COUNTER_EXAMPLE, and emits `property_run` and `property_counterexample` audit events. Counter-examples are auto-pinned to `<project>/test/properties/T<id>-counterexample.{exs,ts}` and tagged with a `property_pinned` event; `disallowedTools: Edit` invariant preserved (Write to a new file path is the pin mechanism).
-**Calibration:** New `verification_mode` field on verdict records — `property | prose | schema | skipped`. Orchestrator writes; existing helpers (`lib/calibration.sh window`) tolerate missing field via `// null` defaults so legacy records remain readable.
-**Critical hook fix:** `is_barrier_violation()` in `hooks/lib.sh` no longer blocks the orchestrator (empty `agent_type`) from reading `briefs/`, `cleanup/`, and `self-assessment` artifacts — restoring the user-facing brief-relay protocol declared in `commands/rnd-start.md`. Barrier still enforced for `rnd-verifier`, `rnd-proof-gate`, `rnd-polisher`. Bidirectional regression test added.
-**Cards:** Four new corpus entries — planner property-shape generation (×2) and verifier counter-example interpretation (×2 for Elixir and TypeScript). Corpus 119 → 123.
-**Perf:** `lib/card-retrieve.sh` rewritten from per-card xargs+jq (~290 subprocess forks on the full corpus) to a single-awk-pass — 1.16s → 0.04s on the full builder corpus (~28× speedup).
+- Adds a property-test runner for Elixir (StreamData) and TypeScript (fast-check); pre-regs can declare a `## Properties` section and the verifier runs it, pinning any counter-example.
+- Fixes the information barrier wrongly blocking the orchestrator from reading briefs and self-assessments.
 
 ## 3.25.0 — 2026-05-17
 
-### Python corpus v2: barrier fix, corpus lint, Python coverage, and P-MEASURE-01 canon
-
-**Critical fix:** `/cleanup/` and `/briefs/` barrier paths now require the `.rnd/` artifact-root prefix, so corpus cards under `cards/cleanup/` are no longer blocked during orchestrator card injection.
-**Tooling:** New `tests/cards-corpus-lint.test.sh` enforces 6-field frontmatter, sentence-form `scope:`, no Markdown headings in body, and role/lang/id vs directory consistency (strict by default).
-**Python coverage:** ~28 new builder cards (FastAPI, Pydantic v2, SQLAlchemy 2, Django ORM, asyncio, httpx, Celery, Flask), 4 verifier cards (pytest/mypy/ruff), 5 reality-auditor cards, 2 cleanup cards, 1 planner card.
-**Canon:** New principle `P-MEASURE-01` — gather profiler or benchmark evidence before any performance change.
-**Format:** 29 existing cards rewritten to sentence-form `scope:` and stripped of `### Card …` body headings; lint enforces this going forward.
+- Adds ~40 Python flash cards, a corpus linter, and a "measure before optimizing" principle; fixes a barrier path that blocked cleanup cards.
 
 ## 3.24.0 — 2026-05-17
 
-### Expand flash-card corpus to v2 with canon principles and language/library tiers
-
-Adds the v2 principle-ladder corpus to plugins/rnd-framework/cards/: four canon principle cards (P-IMPOSSIBLE-01 unrepresentable-states, P-EFFECTS-EDGE-01 functional-core/imperative-shell, P-SMALL-MODULES-01 stable-boundaries, P-PURE-RENDER-01 pure-data-to-UI) anchor a three-tier ladder. Language tier adds 27 cards across Elixir/TypeScript/SQL under builder, reality-auditor, and verifier roles. Library tier adds 43 cards under host-language directories: Elixir-stack Phoenix/Ecto/Bandit/Oban/Sentry-Elixir (cards/<role>/elixir/) and JS/TS-stack Svelte/SvelteKit/Supabase/Sentry-js (cards/<role>/typescript/). All v1 cards retagged with new optional specializes: frontmatter array referencing canon IDs; field is silently ignored by the existing card-retrieve.sh (verified by new tests/card-retrieve-specializes.sh regression test). skills/rnd-cards/SKILL.md documents the field, the ≤40-line soft body budget, the inline-bold label convention, and the canon naming convention P-<TOPIC>-<NN>. Dropped from initial seed scope: Bash and shadcn-svelte. All TS examples use arrow functions and braced if blocks per the project author's JS/TS style preferences. card-retrieve.sh source is byte-identical.
+- Expands the card corpus with canon principles and per-language/library tiers for Elixir and TypeScript stacks.
 
 ## 3.23.0 — 2026-05-17
 
-### Add flash-card priming system: seed corpus, deterministic retrieval, and orchestrator-level injection at card-receiving spawn points
-
-New plugins/rnd-framework/cards directory ships a 17-card seed library organised by role and language (builder, verifier, cleanup-role, reality-auditor, planner; Python and generic). Each card pairs a good example against a plausibly-worse alternative with a brief rationale — material the model can sample from at generation time. lib/card-retrieve.sh is a deterministic tag-overlap retrieval helper: score = #shared-tags + task-type bonus, sort score DESC then card-id ASC, --max default ${RND_CARDS_MAX_PER_SPAWN:-3}. commands/rnd-start.md, commands/rnd-debug.md, and skills/rnd-multi-judge/SKILL.md gain pre-spawn bash blocks at every card-receiving spawn point (9 total). Cards are concatenated under a Reference examples header and prepended to the agent prompt; when retrieval returns empty the prompt is bytewise identical to today. Per-spawn card_injection audit events go through the existing lib/audit-event.sh. skills/rnd-cards/SKILL.md documents the card authoring format, retrieval contract, and injection convention. rnd-decomposition gains an optional Card tags pre-reg field (role + task_type filtering applies when absent). commands/rnd-cards-propose.md scans calibration.jsonl for recurring FAIL or NEEDS_ITERATION feedback via 4-gram Jaccard clustering and surfaces draft card scaffolds for human review — never auto-inserts. commands/rnd-cards-impact.md measures iterations-to-PASS pre and post a --since rollout date per task_type and emits an improved or no-change or regressed or insufficient-data verdict. None of the five card-receiving agent .md files were modified — injection is orchestrator-level. Five new test suites add roughly 250 assertions. Skill-trim cap for rnd-multi-judge raised from 6750 to 8000 chars to accommodate the legitimate card-injection content.
+- Adds a flash-card library and deterministic retrieval; the orchestrator injects relevant good/bad examples into agent prompts at spawn time.
 
 ## 3.22.2 — 2026-05-17
 
-### Lift shared section-parsing helpers to lib.sh; tighten heading-match anchoring across gate hooks
-
-Post-review cleanups for the four cognitive-role gates added in 3.22.1. Two shared helpers — extract_section and is_trivial_section — moved from inline duplication into hooks/lib.sh as a single source of truth; both anomaly-gate.sh and verifier-case-gate.sh now source them, removing ~110 lines of near-duplicate parsing code. extract_section's heading match is anchored to require either end-of-line or a trailing whitespace boundary, so `## Verdict` no longer falsely matches `## Verdicts` — applied across anomaly-gate.sh, verifier-case-gate.sh, and drift-report-gate.sh grep calls. verifier-case-gate.sh further factors its repeated 3-line audit-event emission into a local _emit_event helper. anomaly-gate.sh's trivial-content conditional is inverted to drop a no-op `true` branch. No behavior change — all 108 hook-level tests and the full 18-file suite remain green.
+- Moves shared section-parsing into one place and tightens heading matching so `## Verdict` no longer matches `## Verdicts`.
 
 ## 3.22.1 — 2026-05-17
 
-### Add four SubagentStop gates, rnd-drift-detector agent, and schema-layer cognitive-style enforcement
-
-Four new SubagentStop gates enforce role-appropriate behaviour at artifact boundaries rather than prompts. anomaly-gate.sh (Reality Auditor) blocks completion when the audit report lacks expected anomaly-detection signals. verifier-case-gate.sh (Verifier) enforces symmetric case sections — every positive test case must be accompanied by a corresponding negative case — preventing coverage asymmetry. cleanup-bloat-gate.sh (Cleanup) is advisory: it fires a gateFired / bloat_aversion_underperform calibration record when the cleanup report shows no net line-count reduction across its changes, surfacing bloat-aversion underperformance without blocking the agent. drift-report-gate.sh (Drift Detector) enforces the drift-report schema — blocks when the report is missing required sections or carries disallowed free-text fields. New rnd-drift-detector agent (sonnet/medium, per-wave) runs between the Builder and Verifier waves and produces $RND_DIR/drift/wave-<N>-drift-report.md, flagging semantic drift between the pre-registration intent and the built implementation before the Verifier evaluates it. Audit observability extended with four new gateFired event names: anomaly_gate, verifier_case_symmetry, bloat_aversion_underperform, drift_detector. Together these changes move cognitive-style enforcement out of prose prompts and into the artifact-gate layer, so deviations are measured rather than just requested.
+- Adds gates enforcing reality-auditor anomalies, verifier case symmetry, cleanup bloat, and drift-report schema, plus a drift-detector agent — moving behavior enforcement from prompts to artifact gates.
 
 ## 3.22.0 — 2026-05-17
 
-### Add Tier-1 reliability bundle: existence pre-pass, stop conditions, calibration telemetry, Coverage Gaps and Assumptions enforcement
-
-Six new pipeline features. Reality-auditor gains a mechanical existence pre-pass (Step 0) that verifies imports / third-party method calls / RFC + error-code citations / env-var names exist in the form claimed before adversarial experiments; MISSING short-circuits to INVALID_FOUND and emits FALSE_PASS_PROXY on prior PASS. New PreToolUse Write|Edit hook stop-condition-revisions.sh halts on the Nth Write to the same file per task (default 5, RND_STOP_FILE_REVISIONS). New orchestration-level stop conditions: verdict-flip and plan-size halts (RND_STOP_VERDICT_FLIPS, RND_STOP_PLAN_RATIO) using new lib/audit-scan.sh and a required Heuristic ceiling planner meta-field. Pre-registration template now requires an Assumptions / Refuted-by section in both rnd-decomposition and rnd-orchestration skills; Verifier downgrades verdict by one tier when refutation evidence is missing. Calibration schema extended with three optional fields: multiJudge (pre-resolution judge disagreement), task_type (6-value enum with rule-based inference), gateFired (records every new pipeline gate firing). New lib/calibration.sh task_type_window subcommand. New SubagentStop hook coverage-gaps-gate.sh requires a non-trivial Coverage Gaps section in every T<id>-verification.md. Plus: cleanup deletion-ratio one-liner. Every new gate emits gateFired calibration records so false-positive/false-negative rates can be measured post-deployment.
+- Adds the reality-auditor existence pre-pass, verdict-flip and plan-size stop conditions, an Assumptions/Refuted-by pre-reg section, calibration telemetry, and a Coverage Gaps gate.
 
 ## 3.21.1 — 2026-05-16
 
-### Fix WorktreeCreate hook to echo worktree path to stdout
-
-rnd-framework 3.21.0 added isolation="worktree" to five agent frontmatters but worktree-create.sh only emitted an audit event and exited silently. Claude Code v2.1.83+ requires the WorktreeCreate hook to echo a worktree path on stdout (or return hookSpecificOutput.worktreePath); absence of a path aborts the agent spawn with 'WorktreeCreate hook failed: hook succeeded but returned no worktree path'. This blocked every rnd-builder/rnd-verifier/rnd-cleanup/rnd-polisher/rnd-debugger spawn in 3.21.0. Hook now parses {name, cwd} from the real harness stdin payload (no tool_input.path), resolves the active RND session via active_session_dir(), computes <cwd>/.rnd-worktrees/<rnd-session-id>/<agent-name>, mkdir -p's the parent, emits the audit event, and echoes the path. Test fixture updated to mirror the real stdin contract and lock in the stdout-path assertion.
+- Fixes worktree-create not echoing a path, which aborted every isolated agent spawn.
 
 ## 3.21.0 — 2026-05-16
 
-### Add worktree isolation, destructive-git denylist, and closed-loop calibration
+- Adds worktree isolation for agents, a destructive-git denylist, and closed-loop calibration.
 
 ## 3.20.7 — 2026-05-12
 
-### Restore pipeline rigor after token-saving regression (effort high on Builder/Arbiter; LOW→sonnet for core roles; full prose verification reports; dismissal-gate Check D for premature DONE)
-
-Four changes that reverse quality regressions introduced by earlier token-savings: (1) rnd-builder and rnd-amendment-arbiter agent effort bumped from `medium` to `high` (the other adaptive core agents — rnd-planner, rnd-verifier, rnd-debugger — were already at `high`); (2) adaptive dispatch policy: LOW criticality now maps to `sonnet` instead of `haiku` for the core roles (Builder, Verifier, Planner, Debugger) — only `rnd-integrator` remains on a lighter model and it is non-adaptive; (3) terse-manifest and lazy-prose pass-receipt paths retired — Builder writes full narrative manifests and Verifier writes a full `T<id>-verification.md` prose report for every verdict including PASS (the `T<id>-pass-receipt.json` artifact is gone); (4) builder-dismissal-gate.sh gains Check D: when a DONE/DONE_WITH_CONCERNS manifest is submitted and the Verifier evidence directory `verifications/T<id>-evidence/` already exists (i.e., a prior verification cycle ran), the gate now requires at least one non-empty `VAL-*.txt` evidence file — blocking premature DONE re-submissions that ignore Verifier feedback. Empty files do not satisfy the gate (a `touch VAL-bypass.txt` would otherwise defeat the check). Also: `tests/agent-effort-frontmatter.test.sh` updated to assert `high` for rnd-builder (was asserting `low` against the prior `medium` baseline — a stale assertion from a previous policy update); `lib/validate-xrefs.sh` PARITY_TABLE no longer requires the retired `pass-receipt.json` term in both verification skill and verifier agent; `CLAUDE.md` Runtime Artifacts section updated to describe verification.md as the only Verifier output.
+- Reverses earlier token-saving cuts: higher builder effort, full prose verification reports, sonnet (not haiku) for core roles, and a gate against premature "done" re-submissions.
 
 ## 3.20.6 — 2026-05-12
 
-### Broaden builder/cleanup prohibition to cover all pipeline-context leaks (task IDs, planner phase labels, session artifact paths)
+- Extends the builder/cleanup ban on leaking pipeline context (task IDs, phase labels, session paths) into project code.
 
 ## 3.20.5 — 2026-05-12
 
-### Migrate hooks.json to v2.1.139 exec form (args: [])
-
-Every entry in hooks/hooks.json switches from the documented shell-form `"command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/X.sh"` to the v2.1.139 exec-form `"command": "${CLAUDE_PLUGIN_ROOT}/hooks/X.sh", "args": []`. With `args` present, Claude Code spawns the script directly without a shell, so the `${CLAUDE_PLUGIN_ROOT}` placeholder is substituted as a plain string and never needs quoting. Obsoletes the quoting workaround in 3.20.4 and the single-quote-strip fix in 3.20.3, eliminating that class of bug. Raises the minimum Claude Code version dependency to 2.1.139.
+- Switches hooks to the v2.1.139 exec form, removing a class of `${CLAUDE_PLUGIN_ROOT}` quoting bugs. Raises the minimum Claude Code to 2.1.139.
 
 ## 3.20.4 — 2026-05-12
 
-### Quote CLAUDE_PLUGIN_ROOT in hooks.json to match docs canonical form
-
-Wrap every "${CLAUDE_PLUGIN_ROOT}" path placeholder in hooks/hooks.json with double quotes per the documented shell-form (docs.claude.com/en/docs/claude-code/plugins-reference). Resolves intermittent PreToolUse:Bash hook errors of the form '/bin/sh: ${CLAUDE_PLUGIN_ROOT}/hooks/bash-gate.sh: No such file or directory' observed on Claude Code 2.1.139 when a session is started during cache rotation. Sticks with shell form (not the new v2.1.139 exec form) to preserve compatibility with Claude Code 2.1.117+, the plugin's stated minimum.
+- Quotes the plugin-root placeholder in hooks to fix intermittent "No such file or directory" hook errors during cache rotation.
 
 ## 3.20.3 — 2026-05-12
 
-### Fix hooks.json variable expansion by stripping single quotes around ${CLAUDE_PLUGIN_ROOT}
-
-Removed literal single quotes wrapping ${CLAUDE_PLUGIN_ROOT}/hooks/<name>.sh in all 23 hook command entries. /bin/sh treated the single-quoted parameter expression as a literal path component, causing every hook (SessionStart, PreToolUse:Bash, PostToolUse:Bash, UserPromptSubmit, etc.) to fail with 'No such file or directory'. The shell now expands the variable as intended.
+- Removes literal single quotes that made every hook fail with "No such file or directory".
 
 ## 3.20.2 — 2026-05-11
 
-### Add criticality-driven model dispatch policy
-
-Adaptive per-spawn model override for planner/builder/verifier/debugger keyed on per-task Criticality (LOW=haiku, MEDIUM=sonnet, HIGH=opus); fallback to agent frontmatter when Criticality is absent. Static rebalance: rnd-integrator to haiku, rnd-builder effort to medium. Documented in rnd-orchestration skill and CLAUDE.md.
+- Picks the agent model per task criticality (low → haiku, normal → sonnet, high → opus), falling back to the agent default when unset.
 
 ## 3.20.1 — 2026-05-11
 
-### Add branch-keyed RND artifact partitioning
-
-rnd-dir.sh partitions project-facts.md, roadmap.md, sessions/, .current-session, and .session-git-root under branches/<branch>/ inside the project slug. New --calibration flag returns the un-partitioned calibration.jsonl path. --facts and --roadmap lazily inherit from the default branch on first access. Branch resolved via git symbolic-ref --short HEAD with detached-<sha7> / no-git fallbacks; branch names with .. are rejected.
+- Partitions session artifacts, roadmap, and facts under `branches/<branch>/`; calibration stays shared across branches.
 
 ## 3.20.0 — 2026-05-11
 
-### Add verdict-based escalation gate to multi-judge and trim heavy skill bodies
-
-Multi-judge HIGH-criticality verification now runs a cheap Sonnet/medium first-pass verifier; only FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION escalates to full dual-judge with tiebreaker. Set RND_MULTI_JUDGE_ALWAYS=1 to restore pre-gate always-dual-judge behavior. Adds escalationGate object to calibration.jsonl schema (firstPassVerdict, escalated, overturned) so verdict accuracy can be tracked before/after. Trims rnd-multi-judge, code-review, and rnd-doc-polish skill bodies by 20-30% (no rule deletions) to reduce skill-loading overhead in every relevant agent context.
+- High-criticality verification runs a cheap first-pass verifier and only escalates to dual-judge on a non-PASS. Trims heavy skill bodies.
 
 ## 3.19.0 — 2026-05-10
 
-### Add Bash output cache + cache-hit advisory to prevent same-command re-runs
-
-PostToolUse Bash now writes stdout (plus stderr if present) to `$session_dir/.bash-cache/<sha>.txt` with a sibling `<sha>.meta.json`, keyed by a 16-char sha-256 of the whitespace-normalized command. PreToolUse Bash detects identical re-runs within `RND_BASH_CACHE_TTL_SECONDS` (default 600s) and emits a non-blocking advisory pointing the agent to the cached file when output is ≥10 lines — addressing the observed "ran `mix test | tail -30`, then re-ran `mix test | grep failure`" pattern. Cache lives inside the session dir (auto-clears each pipeline run; no GC). Hash semantics shared between writer (`post-dispatch.sh`) and advisory (`bash-gate.sh`) via `cmd_hash` in `lib.sh`. New helpers in lib.sh: `_normalize_cmd`, `cmd_hash`, `bash_cache_dir`. Test coverage in `tests/bash-cache.test.sh` (24 assertions: hash stability, writer behavior, hit/miss/stale-TTL/small-output advisory cases, TTL override).
+- Caches Bash output per session and advises when an identical command is re-run within ten minutes, instead of re-running it.
 
 ## 3.18.0 — 2026-05-10
 
-### Add opt-in evidence-pack writer and Verifier-side schema gate
-
-Net-new opt-in feature behind RND_EVIDENCE_PACK=1 (Builder) and RND_EVIDENCE_AUDIT=1 (Verifier). New public surfaces: lib/run-tool.sh (pack writer with per-tool relevant_globs input scoping), lib/audit-event.sh (shared {event,task_id,tool,timestamp} emitter), lib/manifest-schema.json (load-bearing — its x-disallowed-fields extension is sourced at runtime), hooks/evidence-pack-gate.sh (PreToolUse Read hook that validates evidence-pack manifests before Verifier reads), lib/tools.json (12-tool registry with structured-output flags + relevant_globs). InformationBarrier.lean extended with evidencePackManifest FileType and verifier-cannot-access-unvalidated-manifest theorem. Builder/Verifier skills documented. Defaults preserved: both flags off.
+- Adds an opt-in evidence-pack writer and a verifier-side gate that validates pack manifests before the verifier reads them.
 
 ## 3.17.0 — 2026-05-09
 
-### Add wave-seam polisher agent (Phase 4.5)
-
-Introduces `rnd-polisher` as the 11th specialized agent. It runs at wave-level — one spawn after all per-task cleanup completes — and detects cross-task seam issues: cross-task duplication, naming and API drift across the wave, helpers that should be lifted to shared locations, and structural inconsistencies. Applies mutations in-place and rolls back automatically on any non-PASS re-verification. Output artifact: `$RND_DIR/polish/wave-<N>-polish-report.md`. Barrier extended in `lib.sh` so the polisher is subject to the same information-barrier restrictions as the verifier (cannot read self-assessments, briefs/, or cleanup/). Polish rules added to all 10 kiss-practices language files and to fp-practices/SKILL.md. Phase numbered 4.5, keeping Cleanup at 4 and Integrate at 5 for stability of existing phase references. Lean 4 proof in `InformationBarrier.lean` extended to cover the polisher agent type.
+- Adds `rnd-polisher`, which runs once per wave after cleanup to fix cross-task duplication, naming drift, and misplaced helpers, rolling back if re-verification breaks.
 
 ## 3.16.0 — 2026-05-09
 
-### Add mandatory Report Surfacing Protocol to all output styles
-
-All three output styles (scientific, rigorous, pipeline) now carry an identical Report Surfacing Protocol section requiring the orchestrator to print agent/skill report artifacts (plan, design spec, build manifest, verification report, verdict map, reality report, diagnosis, integration report, proof report, amendments, iteration log, audit/review reports, narratives, brainstorm) verbatim before any next-step prompt in the same turn, including autonomous/loop mode. A Forbidden Anti-Patterns subsection lists concrete defects. Pointer reminders added to using-rnd-framework SKILL, README, CLAUDE.md, and the five report-producing commands. Excluded artifacts include builder concern notes, found-issues ledgers, cleanup reports, project facts, calibration jsonl, and audit log.
+- All output styles now require the orchestrator to print report artifacts verbatim before asking for next steps.
 
 ## 3.15.0 — 2026-05-09
 
-### Add builder-dismissal-gate.sh hook and found-issues.jsonl ledger for structural fix-on-sight enforcement
-
-SubagentStop hook scoped to rnd-builder blocks completion when the build manifest contains dismissal phrases (pre-existing, out of scope, etc.), acknowledges issues without a co-located ledger, or claims success despite test failures. New T<id>-found-issues.jsonl ledger is the only legal escape — entries with decision="escalated" must be acknowledged by the Verifier or the task re-fails. Replaces the failed textual 'never use pre-existing' rules with structural enforcement.
+- Blocks the builder from dismissing issues as "pre-existing" or "out of scope"; the only legal escape is a logged, escalated ledger entry.
 
 ## 3.14.0 — 2026-05-08
 
-### Amendable Pre-Registration (Amendment Flow)
-
-Introduces AMEND_REQUIRED verdict with cited-defect requirement, rnd-amendment-arbiter agent (10th specialized agent), amendment log artifact at briefs/T<id>-amendments.md (barrier-protected), re-prove rule for tasks with Proof: lean, wave-continuation semantics (AMEND_REQUIRED does not block other tasks in wave), and calibration schema extension (amendmentData field).
+- Adds an AMEND_REQUIRED verdict and an arbiter agent for amending a pre-registration mid-flight. (Removed in 4.0.0.)
 
 ## 3.13.7 — 2026-05-07
 
-### Cap AskUserQuestion options at 4 across rnd-brainstorm, rnd-debug, rnd-design, rnd-start
-
-Five prompt sites (Phase 3 Explore in rnd-brainstorm, design-approval gate in rnd-start.md:153, design SKILL.md, rnd-debug PASS branch, rnd-start Phase 7) instructed AskUserQuestion calls with 5–7 options, exceeding the tool's hard 4-option cap and causing InputValidationError. Trimmed each to ≤4 (merging near-duplicates or using a two-tier menu) and added a global cap rule plus an explicit per-question option bound to the brainstorm Guidelines and Phase 4.
+- Trims question prompts that offered 5–7 options down to the tool's 4-option limit, fixing validation errors.
 
 ## 3.13.6 — 2026-05-03
 
-### Fix bash-gate segment dispatch and align is_barrier_violation with Lean proof; add three audit follow-ups
-
-Resolves the two major and three minor findings from /rnd-framework:rnd-audit. (1) bash-gate.sh: moved the git-staging-of-.rnd-paths blocker into check_segment per-segment dispatch (was triggering on any compound command containing both substrings); tightened rnd-dir.sh auto-allow to anchored boundary regex requiring start-of-string or path-slash before the script name; extended push refspec advisory to also catch HEAD:branch form. (2) lib.sh: extended is_barrier_violation to also block agent_type containing 'proof-gate', aligning the runtime with the existing Lean theorem proofGate_cannot_access_self_assessment in proofs/InformationBarrier.lean. (3) validate.sh: added diff -q parity check between the two plugin-dir-base.sh copies. Three new test files cover the changes: bash-gate-git-add-segment.test.sh, lib-is-barrier-violation.test.sh, bash-gate-rnd-dir-boundary.test.sh. All 295 validate checks and full hook test suite pass.
+- Fixes bash-gate over-matching on compound commands, aligns the barrier with the Lean proof, and adds a parity check between the two plugin-dir-base copies.
 
 ## 3.13.5 — 2026-05-02
 
-### Reconcile skill drift and dedup agent files per audit
-
-Removes ~550 lines of content duplicated between agent files and the skills they preload. Reconciles five skills (rnd-verify, rnd-multi-judge, rnd-orchestration, rnd-iteration, rnd-scaling) so docs match the canonical wave-batched, four-verdict, lazy-prose pipeline. Replaces the cleanup agent's full re-verify spawn with a targeted test-run plus pass-receipt. Adds canonical Decisions Log and User-Facing Briefs sections to rnd-orchestration as the shared home for previously-duplicated agent content.
+- Removes ~550 lines duplicated between agent files and their preloaded skills, and reconciles the docs to the current pipeline.
 
 ## 3.13.4 — 2026-04-30
 
-### Audit fixes: dead FP primitives, bash-gate hardening, config drift
-
-Resolves 6 audit findings: removed unused map_lines/filter_lines/reduce_lines from lib.sh; hardened strip_env_prefix against unmatched-quote bypass and refactored bash-gate.sh main to use parse_input; fixed rnd-cleanup.md skills frontmatter format; replaced wc -l with awk in pre-compact.sh; reconciled settings.json with documented defaults (showTurnDuration, allowRead); removed dead validate.ts fallback in setup.sh.
+- Removes unused list helpers, hardens an env-prefix bypass, and reconciles settings.json with documented defaults.
 
 ## 3.13.3 — 2026-04-30
 
-### Fix detect_pipeline_phase JSON-only state, cleanup-path barrier consistency, lazy-prose PASS contract drift, and four minor hook and tooling bugs from audit findings
+- Fixes JSON-only phase detection, cleanup-path barrier consistency, and four minor hook and tooling bugs.
 
 ## 3.13.2 — 2026-04-26
 
-### Batch verification per wave with lazy prose on FAIL, decomposition caps, and wave-level iteration
-
-Verifier now spawns once per wave and returns a per-task verdict map at wave-N-verdict-map.json. Happy path writes T<id>-pass-receipt.json instead of full prose; FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION auto-materializes the prose report. Planner is capped at max 4 tasks per wave with min 1-hour scope and forced coalescing. Builder/Verifier artifact templates are terse-by-default (structured bullets, no narrative). Phase 5 iteration is wave-level: a single Builder spawn handles all failing tasks in a wave with the full verdict map; budget = highest-criticality task's per-task budget. Information barrier and per-task pre-registration unchanged.
+- The verifier now runs once per wave and returns a per-task verdict map; the planner is capped at four tasks per wave; iteration is wave-level.
 
 ## 3.13.1 — 2026-04-26
 
-### Trim planner maxTurns and verifier overhead to eliminate multi-minute hangs
-
-Drops rnd-planner maxTurns 250 to 100; scopes rnd-experiments mandatory iron law to Correctness criteria only; adds mid-run heartbeat brief triggers to planner (after exploration cache write, after plan.md write) and verifier (after experiments written, after tests run); reconciles all 9 agent assignments in rnd-orchestration from Opus to Sonnet; replaces inline 6-mode failure list in rnd-verifier with forward reference to the 8-mode quick-scan table in rnd-verification skill; deduplicates rnd-verifier.md by 91 body lines (196 to 114) by removing content that already lives in the preloaded rnd-verification skill; adds agent-runtime-budgets.test.sh regression test asserting maxTurns bounds across all 9 agents.
+- Cuts the planner turn limit and verifier overhead, adds mid-run progress briefs, and dedups the verifier doc — eliminating multi-minute hangs.
 
 ## 3.13.0 — 2026-04-23
 
-### Add per-task cleanup phase and adopt Claude Code v2.1.118 features
-
-Introduce rnd-cleanup agent that sweeps dead code, orphan files, duplicate implementations, and stale comments after each Verifier PASS, applies fixes, and rolls back if cleanup breaks re-verification. Raise minimum recommended Claude Code to v2.1.118 to pick up the agent-type hooks, SendMessage cwd restoration, and prompt-hook re-firing fixes. Ship a curated autoMode.allow extension using the v2.1.118 $defaults keyword and wire 'claude plugin tag' into bump.sh so version bumps emit a validated git tag automatically.
+- Adds `rnd-cleanup`, which sweeps dead code after each PASS and rolls back if it breaks re-verification. Adopts Claude Code v2.1.118 features.
 
 ## 3.12.2 — 2026-04-22
 
-### Raise minimum Claude Code version to v2.1.117 and extend info-barrier tests to bfs/ugrep
-
-Primary motivator is the Opus-4.7 1M-context fix in v2.1.117, which restores correct autocompaction behavior for Opus-4.7 pipeline agents. Also added four bfs/ugrep information-barrier test cases in prefer-tools-sh.test.sh to confirm the barrier pattern check catches native-build search tools when used by verifier agents. Corrected stale tool-discipline documentation in CLAUDE.md and skills/committing/SKILL.md that incorrectly claimed cat/grep/find are blocked by bash-gate.sh — they are not; only sed and awk are blocked.
+- Raises the minimum Claude Code to 2.1.117 for the Opus 1M-context fix; corrects stale docs claiming cat/grep/find are blocked (they aren't).
 
 ## 3.12.1 — 2026-04-21
 
-### Inject tool-discipline guidance into orchestrator session
-
-Adds a Tool Discipline section to the using-rnd-framework skill, placed before the session-start trim headers so it is injected into the orchestrator context at session start. Covers the four gate-hook rules the model hit most often — temp files ($RND_DIR vs /tmp), file read/write (Read/Write vs cat/echo), search/listing (Grep/Glob vs grep/find/ls), iteration (Grep alternation or parallel Bash calls vs for/while/until loops), and inline interpreter code (project files only vs -c/-e). Each bullet names both the blocked pattern and the allowed alternative so the guidance is proactive, not only reactive via the hook block message. Pipeline subagents already had this guidance in their system prompts; this closes the gap for the main session.
+- Adds a tool-discipline section to the orchestrator's session context so it follows the gate rules proactively.
 
 ## 3.12.0 — 2026-04-20
 
-### Pipeline tier selection for rnd-start
-
-Adds a Phase 0.1 tier-selection prompt at the top of /rnd-framework:rnd-start. The user picks Prototype, Standard (current default), or High-stakes before discovery begins — via AskUserQuestion or inline --tier=... flag. Prototype tier short-circuits the pipeline: no Planner, Builder, Verifier, or Integrator spawned; orchestrator implements inline and shows the diff. Standard tier is the current full-pipeline behavior. High-stakes tier applies two overrides during execution — Reality Audit runs for every task (not just those declaring External dependencies) and every HIGH-criticality task gets multi-judge consensus automatically. Adds an explicit upgrade path from Prototype to Standard mid-session when the user decides exploration is now worth verifying. Release for real-session testing before hardening.
+- Adds Prototype / Standard / High-stakes tiers at the start of a run. (Removed in 4.0.0.)
 
 ## 3.11.0 — 2026-04-20
 
-### Add Planner self-review checklist
-
-Planner now runs a fresh-eyes self-review against plan.md before notifying the orchestrator — spec coverage, placeholder scan, VAL traceability, identifier consistency, external-dependency completeness, and Verifier test on each Correctness criterion. Catches plan-level mistakes that would otherwise cascade through Build and Verify.
+- The planner now self-reviews its plan (coverage, placeholders, traceability) before handing off.
 
 ## 3.10.0 — 2026-04-20
 
-### Collaborative pipeline: anti-popularity brainstorming, cross-phase decisions log, barrier-protected user-facing briefs, artifact trims
+- Adds a cross-phase decisions log and barrier-protected user-facing briefs relayed to chat during agent work.
+- Brainstorming now diverges from the obvious answer before converging.
 
-Shifts the framework toward iterative collaboration without sacrificing the automation-friendly pipeline.
+## 3.9.0 — 2026-04-20
 
-Key changes:
-- /rnd-framework:rnd-brainstorm Phase 3 now requires naming the LLM-default baseline privately, then diverging. At least one direction must be road-less-traveled and at least one must question the problem framing. New 'Diverge before you converge' guideline.
-- rnd-design skill softened anti-popularity rules (escape hatch when constraints only admit conventional approaches) plus a Verification Checklist item.
-- New $RND_DIR/briefs/decisions.md cross-phase structured judgment log: Planner, Builder, Debugger, and Integrator append entries when rejecting real alternatives. Each entry records options, chosen option, why, and flip condition. Explicit-fork discipline requires narrating the fork in agent output before logging.
-- New $RND_DIR/briefs/*-briefs.md user-facing narratives: plan-briefs.md, T<id>-briefs.md, wave-<N>-briefs.md. Agents write them and fire [user-brief] SendMessages; orchestrator relays to user chat. Keeps the developer informed during background agent work.
-- Information barrier extended to cover /briefs/ paths: hooks/lib.sh is_barrier_violation now matches both self-assessment and /briefs/ path segments. read-gate.sh, glob-grep-gate.sh, and bash-gate.sh all enforce. Triple protection: orchestrator policy, Verifier startup self-check, and mechanical hook layer.
-- rnd-verifier: Information Barrier section, startup self-check, and Rules extended to forbid /briefs/ paths.
-- rnd-start: new User-Facing Brief Relay section documenting the orchestrator's relay protocol and the no-leak-to-Verifier constraint.
-- Artifact trims to reduce token footprint: evidence files only on FAIL or NEEDS ITERATION verdicts (skip on PASS); self-assessment uses a one-line minimal form for plain DONE status; Builder manifest uses a skinny form for Criticality: LOW tasks.
-- 7 new read-gate.test.sh cases for the /briefs/ barrier, including confirmation that the bare word 'brief' in a non-/briefs/ path (e.g. debrief.ts) is not blocked.
-- CLAUDE.md updated to document the new artifact layout and the extended information barrier.
-
-All 281 plugin validation checks pass. All hook test suites (read-gate, glob-grep-gate, bash-gate) pass.
-
-## 3.9.0 (2026-04-20)
-
-### Token Optimization & Model Efficiency
-
-**Agent Model Downgrades (Major Cost Reduction)**
-- `rnd-planner`: opus/xhigh → sonnet/high
-- `rnd-verifier`: opus/xhigh → sonnet/high  
-- `rnd-debugger`: opus/xhigh → sonnet/high
-- `rnd-data-scientist`: opus/medium → sonnet/medium
-- **Impact**: ~75% reduction in token costs for typical pipelines
-
-**Multi-Judge Verification Now Opt-In**
-- Changed from default 2-judge + tiebreaker for HIGH tasks to single-judge default
-- Multi-judge consensus available via `--multi-judge` flag or `Verification: multi-judge` annotation
-- **Impact**: Eliminates 3× token multiplier for high-criticality tasks unless explicitly requested
-
-**Conditional Phase Execution**
-- Proof Gate now only runs when task has `Proof: lean` annotation AND Lean is available
-- Reality Audit now only runs when task has `External dependencies` declared
-- **Impact**: Reduces unnecessary agent spawns for tasks without external deps or formal proof requirements
-
-**Information Barriers Preserved**
-- All read-gate.sh protections remain intact
-- Verification independence maintained with single-judge default
-- Framework quality gates unchanged
+- Downgrades planner/verifier/debugger from opus to sonnet (~75% cheaper) and makes multi-judge opt-in.
+- Proof gate and reality audit now run only when the task declares them.
 
 ## 3.8.0 — 2026-04-18
 
-### Remove read-side tool-discipline gates (cat, head, tail, grep, rg, find)
-
-Drop the `cat`, `head`/`tail` (with file arg), `grep`/`rg` (recursive or with file arg), and `find` blocks from `hooks/bash-gate.sh`. These gates tried to steer Claude toward the Read/Grep/Glob tools but fought training-level habits and triggered excessively on benign one-shot commands, generating noise without preventing anything dangerous. Write-side gates (`sed`/`awk`/`echo>file`/`printf>file`), interpreter blocks (`python -c`/`node -e`/`bun -e`/`perl -e`/`ruby -e`), shell-loop guard, `/tmp` redirect guard, information barrier, DB destructive guards, and git-add-`.rnd/` protection are all unchanged — those have concrete behavioral reasons (hang risk, silent file mutation, context leaks, data loss) rather than stylistic preference. Updates `tests/prefer-tools-sh.test.sh` and `tests/prefer-tools-sh-refactor.test.sh` to match: read-side commands now assert `allowed` / exit 0 instead of `blocked:` / exit 2. Also fixes pre-existing `tests/agent-effort-frontmatter.test.sh` (expected the three Opus agents to use `effort: medium` — v3.7.0 bumped them to `xhigh`; test updated to match the source of truth). Updates tool-discipline wording in `CLAUDE.md`, `README.md`, `skills/prefer-system-tools/SKILL.md`, and `skills/hook-authoring/SKILL.md`.
+- Stops blocking `cat`/`head`/`grep`/`find` — those gates fought training habits and added noise. Write-side and interpreter blocks stay.
 
 ## 3.7.0 — 2026-04-17
 
-### Adopt v2.1.111-2.1.113 features and trim session bootstrap
-
-Dedupe the 18-line agent table in skills/using-rnd-framework/SKILL.md with a one-paragraph pointer to CLAUDE.md §Execution Model, saving ~125 tokens per SessionStart fire (including every compaction). Raise effort from medium to xhigh (v2.1.111) for the three Opus agents (rnd-planner, rnd-verifier, rnd-debugger) for deeper reasoning on hard tasks. Add sandbox.network.deniedDomains (v2.1.113) with a default denylist (pastebin.com, hastebin.com, 0x0.st, transfer.sh) as defense-in-depth against accidental exfiltration by Builder/Reality-Auditor agents. Drop the now-default showTurnDuration:true from settings.json. Remove the unused defer_json() helper from hooks/lib.sh and its test — it was flagged in CLAUDE.md as 'available infrastructure' but had zero call sites. Document four v2.1.113 features in CLAUDE.md: find -exec/-delete tightening (plugin's blanket find block already covers this), 10-minute subagent stall timeout (does not resolve the rnd-integrator hang on its own), native CLI binary, and sandbox.network.deniedDomains.
+- Raises effort on the three opus agents, adds a network exfil denylist, and trims the session bootstrap.
 
 ## 3.6.0 — 2026-04-17
 
-### Fix builder permission denials + audit cleanup
-
-Replaced mode: "auto" with mode: "acceptEdits" across 13 pipeline-agent spawn sites in 6 files (commands/rnd-start, commands/rnd-debug, skills/rnd-build, skills/rnd-verify, skills/rnd-integrate, skills/rnd-multi-judge) and rewrote the rationale in skills/rnd-orchestration. Empirically, mode: "auto" denied project-file Edit/Write for team-spawned Builders on Claude Code 2.1.112, contradicting the 3.4.1 fix claim. Also addressed six minor issues from codebase audit: dropped stale v2.1.81 parenthetical in session-start.sh; extended is_code_file in lib.sh to recognize .lean/.kk/.ml/.mli; de-namespaced skills field in rnd-proof-gate.md for agent parity; added whole-command-allow clarifying comment in bash-gate.sh; updated CLAUDE.md tool-discipline wording; taught check_echo_redirect to strip 2>&N and 2>/dev/... stderr redirects so "echo foo 2>&1" is allowed while "echo foo > /file" remains blocked; added tests/bash-gate-echo-redirect.test.sh covering the three cases.
+- Switches agent spawns to `acceptEdits` mode after `auto` denied builder edits on 2.1.112.
 
 ## 3.5.1 — 2026-04-17
 
-### Fix format-on-save command injection and deduplicate hook barrier/phase logic
-
-Replace eval with array-split invocation in format-on-save.sh to close a command-injection vector via tool_input.file_path (regression test added). Extract is_barrier_violation and detect_pipeline_phase helpers into hooks/lib.sh, replacing 5 duplicated sites across read-gate.sh, glob-grep-gate.sh, bash-gate.sh, statusline.sh, session-title.sh. Also: add hookEventName:"PermissionDenied" to permission-denied.sh output, switch _ver_gte to explicit IFS='.' read -ra, fix duplicate example in plugin-dir-base.sh doc header (both copies), and rename the untracked agent-effort-frontmatter test into the tests/*.test.sh convention so run-tests.sh picks it up.
+- Closes a command-injection vector in format-on-save and dedups barrier/phase logic across hooks.
 
 ## 3.5.0 — 2026-04-17
 
-### Require options after brainstorm
-
-Strengthen rnd-brainstorm Phase 6 to mandate AskUserQuestion for next-step selection; forbid ending the session with a plain-text 'plan saved, run X' message. Updated Guidelines to explicitly call out that pattern as a defect.
+- Brainstorm must end with selectable options, never a "plan saved, run X" message.
 
 ## 3.4.2 — 2026-04-16
 
-### Restore Content Parity markers in rnd-build and rnd-verify skills
-
-Add a sentence documenting the Builder's external-dependency verification duty to rnd-build/SKILL.md, and a sentence documenting the Verifier's external-contract-conformance sweep to rnd-verify/SKILL.md. validate.sh now reports 281/281 checks passing (was 279/2).
+- Re-adds two doc sentences so the structure validator passes again.
 
 ## 3.4.1 — 2026-04-16
 
-### Fix builder agents blocked on Edit/Write under latest Claude Code
-
-Replace mode: "bypassPermissions" with mode: "auto" in 13 pipeline-agent spawn sites across 7 files. On Claude Code v2.1.112 with Opus 4.7, bypassPermissions is not honored for team-spawned (tmux-backed) subagents, so Edit/Write on project files were denied, blocking every build. auto mode uses the in-context auto-approval classifier which propagates reliably to subagents.
+- Switches agent spawns from `bypassPermissions` to `auto` after the former wasn't honored for team-spawned subagents.
 
 ## 3.4.0 — 2026-04-16
 
-### Aggressive token reduction for pipeline agents
-
-- **Effort frontmatter on all 8 agents:** Opus agents set to `medium`, Sonnet agents set to `low`. Counteracts the v2.1.94 default-high change — reduces reasoning tokens ~30-40% per agent turn.
-- **Skill preload trimming:** Removed rnd-debugging from builder (-85 lines), rnd-orchestration from integrator (-181 lines), rnd-debugging from data-scientist (-85 lines), kiss-practices + fp-practices from debugger. Total: ~430 lines of auto-injected content eliminated per pipeline run.
-- **Fixed stale "Required Skills" body text** in 7 of 8 agents to match actual frontmatter.
-- **Model/effort routing matrix** added to rnd-scaling skill: maps criticality tiers (LOW/NORMAL/HIGH) to model + effort per agent type, with Agent tool `model` parameter documentation for orchestrator overrides.
-- **Criticality-based verifier routing** in /rnd-start Phase 3: LOW/NORMAL → single verifier, HIGH → multi-judge protocol via rnd-multi-judge.
-- **Skill prose condensing:** rnd-verification 265→180 lines (-32%), rnd-building 223→180 (-19%), rnd-decomposition 283→160 (-43%). Multi-judge section replaced with pointer, failure modes converted to compact table.
+- Adds effort frontmatter, trims skill preloads, and adds a model/effort routing matrix by criticality.
 
 ## 3.3.2 — 2026-04-12
 
-### Fix blocked-by ID mismatch in task display
-
-Pipeline tasks displayed Claude Code internal IDs (`#21`) instead of pipeline IDs (`T5`) in blocked-by references. Added `metadata.pipelineId` to TaskCreate calls and rendering instructions to resolve internal IDs to pipeline IDs across rnd-plan, rnd-status, rnd-orchestration, and rnd-build.
+- Tasks now show pipeline IDs (`T5`) instead of internal IDs (`#21`) in blocked-by references.
 
 ## 3.3.1 — 2026-04-12
 
-### Enforce information barrier across Grep, Glob, and Bash tools
-
-Closes the Grep/Glob and Bash bypass vectors found in audit. glob-grep-gate.sh now blocks self-assessment access for Verifier agents (path and pattern check). bash-gate.sh now blocks any command referencing self-assessment files (Section 0, before tool discipline). 28 new barrier test assertions.
+- Closes the Grep/Glob and Bash bypass routes around the self-assessment information barrier.
 
 ## 3.3.0 — 2026-04-11
 
-### Make Reality Audit mandatory per-task with Builder self-declaration and diff-based discovery
-
-Builder manifest now requires External References section with provenance tagging. Reality Auditor runs on every task, reads manifest cross-check, and diff-scans all changed files. Gate 2.5 added — INVALID verdicts are hard gates.
+- The reality auditor now runs on every task, cross-checking the builder's declared external references and diff-scanning for undeclared ones.
 
 ## 3.2.1 — 2026-04-10
 
-### Add missing description parameter to all Agent spawn templates
+- Adds the required description to all agent-spawn templates.
 
 ## 3.2.0 — 2026-04-10
 
-### Enforce multi-agent execution, remove pipeline-state.json
-
-- **Multi-agent enforcement:** Replaced inline build/verify/integrate instructions in rnd-start.md with explicit `Agent()` spawn blocks using `subagent_type`. Each phase now has a concrete code example and a "Do NOT [build/verify/integrate] yourself" prohibition. The orchestrator dispatches to agents — it no longer contains implementation steps. Same pattern applied to rnd-build, rnd-verify, and rnd-integrate skills.
-- **Remove pipeline-state.json:** Task status derived from artifact files (`builds/`, `verifications/`, `integration/`). Eliminates 8 orchestrator read/write points and dual-state synchronization risk.
+- Replaces inline build/verify/integrate steps with explicit agent spawns; derives task status from artifact files instead of a state JSON.
 
 ## 3.1.0 — 2026-04-10
 
-### Migrate 9 commands to skills, fix UserPromptSubmit hook schema
-
-- **Commands → skills migration:** rnd-build, rnd-bump, rnd-calibrate, rnd-doctor, rnd-integrate, rnd-narrative, rnd-plan, rnd-validate, rnd-verify moved from `commands/` to `skills/` directories. Cross-reference validation and tests updated for new paths.
-- **session-title.sh fix:** Claude Code v2.1.100 requires `hookEventName` and `additionalContext` in UserPromptSubmit hook output. The hook was only emitting `sessionTitle`, causing "Hook JSON output validation failed" on every prompt. Added required fields; `sessionTitle` is now accepted alongside them.
-- **bump.sh:** Support `--patch`, `--minor`, `--major` flags (default: `--patch`). The rnd-bump skill now asks the user which version type to bump with a `(Recommended)` suggestion based on change analysis.
-- **Lean 4 proofs:** Added lake-manifest.json for proof gate dependencies.
+- Moves nine commands into skills and fixes the UserPromptSubmit hook schema.
 
 ## 3.0.18 — 2026-04-09
 
-### Remove single-flow mode — multi-agent only
-
-Single-flow mode ran build and verification in the same context window, making the information barrier behavioral (prompting) rather than structural (separate contexts). Behavioral barriers fail. Multi-agent is now the only execution mode. Commands (rnd-start, rnd-debug), skills (rnd-orchestration, using-rnd-framework, rnd-scaling, rnd-iteration), agents (rnd-planner), and documentation (CLAUDE.md, README) all updated. rnd-debug now spawns builder + verifier agents instead of running inline.
+- Drops single-flow execution; the information barrier only holds when build and verify run in separate contexts.
 
 ## 3.0.17 — 2026-04-09
 
-### Fix intermittent UserPromptSubmit hook error
-
-session-title.sh inherited `set -euo pipefail` from lib.sh, causing transient failures (file I/O races, git lock contention) to exit non-zero and display "UserPromptSubmit hook error". Added `set +e` after sourcing lib.sh — advisory hooks must never block prompt submission. Added session-title.test.sh (10 assertions).
+- Stops an advisory title hook from blocking prompt submission on transient errors.
 
 ## 3.0.16 — 2026-04-09
 
-### Re-introduce write-gate.sh hook for Write/Edit auto-allow on .rnd/ paths
-
-The allowWrite sandbox rule in settings.json does not reliably match in all contexts (particularly subagents). Re-introduce a PreToolUse hook for Write and Edit that auto-allows .rnd/ artifact paths via is_plugin_artifact_path(), mirroring the existing glob-grep-gate.sh pattern. The allowWrite rule is retained as belt-and-suspenders.
+- Re-adds a Write/Edit hook to auto-allow `.rnd/` paths, since the sandbox rule didn't match reliably in subagents.
 
 ## 3.0.15 — 2026-04-09
 
-### Add v2.1.97 upstream support
-
-Statusline refreshInterval + git_worktree display, UserPromptSubmit session title hook, MIN_CLAUDE_VERSION bump to 2.1.97, bash-gate Accept Edits clarification, CLAUDE.md v2.1.94-v2.1.97 documentation
+- Adds statusline refresh and the prompt-submit title hook; raises the minimum version to 2.1.97.
 
 ## 3.0.14 — 2026-04-04
 
-### Block shell loops, allow grep pipe filters, fix stale docs
-
-- **Shell loop guard:** bash-gate.sh now blocks `for`/`while`/`until` loops (exit 2) — they hang in the Bash tool. Suggests Glob/Grep alternatives.
-- **Grep pipe filter:** `grep`/`rg` without file arguments (stdin filters like `git diff | grep pattern`) are now allowed. Only file-targeting grep (`grep pattern file`, `grep -r`) is blocked.
-- **Agent instructions:** All 8 agents now have shell loop avoidance in Tool Discipline.
-- **Documentation:** Fix stale references in CLAUDE.md and plugin README (missing hooks, skills, commands). Expand root README with features, commands, architecture. Replace SSH URLs with HTTPS. Delete legacy `.factory/` scaffolding.
-- **Test fix:** prefer-tools-sh-refactor.test.sh header-skip uses dynamic `source` line detection instead of hardcoded line count.
+- Blocks `for`/`while`/`until` loops (they hang the Bash tool); allows stdin grep filters; fixes stale docs.
 
 ## 3.0.13 — 2026-04-04
 
-### Fix bash 3.2 compatibility for macOS stock bash
-
-Replace bash 4.0+ features with POSIX-compatible alternatives. Adds _lower() helper using tr. Fixes all hooks failing on macOS systems without Homebrew bash.
+- Replaces bash 4+ features so hooks work on macOS stock bash.
 
 ## 3.0.12 — 2026-04-04
 
-### Add per-assertion evidence files to verification pipeline
+- Adds per-assertion evidence files to the verification pipeline.
 
 ## 3.0.11 — 2026-04-04
 
-### Add structured preconditions to pre-registration and build verification
+- Adds structured preconditions to pre-registration and build verification.
 
 ## 3.0.10 — 2026-04-04
 
-### Add project facts layer with /rnd-scan and Phase 0 staleness detection
+- Adds `/rnd-scan` and a project-facts layer with Phase 0 staleness detection.
 
 ## 3.0.9 — 2026-04-04
 
-### Add pipeline-state.json and align with v2.1.92
+- Adds pipeline-state.json and aligns with v2.1.92.
 
 ## 3.0.8 — 2026-04-02
 
-### Add format-on-save hook, align with Claude Code v2.1.90
+- Adds the format-on-save hook and aligns with v2.1.90.
 
 ## 3.0.6 — 2026-04-01
 
-### Add commit workflow to committing skill
-
-Explicit tool discipline for commit preparation: use Read/Grep tools, never cat/grep; never chain commands with &&.
+- Adds explicit commit-prep tool discipline to the committing skill.
 
 ## 3.0.5 — 2026-04-01
 
-### Add PR creation safety rules to rnd-completion
-
-Never chain git/gh commands when creating PRs. Each command must be a separate Bash call. Use --body-file for long PR bodies.
+- Never chain git/gh commands when creating PRs; use a separate call each.
 
 ## 3.0.4 — 2026-04-01
 
-### Add uv and ruff as preferred Python tools
-
-Add Python package management (uv over pip/pip3/pipx) and linting/formatting (ruff) to prefer-system-tools skill, builder agent tool discipline, KISS practices, bun-scripting fallback, and rnd-formatting detection.
+- Adds uv and ruff as preferred Python tools across the relevant skills and agents.
 
 ## 3.0.3 — 2026-04-01
 
-### Align with Claude Code v2.1.89: PermissionDenied hook, defer helper, version check, env-prefix fix
+- Adds the PermissionDenied hook, a defer helper, a version check, and an env-prefix fix.
 
 ## 3.0.2 — 2026-03-31
 
-### Remove invalid PermissionDenied hook entry from hooks.json
-
-PermissionDenied is not in Claude Code's Zod schema for hook events despite being listed as a HOOK_EVENT constant in the source. Removing the entry fixes plugin load failure.
+- Removes a PermissionDenied hook entry Claude Code's schema rejected, fixing plugin load failure.
 
 ## 3.0.1 — 2026-03-31
 
-### Remove write-gate.sh, add path guards and systemMessage output
-
-Remove redundant write-gate.sh hook (sandbox handles /tmp blocking, settings.json allowWrite handles .rnd/ auto-allow). Add absolute-path guards to lib.sh path matchers. Upgrade post-compact.sh from advisory_json to system_message_json for higher-visibility state restoration. Add SubagentStart/SubagentStop lifecycle hooks for pipeline audit logging.
+- Removes the redundant write-gate, adds absolute-path guards, and upgrades post-compact to a higher-visibility message.
 
 ## 3.0.0 — 2026-03-31
 
-### BREAKING: Drop Factory Droid, OpenCode, and quick mode
-
-Focus exclusively on Claude Code. Remove all multi-platform infrastructure.
-
-- **Drop Factory Droid:** Remove `.factory-plugin/` manifests, `DROID_*` env var detection, `.factory` path matching, Factory Droid tool name variants (`Execute`, `Create`)
-- **Drop OpenCode:** Remove `.opencode-plugin/` manifests, `opencode-bridge.ts`, `OPENCODE_*` env var detection, `.config/opencode` path matching, lowercase tool name variants
-- **Drop quick mode:** Remove `/rnd-framework:rnd-quick` command and all references. Use `/rnd-framework:rnd-start` with single-flow mode for all task sizes
-- **Simplify hooks.json matchers:** `Bash|Execute|bash` → `Bash`, `Write|Create|write` → `Write`, etc.
-- **Simplify lib.sh regexes:** `(\.(claude[^/]*|factory)|\.config/opencode)/` → `\.claude[^/]*/`
-- **Simplify plugin-dir-base.sh:** 7-branch config detection → 3-branch (CLAUDE_PLUGIN_ROOT, CLAUDE_CONFIG_DIR, default)
-- **Clean AskUser dual naming:** Replace `AskUserQuestion`/`AskUser` with `AskUserQuestion` everywhere
-- **Add PermissionDenied hook:** Advisory-only hook for auto mode denials (v2.1.88+)
-- **Add pipeline settings defaults:** `showThinkingSummaries: true`, `showTurnDuration: true`, `spinnerTipsEnabled: false`
-- **Refactor bash-gate.sh:** Extract `_args_after_cmd` and `_check_interpreter` helpers, unify interpreter detection
-- **Audit fixes:** Remove 25 tracked `.factory/` files, fix validate.sh VALID_TOOLS, tighten manifest regex, document race conditions
+- Focuses exclusively on Claude Code, removing all multi-platform (Factory Droid, OpenCode) infrastructure and the quick-mode command.
 
 ## 2.1.0 — 2026-03-30
 
-### Enriched plan.md with environment discovery, validation contract, and worker guidelines
-
-Upgrade the planning phase to produce richer, more intelligent plans. The plan.md format gains 6 new sections while preserving all existing structure.
-
-- **Environment Discovery:** New structured checklist scan in Phase 0 — detects package manager, test framework, CI config, external services, env vars, secrets. Findings presented to user for confirmation.
-- **Validation Contract:** Numbered VAL-AREA-NNN assertions with exact Tool + Evidence commands for every Correctness criterion. Verifiers run these commands directly.
-- **Testing Strategy:** First-class section documenting test framework, baseline count, exact run commands for unit/integration/live tests, and user testing approach.
-- **Worker Guidelines:** Project-specific boundaries (USE/OFF-LIMITS), coding conventions, architecture notes, and design decisions extracted from CLAUDE.md and linter configs.
-- **fulfills traceability:** Each task's pre-registration links to specific VAL assertions via a `fulfills` field, creating bidirectional task↔assertion traceability.
-- **Infrastructure section:** External services with URLs and auth requirements, off-limits items.
-
-Updated files: rnd-decomposition skill, rnd-planner agent, rnd-start command, rnd-plan command, rnd-verification skill, rnd-building skill, rnd-orchestration skill.
+- The plan now adds environment discovery, a numbered validation contract, a testing strategy, worker guidelines, and task↔assertion traceability.
 
 ## 2.0.1 — 2026-03-30
 
-### Fix rnd-quick API rate limit by removing model override and condensing command
-
-Removed model: sonnet from rnd-quick frontmatter (only command forcing a model switch) and condensed from 111 lines / 7,630 bytes to 58 lines / 2,750 bytes. All ceremony preserved.
+- Removes a model override and condenses the quick command to avoid rate-limit errors.
 
 ## 2.0.0 — 2026-03-29
 
-### Restore multi-agent architecture, Lean 4 proofs, and dual-mode orchestration
-
-Major release restoring the rigorous multi-agent architecture from v0.13.8 while preserving all post-1.0.0 improvements (cross-platform support, hook consolidation, codebase-dedicated skills, token reductions).
-
-**Agent Restoration:**
-- Restore all 8 specialized agents in `agents/` directory: rnd-planner (opus), rnd-builder (sonnet), rnd-verifier (opus), rnd-integrator (sonnet), rnd-debugger (opus), rnd-proof-gate (sonnet), rnd-reality-auditor (sonnet), rnd-data-scientist (opus)
-- Remove `permissionMode` from all agents (not supported for plugin agents)
-- Update command references to rnd-prefixed format, add AskUser/AskUserQuestion dual naming
-- All agents retain v0.13.8 features: model selection, skills preloading, persistent memory, maxTurns, disallowedTools, SendMessage communication, tool discipline, convergent iteration
-
-**Skill Rigor Restoration:**
-- `rnd-orchestration`: Dual-mode support (single-flow + multi-agent), Agent Roles section listing all 8 agents, Subagent Coordination, Proof Gate phase documentation
-- `rnd-verification`: Exhaustive Reporting Discipline, 6 Known Failure Modes, Epistemic Posture, Multi-Judge Mode with agent-spawning protocol, Evidence Standards, Common Rationalizations table
-- `rnd-building`: Convergent Iteration, Status Codes table (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED), exploration cache reading, external dependency verification
-- `rnd-multi-judge`: Agent-spawning language restored (spawn 2 independent verifier agents)
-- `rnd-scaling`: Proof Gate column in criticality table, dual verification and agent spawning references
-- `rnd-decomposition`: Exploration cache writing section, External Dependencies field in pre-registration format
-- `rnd-data-science`: Phase 0 Lean Specifications section restored
-- `rnd-completion`: Agent cleanup references
-- `using-rnd-framework`: Documents both single-flow and multi-agent execution modes
-
-**Lean 4 Formal Proofs:**
-- Restore `proofs/InformationBarrier.lean` (3 theorems using native_decide)
-- Restore `proofs/ArtifactFlow.lean` (2 theorems using native_decide)
-- Restore `proofs/lakefile.lean`, `lean-toolchain` (v4.28.0), `.gitignore`
-- Restore `lean-proving` skill and `kiss-practices/lean.md`
-
-**Dual-Mode Execution:**
-- `/rnd-framework:rnd-start` supports mode selection between single-flow and multi-agent
-- `/rnd-framework:rnd-quick` explicitly scoped as single-flow only with escalation to rnd-start
-- `/rnd-framework:rnd-doctor` includes agent health check section
-
-**Cross-Platform Compatibility:**
-- Agent tool lists use PascalCase names (Read, Write, Edit, Bash, Glob, Grep, WebFetch)
-- Agent skills use `rnd-framework:` prefix to avoid personal skill shadowing
-- All 3 plugin manifests preserved (.claude-plugin, .factory-plugin, .opencode-plugin)
-- OpenCode bridge preserved unchanged
-
-**Documentation:**
-- README.md updated with dual-mode execution docs, 8-agent architecture, updated plugin structure
-- CHANGELOG.md 2.0.0 entry
-- Root CLAUDE.md updated with agent architecture references
+- Restores the eight specialized agents, Lean 4 proofs, and dual-mode (single-flow + multi-agent) orchestration, keeping the post-1.0 improvements.
 
 ## 1.0.5 — 2026-03-28
 
-### Remove Lean 4 formal verification
-
-Remove proofs/ directory (InformationBarrier.lean, ArtifactFlow.lean, lakefile.lean, lean-toolchain, lake-manifest.json). Remove lean-proving skill and lean.md KISS practices. Remove Proof Gate phase from rnd-start pipeline, rnd-orchestration execution phases, rnd-scaling criticality table, rnd-data-science Phase 0, rnd-doctor Lean toolchain check, and README skill/agent/artifact listings. Remove proof-gate keyword from read-gate.sh information barrier and corresponding test cases. Remove validate_proofs from validate.sh. All 222 validation checks pass.
+- Removes the proofs directory, the Lean skill, and the proof gate from the pipeline.
 
 ## 1.0.4 — 2026-03-28
 
-### Audit fixes: deduplicate config-dir resolution, extract validate.sh cross-refs
-
-Extract `_resolve_config_dir()` in hooks/lib.sh to eliminate duplicated config-dir resolution logic between `active_session_dir()` and plugin-dir-base.sh. Extract ~200 lines of cross-reference and content parity validation from lib/validate.sh into lib/validate-xrefs.sh, keeping both files under 250 lines. All 225 validation checks pass.
+- Dedups config-dir resolution and splits cross-reference validation into its own file.
 
 ## 1.0.3 — 2026-03-28
 
-### Purge stale multi-agent references from docs, commands, and skills
-
-After the v1.0.0 single-flow migration, CLAUDE.md, README.md, rnd-resume, rnd-brainstorm, rnd-narrative commands, and rnd-calibration, rnd-orchestration, code-review, rnd-roadmapping, using-rnd-framework skills still referenced the removed multi-agent architecture (8 named agents, agent spawning, worktree isolation). Replaced with single-flow terminology. Updated hook filenames: prefer-tools.sh → bash-gate.sh, post-tool-use.sh + observation-mask.sh → post-dispatch.sh. Also updated opencode-bridge.ts comments.
+- Replaces leftover multi-agent terminology with single-flow language across docs and skills.
 
 ## 1.0.2 — 2026-03-28
 
-### Add 5 codebase-dedicated skills
-
-New skills: hook-authoring, plugin-architecture, bash-hook-testing, plugin-versioning, lib-sh-patterns — covering hook conventions, multi-platform plugin structure, test framework patterns, release workflow, and lib.sh shared utilities.
+- Adds skills for hook authoring, plugin architecture, hook testing, versioning, and lib.sh patterns.
 
 ## 1.0.1 — 2026-03-28
 
-### Fix post-1.0.0 breakage: stale agent references, AskUser cross-platform parity
-
-Fix 28 content parity validation failures caused by the 1.0.0 agent removal. Redirect PARITY_TABLE entries in `lib/validate.sh` from deleted agent files to their new locations in commands and skills. Remove entries that were self-contained within a single artifact (data-science skill, multi-judge file naming).
-
-Fix `rnd-brainstorm` and all other conversation-driven commands hanging in Factory Droid. The commands referenced `AskUserQuestion` (Claude Code tool name) but Factory Droid only has `AskUser`. Update all 18 commands and 4 skills to use dual naming (`AskUserQuestion`/`AskUser`). Add `AskUser` to VALID_TOOLS in validate.sh.
-
-Clean up stale agent terminology across 7 skills: replace "spawn agent", "Builder agents", "Verifiers", "dispatch one agent per task" with phase-based language matching the single-flow architecture.
+- Repairs validation failures and command hangs caused by the agent removal and cross-platform naming.
 
 ## 1.0.0 — 2026-03-28
 
-### BREAKING: Single-flow execution, remove all agents, merge hooks
-
-Remove all 8 agents (rnd-planner, rnd-builder, rnd-verifier, rnd-integrator, rnd-debugger, rnd-data-scientist, rnd-proof-gate, rnd-reality-auditor). All pipeline phases now run sequentially in one session — no agent spawning, no worktree isolation, no per-agent context overhead. Phase-specific instructions were already covered by corresponding skills (rnd-decomposition, rnd-building, rnd-verification, rnd-integration, etc.); commands now invoke skills directly instead of spawning agents.
-
-Refactor all 10 orchestration commands (rnd-start, rnd-plan, rnd-build, rnd-verify, rnd-integrate, rnd-debug, rnd-review, rnd-audit, rnd-roadmap, rnd-quick) to replace "Spawn agent with subagent_type" instructions with "Invoke skill" + inline execution.
-
-Merge PreToolUse hooks: db-guard.sh + prefer-tools.sh → bash-gate.sh (1 process spawn instead of 2 for every Bash tool call). Merge PostToolUse hooks: post-tool-use.sh + observation-mask.sh → post-dispatch.sh with tool_name-based routing. Add session-based early exit to post-dispatch.sh (skip all work when no active pipeline session).
-
-Update hooks.json: PreToolUse Bash entries reduced from 2 to 1; PostToolUse entries reduced from 3 to 1 (single matcher covers Write|Create|write|Edit|edit|Bash|Execute|bash). Update OpenCode bridge routing tables to use new script names.
-
-Update skills: rnd-orchestration, rnd-scheduling, rnd-multi-judge, rnd-scaling, rnd-local-experts — remove agent-spawning language, replace with skill invocation and sequential execution references.
-
-Information barrier preserved: read-gate.sh still blocks self-assessment reads mechanically. The model writes the self-assessment during build but cannot re-read it during verification.
+- Removes all agents; pipeline phases run sequentially in one session via skills. Merges several hooks to cut process spawns.
 
 ## 0.14.14 — 2026-03-28
 
-### Add database guard hook, OpenCode platform support
-
-Add `db-guard.sh` PreToolUse hook that blocks destructive database operations across all platforms. Blocks `mix ecto.reset`/`ecto.drop` without `MIX_ENV=test`, direct deletion of `.db`/`.sqlite`/`.sqlite3` files, PostgreSQL destructive commands (`dropdb`, `DROP DATABASE`, `pg_restore --clean`), MySQL destructive commands (`mysqladmin drop`, `DROP DATABASE`), and SQLite destructive SQL (`DELETE FROM`, `DROP TABLE`). Issues advisory warnings for `MIX_ENV=dev ecto.create`/`ecto.migrate`. Registered before `prefer-tools.sh` in hooks.json so database guards run first.
-
-Add OpenCode as third supported platform alongside Claude Code and Factory Droid. Add `opencode-bridge.ts` that translates OpenCode JS hook events to shell script calls via `Bun.spawn`. Widen path regexes in `lib.sh`, `prefer-tools.sh`, `plugin-dir-base.sh` to match `~/.config/opencode/` paths. Add `OPENCODE_CONFIG_DIR`/`OPENCODE_CONFIG` detection to config directory resolution. Widen hook matchers to include lowercase tool names (`bash`, `read`, `write`, `edit`, `glob`, `grep`). Update CLAUDE.md documentation for tri-platform support.
+- Adds a hook blocking destructive database operations, and OpenCode as a third supported platform.
 
 ## 0.14.13 — 2026-03-27
 
-### Fix all audit findings: entropy, stdin parsing, unused code, style consistency
-
-Increase session ID entropy from 2 to 4 bytes in all 3 plugin-dir-base.sh copies; widen SESSION_ID_REGEX and SESSION_ID_RE to accept 4-8 hex chars for backward compatibility. Standardize stdin parsing in write-gate.sh and glob-grep-gate.sh to use parse_input from lib.sh. Remove unused parse_input_stdout function from lib.sh. Remove redundant set -euo pipefail from setup.sh and instructions-loaded.sh (lib.sh provides it). Update tests for new regex and removed function.
+- Increases session-ID entropy, standardizes stdin parsing, and removes unused code.
 
 ## 0.14.12 — 2026-03-27
 
-### Fix audit findings: verifier rules, session validation, hook consistency
-
-Remove contradictory "proposed fix" mandate from rnd-verifier.md that conflicted with the diagnosis-only rule. Add SESSION_ID_RE validation to active_session_dir fast path in lib.sh for defense-in-depth. Standardize explicit exit 0 after allow_json in write-gate.sh and glob-grep-gate.sh. Extract repeated interpreter-blocked message into readonly constant in prefer-tools.sh.
+- Removes a contradictory verifier rule and hardens session validation.
 
 ## 0.14.11 — 2026-03-27
 
-### Add rnd- prefix to all command filenames for Droid namespace disambiguation
-
-Rename all 19 command files from `X.md` to `rnd-X.md` (e.g., `start.md` → `rnd-start.md`). In Factory Droid, which doesn't auto-namespace plugin commands, these now appear as `/rnd-start` instead of `/start`, preventing collisions with other plugins. In Claude Code, they appear as `/rnd-framework:rnd-start`. Updated all cross-references across 29 files (CLAUDE.md, README, 16 commands, 12 skills, 1 agent, validate.sh, tests). Added command-to-command cross-reference validation to validate.sh (325 total checks).
+- Renames all command files with an `rnd-` prefix so they don't collide with other plugins in Factory Droid.
 
 ## 0.14.10 — 2026-03-27
 
-### Optimize hook performance: 44% reduction in per-cycle overhead
-
-Cache active session base-dir path in `.active-base-dir` file to avoid re-running `git rev-parse` + `shasum` (~15ms) on every hook invocation. Collapse multiple sequential `jq` subprocess spawns into single calls across 7 hooks (parse_input 3→1, post-tool-use 4→1, write-gate 2→1, glob-grep-gate 2→1, task-created, stop-failure, observation-mask). Short-circuit PostToolUse hooks (post-tool-use, task-created, observation-mask) before reading stdin when no active pipeline session exists. Per-cycle hook overhead drops from 183ms to 102ms. Also fix CLAUDE.md: reality-auditor color red→teal, document marketplace.json asymmetry.
+- Caches the session base-dir path and collapses repeated jq calls, cutting per-cycle hook overhead from 183ms to 102ms.
 
 ## 0.14.9 — 2026-03-26
 
-### Add Factory Droid platform support
-
-Platform shim: config dir detection (DROID_CONFIG_DIR, DROID_PLUGIN_ROOT), path regex widening for ~/.factory/ paths, hooks.json matcher expansion (Bash|Execute, Write|Create). Also includes audit fixes: validate.md reference, shellcheck directives, credential env var support in start.ts.
+- Adds a Factory Droid platform shim (config-dir detection, path matching, matcher expansion).
 
 ## 0.14.8 — 2026-03-26
 
-### Add Glob/Grep PreToolUse hooks, align permission regex with is_plugin_artifact_path
-
-Add glob-grep-gate.sh to auto-allow Glob and Grep operations on .rnd/ artifact paths. Tighten prefer-tools.sh Bash auto-allow and check_echo_redirect regexes to require .claude prefix, consistent with is_plugin_artifact_path. Add 18 tests for the new hook.
+- Auto-allows Glob and Grep on `.rnd/` paths and tightens the bash auto-allow regexes.
 
 ## 0.14.7 — 2026-03-26
 
-### Fix audit findings: remove dead code, standardize hooks, increase verifier turn limit
-
-Remove unused `_BUN_SAFE_SUBCOMMANDS` from prefer-tools.sh. Replace `ls | grep` with `compgen -G` in statusline.sh. Remove `main()` wrappers from 4 hooks to match majority top-level pattern. Increase verifier agent maxTurns from 100 to 150 for full codebase audits.
+- Removes dead code, standardizes hooks, and raises the verifier turn limit for full-codebase audits.
 
 ## 0.14.6 — 2026-03-26
 
-### Fix hook auto-allow for plugin artifact paths, MCP schema for object-valued attributes, and remove Team Mode from pipeline
-
-Generalize hook auto-allow for plugin artifact paths. Remove TeamCreate/TeamDelete from pipeline commands.
+- Generalizes plugin-artifact auto-allow and removes Team Mode from the pipeline.
 
 ## 0.14.5 — 2026-03-26
 
-### Fix plugin-dir-base.sh missing from plugin cache by adding local copies
+- Adds local copies so plugin-dir-base.sh isn't missing from the plugin cache.
 
 ## 0.14.4 — 2026-03-26
 
-### Adopt v2.1.84 platform features: agent effort levels, builder worktree isolation, TaskCreated hook
+- Adopts v2.1.84 features: agent effort levels, builder worktree isolation, and the TaskCreated hook.
 
 ## 0.14.3 — 2026-03-26
 
-### Auto-allow learnings directory reads in read-gate hook
+- Auto-allows reads of the learnings directory.
 
 ## 0.14.2 — 2026-03-25
 
-### Fix 6 major audit findings
-
-Fix inert cwd-changed.sh hook, remove nonexistent command reference in instructions-loaded.sh, fix settings.json statusline extension, extract shared plugin-dir-base.sh to eliminate duplication, add proof-gate to read-gate.sh information barrier
+- Fixes an inert cwd-changed hook, a bad command reference, the statusline extension, and extracts a shared plugin-dir-base.
 
 ## 0.14.1 — 2026-03-25
 
-### Condense command and skill prose for token reduction
-
-Tightened prose in 5 files: start.md (390→223), verify.md (137→130), rnd-verification (311→180), rnd-building (262→180), rnd-decomposition (223→153). Total: 1,323→866 lines (-457, 35% reduction). Replaced duplicated multi-judge protocol summaries with skill references. Compressed templates, converted verbose conditionals to tables, removed redundant explanations. All behavioral semantics preserved.
+- Tightens command and skill prose by 35% with no behavior change.
 
 ## 0.14.0 — 2026-03-25
 
-### Add Team Mode for builder agents
-
-start.md Phase 2 and Phase 4 now wrap builder spawning with TeamCreate/TeamDelete for session-scoped team lifecycle. Builder Agent calls include team_name and name parameters for addressability. build.md standalone command follows the same pattern. rnd-builder.md gains a concise team awareness section. Verifier, Proof Gate, and Reality Audit spawning unchanged.
+- Wraps builder spawning in session-scoped teams. (Removed in 0.8.0.)
 
 ## 0.13.8 — 2026-03-25
 
-### Add criticality-driven verification routing (single-judge default)
-
-Added Criticality: LOW | NORMAL | HIGH field to pre-registration format. Renamed MEDIUM tier to NORMAL in rnd-scaling. Default verification mode is now single-judge (1 verifier) for LOW and NORMAL tasks. Multi-judge consensus (2 verifiers + tiebreaker) is reserved for HIGH criticality tasks (security, auth, data integrity, complex algorithms, data migrations, financial calculations, architectural decisions). Iteration budgets scale with criticality: LOW=2, NORMAL=3, HIGH=5. Updated start.md Phase 3, verify.md, rnd-multi-judge, rnd-verification, rnd-decomposition, and rnd-planner.
+- Adds a Criticality field; low/normal tasks get a single verifier, high tasks get multi-judge. Iteration budgets scale with criticality.
 
 ## 0.13.7 — 2026-03-25
 
-### Trim agent skill preloads and fold failure modes into verification
-
-Trimmed using-rnd-framework from 167 to 53 lines by removing reference tables. Folded 6 critical failure modes and 14 red flag phrases into rnd-verification as a compact appendix. Removed rarely-used skill preloads from 5 agents: rnd-debugging/rnd-experiments/rnd-failure-modes from verifier, fp-practices from builder, lean-proving from data-scientist, kiss-practices from proof-gate and reality-auditor. Updated validate.sh parity checks. All 293 validation checks pass.
+- Trims preloaded skills and folds the failure-mode catalog into the verification skill.
 
 ## 0.13.6 — 2026-03-25
 
-### Refactor hooks with FP toolkit and expand clean-code skills
+- Refactors hooks with a functional toolkit and expands the clean-code skills.
 
 ## 0.13.5 — 2026-03-25
 
-### Adopt v2.1.83 features: CwdChanged/FileChanged hooks, fix SessionStart JSON format
-
-Add CwdChanged hook (warns on cross-repo directory change during active session) and FileChanged hook (advises on external .rnd/ artifact edits). Remove additional_context top-level key from SessionStart JSON output — emit only hookSpecificOutput to match Claude Code's expected format.
+- Adds CwdChanged and FileChanged hooks and fixes the SessionStart JSON format.
 
 ## 0.13.4 — 2026-03-25
 
-### Remove stale extract-patterns.ts and slop gate references
-
-The slop gate system was removed but references survived in debug.md, quick.md, prefer-tools.sh, and code-review SKILL.md, breaking both debug and quick pipelines at setup.
+- Removes leftover slop-gate references that broke the debug and quick pipelines at setup.
 
 ## 0.13.3 — 2026-03-24
 
-### Allow head/tail as pipe filters in prefer-tools hook
+- Allows head/tail as stdin pipe filters.
 
 ## 0.13.2 — 2026-03-24
 
-### Prevent pipeline task ID leakage into project code
+- Prevents pipeline task IDs from leaking into project code.
 
 ## 0.13.1 — 2026-03-24
 
-### Block inline interpreter execution and /tmp writes
-
-Add interpreter inline ban to prefer-tools.sh: blocks python/python3/node/bun/perl/ruby
-with -c/-e flags or as bare pipe targets, while allowing file execution (bun test,
-python -m pytest, node script.js). Add /tmp redirect detection for Bash tool and /tmp
-write block for Write/Edit tools in write-gate.sh. Add ## Tool Discipline section to
-all 8 agent markdown files. 183 prefer-tools + 21 write-gate test assertions (304 total).
+- Blocks `python -c`/`node -e`-style inline execution and `/tmp` writes, while allowing file execution.
 
 ## 0.13.0 — 2026-03-23
 
-### Migrate all hooks from TypeScript to plain bash, remove regex verification systems
+- Rewrites all hooks from TypeScript to plain bash and removes the regex verification systems.
 
 ## 0.12.6 — 2026-03-23
 
-### Add Reality Auditor agent for external service verification
+- Adds the reality-auditor agent for external-service verification.
 
 ## 0.12.5 — 2026-03-23
 
-### Add 17 management tools for full framer-api coverage
-
-Collection ordering, code file management, style removal, locale management, redirect management, plugin data persistence, and code validation tools. Achieves complete coverage of all request-response-compatible framer-api operations.
+- Adds collection, code-file, style, locale, and redirect management tools for full Framer API coverage.
 
 ## 0.12.4 — 2026-03-23
 
-### Add asset, page, and component variable tools
-
-New tools: add_image, add_svg, add_text, clone_web_page, clone_design_page, get_breakpoint_suggestions, add_breakpoint, get_component_variables, add_component_variables, remove_component_variables, set_variable_order.
+- Adds Framer image/svg/text, page-cloning, breakpoint, and component-variable tools.
 
 ## 0.12.3 — 2026-03-23
 
-### Add 10 node/canvas/misc tools and upgrade MCP protocol to 2025-11-25
-
-New tools: get_parent, set_parent, get_rect, walk_tree, select_nodes, get_selection, zoom_into_view, get_canvas_root, check_permission, notify. Protocol upgraded to 2025-11-25.
+- Adds 10 Framer node/canvas tools and upgrades the MCP protocol to 2025-11-25.
 
 ## 0.12.2 — 2026-03-23
 
-### Add component tools, style lookups, and attribute resolution to Framer MCP
-
-New: create_component_node, add_component_instance, add_variant, add_gesture_variant tools. New: getColorStyle and getTextStyle lookups. Enhanced: set_node_attributes resolves cs:Name to ColorStyle, font to Font instance, inlineTextStyle to TextStyle. Enhanced: create/update_text_style support color, tag, alignment, transform.
+- Adds Framer component, style-lookup, and attribute-resolution tools.
 
 ## 0.12.1 — 2026-03-23
 
-### Rewrite all 11 Framer skills with Academy-sourced methodology
-
-Each skill now includes Methodology (sequencing, decision points, best practices), Patterns (cookbook MCP tool call examples), Anti-Patterns, and Academy References. Total skill content grew from 1,078 to 3,938 lines.
+- Rewrites all 11 Framer skills with methodology, patterns, anti-patterns, and references.
 
 ## 0.12.0 — 2026-03-22
 
-### Move to private repo, proprietary license
+- Moves to a private repo under a proprietary license.
 
 ## 0.11.33 — 2026-03-22
 
-### Fix observation-mask test isolation and injection-scanner stdout fallback
+- Fixes observation-mask test isolation and an injection-scanner stdout fallback.
 
 ## 0.11.32 — 2026-03-22
 
-### Add formatting and bump options to debug pipeline ship flow
+- Adds formatting and version-bump options to the debug pipeline's ship flow.
 
 ## 0.11.31 — 2026-03-22
 
-### Add SendMessage Communication sections to agent files
+- Adds SendMessage communication sections to the agent files.
 
 ## 0.11.30 — 2026-03-22
 
-### Auto-allow plugin lib/ script invocations to stop repetitive permission prompts
+- Auto-allows plugin lib/ script invocations to stop repetitive prompts.
 
 ## 0.11.29 — 2026-03-22
 
-### Rename marketplace to oleksify-plugins
+- Renames the marketplace to oleksify-plugins.
 
 ## 0.11.28 — 2026-03-22
 
-### Fix Lean 4 proof gate activation and detection
+- Fixes Lean 4 proof-gate activation and detection.
 
 ## 0.11.27 — 2026-03-22
 
-### Fix prefer-tools hook evasion via compound shell commands
+- Closes a bash-hook bypass via compound shell commands.
 
 ## 0.11.26 — 2026-03-22
 
-### Add push protection and prompt injection scanner
-
-Inspired by dwarvesf/claude-guardrails: (1) prefer-tools.ts now blocks git push to main/master/production branches — deterministic enforcement replacing advisory CLAUDE.md instruction. (2) New injection-scanner.ts PostToolUse hook scans Read, Bash, and MCP tool output for 14 common prompt injection patterns and emits advisory warnings. Registered for PostToolUse/Read and PostToolUse/Bash events. Uses import.meta.main guard for safe test imports.
+- Blocks `git push` to protected branches and adds an advisory prompt-injection scanner on tool output.
 
 ## 0.11.25 — 2026-03-22
 
-### Fix audit findings
-
-Fix Bun.file().exists() used on directory path in pre-compact.ts extractCurrentTaskId() — always returned null for existing builds directories. Move generateNeedle() from pre-compact.ts to lib.ts to prevent compact-needle tests from silently failing (module-level process.exit killed test runner). Add observation-mask.ts to CLAUDE.md and README.md file trees. Fix README.md command count (18→19).
+- Fixes a directory-path existence check and a test-killing module-level exit.
 
 ## 0.11.24 — 2026-03-22
 
-### Migrate hook filesystem I/O to Bun-native APIs
-
-Replace readFileSync/writeFileSync with Bun.file().text(), Bun.file().json(), and Bun.write() across 5 hook files. post-compact.ts is now fully node:fs-free. Remaining node:fs imports (existsSync for directories, appendFileSync, mkdirSync, readdirSync, statSync) have no Bun alternatives.
+- Moves hook filesystem I/O to Bun-native APIs where alternatives exist.
 
 ## 0.11.23 — 2026-03-22
 
-### Add research-backed failure patterns to catalog
-
-Expand rnd-failure-modes from 11 to 18 patterns with 7 new builder/orchestrator drift patterns extracted from 2024-2026 LLM reliability research: Pipeline Ceremony Shortcut, Attention Decay Drift, Resource Hallucination, Mapping Hallucination, Self-Deception Cycle, Observation Flooding, Post-Compaction Amnesia. Each maps to a concrete mitigation already in the framework. Add 4 new red flag phrases.
+- Expands the failure-mode catalog from 11 to 18 patterns drawn from LLM-reliability research.
 
 ## 0.11.22 — 2026-03-22
 
-### Fix roadmap mode skipping verification
-
-Roadmap milestones were being completed inline without multi-judge verification. Root cause: recursive /rnd-framework:start invocation when already inside one caused the orchestrator to silently drop pipeline phases. Fix adds anti-recursion guidance to roadmap.md and a Milestone Execution and Verification section to the roadmapping skill that marks inline completion as an anti-pattern.
+- Fixes roadmap milestones completing inline without verification, caused by recursive invocation.
 
 ## 0.11.21 — 2026-03-22
 
-### Research-driven improvements from LLM drift and hallucination literature
-
-Six improvements based on 2024-2026 academic work: (1) Release automation — add "Bump version, tag and push" option to Phase 6 menus in start.md, quick.md, and rnd-completion skill. (2) SCAN re-anchoring — mandatory compliance re-statement before each Red-Green-Refactor criterion in the builder skill, restoring attention weights as context grows. (3) Property-based testing — guidance in builder skill for when to prefer property tests over specific-output tests. (4) Post-compact verification — needle-in-the-haystack challenge after context compaction to detect degraded recall. (5) Observation masking — context management guidance plus PostToolUse/Bash hook that advises when output exceeds 50 lines. (6) Criticality-based verification scaling — LOW/MEDIUM/HIGH tiers in rnd-scaling skill with differentiated judge count and iteration budgets.
+- Adds release automation, attention re-anchoring, property-test guidance, post-compaction recall checks, and output masking.
 
 ## 0.11.20 — 2026-03-22
 
-### Consolidate PostToolUse hooks and add write-gate
-
-Merge audit-log.ts, slop-gate.ts, and evidence-warn.ts into a single post-tool-use.ts handler, eliminating 2 redundant Bun process spawns per Write/Edit operation. Convert slop-gate.ts and evidence-warn.ts to pure library modules. Extract shared helpers (extractWriteEditContent, extractFilePath, activeSessionDir, isoTimestamp) to lib.ts. Clean up lifecycle hooks (stop-failure, pre-compact, post-compact) to use shared helpers. Add write-gate.ts PreToolUse hook for Write/Edit to auto-allow .rnd/ path operations without permission prompts.
+- Merges three PostToolUse hooks into one and adds a write-gate to auto-allow `.rnd/` paths.
 
 ## 0.11.19 — 2026-03-20
 
-### Remove chunk-gate hook and 30-line chunking workflow
-
-Delete chunk-gate.ts and its test, remove Write/Edit PreToolUse entries from hooks.json, remove .planning-phase marker from commands, update builder agent to use bypassPermissions, clean all chunk references from skills and docs.
+- Removes the 30-line chunking gate and workflow.
 
 ## 0.11.18 — 2026-03-20
 
-### Inline quick mode verification to avoid API rate limits
-
-Quick mode now verifies inline instead of spawning a separate verifier agent. Reduces API calls from 3+ to 1 per pipeline run, preventing 429 rate limit errors.
+- Quick mode verifies inline instead of spawning a verifier, cutting API calls to avoid rate limits.
 
 ## 0.11.17 — 2026-03-20
 
-### Add deterministic pattern extraction and multiline slop gate analysis
-
-Fix slop gate not catching project-specific CLAUDE.md rule violations. New lib/extract-patterns.ts runs in all commands for reliable coverage. Multiline pattern support in slop-gate.ts enables cross-line detection.
+- Makes slop-gate pattern extraction deterministic and adds multiline detection.
 
 ## 0.11.16 — 2026-03-20
 
-### Add pre-commit code formatting step
-
-New `rnd-formatting` skill that detects the project's code formatter (biome, prettier, mix format, cargo fmt, ruff, gofmt, etc.) from config files and runs it on pipeline-changed files. Runs automatically before doc-polish in both `/start` Phase 6 and `/quick` Step 4. Formatter detection is config-based — never assumes a default. Formatting failures are advisory and do not block the pipeline.
+- Adds the `rnd-formatting` skill that detects and runs the project's formatter before doc-polish.
 
 ## 0.11.15 — 2026-03-20
 
-### Add pipeline learning extraction
-
-Auto-captures non-obvious gotchas from iteration cycles to the user's Learning Library (`$CLAUDE_CONFIG_DIR/learnings/`). When a build fails verification and the fix reveals something non-obvious, the orchestrator extracts the gotcha and writes it to the appropriate language file. Builder prompts now include "Known gotchas" from matching learnings files, preventing agents from repeating known mistakes across sessions.
+- Auto-captures non-obvious gotchas from failed-then-fixed builds into the Learning Library and feeds them back to builders.
 
 ## 0.11.14 — 2026-03-20
 
-### Add multi-session roadmapping
-
-New `/rnd-framework:roadmap` command and `rnd-roadmapping` skill for planning work that spans multiple sessions across multiple days. A roadmap decomposes a broad goal into milestones (3-7), each executed as a separate pipeline session via `/start`. The `/start` command now checks for existing roadmaps in Phase 0 and suggests the next milestone. Session completion (`rnd-completion`) automatically updates the roadmap after SHIP verdicts. Added `--roadmap` flag to `rnd-dir.sh` for path resolution and a "Multi-session" tier to `rnd-scaling`.
+- Adds the roadmap command and skill for decomposing a broad goal into milestones run as separate sessions.
 
 ## 0.11.13 — 2026-03-20
 
-### Adopt Claude Code v2.1.80 features
-
-Added `effort` frontmatter to all 30 skills and 18 commands — low for reference/guidance, medium for procedural workflows, high for orchestration commands. This lets Claude Code adjust reasoning effort per skill/command invocation, saving tokens on simple operations. Added statusline script (`hooks/statusline.ts`) that displays rate limit usage (5h/7d windows) and current pipeline phase in the Claude Code status bar. Documented `source: 'settings'` inline plugin declaration in README as an alternative to marketplace installation.
+- Adds effort frontmatter to all skills and commands, plus a statusline showing rate-limit usage and pipeline phase.
 
 ## 0.11.11 — 2026-03-19
 
-### Adopt Claude Code v2.1.79 features
-
-Added `SessionEnd` hook (`hooks/session-end.ts`) that auto-clears the active RND session when a Claude Code session closes or switches via `/resume`. Previously, stale `.current-session` markers could persist because SessionEnd hooks didn't fire on `/resume` — fixed upstream in v2.1.79. Also documented `CLAUDE_CODE_PLUGIN_SEED_DIR` multi-directory support in README for org-wide plugin distribution. Upstream improvements to non-streaming API fallback (2-minute timeout) and enterprise 429 retry passively improve pipeline agent reliability.
+- Adds a SessionEnd hook that clears the active session on close or `/resume`.
 
 ## 0.11.10 — 2026-03-18
 
-### Adopt Claude Code v2.1.78 features
+- Adopts Claude Code v2.1.78 features.
 
 ## 0.11.9 — 2026-03-18
 
-### Fix Lean detection in Proof Gate for subagent PATH
+- Fixes Lean detection in the proof gate for the subagent PATH.
 
 ## 0.11.8 — 2026-03-18
 
-### Fix hook security and reduce startup overhead
+- Hardens hook security and reduces startup overhead.
 
 ## 0.11.7 — 2026-03-18
 
-### Add Koka KISS practices and expand Lean 4 with Mathlib style
+- Adds Koka KISS practices and expands the Lean rules.
 
 ## 0.11.6 — 2026-03-18
 
-### Update Svelte KISS practices to Svelte 5 runes API
+- Updates the Svelte KISS practices to the Svelte 5 runes API.
 
 ## 0.11.5 — 2026-03-18
 
-### Remove non-functional wellbeing-check hook
+- Removes the non-functional wellbeing-check hook.
 
 ## 0.11.4 — 2026-03-18
 
-### Add lib/ to tsconfig, standardize hook error wrapping, simplify readStdin
+- Adds lib/ to tsconfig, standardizes hook error wrapping, and simplifies stdin reading.
 
 ## 0.11.3 — 2026-03-18
 
-### Tighten .rnd/ auto-allow and fix chunk-gate line count
+- Tightens the `.rnd/` auto-allow and fixes a chunk-gate line count.
 
 ## 0.11.2 — 2026-03-17
 
-### Fix slop gate to surface findings as advisory context
+- Surfaces slop-gate findings as advisory context.
 
 ## 0.11.1 — 2026-03-17
 
-### Audit and harden hooks, rewrite validate.sh as TypeScript
+- Audits and hardens the hooks and rewrites the validator as TypeScript.
 
 ## 0.11.0 — 2026-03-17
 
-### Add Lean 4 formal verification integration
+- Adds Lean 4 formal-verification integration.
 
 ## 0.10.10 — 2026-03-17
 
-### Auto-allow plugin cache reads and update v2.1.77 compatibility
+- Auto-allows plugin-cache reads and updates v2.1.77 compatibility.
 
 ## 0.10.9 — 2026-03-16
 
-### Add experiment-based verification and calibration
+- Adds experiment-based verification and calibration.
 
 ## 0.10.8 — 2026-03-16
 
-### Fix bump.sh failing when invoked from plugin cache path
+- Fixes bump.sh failing when invoked from the plugin cache path.
 
 ## 0.10.7 — 2026-03-16
 
-### Port all hooks to TypeScript
-
-Replaced all 11 bash hooks and 2 JS hooks with TypeScript equivalents sharing a typed lib.ts utility library. Merged auto-allow-rnd logic into chunk-gate.ts (Write/Edit) and read-gate.ts (Read), eliminating the standalone hook. Deleted lib.sh. Renamed 7 t-prefixed test files to descriptive names, centralized duplicated helpers (computeSlug, createTestEnv, input builders) into helpers.ts, standardized all tests on test() instead of it(). Updated CLAUDE.md and README.md hooks directory trees. 505 tests pass, net -262 lines.
+- Ports all hooks to TypeScript on a shared typed lib.
 
 ## 0.10.6 — 2026-03-16
 
-### Fix 4 non-functional features
-
-Remove bypassPermissions from builder to restore chunk-gate enforcement. Add anti-deflection rules to prevent dismissing findings as pre-existing. Replace broken cron-based wellbeing with PostToolUse timer hook. Add MANDATORY enforcement language for doc-polish invocation.
+- Restores chunk-gate enforcement, anti-deflection rules, the wellbeing timer, and doc-polish enforcement.
 
 ## 0.10.5 — 2026-03-15
 
-### Add evidence-based decision grounding
-
-Require Builders to cite file:line evidence for external contracts before coding (Step 2.75). Verifiers now check manifest Evidence Gathered section against code. New evidence-warn PostToolUse hook detects SQL/API patterns and reminds Builders to read schemas.
+- Requires builders to cite file:line evidence for external contracts before coding, and verifiers to check it.
 
 ## 0.10.4 — 2026-03-15
 
-### Fix minor audit cosmetic findings
-
-Fix slop-gate cumulative score double-counting on same-file rewrites, prefer-tools cd-stripping regex precision, standardize resilient hook comments, and replace grep -iq with bash nocasematch in read-gate
+- Fixes slop-gate double-counting, a cd-strip regex, and a read-gate matcher.
 
 ## 0.10.3 — 2026-03-15
 
-### Adopt Claude Code latest features
-
-Add PreCompact, PostCompact, InstructionsLoaded, and Setup hooks. Enhance read-gate with agent_type awareness. Add wellbeing cron via SessionStart. Add permissionMode to all agents. Add user-invocable, context:fork, allowed-tools, CLAUDE_SKILL_DIR, and CLAUDE_SESSION_ID to skills. Ship settings.json with spinnerVerbs. Add model to quick and verify commands.
+- Adds PreCompact/PostCompact/InstructionsLoaded/Setup hooks and per-agent permission modes.
 
 ## 0.10.2 — 2026-03-15
 
-### Fix minor audit findings
-
-Compute HOOK_PATH from import.meta.dir in audit-log and slop-gate tests, align generateSessionId() to lowercase hex, consolidate validate.sh frontmatter_val sed pipes
+- Fixes test path resolution and session-ID casing.
 
 ## 0.10.1 — 2026-03-15
 
-### Fix hooks blocking Builder self-assessment writes to .rnd/ paths
+- Stops hooks from blocking the builder's self-assessment writes to `.rnd/` paths.
 
 ## 0.10.0 — 2026-03-15
 
-### Add explained incremental building with chunk-gate enforcement
-
-New chunk-gate PreToolUse hook blocks Write/Edit calls exceeding 30 lines to project files, forcing agents to produce small, reviewable chunks. Builder agent now uses AskUserQuestion after each chunk to present reasoning (WHY + CONNECTS TO) for human approval before proceeding. Planner writes exploration cache to $RND_DIR/exploration/ so downstream agents avoid redundant codebase reads. Builder agents no longer use bypassPermissions to ensure AskUserQuestion pass-through works.
+- Adds a gate forcing small reviewable chunks, with the builder explaining each before writing. (Removed in 0.11.19.)
 
 ## 0.9.28 — 2026-03-14
 
-### Add developer wellbeing and explained coding
-
-New rnd-wellbeing skill with break suggestions at 90min/2hr/3hr thresholds using cognitive science reasoning, and explained incremental coding principles. Iron Law 7 requires builders to explain before writing and work in logical increments. Break checkpoints wired into start.md between waves and Phase 6. Builder agent preloads the wellbeing skill.
+- Adds break suggestions and explained incremental coding. (Removed later.)
 
 ## 0.9.27 — 2026-03-14
 
-### Add standalone narrative command for past sessions
-
-New /rnd-framework:narrative command generates a prose development narrative from any pipeline session's artifacts. Reads plan, build manifests, verification reports, iteration logs, and integration reports. Works with active sessions, most recent session, or specific session IDs. Complements the 'Show development narrative' option in the Phase 6 menu.
+- Adds a command that generates a prose development narrative from any session's artifacts.
 
 ## 0.9.26 — 2026-03-14
 
-### Add anti-deflection rule for error handling
-
-Iron Law 6 in builder skill: agents must investigate and fix errors/warnings instead of deflecting with 'pre-existing' as a reason to skip. Context about whether an issue is new or old is allowed, but the response must always be solution-oriented.
+- Requires builders to fix errors rather than deflect them as "pre-existing".
 
 ## 0.9.25 — 2026-03-14
 
-### Add development narrative option to pipeline completion
-
-New 'Show development narrative' option in Phase 6 (start.md) and Step 4 (quick.md) completion menus. Generates a prose narrative of the pipeline run covering what was built, key decisions and trade-offs, obstacles and iterations, insights gained, and what's left. Generated by the orchestrator from conversation context with RND_DIR artifact fallback for long runs.
+- Adds a "show development narrative" option to the completion menu.
 
 ## 0.9.24 — 2026-03-14
 
-### Add brainstorming pipeline for idea exploration
-
-New /rnd-framework:brainstorm command — a conversational pipeline that funnels vague ideas into focused, implementable plans through 6 phases: Seed, Expand, Explore, Narrow, Focus, Output. No agents spawned — purely AskUserQuestion driven. Output can be saved or handed to /rnd-framework:start for implementation.
+- Adds the brainstorm command — a conversational funnel from vague idea to focused plan.
 
 ## 0.9.23 — 2026-03-14
 
-### Add functional programming practices skill
-
-New fp-practices skill with five concrete FP principles: pure functions, data transformations over mutation, composition over inheritance, command-query separation, and immutability by default. Each principle includes do/don't rules with code-level examples and a 'when to break' section. Preloaded in the builder agent and loaded during Phase 0 alongside KISS practices.
+- Adds a functional-programming practices skill with five principles and do/don't examples.
 
 ## 0.9.22 — 2026-03-14
 
-### Fix README kiss-practices language list
-
-README skill table description for kiss-practices now includes Bash and Markdown alongside the existing six languages.
+- Adds Bash and Markdown to the kiss-practices README description.
 
 ## 0.9.21 — 2026-03-14
 
-### Add Markdown and Bash KISS practice rules
-
-New KISS practice files for Markdown (headings, formatting, tables, links, content organization) and Bash (script structure, quoting, variables, conditionals, pipelines, error handling). Detection heuristics table updated for *.md and *.sh file patterns.
+- Adds KISS practice files for Markdown and Bash.
 
 ## 0.9.20 — 2026-03-14
 
-### Fix design recommendation truncation in terminal
-
-Design exploration step now explicitly outputs the full recommendation as regular text before presenting the AskUserQuestion choice. Previously the recommendation could get stuffed into option descriptions which truncate in the terminal.
+- Outputs the full design recommendation as text before the choice prompt, so it isn't truncated.
 
 ## 0.9.19 — 2026-03-14
 
-### Add post-SHIP documentation polish step
-
-New rnd-doc-polish skill checks and updates CLAUDE.md, README.md, project-specific docs, and stale inline comments after SHIP but before committing. Wired into start.md Phase 6 and quick.md Step 4.
+- Adds the doc-polish skill that updates docs and stale comments after SHIP, before committing.
 
 ## 0.9.18 — 2026-03-14
 
-### Add project-specific code standards enforcement
-
-New rnd-standards skill auto-extracts coding rules from CLAUDE.md files into regex-based slop patterns at pipeline start. The slop-gate hook now merges project-specific patterns from project-patterns.json alongside built-in patterns. Iron Law 5 in the builder skill mandates immediate self-correction on severity 3+ matches. Both /start and /quick commands now invoke rnd-standards during discovery. Five new tests cover all merging paths.
+- Auto-extracts coding rules from CLAUDE.md into slop patterns enforced during the build. (Later removed with the slop gate.)
 
 ## 0.9.17 — 2026-03-14
 
-### Fix stale docs in README and skill tables
-
-Update README command table (12→14 commands, added review and audit), skill table (22→23 skills, added code-review), hash comment (6-char→8-char), command count comment (12→14), and structure trees (added validate.sh). Update using-rnd-framework skill table (added kiss-practices).
+- Updates stale command and skill counts and structure trees in the docs.
 
 ## 0.9.16 — 2026-03-14
 
-### Add full codebase audit command
-
-New /rnd-framework:audit command performs full codebase audits using multi-judge consensus. Unlike /review (diff-based), audit explores every tracked file against project standards auto-detected from CLAUDE.md files, KISS rules, and codebase conventions.
+- Adds the audit command, which checks every tracked file against project standards.
 
 ## 0.9.15 — 2026-03-14
 
-### Suggest code review before committing in pipeline completion
+- Suggests a code review before committing at pipeline completion.
 
 ## 0.9.14 — 2026-03-14
 
-### Add evidence-based code review pipeline
-
-New `/rnd-framework:review` command for reviewing code changes with the same multi-judge, evidence-based rigor as the verification pipeline. Supports three scope modes: uncommitted changes (default), commit ranges (`HEAD~3..HEAD`), and directory paths. Reuses the `rnd-verifier` agent — no new agents. Includes a `code-review` skill defining 6 review categories (architecture, security, correctness, testing, KISS compliance, style), 4 severity levels (critical, major, minor, info), and 3 verdicts (CLEAN, ISSUES_FOUND, CRITICAL_ISSUES). After review, suggests `/rnd-framework:start` or `:quick` to fix issues found. Checks: 212 → 218.
+- Adds the review command and a code-review skill (six categories, four severities, three verdicts).
 
 ## 0.9.13 — 2026-03-14
 
-### Add Tailwind KISS rules and update docs
+- Adds Tailwind KISS rules.
 
 ## 0.9.12 — 2026-03-14
 
-### Add Svelte and DuckDB KISS rules
+- Adds Svelte and DuckDB KISS rules.
 
 ## 0.9.11 — 2026-03-14
 
-### Add KISS practices skill with language-specific rules
-
-New `kiss-practices` skill with language-specific KISS (Keep It Simple) rules to prevent over-engineering. Includes general rules plus three language files: `elixir.md` (Elixir/Phoenix/Ecto), `javascript.md` (JS/TS/CSS/HTML), and `postgresql.md`. Phase 0 Discovery detects the project's tech stack and loads only the relevant language rules. Rules are overridable by project-local `kiss-practices` skills. All three agents (planner, builder, verifier) have KISS notes in their rules sections. Checks: 210 → 212.
+- Adds the kiss-practices skill with general and per-language rules loaded by the detected stack.
 
 ## 0.9.10 — 2026-03-14
 
-### Extract shared hook utilities into hooks/lib.sh
-
-Consolidated duplicated patterns across 5 bash hook scripts (auto-allow-rnd, read-gate, prefer-tools, audit-log, session-start) into a shared `hooks/lib.sh` library. Provides: `hook_file_path()`, `hook_command()`, `hook_tool_name()` for JSON input parsing, `is_rnd_path()` for artifact path detection, `resolve_rnd_dir()` for session resolution, `hook_allow()` and `hook_block()` for PreToolUse decisions, and `PLUGIN_ROOT` path setup. Each hook now sources lib.sh instead of duplicating these patterns.
+- Consolidates duplicated patterns across the bash hooks into a shared lib.sh.
 
 ## 0.9.9 — 2026-03-14
 
-### Remove hardcoded component counts from docs
+- Removes hardcoded component counts from the docs.
 
 ## 0.9.8 — 2026-03-14
 
-### Add colors, skill preloading, and disallowedTools to agents
-
-All 5 agents now have distinct UI colors (planner: blue, builder: green, verifier: amber, integrator: purple, data-scientist: cyan), skill preloading via frontmatter (eliminating startup tool calls for skill loading), and the verifier has `disallowedTools: Write, Edit` as defense-in-depth alongside its tools allowlist. The `## Required Skills` sections in all agents updated to note skills are preloaded at startup. validate.sh extended with color, skills, and disallowedTools field validation. Checks: 199 → 210.
+- Adds distinct agent colors, frontmatter skill preloading, and read-only enforcement on the verifier.
 
 ## 0.9.7 — 2026-03-14
 
-### Add persistent memory to all agents
-
-All 5 agents (planner, builder, verifier, integrator, data-scientist) now have `memory: user` frontmatter enabling persistent cross-project learning. Each agent includes a domain-specific `## Memory` section guiding what knowledge to accumulate: decomposition patterns (planner), debugging insights (builder), failure patterns (verifier), integration patterns (integrator), and data processing gotchas (data-scientist). The verifier's memory section explicitly preserves the information barrier by prohibiting storage of task-specific builder information. validate.sh extended with memory scope validation (user|project|local); 5 new tests. Checks: 194 → 199. Tests: 310 → 315.
+- Adds persistent memory to all agents, with a guided memory section each; the verifier's preserves the barrier.
 
 ## 0.9.6 — 2026-03-13
 
-### Fix stale skill counts in CLAUDE.md and README
+- Fixes stale skill counts in the docs.
 
 ## 0.9.5 — 2026-03-13
 
-### Add slop gate and fix confirmation prompts
-
-New evidence-based PostToolUse hook (hooks/slop-gate) detects structural LLM anti-patterns in code written by Write/Edit tools. Includes: declarative pattern catalog (slop-patterns.json) with 15 anti-patterns, diff-aware analysis (Write analyzes full content, Edit analyzes only new_string), evidence-based scoring with PASS/WARN/FAIL verdicts, pipeline artifact integration (per-file reports and cumulative session scoring), companion skill (rnd-slop-detection) with 15 before/after remediation examples, hooks.json registration, validate.sh parity checks (193 total), and 70 new tests. Also fixes excessive confirmation prompts during pipeline runs by making the prefer-tools hook auto-allow all non-blocked bash commands instead of returning no-opinion. Skills: 20 to 21. Tests: 240 to 310.
+- Adds an anti-pattern slop gate and fixes excessive confirmation prompts by auto-allowing safe bash. (Slop gate later removed.)
 
 ## 0.9.4 — 2026-03-13
 
-### Add /rnd-framework:resume command
-
-New command that scans $RND_DIR artifacts to reconstruct pipeline state and continues a partially-completed pipeline from where it left off. Parses plan.md for task tree and waves, scans builds/, verifications/, and integration/ directories to determine per-task status, recreates TaskList entries, and presents next-action options via AskUserQuestion. Cross-session capable — works in a new Claude Code conversation. Commands: 11 → 12.
+- Adds the resume command, which reconstructs pipeline state from artifacts and continues from where it left off.
 
 ## 0.9.3 — 2026-03-12
 
-### Add design exploration, failure modes, status codes, and tiered verification
-
-Four superpowers-inspired features: Design Exploration phase (Phase 0.5) between Discovery and Planning, verification anti-pattern catalog (rnd-failure-modes skill), structured builder status codes (DONE/DONE_WITH_CONCERNS/NEEDS_CONTEXT/BLOCKED), and two-stage verification with Correctness/Quality tiers. Updated agents, commands, skills, validate.sh parity checks, and tests.
+- Adds a design-exploration phase, a failure-mode catalog, builder status codes, and two-tier verification.
 
 ## 0.9.2 — 2026-03-12
 
-### Add optional tagging to bump command
+- Adds optional git tagging to the bump command.
 
 ## 0.9.1 — 2026-03-12
 
-### Make verifier agent read-only
-
-Remove Write tool from verifier agent, making it fully read-only. Adversarial test writing replaced with failure mode analysis (code inspection). Verifiers now return reports as text output; the orchestrator saves all verification report files. Updated across agent, skills (rnd-verification, rnd-multi-judge, rnd-debugging), commands (start, verify, quick), validate.sh parity descriptions, and README.
+- Makes the verifier fully read-only; it returns reports and the orchestrator saves them.
 
 ## 0.9.0 — 2026-03-11
 
-### Add multi-judge verification and local expert discovery
-
-Two new features for the pipeline. **Multi-judge verification** replaces the single-verifier model: two independent verifier agents check each task's output against pre-registered criteria, and a tiebreaker resolves split verdicts. The information barrier applies to all judges. New `rnd-multi-judge` skill defines the consensus protocol; `verify.md`, `start.md` Phase 3, `rnd-verification` skill, and `rnd-verifier` agent all updated. Quick mode retains single-verifier for lightweight tasks. **Local expert discovery** auto-scans the target project's `.claude/agents/` and `.claude/skills/` directories during Phase 0 (Discovery), reads frontmatter from each, and includes a structured summary in the Planner's context. The Planner can then reference project-local agents/skills in pre-registrations via an optional `Local expert` field. New `rnd-local-experts` skill defines the discovery protocol; `start.md` Phase 0, `rnd-planner` agent, and `rnd-decomposition` skill all updated. Plugin now has 18 skills and 155 validation checks.
+- Adds two-verifier consensus with a tiebreaker, and auto-discovery of the project's own `.claude/` agents and skills for the planner.
 
 ## 0.8.5 — 2026-03-11
 
-### Remove worktree isolation skill
+- Removes the worktree-isolation skill.
 
 ## 0.8.4 — 2026-03-11
 
-### Fix stale references and terminology
-
-Updated doctor.md example version from v0.7.21 to v0.8.3, corrected skill count from 16 to 17 in CLAUDE.md, and standardized "info-barrier" to "information-barrier" across verify.md, rnd-verifier.md, and CHANGELOG.md to match established codebase terminology.
+- Fixes stale version and skill counts and standardizes "information-barrier" terminology.
 
 ## 0.8.3 — 2026-03-11
 
-### Add information-barrier pre-flight checks
-
-Added defense-in-depth for the information barrier between Builder and Verifier agents. The verify command now runs a pre-flight sanity check that lists self-assessment files before prompt assembly and scans the assembled prompt for the substring `self-assessment`. The verifier agent now performs a startup self-check to detect leaked Builder reasoning in its prompt context. Updated the `bypassPermissions` documentation to describe all three defense layers (hook, pre-flight, self-check) instead of just documenting the weakness.
+- Adds a verify-time pre-flight scan and a verifier startup self-check for leaked builder reasoning.
 
 ## 0.8.2 — 2026-03-11
 
-### Harden hooks against edge cases
-
-Improved resilience of three hook scripts: `audit-log` now guards against missing jq/date dependencies, uses `printf` instead of `echo` for POSIX correctness, silently exits on empty fields or malformed JSON, and handles write failures gracefully. `prefer-tools` fixes jq parse failure handling, improves echo/printf redirect detection by stripping `/dev/` paths before checking for redirects, and tightens the `.rnd` git-add pattern to avoid false positives. `read-gate` fixes jq parse failure handling and uses case-insensitive matching for self-assessment filenames. All changes paired with expanded test coverage.
+- Hardens three hooks against missing dependencies, malformed JSON, and false positives.
 
 ## 0.8.1 — 2026-03-05
 
-### Fix 30 code review findings
-
-Comprehensive code review identified and fixed 30 issues across hooks, shell scripts, commands, agents, and skills. Key fixes: JSONL injection in audit-log (use jq -n), race condition in session creation (noclobber), semver validation in bump.sh, greedy cd-strip in prefer-tools, /dev/ exclusion for redirect detection, missing Write/Bash tools in planner agent, empty-argument handlers for build/integrate commands, prefer-system-tools restructured to lead with rg/fd/sd (blocked tools demoted to POSIX fallback), External dependencies field added to orchestration template, data-scientist role documented in using-rnd-framework, and RND_DIR path examples corrected to show session paths.
+- Fixes 30 issues across hooks, scripts, commands, agents, and skills.
 
 ## 0.8.0 — 2026-03-05
 
-### Remove team/swarm coordination from pipeline commands
-
-Replaced TeamCreate/SendMessage/team_name team coordination with plain Agent tool calls in start.md. The Agent tool is blocking — agents run to completion and return results directly, making the team messaging layer unnecessary. This eliminates cross-session message leaks caused by Claude Code's experimental team feature. Phase 4 iteration now spawns a new Builder with feedback in the prompt instead of using SendMessage to a finished agent. TeamCreate and TeamDelete removed from validate.sh valid_tools list. All other command files (build, verify, integrate, quick) were already clean. Total checks: 147 (unchanged).
+- Replaces team/swarm coordination with plain blocking Agent calls, eliminating cross-session message leaks.
 
 ## 0.7.25 — 2026-03-05
 
-### Add /rnd-framework:bump command for patch version automation
-
-New `/rnd-framework:bump` command backed by `lib/bump.sh` automates the release version workflow. The shell script reads the current version from `plugin.json` via `jq`, increments the patch number, writes back atomically, prepends a correctly-formatted CHANGELOG entry, and stages both files. The command file handles argument parsing (headline + optional description via ` --- ` separator), prompts for the headline via `AskUserQuestion` when no arguments are provided, and asks for commit confirmation before creating the commit. New validation checks in `validate.sh` verify `lib/bump.sh` exists and is executable (total checks: 147). Commands: 10 → 11.
+- Adds the bump command and script that increments the patch version and prepends a changelog entry.
 
 ## 0.7.24 — 2026-03-05
 
-### Fix agent spawn instructions using bare type names
-
-All 6 command files (`start`, `plan`, `build`, `verify`, `integrate`, `quick`) used prose like "Spawn the `rnd-framework:rnd-planner` agent" to instruct agent spawning. The LLM sometimes stripped the `rnd-framework:` prefix when constructing the `subagent_type` parameter, causing `Agent type 'rnd-planner' not found` errors. Now all 11 spawn instructions use explicit parameter syntax: `subagent_type: "rnd-framework:rnd-planner"`, making the full qualified name unambiguous.
+- Uses explicit `subagent_type` syntax so the namespace prefix isn't stripped during spawns.
 
 ## 0.7.23 — 2026-03-05
 
-### Add PostToolUse audit logging for Write and Edit operations
-
-New `hooks/audit-log` PostToolUse hook records every file creation (Write) and modification (Edit) during active pipeline sessions. Each event is appended to `$RND_DIR/audit.jsonl` in JSONL format with timestamp, tool name, and file path. Silent when no pipeline session is active (no `$RND_DIR` set). A new PostToolUse section in `hooks.json` routes Write and Edit tool completions to the `audit-log` script.
+- Adds a PostToolUse hook recording every file write/edit to the session audit log.
 
 ## 0.7.22 — 2026-03-05
 
-### Add /rnd-framework:doctor command for runtime environment diagnostics
-
-New `/rnd-framework:doctor` command checks runtime readiness of the framework environment. Unlike `/rnd-framework:validate` (which checks static plugin structure — frontmatter, hooks, cross-references), `doctor` checks the live runtime state: presence and executability of CLI tools (`jq`, `bun`, `duckdb`), hook scripts, RND_DIR accessibility and write permissions, marketplace registration, plugin version sync between source and cache, and Julia MCP availability. Reports PASS/FAIL per check with a summary. Use `validate` to check plugin integrity after edits; use `doctor` when something isn't working at runtime.
+- Adds the doctor command, which checks live runtime readiness (CLI tools, hooks, RND_DIR, version sync).
 
 ## 0.7.21 — 2026-03-04
 
-### Add DuckDB CLI as dual-tool option to rnd-data-science skill and rnd-data-scientist agent
-
-The `rnd-data-science` skill and `rnd-data-scientist` agent previously relied solely on Julia (via `mcp__julia__julia_eval`) as the computation backend. DuckDB CLI is now a first-class alternative for tasks that are better suited to SQL: querying CSV/Parquet files, aggregating large datasets, and ad-hoc relational analysis. The skill's tool-selection heuristic guides the agent to choose between Julia (numerical computation, Plots.jl charts, matrix ops) and DuckDB (SQL queries, file ingestion, tabular aggregation) based on task type. Both tools remain available in the same agent session. Reference docs updated in `using-rnd-framework` skill table, README agent table, and CLAUDE.md agent table.
+- Adds DuckDB as a first-class alternative to Julia for SQL-shaped data tasks.
 
 ## 0.7.20 — 2026-03-04
 
-### Add rnd-data-scientist agent and rnd-data-science skill
-
-New standalone specialist agent (`rnd-data-scientist`, opus) for numerical and analytical work — finances, calculations, data wiring, analytics, tables, CSV/XLS, charts, and insights. Unlike the 4 pipeline-phase agents, this agent is called on-demand by the orchestrator or other agents when a task involves data work. Uses Julia MCP tools (`mcp__julia__julia_eval`) as primary computation environment, loaded via `ToolSearch` at runtime.
-
-Companion `rnd-data-science` skill provides structured methodology: data validation, numerical verification (cross-checks, tolerance-based comparison), CSV/XLS ingestion, financial calculations, chart generation (Plots.jl), and insight extraction. Four content-parity entries added to `validate.sh` ensuring skill-agent alignment. All reference docs updated (README, `using-rnd-framework`, CLAUDE.md). Total checks: 122 → 135. Agents: 4 → 5. Skills: 16 → 17.
+- Adds the on-demand data-scientist agent and data-science skill, using Julia for computation.
 
 ## 0.7.19 — 2026-03-04
 
-### Add skill-agent content parity checks to validate.sh
-
-`/rnd-framework:validate` now checks that key content markers in skill files also appear in their corresponding agent mirrors. A data-driven parity table defines 6 marker-pairs across 3 skill-agent pairs (rnd-decomposition↔rnd-planner, rnd-building↔rnd-builder, rnd-verification↔rnd-verifier). Adding a new parity check requires one array entry — no new bash logic. Total checks: 116 → 122.
+- Adds checks that key skill content also appears in the matching agent.
 
 ## 0.7.18 — 2026-03-04
 
-### Add external dependency verification to pipeline
-
-External systems (DB schemas, API contracts, file formats, env vars, third-party services) had no first-class representation in the pipeline. A Builder could write code against a wrongly-assumed schema, and the Verifier had no hook to catch it — tests would pass because both the code and the mocks shared the same wrong assumptions.
-
-Now all three pipeline phases enforce external dependency awareness:
-
-- **Planner** (`rnd-decomposition` skill + `rnd-planner` agent): Pre-registration template gains an `External dependencies` field with sub-structure (`system`, `contract`, `verification`). New decomposition heuristic triggers Phase 0 spikes for unverified external contracts. Checklist item enforces field presence.
-- **Builder** (`rnd-building` skill + `rnd-builder` agent): New step 2.5 "Verify External Dependencies" requires querying/reading actual external systems before writing code. Evidence recorded in build manifest. Self-assessment template restructured to distinguish verified from unverified external assumptions.
-- **Verifier** (`rnd-verification` skill + `rnd-verifier` agent): Adversarial testing gains "External contract conformance" category. Code inspection gains check for hardcoded unverified assumptions. Cross-criterion sweep gains "External assumption probe" — flags all dependent criteria as at-risk when build manifest lacks verification evidence.
+- Adds first-class external-dependency handling across planner, builder, and verifier so wrong-schema assumptions get caught.
 
 ## 0.7.17 — 2026-03-04
 
-### Distinguish FAIL from NEEDS ITERATION in verify and start commands
-
-Previously both `verify.md` and `start.md` treated FAIL and NEEDS ITERATION identically ("FAIL: Same as NEEDS ITERATION"), routing both to the Builder for iteration. The `rnd-verification` skill defines them differently: NEEDS ITERATION is "all-but-one criteria met with a clear, isolated fix path" while FAIL is "any criterion unmet without a clear fix path." Now FAIL routes to re-planning (not iteration), and in auto-continue mode, FAIL always pauses for user decision — it is an escalation gate.
+- FAIL now routes to re-planning and pauses for a decision, instead of being treated like a simple iteration.
 
 ## 0.7.16 — 2026-03-04
 
-### Add summary table and --quiet mode to validate.sh
-
-`/rnd-framework:validate` now outputs a per-category summary table at the end showing pass/fail counts for Manifest, Hooks, Skills, Agents, Commands, Output Styles, and Cross-References. New `--quiet` flag suppresses individual check lines and shows only the summary table — useful for CI. Also fixed a `grep -c || echo "0"` bug where both grep's stdout (`"0"`) and echo's stdout (`"0"`) were captured in command substitution, producing `"0\n0"` and failing integer comparison.
+- Adds a per-category summary table and a `--quiet` flag to the validator.
 
 ## 0.7.15 — 2026-03-04
 
-### Define skip procedure for failing tasks
-
-The "Skip and continue" option in `start.md` and `verify.md` had no defined mechanism: no task status mapping, no dependency handling, no integrator guidance. Added a **Skip Procedure** section to both commands that specifies: (1) mark with `metadata: {"skipped": true, "reason": "..."}` and `completed` status, (2) check downstream dependencies and warn about dependent tasks, (3) inform the integrator which tasks were skipped. Phase 5 now reads "all non-skipped tasks" instead of "ALL tasks."
+- Defines how to skip a failing task: status mapping, dependency warnings, and integrator notice.
 
 ## 0.7.14 — 2026-03-04
 
-### Increase artifact path hash from 6 to 8 characters
-
-The project slug hash in `rnd-dir.sh` used 6 hex characters (~16M unique values). With many local projects, hash collisions could silently merge artifact directories. Increased to 8 hex characters (~4B unique values). The `cksum` fallback format string was also widened (`%06x` → `%08x`). **Breaking:** existing sessions under 6-char paths are preserved on disk but won't be discovered; run `/rnd-framework:history` to find old artifacts manually.
+- Widens the project-slug hash from 6 to 8 hex chars to avoid silent directory collisions.
 
 ## 0.7.13 — 2026-03-04
 
-### Expand valid agent tool list in validate.sh
-
-The agent tool validation only recognized 12 tools (`Read`, `Write`, `Edit`, `Bash`, `Glob`, `Grep`, `NotebookRead`, `NotebookEdit`, `WebFetch`, `WebSearch`, `Agent`, `TodoWrite`). Added 12 more: `AskUserQuestion`, `TaskCreate`, `TaskGet`, `TaskUpdate`, `TaskList`, `Skill`, `SendMessage`, `TeamCreate`, `TeamDelete`, `EnterPlanMode`, `ExitPlanMode`, `EnterWorktree`, `ToolSearch`. This prevents false "unknown tool" failures when agents are given orchestration or team-coordination tools.
+- Adds 12 more recognized agent tools so orchestration and team tools don't fail validation.
 
 ## 0.7.12 — 2026-03-04
 
-### Use generic path templates in artifact layout examples
-
-README artifact path examples used concrete values (`myproject-6f015c`, `20260303-102051-4b5f`) that could mislead users about the actual slug format. Replaced with generic templates (`<dirname>-<hash>`, `<YYYYMMDD-HHMMSS-XXXX>`) matching the inline helper description. CLAUDE.md was already fixed in 0.7.10.
+- Replaces concrete artifact-path examples with generic templates.
 
 ## 0.7.11 — 2026-03-04
 
-### Add argument-hint validation to validate.sh
-
-`/rnd-framework:validate` now checks that commands using `$ARGUMENTS` have an `argument-hint` frontmatter field, and that commands with `argument-hint` actually reference `$ARGUMENTS`. Catches missing usage hints on new commands. Adds 6 checks (116 total). Required `|| true` guard on the `frontmatter_val` call since `argument-hint` is optional — without it, `set -euo pipefail` kills the script when `grep` finds no match inside the function's pipeline.
+- Checks that commands using `$ARGUMENTS` declare an `argument-hint`, and vice versa.
 
 ## 0.7.10 — 2026-03-04
 
-### Add /validate to command tables and fix artifact path examples
-
-The `/rnd-framework:validate` command was missing from both the README and `using-rnd-framework` skill command tables (only 8 of 9 commands listed). Also fixed the artifact path example in README and CLAUDE.md: slug format was shown as `project-<hash>` but the actual format is `<dirname>-<hash>` (computed from the project directory's basename).
+- Adds the validate command to the docs tables and corrects the slug-format example.
 
 ## 0.7.9 — 2026-03-04
 
-### Add cross-reference validation to validate.sh
-
-`/rnd-framework:validate` now checks 33 cross-references in addition to the 77 structural checks: skill references in the `using-rnd-framework` table (15), skill references in agent "Required Skills" sections (9), and agent references in command spawn instructions (9). Distinguishes skill refs (backtick-wrapped) from command refs (slash-prefixed) to avoid false positives.
+- Adds 33 cross-reference checks for skill and agent references.
 
 ## 0.7.8 — 2026-03-04
 
-### Warn on stale plugin cache in session-start
-
-The `session-start` hook now detects version mismatches between the cached plugin and the source repo. When running in the plugin's source repository, it compares the cached `plugin.json` version against the source version. If they differ, a warning appears in the session context suggesting `/plugin update`. Searches multiple common repo layouts (`plugins/rnd-framework/`, `rnd-framework/`, root-level).
+- The session-start hook now warns when the cached plugin version differs from the source repo.
 
 ## 0.7.7 — 2026-03-04
 
-### Block project file writes during planning phase
-
-Three-layer defense preventing the Planner from modifying project files: (1) agent frontmatter restricts tools to Read/Grep/Glob, (2) explicit "NEVER modify project files" instruction as first rule, (3) `auto-allow-rnd` hook blocks non-`.rnd/` Write/Edit calls when a `.planning-phase` marker file exists in `$RND_DIR`. The orchestrator creates the marker before spawning the planner and removes it after. `.rnd/` writes (plan.md) remain allowed.
+- Three layers prevent the planner from modifying project files during the planning phase.
 
 ## 0.7.6 — 2026-03-04
 
-### Add plugin validation command
-
-New `/rnd-framework:validate` command runs `lib/validate.sh` to check plugin structure without starting a new session. Validates: plugin manifest (JSON, semver), hooks (JSON, script existence and executability), skills (frontmatter, name/directory consistency), agents (frontmatter, valid tools and models), commands (frontmatter), and output styles (frontmatter). Reports PASS/FAIL per check with a summary count. 77 checks across all 6 artifact types.
+- Adds the validate command, which checks plugin structure without starting a session.
 
 ## 0.7.5 — 2026-03-04
 
-### Harden hook system with external scripts and jq
-
-Extracted all inline PreToolUse hooks from `hooks.json` into external scripts: `auto-allow-rnd` (shared by Write and Edit matchers) and `read-gate` (Read matcher with information barrier). Added echo/printf file redirect blocking to `prefer-tools` — catches `echo/printf ... > file` patterns while allowing `>&2` stderr output. Replaced the fragile `escape_for_json()` bash function in `session-start` with `jq -n --arg`, eliminating manual string escaping that missed control characters and unicode edge cases.
+- Extracts inline hooks into external scripts and replaces fragile JSON escaping with jq.
 
 ## 0.7.4 — 2026-03-03
 
-### Namespace agent references in commands and skills
-
-All commands and skills referenced agents by short name (e.g., `rnd-planner`), but Claude Code's plugin system requires the full `plugin:agent` namespace (`rnd-framework:rnd-planner`). This caused "Agent type not found" errors whenever the pipeline tried to spawn an agent. Updated all 14 spawn instructions across 6 commands, 2 skills, and the README to use the full namespace. Agent frontmatter `name:` fields remain unchanged.
+- Uses the full `plugin:agent` namespace everywhere so spawns stop failing with "agent type not found".
 
 ## 0.7.3 — 2026-03-03
 
-### Remove unused skills-core.js
-
-`lib/skills-core.js` was an ESM module implementing skill discovery (frontmatter parsing, recursive directory search, name resolution with shadowing). None of its exports were imported by any hook, command, agent, or script — Claude Code's native plugin system handles skill discovery by directory convention. Deleted the file and removed all references from README.md and CLAUDE.md.
+- Deletes an unused skill-discovery module; the native plugin system handles discovery.
 
 ## 0.7.2 — 2026-03-03
 
-### Update documentation with marketplace install and fix stale content
-
-Root README now covers marketplace-based installation, plugin updates, and auto-update configuration instead of the old `--dir` flag. rnd-framework README and CLAUDE.md synced with current codebase: 8 commands (added `/rnd-framework:history`), 16 skills, `prefer-tools` hook, `rnd-dir.sh` helper, and session-based artifact layout.
+- Documents marketplace install and updates, replacing the old `--dir` flag.
 
 ## 0.7.1 — 2026-03-03
 
-### Use hookSpecificOutput format in PreToolUse hooks
-
-All PreToolUse hooks were outputting `{"decision": "allow/block"}` — a format Claude Code doesn't recognize for PreToolUse events. This caused "PreToolUse:Bash hook error" messages and auto-allow rules failing silently, falling through to permission prompts.
-
-Allow decisions now output `hookSpecificOutput` JSON with `permissionDecision: "allow"`. Block decisions now use `exit 2` with the reason on stderr. Unmatched commands exit 0 with no output (no opinion). Applied to all 4 PreToolUse hooks: Write, Edit, Read (inline in `hooks.json`), and Bash (`prefer-tools` script).
+- Switches allow decisions to `hookSpecificOutput` and blocks to `exit 2`, fixing silent auto-allow failures.
 
 ## 0.7.0 — 2026-03-03
 
-### Fix all PreToolUse hooks to read tool input from stdin
-
-All hooks were reading `$TOOL_INPUT` (an environment variable that Claude Code never populates). Tool input is actually passed as JSON on stdin. This caused every auto-allow rule to silently fail — `rnd-dir.sh`, `.rnd/` paths, `ls`, and the information barrier for self-assessment files all prompted for permission instead of resolving automatically. The `prefer-tools` hook also failed to block `sed`/`cat`/`grep`/`find` since it couldn't see the command.
-
-All hooks now use `jq` to parse stdin JSON. The `prefer-tools` script additionally strips `cd` prefixes with `sed` instead of a complex regex, and matches the actual extracted command string rather than raw JSON.
+- All hooks now read tool input from stdin (not a never-populated env var), fixing every auto-allow rule.
 
 ## 0.6.1 — 2026-03-03
 
-### Structured next-step options after task completion
-
-The `using-rnd-framework` skill now requires `AskUserQuestion` after completing any user request — not just at pipeline decision points. Previously the agent would end with plain text like "Done." after finishing ad-hoc tasks. Now it always presents structured options: continue with related work, review changes, or finish the session.
+- The framework now ends every request with structured options, not a plain "Done."
 
 ## 0.6.0 — 2026-03-03
 
-### Structured task input for no-args invocations
-
-`/rnd-framework:start`, `/rnd-framework:quick`, and `/rnd-framework:plan` now handle empty arguments with `AskUserQuestion` instead of falling back to plain text. When invoked without a task description, the orchestrator scans the codebase (recent commits, TODOs, recent changes) and presents 2-4 concrete task suggestions as structured options. This follows the framework's own mandatory rule that every decision point uses `AskUserQuestion`.
+- No-argument `start`/`quick`/`plan` now scan the codebase and offer task suggestions instead of plain text.
 
 ## 0.5.3 — 2026-03-01
 
-### Handle cd-prefixed commands in Bash hook
-
-The `prefer-tools` hook now correctly matches commands prefixed with `cd /path &&` or `cd /path ;`. Previously, `cd /path && sed ...` bypassed the block and `cd /path && ls` bypassed the auto-allow because the regex anchored to the start of the command string.
+- The bash hook now matches commands prefixed with `cd /path &&`.
 
 ## 0.5.2 — 2026-03-01
 
-### Auto-allow ls in Bash hook
-
-The `prefer-tools` hook now auto-allows `ls` commands without prompting for confirmation. `ls` is read-only and safe, and is frequently used during pipeline operations to inspect directory structure.
+- Auto-allows `ls`.
 
 ## 0.5.1 — 2026-03-01
 
-### Auto-allow rnd-dir.sh in Bash hook
-
-The `prefer-tools` PreToolUse hook now auto-allows Bash commands containing `rnd-dir.sh`. Previously, running `rnd-dir.sh -c` to create the artifacts directory prompted for user confirmation because the script's path (`plugins/cache/.../lib/rnd-dir.sh`) doesn't contain `.rnd/` — only its output directory does.
+- Auto-allows Bash commands running `rnd-dir.sh`.
 
 ## 0.5.0 — 2026-03-01
 
-### Session-based history
-
-Each pipeline run now gets a unique session ID (`YYYYMMDD-HHMMSS-XXXX`) stored in `<base>/.current-session`. Artifacts are written to `<base>/sessions/<session-id>/` instead of the project base directory, preserving history across runs. `rnd-dir.sh` gains `--finish` (clear session ID) and `--base` (output project base dir) flags. New `/rnd-framework:history` command lists past sessions with dates, task names, and SHIP/NO-SHIP verdicts. Completion flow offers "Finish session" alongside existing cleanup options.
+- Each run gets a unique session ID and its own artifact directory, preserving history; adds the history command.
 
 ## 0.4.1 — 2026-03-01
 
-### Autonomous agents
-
-All pipeline agents (Planner, Builder, Verifier, Integrator) are now spawned with `mode: "bypassPermissions"`. This eliminates permission prompts during pipeline execution — the framework's own quality gates (pre-registration, information barriers, independent verification) provide sufficient control. Applied across all 7 commands (`start`, `plan`, `build`, `verify`, `integrate`, `quick`, `status`) and documented in the orchestration skill.
+- Spawns pipeline agents with `bypassPermissions` to remove prompts during execution.
 
 ## 0.4.0 — 2026-03-01
 
-### Iteration convergence
-
-Verifier now reports ALL issues in a single pass (exhaustive reporting discipline with cross-criterion sweep), and Builder now fixes ALL failed criteria in one iteration (convergent iteration with shared code path checks). Eliminates the "whack-a-mole" pattern where issues surfaced incrementally across rounds.
-
-### Auto-continue mode
-
-New "Approve plan and auto-continue" option at plan approval. Skips happy-path user gates (post-build, post-verify PASS, post-verify ITERATE, post-integrate SHIP) while preserving escalation gates (budget exhaustion, NO-SHIP, final completion). Opt-in, token-aware.
-
-### Phase 0: Discovery
-
-Before the Planner decomposes a task, the orchestrator now explores the codebase, identifies ambiguities, and asks 3-5 targeted clarifying questions. Discovery context (codebase findings, user answers, constraints) is passed to the Planner to inform decomposition. Skippable when the task is already highly specific.
+- The verifier reports all issues in one pass and the builder fixes them all in one iteration, ending whack-a-mole.
+- Adds an opt-in auto-continue mode and a Phase 0 discovery step.
 
 ## 0.3.1 — 2026-03-01
 
-### Config directory resolution fix
-
-`rnd-dir.sh` now checks `CLAUDE_CONFIG_DIR` before falling back to `~/.claude`. Previously, custom Claude profiles (e.g., `claude-personal` using `~/.claude-personal`) would incorrectly place artifacts under `~/.claude/.rnd/` because `CLAUDE_PLUGIN_ROOT` isn't available in the Bash tool's shell environment.
+- Honors `CLAUDE_CONFIG_DIR` before falling back to `~/.claude`, so custom profiles place artifacts correctly.
 
 ## 0.3.0 — 2026-03-01
 
-### Centralized artifacts
-
-Pipeline artifacts (plans, build manifests, verification reports) now live in `<claude-config-dir>/.rnd/<project-slug>/` instead of `.rnd/` inside the user's project. No `.gitignore` entry needed. The `lib/rnd-dir.sh` helper computes the path from `$CLAUDE_PLUGIN_ROOT` (falling back to `~/.claude`); all commands, agents, and skills reference it via `$RND_DIR`.
-
-### User decision gates
-
-Every pipeline command now uses `AskUserQuestion` with structured options at decision points. Previously, standalone commands (`/plan`, `/build`, `/verify`, `/integrate`, `/status`) ended without prompting the user for next steps.
-
-### Agent communication contracts
-
-All four agents (Planner, Builder, Verifier, Integrator) now have explicit `SendMessage` contracts: they notify the orchestrator on start, completion, approach disagreements, and blockers. Agents never finish work silently.
-
-### Tool discipline
-
-- Agents must use `Write`/`Edit` tools instead of bash heredocs for file creation
-- Agents must use `Read`/`Grep`/`Glob` instead of `cat`/`grep`/`find` in Bash
-- Agents must not use `sleep` or polling loops — the Agent tool is blocking
-- PreToolUse hook blocks `git add .rnd/` and auto-allows operations on `$RND_DIR` paths
-
-### New skills
-
-- **prefer-system-tools** — prefer system CLI tools, then Bun scripts, then Python
-- **bun-scripting** — prefer Bun over Python for scripting tasks
-- **committing** — git commit message conventions and pre-commit confirmation
-
-### Output styles
-
-Three custom output styles: `scientific`, `rigorous`, and `pipeline`.
-
-### Information barrier enforcement
-
-PreToolUse hook blocks Verifier agents from reading Builder self-assessment files, preventing anchoring bias during independent verification.
+- Moves pipeline artifacts out of the project into a central directory, so no `.gitignore` entry is needed.
+- Adds decision gates, agent SendMessage contracts, the three output styles, and the information barrier.
 
 ## 0.2.0 — 2026-02-28
 
-Initial release.
-
-- 4 specialized agents: Planner (opus), Builder (sonnet), Verifier (opus), Integrator (sonnet)
-- 7 slash commands: `/start`, `/plan`, `/build`, `/verify`, `/integrate`, `/status`, `/quick`
-- 15 skills covering decomposition, building, verification, iteration, integration, isolation, debugging, scheduling, scaling, completion, and orchestration
-- Pre-registration documents with testable success criteria
-- Dependency matrix and wave-based parallel execution
-- Information barriers between Builder and Verifier
-- Iteration budgets with escalation paths
-- Session bootstrap via `SessionStart` hook
+- Initial release: four agents, seven commands, fifteen skills, pre-registration, dependency-based waves, and the builder/verifier information barrier.

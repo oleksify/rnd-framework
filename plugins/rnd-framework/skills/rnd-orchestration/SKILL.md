@@ -162,7 +162,7 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 **Dispatch example:**
 
 ```
-// Task T7 has `Criticality: HIGH` in plan.md → spawn Builder with model="opus"
+// Task T7 has `Criticality: HIGH` in features.json → spawn Builder with model="opus"
 Agent({
   description: "Build task T7",
   subagent_type: "rnd-framework:rnd-builder",
@@ -270,7 +270,7 @@ The fast profile reduces ceremony and rigor; it NEVER skips the manifest or the 
 
 ## Stop Conditions
 
-Two post-hoc checks guard against pathological pipeline trajectories. Both fire after a Verifier wave completes or after the Planner writes `plan.md` — not in PreToolUse hooks, because they require LLM interpretation of context.
+Two post-hoc checks guard against pathological pipeline trajectories. Both fire after a Verifier wave completes or after the Planner writes `protocol.md` — not in PreToolUse hooks, because they require LLM interpretation of context.
 
 ### Verdict-Flip Detection
 
@@ -307,7 +307,7 @@ See `rnd-framework:rnd-calibration` for the full `gateFired` schema and producer
 
 ### Plan-Size Check
 
-After the Planner writes `plan.md`, the orchestrator reads the `Heuristic ceiling: N` meta-field from the top of `plan.md` (see planner agent for format) and compares it to the actual task count:
+After the Planner writes `protocol.md`, the orchestrator reads the `Heuristic ceiling: N` meta-field from the top of `protocol.md` (see planner agent for format) and compares it to the actual task count:
 
 ```
 task_count > RND_STOP_PLAN_RATIO * Heuristic ceiling   →   halt
@@ -322,7 +322,7 @@ AskUserQuestion(
   question: "The plan has <task_count> tasks but the Heuristic ceiling is <N> (ratio <actual> vs allowed <RND_STOP_PLAN_RATIO>). An oversized plan risks runaway builds. How should we proceed?",
   options: [
     { label: "Trim the plan (Recommended)", description: "Go back to the Planner and coalesce or drop low-priority tasks until task_count ≤ ceiling × ratio." },
-    { label: "Raise the ceiling",           description: "Accept the larger plan; update Heuristic ceiling in plan.md." },
+    { label: "Raise the ceiling",           description: "Accept the larger plan; update Heuristic ceiling in protocol.md." },
     { label: "Proceed anyway",              description: "Continue with the oversized plan and accept the higher build risk." }
   ]
 )
@@ -366,7 +366,7 @@ During rnd phases (Phase 0 discovery, Phase 1 planning, Phase 5 re-plan), the `E
 
 ## Execution Phases
 
-1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce enriched plan.md with sections: Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets. Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
+1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce the four plan artifacts: `protocol.md` (Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets), `validation-contract.md` (the Validation Contract assertions), `features.json` (machine-readable task manifest), and `AGENTS.md` (per-agent guidance). Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
 2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
 3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
 3.5. **Reality Audit** (blocking, conditional) — Run only when:
@@ -398,7 +398,7 @@ Task status is derived from artifact files — no separate state file is needed.
 | `$RND_DIR/verifications/T<id>-verification.md` contains `Overall Verdict: PASS` | verified |
 | `$RND_DIR/verifications/T<id>-verification.md` contains NEEDS_ITERATION | iterating |
 | `$RND_DIR/builds/<ref>-manifest.md` exists and is non-empty | built |
-| Task in plan.md but no build artifact | planned |
+| Task in features.json but no build artifact | planned |
 
 **Build-manifest naming.** Build manifests are named by the task's canonical unique reference `M<NN>-T<NN>-<uuid>` — `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` (e.g. `M02-T03-f6d3915b-manifest.md`). The `uuid` (from `features.json`) makes the filename globally unique, so two tasks that share a `T<NN>` slot across milestones (`M1.T01` and `M2.T01`) produce DISTINCT manifest files and never overwrite each other. The filename is the canonical attribution key: the post-review writer extracts the `uuid` from it and matches `features.json .uuid` exactly, never a substring on the bare `T<NN>` slot.
 

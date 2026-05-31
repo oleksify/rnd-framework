@@ -13,7 +13,7 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-Read the plan from `$RND_DIR/plan.md`. Check `TaskList` to confirm which tasks are built and ready for verification.
+Read the plan from `$RND_DIR/protocol.md` (and the assertions from `$RND_DIR/validation-contract.md`). Check `TaskList` to confirm which tasks are built and ready for verification.
 
 ## CRITICAL: Information Barrier Enforcement
 
@@ -46,7 +46,7 @@ Agent({
   description: "Verify wave <N>",
   subagent_type: "rnd-framework:rnd-verifier",
   mode: "acceptEdits",
-  prompt: "Wave: <N>\nTasks in wave: T<id1>, T<id2>, ...\nRND_DIR: <path>\n<paste all task pre-registrations from plan.md>"
+  prompt: "Wave: <N>\nTasks in wave: T<id1>, T<id2>, ...\nRND_DIR: <path>\n<paste all task pre-registrations sliced from validation-contract.md>"
 })
 ```
 

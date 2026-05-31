@@ -236,7 +236,7 @@ Check if `project-facts.md` exists (`"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --fa
 | Environment variables | .env.example, .env.template, CI secrets config | Read env templates, Grep for process.env/ENV/os.environ |
 | Secrets and off-limits | .gitignore patterns, CI secret names, sensitive file paths | Read .gitignore, infer from CI config |
 
-Findings feed into **Environment Setup**, **Infrastructure**, and **Testing Strategy** sections of plan.md.
+Findings feed into **Environment Setup**, **Infrastructure**, and **Testing Strategy** sections of protocol.md.
 
 ## Dependency Analysis
 

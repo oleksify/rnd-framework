@@ -129,7 +129,7 @@ These are the known failure modes this framework has encountered. Each entry inc
 
 **How it manifests:** Deep into a long session, you start ignoring pre-registration criteria, deviating from the planned approach, or forgetting constraints established earlier. Your outputs gradually drift from the original requirements. You may not notice because the drift is gradual — each step seems locally reasonable.
 
-**Correct behavior:** Use SCAN re-anchoring (output a compliance statement before each criterion). Read the pre-registration again — not from memory, from the file. If context has been compacted, re-read `$RND_DIR/plan.md`. Research shows system prompt tokens command only ~1% of attention at 80K context tokens; active re-generation restores the weight.
+**Correct behavior:** Use SCAN re-anchoring (output a compliance statement before each criterion). Read the pre-registration again — not from memory, from the file. If context has been compacted, re-read `$RND_DIR/protocol.md`. Research shows system prompt tokens command only ~1% of attention at 80K context tokens; active re-generation restores the weight.
 
 ---
 
@@ -169,7 +169,7 @@ These are the known failure modes this framework has encountered. Each entry inc
 
 **How it manifests:** After context compaction, you lose track of the original requirements, the current task, or constraints established earlier in the session. You continue working but on a subtly different problem. The compact-state.json restoration gives you the facts but not the nuanced understanding.
 
-**Correct behavior:** After compaction, re-read `$RND_DIR/plan.md` and the current task's pre-registration. Answer the post-compact verification challenge (needle-in-the-haystack). If you can't recall the task ID, plan summary, and iteration count without looking them up, your context has degraded — reload before continuing.
+**Correct behavior:** After compaction, re-read `$RND_DIR/protocol.md` and the current task's pre-registration. Answer the post-compact verification challenge (needle-in-the-haystack). If you can't recall the task ID, plan summary, and iteration count without looking them up, your context has degraded — reload before continuing.
 
 ---
 

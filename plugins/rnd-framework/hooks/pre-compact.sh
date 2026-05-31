@@ -3,7 +3,7 @@
 # Saves pipeline state to $RND_DIR/compact-state.json before context compaction.
 #
 # Fire-and-forget: exits 0 always, produces no stdout.
-# Reads: plan.md, builds/T*-manifest.md, iteration-log.md
+# Reads: protocol.md (fallback plan.md), builds/T*-manifest.md, iteration-log.md
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -18,11 +18,18 @@ readonly MANIFEST_REGEX='^T[0-9]+-manifest\.md$'
 readonly PLAN_HEAD_LINES=5
 
 # ---------------------------------------------------------------------------
-# planSummary: first N lines of plan.md, or "no plan" if absent
+# plan_summary: first N lines of protocol.md (fallback plan.md), or "no plan"
 # ---------------------------------------------------------------------------
 
-plan_file="${session_dir}/plan.md"
-if [[ -f "$plan_file" ]]; then
+if [[ -f "${session_dir}/protocol.md" ]]; then
+  plan_file="${session_dir}/protocol.md"
+elif [[ -f "${session_dir}/plan.md" ]]; then
+  plan_file="${session_dir}/plan.md"
+else
+  plan_file=""
+fi
+
+if [[ -n "$plan_file" ]]; then
   plan_summary="$(awk -v n="$PLAN_HEAD_LINES" 'NR<=n' "$plan_file" 2>/dev/null || true)"
   [[ -n "$plan_summary" ]] || plan_summary="no plan"
 else
@@ -74,12 +81,12 @@ needle="$(od -An -N4 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' || printf '0000
 # ---------------------------------------------------------------------------
 
 jq -cn \
-  --arg planSummary "$plan_summary" \
-  --argjson currentTaskId "$current_task_id_json" \
-  --argjson iterationCount "$iteration_count" \
-  --arg savedAt "$(iso_timestamp)" \
-  --arg verificationNeedle "$needle" \
-  '{planSummary:$planSummary,currentTaskId:$currentTaskId,iterationCount:$iterationCount,savedAt:$savedAt,verificationNeedle:$verificationNeedle}' \
+  --arg plan_summary "$plan_summary" \
+  --argjson current_task_id "$current_task_id_json" \
+  --argjson iteration_count "$iteration_count" \
+  --arg saved_at "$(iso_timestamp)" \
+  --arg verification_needle "$needle" \
+  '{plan_summary:$plan_summary,current_task_id:$current_task_id,iteration_count:$iteration_count,saved_at:$saved_at,verification_needle:$verification_needle}' \
   > "${session_dir}/compact-state.json" 2>/dev/null || true
 
 exit 0

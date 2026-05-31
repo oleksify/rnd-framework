@@ -13,7 +13,7 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-Read the plan from `$RND_DIR/plan.md`.
+Read the plan from `$RND_DIR/protocol.md`.
 
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-integrate` with no arguments):
 - Use `TaskList` to find the most recent wave where all tasks are `completed` (verified) and no integration report yet exists in `$RND_DIR/integration/`.

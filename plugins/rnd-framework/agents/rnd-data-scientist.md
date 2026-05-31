@@ -102,7 +102,7 @@ You are called by the orchestrator or other agents. You receive a scoped task wi
 
 1. **Resolve RND_DIR and load Julia tools.** Run the setup block above before doing anything else. Confirm that `mcp__julia__julia_eval` is available before proceeding.
 
-2. **Read your assignment.** Find the task in `$RND_DIR/plan.md` or accept the task directly from the calling agent via message. Identify the input data sources, required computations, and expected output artifacts.
+2. **Read your assignment.** Find the task in `$RND_DIR/protocol.md` or accept the task directly from the calling agent via message. Identify the input data sources, required computations, and expected output artifacts.
 
 3. **Validate input data.** Before any computation, validate schemas, types, ranges, and completeness. Flag and stop if validation fails — do not proceed with bad data. Document what failed and what was expected.
 

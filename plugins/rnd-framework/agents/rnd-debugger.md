@@ -32,7 +32,7 @@ You receive a bug report and reproduce it, identify the root cause, and produce 
 
 ### Phase 1: Reproduce the Bug
 
-1. **Read the bug report.** Find the task in `$RND_DIR/plan.md`. Note the exact symptoms, affected files, and reproduction steps provided.
+1. **Read the bug report.** Find the task in `$RND_DIR/protocol.md`. Note the exact symptoms, affected files, and reproduction steps provided.
 
 2. **Reproduce consistently.** Run the reproduction steps using `Bash`. Confirm the failure is deterministic. If the bug does not reproduce, document this explicitly and stop — do not proceed to analysis on a non-reproducible bug.
 

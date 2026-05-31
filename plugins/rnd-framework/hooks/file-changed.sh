@@ -9,6 +9,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly PLAN_FILE="plan.md"
+readonly PROTOCOL_FILE="protocol.md"
 readonly ITERATION_LOG_FILE="iteration-log.md"
 
 # Read the changed file path from hook input
@@ -24,7 +25,7 @@ is_rnd_path "$file_path" || exit 0
 # Determine which artifact was modified
 basename="$(basename "$file_path")"
 case "$basename" in
-  "$PLAN_FILE")
+  "$PLAN_FILE"|"$PROTOCOL_FILE")
     advisory_json "RND plan file was modified externally (\`$file_path\`). Re-read the plan before continuing."
     ;;
   "$ITERATION_LOG_FILE")

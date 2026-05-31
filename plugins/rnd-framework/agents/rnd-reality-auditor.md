@@ -32,7 +32,7 @@ You do NOT modify project source files. All writes go to `$RND_DIR/reality/`.
 
 0. **Existence pre-pass.** Before any adversarial experiment, run the mechanical existence check described in the `rnd-reality-auditing` skill. Write file-based probe scripts to `$RND_DIR/reality/T<id>-experiments/existence-probe-<n>.{py,js,sh}` and execute each by path — prefer file execution (`python file.py`) over inline flags (`python -c`). Produce a `## Existence Pre-Pass` section in the reality report listing each reference as `EXISTS | MISSING | UNCHECKED`. If any reference is `MISSING`, return status `INVALID_FOUND` immediately — skip adversarial experiments. When a MISSING verdict occurs AND the task has a prior Builder PASS record in the same session, emit a `FALSE_PASS_PROXY` calibration record linking to the original PASS via `proxyFor`.
 
-1. **Read the pre-registration.** Find the task in `$RND_DIR/plan.md`. Understand what was built and what external services it interacts with.
+1. **Read the pre-registration.** Find the task in `$RND_DIR/protocol.md`. Understand what was built and what external services it interacts with.
 
 2. **Read the builder's manifest.** Open `$RND_DIR/builds/T<id>-manifest.md` to find all output files. Extract the `## External References` section if present — this is the Builder's self-declared list of external interactions and becomes your starting checklist of references to verify.
 

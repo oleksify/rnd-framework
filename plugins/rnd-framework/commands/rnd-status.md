@@ -12,11 +12,11 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
-If `$RND_DIR` does not exist or contains no artifacts (no `plan.md`, no `builds/`, no `verifications/`), report: "No active pipeline. Start one with `/rnd-framework:rnd-start <task>`."
+If `$RND_DIR` does not exist or contains no artifacts (no `protocol.md`, no `builds/`, no `verifications/`), report: "No active pipeline. Start one with `/rnd-framework:rnd-start <task>`."
 
 ### Status determination
 
-Derive task status by scanning artifact directories. Read `$RND_DIR/plan.md` for the task list, then check:
+Derive task status by scanning artifact directories. Read `$RND_DIR/protocol.md` for the task list, then check:
 
 1. `$RND_DIR/integration/wave-<N>-report.md` — if exists and contains SHIP → **integrated**
 2. `$RND_DIR/verifications/T<id>-pass-receipt.json` — if exists → **verified**

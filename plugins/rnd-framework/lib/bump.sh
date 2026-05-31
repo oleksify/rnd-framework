@@ -30,7 +30,7 @@ if git rev-parse --show-toplevel &>/dev/null; then
   GIT_ROOT="$(git rev-parse --show-toplevel)"
   # Find the plugin dir inside the repo (look for .claude-plugin/plugin.json)
   for candidate in "$GIT_ROOT" "$GIT_ROOT/plugins/rnd-framework"; do
-    if [ -f "$candidate/.claude-plugin/plugin.json" ]; then
+    if [[ -f "$candidate/.claude-plugin/plugin.json" ]]; then
       PLUGIN_DIR="$candidate"
       break
     fi
@@ -66,7 +66,7 @@ HEADLINE="$1"
 DESCRIPTION="${2:-}"
 
 # --- Check CHANGELOG exists before modifying any files ---
-if [ ! -f "$CHANGELOG" ]; then
+if [[ ! -f "$CHANGELOG" ]]; then
   echo "error: CHANGELOG.md not found at ${CHANGELOG}" >&2
   exit 1
 fi

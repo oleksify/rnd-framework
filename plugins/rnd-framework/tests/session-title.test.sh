@@ -68,7 +68,7 @@ assert_eq "no session → sessionTitle field omitted" "false" "$has_title_idle"
 rm -rf "$tmp_idle"
 
 # ---------------------------------------------------------------------------
-# Planning phase: plan.md present
+# Planning phase: plan.md present (debug pipeline)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- session-title: planning phase ---'
 
@@ -87,6 +87,23 @@ if [[ -n "$base_plan" ]]; then
   assert_contains "planning → title contains Planning" "Planning" "$title_plan"
 fi
 rm -rf "$tmp_plan"
+
+# Planning phase: protocol.md present (main pipeline)
+tmp_proto="$(mktemp -d)"
+base_proto="$(CLAUDE_CONFIG_DIR="$tmp_proto" "$RND_DIR_SH" --base 2>/dev/null || true)"
+if [[ -n "$base_proto" ]]; then
+  session_id="20260101-120000-abcd"
+  session_dir="${base_proto}/sessions/${session_id}"
+  mkdir -p "$session_dir"
+  printf '%s' "$session_id" > "${base_proto}/.current-session"
+  touch "${session_dir}/protocol.md"
+
+  run_title "CLAUDE_CONFIG_DIR=${tmp_proto}"
+  assert_exit_code "planning protocol.md → exits 0" 0
+  title_proto="$(printf '%s' "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.sessionTitle // ""' 2>/dev/null || true)"
+  assert_contains "planning protocol.md → title contains Planning" "Planning" "$title_proto"
+fi
+rm -rf "$tmp_proto"
 
 # ---------------------------------------------------------------------------
 # Resilience: always exits 0 under failure conditions

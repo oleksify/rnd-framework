@@ -59,7 +59,7 @@ The `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections rema
 ## Process
 
 ### 1. Read the Pre-Registration and Validation Contract
-Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding VAL-AREA-NNN assertions in the Validation Contract section of plan.md. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
+Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding VAL-AREA-NNN assertions in `validation-contract.md`. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
 
 If the pre-registration contains an `Assumptions` section, list each assumption and its declared `Refuted by` action. You will verify Builder compliance with these in the Assumption Checks step below.
 
@@ -155,9 +155,9 @@ The helper appends one JSON line to `$RND_DIR/audit.jsonl` with fields `event`, 
 
 ### 3.5. Property Execution
 
-If the task pre-registration (in `$RND_DIR/plan.md`) contains a `## Properties` section, execute property-based tests before running the Builder's test suite.
+If the task pre-registration (in `$RND_DIR/protocol.md`) contains a `## Properties` section, execute property-based tests before running the Builder's test suite.
 
-**Detection:** Grep the task's pre-registration block in `$RND_DIR/plan.md` for `## Properties`. If absent, skip this step entirely and proceed to Step 4.
+**Detection:** Grep the task's pre-registration block in `$RND_DIR/protocol.md` for `## Properties`. If absent, skip this step entirely and proceed to Step 4.
 
 **Language detection:** Determine `<lang>` from the `## Properties` block — look for a `runner:` key (`runner: elixir` or `runner: typescript`), or infer from the file extension of sibling spec files (`.exs` → `elixir`, `.ts` → `typescript`).
 

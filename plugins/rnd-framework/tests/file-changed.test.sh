@@ -63,6 +63,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# protocol.md in .rnd/ → same plan advisory as plan.md
+# ---------------------------------------------------------------------------
+
+run_hook '{"file_path":"/Users/user/.claude/.rnd/sessions/20260325-120000-abcd/protocol.md"}'
+assert_exit "protocol.md in .rnd/ → exits 0" 0
+assert_stdout_contains "protocol.md in .rnd/ → specific advisory with Re-read" "Re-read the plan"
+assert_stdout_contains "protocol.md in .rnd/ → advisory contains file path" "protocol.md"
+
+# Valid JSON advisory
+if printf '%s' "$HOOK_STDOUT" | jq . > /dev/null 2>&1; then
+  pass "protocol.md advisory is valid JSON"
+else
+  fail "protocol.md advisory is valid JSON" "got: '$HOOK_STDOUT'"
+fi
+
+# ---------------------------------------------------------------------------
 # iteration-log.md in .rnd/ → specific advisory
 # ---------------------------------------------------------------------------
 

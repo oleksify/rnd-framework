@@ -26,7 +26,7 @@ If no session directory is found, tell the user: "No pipeline sessions found for
 
 Read all available artifacts from the session directory. Not all may exist — some sessions produce fewer artifacts than full pipeline runs. Read what's there:
 
-- `$RND_DIR/plan.md` — task tree, pre-registrations, dependencies, schedule
+- `$RND_DIR/protocol.md` — task tree, pre-registrations, dependencies, schedule
 - `$RND_DIR/builds/T*-manifest.md` — what each builder produced (use Glob: `$RND_DIR/builds/*-manifest.md`)
 - `$RND_DIR/verifications/T*-verification.md` — verifier verdicts and findings (use Glob: `$RND_DIR/verifications/*-verification.md`)
 - `$RND_DIR/iteration-log.md` — iteration cycles, if any
@@ -34,7 +34,7 @@ Read all available artifacts from the session directory. Not all may exist — s
 - `$RND_DIR/design-spec.md` — architectural alternatives and approved design, if the session used design exploration
 - `$RND_DIR/brainstorm.md` — brainstorming output, if the session saved one
 
-If `plan.md` doesn't exist, the session may have been a brainstorming-only or review-only run — adapt the narrative accordingly.
+If `protocol.md` doesn't exist, the session may have been a brainstorming-only or review-only run — adapt the narrative accordingly.
 
 ## Step 3: Generate Narrative
 

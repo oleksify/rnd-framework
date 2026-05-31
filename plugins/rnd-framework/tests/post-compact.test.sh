@@ -48,9 +48,9 @@ fi
 rm -rf "$tmp_no_state"
 
 # ---------------------------------------------------------------------------
-# outputs advisory JSON with restored state when state file exists
+# outputs advisory JSON with restored state (snake_case record)
 # ---------------------------------------------------------------------------
-printf '\n%s\n' '--- post-compact: with state file ---'
+printf '\n%s\n' '--- post-compact: with snake_case state file ---'
 
 tmp_config="$(mktemp -d)"
 base_dir="$(CLAUDE_CONFIG_DIR="$tmp_config" "$RND_DIR_SH" --base 2>/dev/null || true)"
@@ -67,19 +67,19 @@ session_dir="${base_dir}/sessions/${session_id}"
 mkdir -p "$session_dir"
 printf '%s' "$session_id" > "${base_dir}/.current-session"
 
-# Write a compact-state.json
+# Write a compact-state.json with snake_case keys (new format)
 jq -cn \
-  --arg planSummary "Task Plan: build widget" \
-  --arg currentTaskId "T3" \
-  --argjson iterationCount 2 \
-  --arg savedAt "2026-01-01T12:00:00Z" \
-  --arg verificationNeedle "deadbeef" \
-  '{planSummary:$planSummary,currentTaskId:$currentTaskId,iterationCount:$iterationCount,savedAt:$savedAt,verificationNeedle:$verificationNeedle}' \
+  --arg plan_summary "Task Plan: build widget" \
+  --arg current_task_id "T3" \
+  --argjson iteration_count 2 \
+  --arg saved_at "2026-01-01T12:00:00Z" \
+  --arg verification_needle "deadbeef" \
+  '{plan_summary:$plan_summary,current_task_id:$current_task_id,iteration_count:$iteration_count,saved_at:$saved_at,verification_needle:$verification_needle}' \
   > "${session_dir}/compact-state.json"
 
 HOOK_EXIT=0
 HOOK_OUT="$(env "CLAUDE_CONFIG_DIR=${tmp_config}" "$HOOK" 2>/dev/null || HOOK_EXIT=$?)"
-assert_eq "post-compact exits 0 with state file" "0" "$HOOK_EXIT"
+assert_eq "post-compact exits 0 with snake_case state file" "0" "$HOOK_EXIT"
 
 # Output must be valid JSON
 if printf '%s' "$HOOK_OUT" | jq . > /dev/null 2>&1; then
@@ -99,6 +99,45 @@ assert_contains "post-compact system message mentions current task" "T3" "$ctx"
 # System message text must mention the needle for verification challenge
 assert_contains "post-compact system message contains verification needle" "deadbeef" "$ctx"
 
+# Verification check message must reference protocol.md, not plan.md
+assert_contains "post-compact verification check references protocol.md" "protocol.md" "$ctx"
+
 rm -rf "$tmp_config"
+
+# ---------------------------------------------------------------------------
+# legacy camelCase record is still read (back-compat)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- post-compact: legacy camelCase state file ---'
+
+tmp_legacy="$(mktemp -d)"
+base_legacy="$(CLAUDE_CONFIG_DIR="$tmp_legacy" "$RND_DIR_SH" --base 2>/dev/null || true)"
+
+if [[ -n "$base_legacy" ]]; then
+  session_legacy_id="20260101-120000-abcd"
+  session_legacy_dir="${base_legacy}/sessions/${session_legacy_id}"
+  mkdir -p "$session_legacy_dir"
+  printf '%s' "$session_legacy_id" > "${base_legacy}/.current-session"
+
+  # Write a compact-state.json with legacy camelCase keys
+  jq -cn \
+    --arg planSummary "Legacy Task Plan" \
+    --arg currentTaskId "T7" \
+    --argjson iterationCount 5 \
+    --arg savedAt "2025-06-01T10:00:00Z" \
+    --arg verificationNeedle "cafebabe" \
+    '{planSummary:$planSummary,currentTaskId:$currentTaskId,iterationCount:$iterationCount,savedAt:$savedAt,verificationNeedle:$verificationNeedle}' \
+    > "${session_legacy_dir}/compact-state.json"
+
+  HOOK_LEGACY_EXIT=0
+  HOOK_LEGACY_OUT="$(env "CLAUDE_CONFIG_DIR=${tmp_legacy}" "$HOOK" 2>/dev/null || HOOK_LEGACY_EXIT=$?)"
+  assert_eq "post-compact exits 0 with legacy camelCase state" "0" "$HOOK_LEGACY_EXIT"
+
+  ctx_legacy="$(printf '%s' "$HOOK_LEGACY_OUT" | jq -r '.systemMessage // ""' 2>/dev/null || true)"
+  assert_contains "legacy record: task id restored" "T7" "$ctx_legacy"
+  assert_contains "legacy record: iteration count restored" "5" "$ctx_legacy"
+  assert_contains "legacy record: needle restored" "cafebabe" "$ctx_legacy"
+fi
+
+rm -rf "$tmp_legacy"
 
 report

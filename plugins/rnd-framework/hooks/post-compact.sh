@@ -12,16 +12,16 @@ state_file="${rnd_dir}/compact-state.json"
 [[ -f "$state_file" ]] || exit 0
 
 state_json="$(cat "$state_file" 2>/dev/null || true)"
-plan="$(jq_extract "$state_json" '.planSummary')"
+plan="$(jq_extract "$state_json" '.plan_summary // .planSummary')"
 [[ -n "$plan" ]] || exit 0
 
-task="$(jq_extract "$state_json" '.currentTaskId')"
+task="$(jq_extract "$state_json" '.current_task_id // .currentTaskId')"
 task="${task:-unknown}"
-iter="$(jq_extract "$state_json" '.iterationCount')"
+iter="$(jq_extract "$state_json" '.iteration_count // .iterationCount')"
 iter="${iter:-0}"
-saved="$(jq_extract "$state_json" '.savedAt')"
+saved="$(jq_extract "$state_json" '.saved_at // .savedAt')"
 saved="${saved:-unknown}"
-needle="$(jq_extract "$state_json" '.verificationNeedle')"
+needle="$(jq_extract "$state_json" '.verification_needle // .verificationNeedle')"
 
 msg="Pipeline state restored after compaction:
   Plan: ${plan}
@@ -32,7 +32,7 @@ msg="Pipeline state restored after compaction:
 if [[ -n "$needle" ]]; then
   msg="${msg}
 
-VERIFICATION CHECK: Confirm your context survived compaction by stating: (1) current task ID: ${task}, (2) iteration count: ${iter}, (3) needle: ${needle}. If you cannot answer these, re-read \$RND_DIR/plan.md before continuing."
+VERIFICATION CHECK: Confirm your context survived compaction by stating: (1) current task ID: ${task}, (2) iteration count: ${iter}, (3) needle: ${needle}. If you cannot answer these, re-read \$RND_DIR/protocol.md before continuing."
 fi
 
 system_message_json "$msg"

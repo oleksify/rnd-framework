@@ -45,10 +45,10 @@ session_dir="${base_dir}/sessions/${session_id}"
 mkdir -p "${session_dir}/builds"
 printf '%s' "$session_id" > "${base_dir}/.current-session"
 
-# Write a plan.md so planSummary is non-empty
-printf 'Task Plan\n=========\nTask 1\nTask 2\nTask 3\n' > "${session_dir}/plan.md"
+# Write a protocol.md so plan_summary is non-empty (main pipeline path)
+printf 'Task Plan\n=========\nTask 1\nTask 2\nTask 3\n' > "${session_dir}/protocol.md"
 
-# Write a manifest file so currentTaskId is detected
+# Write a manifest file so current_task_id is detected
 touch "${session_dir}/builds/T1-manifest.md"
 
 # Write an iteration log (3 lines)
@@ -72,40 +72,81 @@ else
   assert_eq "compact-state.json is valid JSON" "0" "1"
 fi
 
-# Check required fields exist
-for field in planSummary currentTaskId iterationCount savedAt verificationNeedle; do
+# Check snake_case fields exist (not camelCase)
+for field in plan_summary current_task_id iteration_count saved_at verification_needle; do
   val="$(jq -r ".${field} // \"MISSING\"" "$state_file" 2>/dev/null || printf 'MISSING')"
   if [[ "$val" != "MISSING" ]]; then
-    assert_eq "compact-state.json has field: ${field}" "0" "0"
+    assert_eq "compact-state.json has snake_case field: ${field}" "0" "0"
   else
-    assert_eq "compact-state.json has field: ${field}" "0" "1"
+    assert_eq "compact-state.json has snake_case field: ${field}" "0" "1"
   fi
 done
 
-# planSummary should contain first lines of plan.md
-plan_summary="$(jq -r '.planSummary' "$state_file" 2>/dev/null || true)"
-assert_contains "planSummary contains plan content" "Task Plan" "$plan_summary"
+# Confirm no legacy camelCase keys survive in the written record
+for old_field in planSummary currentTaskId iterationCount savedAt verificationNeedle; do
+  val="$(jq -r "has(\"${old_field}\")" "$state_file" 2>/dev/null || printf 'true')"
+  if [[ "$val" = "false" ]]; then
+    assert_eq "compact-state.json has no camelCase key: ${old_field}" "0" "0"
+  else
+    assert_eq "compact-state.json has no camelCase key: ${old_field}" "0" "1"
+  fi
+done
 
-# currentTaskId should be T1 (from T1-manifest.md)
-current_task="$(jq -r '.currentTaskId // ""' "$state_file" 2>/dev/null || true)"
-assert_eq "currentTaskId matches manifest basename" "T1" "$current_task"
+# plan_summary should contain first lines of protocol.md
+plan_summary="$(jq -r '.plan_summary' "$state_file" 2>/dev/null || true)"
+assert_contains "plan_summary contains protocol.md content" "Task Plan" "$plan_summary"
 
-# iterationCount should be 3 (3 lines in iteration-log.md)
-iter_count="$(jq -r '.iterationCount' "$state_file" 2>/dev/null || true)"
-assert_eq "iterationCount matches iteration-log line count" "3" "$iter_count"
+# current_task_id should be T1 (from T1-manifest.md)
+current_task="$(jq -r '.current_task_id // ""' "$state_file" 2>/dev/null || true)"
+assert_eq "current_task_id matches manifest basename" "T1" "$current_task"
 
-# verificationNeedle should be non-empty (random hex)
-needle="$(jq -r '.verificationNeedle // ""' "$state_file" 2>/dev/null || true)"
+# iteration_count should be 3 (3 lines in iteration-log.md)
+iter_count="$(jq -r '.iteration_count' "$state_file" 2>/dev/null || true)"
+assert_eq "iteration_count matches iteration-log line count" "3" "$iter_count"
+
+# verification_needle should be non-empty (random hex)
+needle="$(jq -r '.verification_needle // ""' "$state_file" 2>/dev/null || true)"
 if [[ -n "$needle" ]]; then
-  assert_eq "verificationNeedle is non-empty" "0" "0"
+  assert_eq "verification_needle is non-empty" "0" "0"
 else
-  assert_eq "verificationNeedle is non-empty" "0" "1"
+  assert_eq "verification_needle is non-empty" "0" "1"
 fi
 
 rm -rf "$tmp_config"
 
 # ---------------------------------------------------------------------------
-# no builds directory → currentTaskId is null
+# protocol.md absent → falls back to plan.md
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- pre-compact: plan.md fallback ---'
+
+tmp_fallback="$(mktemp -d)"
+base_fallback="$(CLAUDE_CONFIG_DIR="$tmp_fallback" "$RND_DIR_SH" --base 2>/dev/null || true)"
+
+if [[ -n "$base_fallback" ]]; then
+  session_id_fb="20260101-120000-abcd"
+  session_dir_fb="${base_fallback}/sessions/${session_id_fb}"
+  mkdir -p "${session_dir_fb}/builds"
+  printf '%s' "$session_id_fb" > "${base_fallback}/.current-session"
+  printf 'Fallback Plan\n' > "${session_dir_fb}/plan.md"
+  touch "${session_dir_fb}/builds/T2-manifest.md"
+
+  HOOK_EXIT=0
+  env "CLAUDE_CONFIG_DIR=${tmp_fallback}" "$HOOK" > /dev/null 2>&1 || HOOK_EXIT=$?
+  assert_eq "pre-compact exits 0 with plan.md fallback" "0" "$HOOK_EXIT"
+
+  state_fb="${session_dir_fb}/compact-state.json"
+  if [[ -f "$state_fb" ]]; then
+    plan_fb="$(jq -r '.plan_summary' "$state_fb" 2>/dev/null || true)"
+    assert_contains "plan.md fallback: plan_summary populated" "Fallback Plan" "$plan_fb"
+  else
+    assert_eq "plan.md fallback: compact-state.json created" "0" "1"
+  fi
+fi
+
+rm -rf "$tmp_fallback"
+
+# ---------------------------------------------------------------------------
+# no builds directory → current_task_id is null
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- pre-compact: no builds dir ---'
 
@@ -125,8 +166,8 @@ if [[ -n "$base_dir2" ]]; then
 
   state2="${session_dir2}/compact-state.json"
   if [[ -f "$state2" ]]; then
-    task_null="$(jq -r '.currentTaskId' "$state2" 2>/dev/null || true)"
-    assert_eq "currentTaskId is null when no builds dir" "null" "$task_null"
+    task_null="$(jq -r '.current_task_id' "$state2" 2>/dev/null || true)"
+    assert_eq "current_task_id is null when no builds dir" "null" "$task_null"
   else
     assert_eq "compact-state.json created with no builds dir" "0" "1"
   fi

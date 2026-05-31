@@ -48,7 +48,7 @@ Run ONLY the planning phase for: $ARGUMENTS
 
 6. Build the dependency matrix and execution schedule.
 
-7. Save to `$RND_DIR/plan.md` with enriched sections: Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Validation Contract, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets.
+7. Save the four plan artifacts to `$RND_DIR`: `protocol.md` (scope plus Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets), `validation-contract.md` (the numbered assertions), `features.json` (machine-readable task manifest), and `AGENTS.md` (per-agent guidance).
 
 8. Validate that every task has:
    - Testable success criteria (not vague)

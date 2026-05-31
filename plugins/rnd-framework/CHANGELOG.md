@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.277 — 2026-05-31
+
+### Migrate hooks off retired plan.md to protocol.md and standardize emitted JSON keys to snake_case
+
+detect_pipeline_phase, pre-compact, post-compact, and file-changed now recognize protocol.md (the v5 main-pipeline plan artifact), with plan.md retained for the debug pipeline. compact-state.json (plan_summary, current_task_id, iteration_count, saved_at, verification_needle) and calibration.sh (false_verdict_flag) emit snake_case keys with backward-compatible reads of legacy camelCase records. Also fixes bump.sh single-bracket tests, a coverage-gaps-gate comment, and sweeps stale plan.md prose to protocol.md across agents, commands, skills, and output-styles.
+
 ## 0.15.276 — 2026-05-31
 
 ### Add rnd-explorer, a narrow-grant read-only search agent replacing the built-in Explore in MCP-heavy sessions

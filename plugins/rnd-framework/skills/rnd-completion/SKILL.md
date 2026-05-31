@@ -31,7 +31,7 @@ Confirm the final integration report at `$RND_DIR/integration/` shows SHIP verdi
 
 ### 1.5. Pipeline Cost Summary
 
-After confirming SHIP, note the pipeline duration (time from `plan.md` creation to SHIP verdict) and inform the user:
+After confirming SHIP, note the pipeline duration (time from `protocol.md` creation to SHIP verdict) and inform the user:
 
 > "Pipeline complete. Run `/cost` to see per-model and cache-hit cost breakdown for this session."
 

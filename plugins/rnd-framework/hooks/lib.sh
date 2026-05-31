@@ -349,7 +349,7 @@ detect_pipeline_phase() {
     printf 'Verifying'
   elif compgen -G "${dir}/builds/"*.md > /dev/null 2>&1; then
     printf 'Building'
-  elif [[ -f "${dir}/plan.md" ]]; then
+  elif [[ -f "${dir}/protocol.md" ]] || [[ -f "${dir}/plan.md" ]]; then
     printf 'Planning'
   else
     printf 'Idle'

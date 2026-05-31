@@ -30,7 +30,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 ## Process
 
-1. **Read your assignment.** Find the task in `$RND_DIR/plan.md`. Read its pre-registration document carefully — especially the success criteria.
+1. **Read your assignment.** Find the task in `$RND_DIR/protocol.md`. Read its pre-registration document carefully — especially the success criteria.
 
 2. **Read context.** Examine upstream artifacts (API contracts, type definitions, etc.) from completed dependencies.
 
@@ -68,8 +68,8 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Do NOT leak pipeline-internal context into project code — inline comments, docstrings, test names, or variable names. "Pipeline-internal context" covers three forms:
   - **Task / wave identifiers** — `T1`, `T01`, `T14`, `M2`, `wave-3`, etc.
   - **Planner phase or disposition labels** — `Q4 disposition`, `compatibility audit`, "decided during planning", "chosen in the build phase".
-  - **Session artifact paths and meta-references** — `research/jido_compat.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline", "see the session's research notes".
-  These references rot the moment the pipeline session ends. If the *why* behind a decision matters to a future reader, write it as a self-contained explanation grounded in the project's own concepts (code, data, domain) — never in pipeline labels or artifact paths. If it doesn't matter to a future reader, don't write the comment. **Carve-out:** this prohibition applies only to project code. RND artifact files themselves ($RND_DIR paths such as `T<id>-manifest.md`, `T<id>-self-assessment.md`, `plan.md`) may freely reference task IDs and other pipeline labels.
+  - **Session artifact paths and meta-references** — `research/jido_compat.md`, `protocol.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline", "see the session's research notes".
+  These references rot the moment the pipeline session ends. If the *why* behind a decision matters to a future reader, write it as a self-contained explanation grounded in the project's own concepts (code, data, domain) — never in pipeline labels or artifact paths. If it doesn't matter to a future reader, don't write the comment. **Carve-out:** this prohibition applies only to project code. RND artifact files themselves ($RND_DIR paths such as `T<id>-manifest.md`, `T<id>-self-assessment.md`, `protocol.md`) may freely reference task IDs and other pipeline labels.
 
 ## Memory
 

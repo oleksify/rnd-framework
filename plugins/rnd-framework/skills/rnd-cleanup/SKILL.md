@@ -55,7 +55,7 @@ LLM diff review only. Read the diff; identify whether an existing utility does t
   - **Test-comment trace tags:** `# M4.wiring.outside-view-section-exists` above a test block, `(M2.calib.verdict-record-lands-at-slug-roo)` parentheticals after a `# Test N:` line. These trace tests back to validation-contract assertion IDs from a specific session. Strip the tag; keep the natural-language description.
   - **Task / wave identifiers:** `T1`, `T01`, `T14`, `M2`, `wave-3`, `FM6`, `Phase 1` (when used as a session-phase pointer rather than a domain term).
   - **Planner phase or disposition labels:** `Q4 disposition`, "compatibility audit", "decided during planning".
-  - **Session artifact paths or meta-references:** `research/*.md`, `plan.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
+  - **Session artifact paths or meta-references:** `research/*.md`, `protocol.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
   - **Distinguish leakage from framework-own guidance.** ID FORMATS (`M<N>.<area>.<slug>`, `T<id>`, `wave-<N>`) documented in agent/skill specs are canonical schema, NOT leakage — leave them alone. Sample IDs inside test FIXTURE DATA (heredoc content creating validation-contract.md or features.json) are demonstrating the parser, NOT leakage — leave them alone. The leakage pattern is narrative session-tag prefixes and trace comments in surrounding prose.
   Rewrite the comment/heading to ground its rationale in the project's own concepts, or delete it if it doesn't help a future reader who never saw the pipeline run.
 
@@ -78,7 +78,7 @@ Use Edit or Bash. Record every file touched.
 
 ### 4. Re-verify
 
-Run the project's test suite directly via Bash (read `$RND_DIR/plan.md` "Testing Strategy" for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). On all-green, write a minimal `T<id>-cleanup-pass-receipt.json` to `$RND_DIR/verifications/` with `source: "cleanup-reverify"` and an ISO 8601 timestamp. Do NOT spawn a fresh `rnd-verifier` agent — the full Verifier already PASSed this task before cleanup ran; this step only confirms the cleanup mutations did not break the existing tests.
+Run the project's test suite directly via Bash (read `$RND_DIR/protocol.md` "Testing Strategy" for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). On all-green, write a minimal `T<id>-cleanup-pass-receipt.json` to `$RND_DIR/verifications/` with `source: "cleanup-reverify"` and an ISO 8601 timestamp. Do NOT spawn a fresh `rnd-verifier` agent — the full Verifier already PASSed this task before cleanup ran; this step only confirms the cleanup mutations did not break the existing tests.
 
 ### 5. Branch on verdict
 

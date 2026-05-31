@@ -27,7 +27,7 @@ Otherwise, list all directories under `$SESSIONS_DIR`. Each subdirectory is a se
 
 2. **Extract the date** from the first part of the session ID: `YYYYMMDD-HHMMSS` → format as `YYYY-MM-DD`.
 
-3. **Read the task name** from `<session>/plan.md`: read the first line that starts with `# `, strip the `# ` prefix, and also strip a leading `RND Plan: ` prefix if present (e.g., `# RND Plan: Auth system` → `Auth system`). If `plan.md` does not exist, use `—` as the task name.
+3. **Read the task name** from `<session>/protocol.md`: read the first line that starts with `# `, strip the `# ` prefix, and also strip a leading `RND Plan: ` prefix if present (e.g., `# RND Plan: Auth system` → `Auth system`). If `protocol.md` does not exist, use `—` as the task name.
 
 4. **Determine the verdict** by checking `<session>/integration/` for any report files:
    - If any file in `integration/` contains `NO-SHIP`: verdict is `NO-SHIP ❌`
@@ -50,5 +50,5 @@ Session ID               | Date       | Task                     | Verdict
 
 After displaying the table, use `AskUserQuestion` with options:
 - "Start new pipeline" — run `/rnd-framework:rnd-start`
-- "View session details" — ask the user to type a session ID, then display: `plan.md` contents, a list of build manifests from `builds/`, verification reports from `verifications/`, and integration reports from `integration/`
+- "View session details" — ask the user to type a session ID, then display: `protocol.md` contents, a list of build manifests from `builds/`, verification reports from `verifications/`, and integration reports from `integration/`
 - "Continue current session" — run `/rnd-framework:rnd-status` (only show this option if there is an active session marked with `*`)

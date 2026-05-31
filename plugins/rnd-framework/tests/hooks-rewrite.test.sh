@@ -172,32 +172,32 @@ state_file="${sessions_dir}/compact-state.json"
 if [[ -f "$state_file" ]]; then
   assert_eq "pre-compact writes compact-state.json" "pass" "pass"
 
-  plan_val="$(jq -r '.planSummary' "$state_file" 2>/dev/null || true)"
-  iter_val="$(jq -r '.iterationCount' "$state_file" 2>/dev/null || true)"
-  saved_val="$(jq -r '.savedAt' "$state_file" 2>/dev/null || true)"
-  needle_val="$(jq -r '.verificationNeedle' "$state_file" 2>/dev/null || true)"
+  plan_val="$(jq -r '.plan_summary' "$state_file" 2>/dev/null || true)"
+  iter_val="$(jq -r '.iteration_count' "$state_file" 2>/dev/null || true)"
+  saved_val="$(jq -r '.saved_at' "$state_file" 2>/dev/null || true)"
+  needle_val="$(jq -r '.verification_needle' "$state_file" 2>/dev/null || true)"
 
   [[ -n "$plan_val" && "$plan_val" != "null" ]] \
-    && assert_eq "compact-state.json has planSummary" "pass" "pass" \
-    || assert_eq "compact-state.json has planSummary" "pass" "fail"
+    && assert_eq "compact-state.json has plan_summary" "pass" "pass" \
+    || assert_eq "compact-state.json has plan_summary" "pass" "fail"
 
   [[ -n "$iter_val" && "$iter_val" != "null" ]] \
-    && assert_eq "compact-state.json has iterationCount" "pass" "pass" \
-    || assert_eq "compact-state.json has iterationCount" "pass" "fail"
+    && assert_eq "compact-state.json has iteration_count" "pass" "pass" \
+    || assert_eq "compact-state.json has iteration_count" "pass" "fail"
 
   [[ -n "$saved_val" && "$saved_val" != "null" ]] \
-    && assert_eq "compact-state.json has savedAt" "pass" "pass" \
-    || assert_eq "compact-state.json has savedAt" "pass" "fail"
+    && assert_eq "compact-state.json has saved_at" "pass" "pass" \
+    || assert_eq "compact-state.json has saved_at" "pass" "fail"
 
   [[ -n "$needle_val" && "$needle_val" != "null" ]] \
-    && assert_eq "compact-state.json has verificationNeedle" "pass" "pass" \
-    || assert_eq "compact-state.json has verificationNeedle" "pass" "fail"
+    && assert_eq "compact-state.json has verification_needle" "pass" "pass" \
+    || assert_eq "compact-state.json has verification_needle" "pass" "fail"
 else
   assert_eq "pre-compact writes compact-state.json" "pass" "fail"
-  assert_eq "compact-state.json has planSummary" "pass" "fail"
-  assert_eq "compact-state.json has iterationCount" "pass" "fail"
-  assert_eq "compact-state.json has savedAt" "pass" "fail"
-  assert_eq "compact-state.json has verificationNeedle" "pass" "fail"
+  assert_eq "compact-state.json has plan_summary" "pass" "fail"
+  assert_eq "compact-state.json has iteration_count" "pass" "fail"
+  assert_eq "compact-state.json has saved_at" "pass" "fail"
+  assert_eq "compact-state.json has verification_needle" "pass" "fail"
 fi
 
 # ---------------------------------------------------------------------------

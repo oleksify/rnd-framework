@@ -27,7 +27,7 @@ Use structured status blocks:
 Examples:
 ```
 ▸ [PLAN] Decomposed task into 4 sub-tasks across 2 waves
-  Result: plan.md written
+  Result: protocol.md written
   Next: Awaiting plan approval
 
 ▸ [BUILD] T1 — API contract definitions
@@ -71,7 +71,7 @@ Report each phase transition as a single status block. Accumulate results in tab
 
 When an agent or skill produces a report artifact, you MUST print the report's full file path followed by its complete contents verbatim into chat BEFORE asking the user for next steps — in the same turn. Surfaced report types:
 
-- `plan.md` (Planner)
+- `protocol.md` (Planner)
 - `design-spec.md` (Phase 0.5 architectural alternatives)
 - `T<id>-manifest.md` (Builder)
 - `T<id>-verification.md` and `wave-<N>-verdict-map.json` (Verifier)
@@ -105,7 +105,7 @@ If you find yourself typing ` ```markdown ` immediately before the body, stop: t
 
 These responses are defects:
 
-- "Plan saved to `$RND_DIR/plan.md`. Proceed?" — the file contents were not surfaced.
+- "Plan saved to `$RND_DIR/protocol.md`. Proceed?" — the file contents were not surfaced.
 - "Verifier returned PASS for T1 and T2, NEEDS_ITERATION for T3. What next?" — the verdict map was not surfaced.
 - "Audit complete — see `audit.md`." — the audit report was not surfaced.
 - Summarizing a report's findings without first printing the file verbatim.

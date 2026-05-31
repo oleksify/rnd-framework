@@ -148,4 +148,54 @@ all_baz="$(CLAUDE_PLUGIN_DATA="$MIXED_DIR" "$CALIB" assertion_id_window "M1.foo.
 baz_count="$(printf '%s\n' "$all_baz" | jq -sc 'length')"
 assert_eq "assertion_id_window M1.foo.baz returns 1 record (HIGH criticality)" "1" "$baz_count"
 
+printf '\n--- calibration: false_verdict_flag snake_case back-compat ---\n'
+
+# Set up a fixture with both spellings to prove both are counted
+SNAKE_DIR="${TMP_DIR}/snake-plugin-data"
+mkdir -p "$SNAKE_DIR"
+SNAKE_FILE="${SNAKE_DIR}/calibration.jsonl"
+
+# 10 records: 5 with legacy camelCase key, 5 with new snake_case key
+# 2 legacy FALSE_PASS + 2 snake FALSE_PASS + 6 clean = 4/10 = 0.40
+printf '%s\n' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":"FALSE_PASS"}' \
+  '{"criticality":"NORMAL","verdict":"PASS","falseVerdictFlag":"FALSE_PASS"}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":"FALSE_PASS_PROXY"}' \
+  > "$SNAKE_FILE"
+
+# Test 14: legacy falseVerdictFlag records are counted (back-compat)
+legacy_rate="$(CLAUDE_PLUGIN_DATA="$SNAKE_DIR" "$CALIB" false_pass_rate NORMAL)"
+assert_eq "false_pass_rate counts legacy falseVerdictFlag AND new false_verdict_flag" "0.40" "$legacy_rate"
+
+# Test 15: should_promote responds to snake_case records (rate 0.40 >= 0.20)
+snake_promote=0
+CLAUDE_PLUGIN_DATA="$SNAKE_DIR" "$CALIB" should_promote NORMAL || snake_promote=$?
+assert_eq "should_promote exits 0 with mixed-spelling fixture (rate 0.40)" "0" "$snake_promote"
+
+# Test 16: a fixture with ONLY snake_case false_verdict_flag records is counted
+SNAKE_ONLY_DIR="${TMP_DIR}/snake-only-plugin-data"
+mkdir -p "$SNAKE_ONLY_DIR"
+printf '%s\n' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":null}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}' \
+  '{"criticality":"NORMAL","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}' \
+  > "${SNAKE_ONLY_DIR}/calibration.jsonl"
+
+snake_only_rate="$(CLAUDE_PLUGIN_DATA="$SNAKE_ONLY_DIR" "$CALIB" false_pass_rate NORMAL)"
+assert_eq "false_pass_rate with snake_case-only fixture = 0.30" "0.30" "$snake_only_rate"
+
 report

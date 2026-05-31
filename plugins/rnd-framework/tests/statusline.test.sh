@@ -99,6 +99,22 @@ if [[ -n "$base_planning" ]]; then
 fi
 rm -rf "$tmp_planning"
 
+# Planning phase: session has protocol.md but no builds (main pipeline)
+tmp_proto="$(mktemp -d)"
+base_proto="$(CLAUDE_CONFIG_DIR="$tmp_proto" "$RND_DIR_SH" --base 2>/dev/null || true)"
+if [[ -n "$base_proto" ]]; then
+  session_proto_id="20260101-120000-abcd"
+  session_proto_dir="${base_proto}/sessions/${session_proto_id}"
+  mkdir -p "$session_proto_dir"
+  printf '%s' "$session_proto_id" > "${base_proto}/.current-session"
+  touch "${session_proto_dir}/protocol.md"
+
+  run_statusline '{}' "CLAUDE_CONFIG_DIR=${tmp_proto}"
+  text_proto="$(printf '%s' "$HOOK_STDOUT" | jq -r '.text // ""' 2>/dev/null || true)"
+  assert_contains "statusline shows Planning phase with protocol.md" "Planning" "$text_proto"
+fi
+rm -rf "$tmp_proto"
+
 # Building phase: session has builds/*.md
 tmp_building="$(mktemp -d)"
 base_building="$(CLAUDE_CONFIG_DIR="$tmp_building" "$RND_DIR_SH" --base 2>/dev/null || true)"

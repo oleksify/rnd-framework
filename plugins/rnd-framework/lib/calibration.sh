@@ -7,8 +7,9 @@
 #       Records with or without assertion_id are both included.
 #
 #   calibration.sh false_pass_rate <tier> [N=10]
-#       Print the fraction of records in the window whose falseVerdictFlag is
-#       FALSE_PASS or FALSE_PASS_PROXY, formatted as a 2-decimal string (e.g. 0.30).
+#       Print the fraction of records in the window whose false_verdict_flag (or
+#       legacy falseVerdictFlag) is FALSE_PASS or FALSE_PASS_PROXY, formatted as
+#       a 2-decimal string (e.g. 0.30).
 #
 #   calibration.sh should_promote <tier> [N=10]
 #       Exit 0 iff false_pass_rate >= 0.20 AND RND_DISABLE_AUTO_ESCALATION != "1".
@@ -110,7 +111,10 @@ _false_pass_rate() {
 
   total="$(printf '%s\n' "$records" | jq -sc 'length')"
   count="$(printf '%s\n' "$records" \
-    | jq -sc '[.[] | select(.falseVerdictFlag == "FALSE_PASS" or .falseVerdictFlag == "FALSE_PASS_PROXY")] | length')"
+    | jq -sc '[.[] | select(
+        (.false_verdict_flag // .falseVerdictFlag) == "FALSE_PASS" or
+        (.false_verdict_flag // .falseVerdictFlag) == "FALSE_PASS_PROXY"
+      )] | length')"
 
   if [[ "$total" -eq 0 ]]; then
     printf '0.00\n'
@@ -139,7 +143,10 @@ _should_promote() {
 
   total="$(printf '%s\n' "$records" | jq -sc 'length')"
   count="$(printf '%s\n' "$records" \
-    | jq -sc '[.[] | select(.falseVerdictFlag == "FALSE_PASS" or .falseVerdictFlag == "FALSE_PASS_PROXY")] | length')"
+    | jq -sc '[.[] | select(
+        (.false_verdict_flag // .falseVerdictFlag) == "FALSE_PASS" or
+        (.false_verdict_flag // .falseVerdictFlag) == "FALSE_PASS_PROXY"
+      )] | length')"
 
   if [[ "$total" -eq 0 ]]; then
     return 1

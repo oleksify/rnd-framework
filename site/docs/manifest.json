@@ -1,0 +1,10 @@
+[
+  { "file": "00-intro.md",                "title": "Introduction" },
+  { "file": "01-concepts.md",             "title": "Concepts" },
+  { "file": "02-getting-started.md",      "title": "Getting started" },
+  { "file": "03-commands.md",             "title": "Commands" },
+  { "file": "04-agents.md",               "title": "Agents" },
+  { "file": "05-skills.md",               "title": "Skills" },
+  { "file": "06-artifacts.md",            "title": "Artifacts" },
+  { "file": "07-information-barrier.md",  "title": "Information barrier" }
+]

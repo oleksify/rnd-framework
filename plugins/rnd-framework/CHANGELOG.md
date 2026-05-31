@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.276 — 2026-05-31
+
+### Add rnd-explorer, a narrow-grant read-only search agent replacing the built-in Explore in MCP-heavy sessions
+
+The built-in Explore and general-purpose agents are granted the full tool surface, so in a session with many connected MCP servers their spawn-time prompt (every server's tool schema, materialized eagerly because spawned subagents do not inherit the main session's ToolSearch deferral) exceeds the context budget and the spawn fails immediately with "Prompt is too long" — verified by a deterministic reproduction where an Explore spawn returned the error before executing any tool. This is not an rnd-framework defect (its only SubagentStart hook is a no-stdout audit logger, its context injections target the main session not spawned subagents, its own agents use narrow explicit grants and spawn fine, and it ships no MCP servers) but the framework can offer the fix: new agents/rnd-explorer.md is a read-only fan-out search agent with a deliberately narrow grant (Read, Grep, Glob, Bash) that spawns reliably and returns the search conclusion rather than file dumps. The using-rnd-framework skill gains an Exploration & Search section instructing the orchestrator to spawn rnd-explorer and never the built-in Explore/general-purpose; it sits above the Data Science Tasks header so session-start.sh's skill trim preserves it in the injected orchestrator context. Agent count references in CLAUDE.md and README.md move 12 to 13 (3 to 4 helpers). validate.sh (377) stays green.
+
 ## 0.15.275 — 2026-05-31
 
 ### Make the bash test suite hermetic against ambient session env and zero out production shellcheck warnings

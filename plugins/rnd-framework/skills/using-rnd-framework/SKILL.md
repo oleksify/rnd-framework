@@ -18,6 +18,10 @@ This is a scientific process. Results are true or false — never "almost true".
 
 Pipeline work runs in specialized subagents spawned via `subagent_type` (e.g., `rnd-builder`, `rnd-verifier`). Each agent has its own model, effort, and preloaded skills; the orchestrator collects results via `SendMessage` and manages phase gates. For the full agent/model/role table, see the project `CLAUDE.md` (§Architecture → Execution Model) — it is already loaded into context.
 
+## Exploration & Search
+
+For broad codebase exploration — sweeping many files, directories, or naming conventions to locate code — spawn the `rnd-explorer` agent (`subagent_type: rnd-framework:rnd-explorer`), **never** the built-in `Explore` or `general-purpose` agents. Those inherit the full tool surface (every connected MCP server's schema), so in MCP-heavy sessions they **fail at spawn with "Prompt is too long"** before doing any work. `rnd-explorer` carries a narrow read-only grant (`Read, Grep, Glob, Bash`) that spawns reliably; its final message is the search conclusion. For a single known-location lookup, search inline instead of spawning.
+
 ## Tool Discipline
 
 - **Temporary files:** use `$RND_DIR` — never `/tmp`. `$RND_DIR` is auto-allowed and persists across the pipeline.

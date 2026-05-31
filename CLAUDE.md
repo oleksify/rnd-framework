@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 12 specialized agents (9 pipeline-phase + 3 helpers) with structural isolation enforce the information barrier at the context-window level.
+A Claude Code plugin repository containing **rnd-framework** — a scientific-method orchestration system for structured coding. It structures workflows around pre-registration, independent verification with information barriers, evidence-based quality gates, and structured decomposition. Uses a multi-agent execution model: 13 specialized agents (9 pipeline-phase + 4 helpers) with structural isolation enforce the information barrier at the context-window level.
 
 The plugin lives under `plugins/rnd-framework/`. The root `.claude-plugin/marketplace.json` is a local plugin registry. Plugins can also be declared inline in `settings.json` using `source: 'settings'` (v2.1.80+).
 
@@ -15,7 +15,7 @@ lib/plugin-dir-base.sh                  # Canonical shared artifact-dir logic (e
 
 plugins/rnd-framework/
 ├── .claude-plugin/plugin.json          # Plugin manifest
-├── agents/                             # 12 agents (9 pipeline-phase + 3 helpers: premortem fan-out + replan-differ + assertion paraphraser)
+├── agents/                             # 13 agents (9 pipeline-phase + 4 helpers: premortem fan-out + replan-differ + assertion paraphraser + read-only explorer)
 ├── commands/                           # /rnd-framework:* slash commands
 ├── skills/                             # One dir per skill, each with SKILL.md
 ├── output-styles/                      # scientific, rigorous, pipeline
@@ -64,7 +64,7 @@ plugins/rnd-framework/
 
 ### Execution Model
 
-Twelve specialized agents (9 pipeline-phase + 3 helpers) handle pipeline work in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
+Thirteen specialized agents (9 pipeline-phase + 4 helpers) handle pipeline work in isolated context windows. The orchestrator dispatches work to agents, enforcing structural information barriers — the Verifier literally cannot see the Builder's reasoning because they run in separate context windows.
 
 | Phase | Agent | Purpose |
 |---|---|---|

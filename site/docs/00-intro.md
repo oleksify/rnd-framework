@@ -1,10 +1,17 @@
 ## Introduction
 
+> ⚠️ **Before you rely on this.** This is a highly experimental personal project, built and dogfooded for one workflow. No support, no stability promise, and it may not behave the way you expect.
+>
+> - **It burns a lot of tokens.** Every task fans out across multiple agents — planning, building, verifying, cleanup, integration — each in its own context window. A single run can cost many times what one Claude session would. This is the point of the design, not a bug, but budget accordingly.
+> - **It's slow.** Sequential agent spawns and independent verification add real wall-clock time. It trades speed for rigor.
+> - **It's opinionated.** The pipeline imposes pre-registration, information barriers, and quality gates whether or not your task needs them. Small tasks get heavy ceremony.
+> - **It changes without notice.** Versioned 0.x on purpose — interfaces, protocols, and quality gates shift between releases, and things break.
+>
+> If you want a fast, cheap, lightweight assistant, this isn't it. If you want maximum verification rigor and don't mind paying for it, read on.
+
 **rnd-framework** is a plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It turns "ask the model to write some code" into a structured pipeline: decompose the task, declare what success looks like up front, build it, then verify it independently behind an information barrier, and only then integrate.
 
 The design borrows a few ideas from how science and systems engineering keep work honest — declaring a hypothesis before running the experiment, having someone other than the author check the result, and requiring evidence rather than assertions at each checkpoint. Those ideas are explained in [Concepts](#concepts).
-
-> **Before you rely on this.** It is a highly experimental personal project, built and dogfooded for one workflow. It burns a lot of tokens — every task fans out across multiple agents, each in its own context window, so a single run can cost many times what one Claude session would. It is slower than working directly, by design. It is opinionated: small tasks still get the full ceremony. And it is versioned `0.x` on purpose — interfaces and quality gates change between releases. If you want a fast, cheap assistant, this is not it.
 
 ### Install
 

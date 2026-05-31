@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.275 — 2026-05-31
+
+### Make the bash test suite hermetic against ambient session env and zero out production shellcheck warnings
+
+A full-codebase audit found the 90-file bash test suite was not hermetic: run inside a live rnd-framework session (or with CLAUDE_CONFIG_DIR exported to the developer's real config), 12 test files failed by reading the live .current-session and audit.jsonl instead of their fixtures, while the same suite passed under env -i. Notably 27 files already exported their own CLAUDE_CONFIG_DIR yet still leaked, because a := default-assignment guard is a no-op when the variable is already set to the dirty value. Fix is defense-in-depth with unconditional overrides: run-tests.sh now runs each test under env -i PATH HOME=mktemp (the harness chokepoint); test-helpers.sh gained an on-source preamble that unconditionally re-points CLAUDE_CONFIG_DIR and HOME to fresh mktemp dirs and unsets RND_DIR; and the 22 non-sourcing test files each carry the same explicit guard. A new tests/hermeticity.test.sh is a standing regression guard — a control/treatment A/B proving the preamble is load-bearing (not vacuously passing), a structural check that every non-sourcing test is guarded, and a behavioural check that a guarded test passes under a dirty env. Separately, the production-script shellcheck warning count is driven to zero: one genuine refactor (bash-gate.sh declare-then-assign split for SC2155) plus five documented shellcheck disable directives for verified false positives (lib.sh SC2034 caller-scope vars and SC2120 $@ passthrough, both plugin-dir-base.sh byte-twins SC2034, run-tool.sh SC2053 intentional glob), none deleting live behaviour. The suite (now 91 files) passes both hermetically and under a dirty CLAUDE_CONFIG_DIR/RND_DIR, and validate.sh (372) stays green.
+
 ## 0.15.274 — 2026-05-31
 
 ### Resolve self-assessment task_id to the canonical features.json id and unify the task identifier to snake_case task_id

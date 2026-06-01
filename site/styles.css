@@ -66,6 +66,16 @@ body {
 
 .page-head { grid-area: head; border-bottom: 1px solid var(--rule); padding-bottom: 1.2rem; margin-bottom: 1.5rem; }
 .page-foot { grid-area: foot; border-top: 1px solid var(--rule); padding-top: 1.2rem; margin-top: 3rem; }
+.foot-meta {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+.foot-meta a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.foot-meta a:hover { color: var(--accent); }
 
 h1 {
   font-weight: 600;
@@ -74,6 +84,13 @@ h1 {
   margin: 1rem 0 0.3rem;
 }
 .tagline { color: var(--muted); margin: 0; max-width: 60ch; }
+.byline {
+  margin: 0.4rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
 
 /* table of contents — sticky sidebar on wide screens */
 #toc {
@@ -120,6 +137,12 @@ h2 {
   padding-top: 0.4rem;
   border-top: 1px solid var(--rule);
   scroll-margin-top: 1rem;
+}
+/* the page header already separates the first section — drop its top rule */
+#content section:first-child h2:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0.5rem;
 }
 h3 {
   font-weight: 600;
@@ -182,6 +205,45 @@ blockquote {
   color: var(--fg);
 }
 blockquote p { margin: 0.3rem 0; }
+
+/* collapsible deep-dives — closed by default, manpage-flavoured */
+details {
+  margin: 1.2rem 0;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+details summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.55rem 0.9rem;
+  background: var(--code-bg);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1em;
+  color: var(--accent);
+}
+details[open] summary::before { content: "▾"; }
+details summary code { background: none; padding: 0; font-size: 1em; color: var(--fg); }
+details summary:hover { color: var(--fg); }
+details[open] summary {
+  border-radius: 4px 4px 0 0;
+  border-bottom: 1px solid var(--rule);
+}
+details > :not(summary) { padding-left: 1.1rem; padding-right: 1.1rem; }
+details > summary + * { margin-top: 0.85rem; }
+details > :last-child { margin-bottom: 0.95rem; }
+/* hanging indent: marker sits at the body's left text edge, wrapped lines indent under the text */
+details ul { list-style: none; padding-left: 1.1rem; }
+details ul li { position: relative; padding-left: 1.3rem; margin: 0.3rem 0; }
+details ul li::before { content: "•"; position: absolute; left: 0; color: var(--muted); }
 
 /* tables — thin rules, no boxes */
 table {

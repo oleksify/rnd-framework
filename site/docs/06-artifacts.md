@@ -66,6 +66,32 @@ The path is computed by `lib/rnd-dir.sh`. The layout:
 | `criticality` | `LOW` / `NORMAL` / `HIGH` — drives the model and effort the orchestrator dispatches. |
 | `status` | Progresses from `pending` through `completed`. |
 
+### Inside audit.jsonl
+
+`audit.jsonl` is the session's append-only event log — one JSON object per line, written by the hooks (file-write auditing, subagent lifecycle, the quality gates) and the lib emitters. Nothing edits it after the fact; it is the raw substrate the `rnd-stats` and calibration views query. A few representative lines:
+
+```json
+{"ts":"2026-01-01T10:00:00Z","tool":"Write","file":".../builds/M1-T01-af995933-manifest.md"}
+{"event":"SubagentStart","agent_id":"a2e82da53","agent_type":"rnd-framework:rnd-builder","timestamp":"2026-01-01T10:00:01Z"}
+{"event":"assertion_shape","task_id":"M1.T01.parse-config-file","assertion_id":"M1.cfg.valid-yaml-parses","shape":"behaviour","confidence":"high","timestamp":"2026-01-01T10:01:00Z"}
+{"event":"builder_self_assessment","session_id":"20260101-100000-abcd","task_id":"T01","self_verdict":"PASS","timestamp":"2026-01-01T10:05:00Z"}
+{"event":"gate_fired","task_id":"M1.cfg.valid-yaml-parses","tool":"evidence_locking_gate","timestamp":"2026-01-01T10:06:00Z"}
+```
+
+Lines come in two shapes — a **tool-audit** line (a `tool` + `file`, no `event` key; one per Write/Edit applied during the run) and a **named event** (carries an `event` key). The common events:
+
+| `event` | Emitted when |
+|---|---|
+| *(none)* | A file was written or edited — `{ts, tool, file}`. The bulk of the log. |
+| `SubagentStart` / `SubagentStop` | A pipeline agent spawned or returned (`agent_type`, `agent_id`). |
+| `task_created` | The orchestrator registered a task. |
+| `assertion_shape` | The planner classified an assertion (`shape`, `confidence`) — feeds the per-shape stats. |
+| `builder_self_assessment` | A builder recorded its own `self_verdict` — later compared against the verifier's. |
+| `gate_fired` | A quality gate blocked an agent (the `tool` names which gate). |
+| `premortem_generated` · `paraphrase_injected` · `outside_view_injected` | Phase-specific lifecycle markers. |
+
+(Tool-audit lines stamp `ts`; named events stamp `timestamp` — a historical split the stats views tolerate.)
+
 ### rnd-dir.sh flags
 
 | Flag | Returns |

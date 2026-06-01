@@ -6,25 +6,25 @@ Start a full pipeline with a task description:
 /rnd-framework:rnd-start Add OAuth2 login with a Google provider
 ```
 
-The orchestrator runs the phases below, dispatching each to a specialised agent (see [Agents](#agents)) and aggregating the results.
+The framework runs the phases below, handing each one to a specialised agent (see [Agents](#agents)) and pulling the results together.
 
 ```
    Plan
-     │   decompose · pre-register success criteria · schedule waves
+     │   split the work · write the checks first · group into waves
      ▼
    Build
-     │   implement one task with tests
+     │   build one task, with tests
      ▼
   [Reality Audit]        only when the task declares external dependencies
      │   check that cited URLs / APIs / schemas / env vars actually exist
      ▼
    Verify
-     │   independent check against the contract, behind the barrier
+     │   independent check against the contract, without seeing how it was built
      ▼
   [Iterate]              only on a non-PASS verdict — fix and re-verify
      │
      ▼
-   Cleanup ─▶ Polish      remove dead code · fix cross-task seams
+   Cleanup ─▶ Polish      remove dead code · tidy the joins between tasks
      │
      ▼
    Integrate
@@ -36,12 +36,12 @@ Brackets mark conditional phases: Reality Audit runs only when a task declares e
 <details>
 <summary>What actually happens in each phase</summary>
 
-- **Plan.** One planner agent decomposes the task, writes a validation contract (one testable assertion per requirement, fixed *before* any code), and groups independent sub-tasks into waves. See [the planner in depth](#agents).
-- **Build.** One builder agent implements a single task test-first, leaving a manifest of what changed and a private self-assessment of its own doubts.
+- **Plan.** One planner agent splits the task up, writes a validation contract — one testable statement per requirement, locked in *before* any code — and groups the independent pieces into waves. See [the planner in depth](#agents).
+- **Build.** One builder agent builds a single task test-first, leaving a manifest of what changed and a private note of where it's unsure.
 - **Reality Audit.** *(conditional)* Only when the task cites external things — URLs, APIs, schemas, env vars — an auditor checks each one actually exists before trusting the build.
-- **Verify.** A separate verifier, which cannot see the builder's reasoning, checks the work against the contract and writes a per-assertion verdict with cited evidence.
+- **Verify.** A separate verifier, which can't see the builder's reasoning, checks the work against the contract and gives a verdict on each statement, backed by evidence it cites.
 - **Iterate.** *(conditional)* On any non-pass verdict, the feedback goes back to a builder or debugger, the fix is made, and the task is re-verified.
-- **Cleanup → Polish.** Per-task dead-code removal, then a wave-level pass over the seams between tasks. Both roll back if they break re-verification.
+- **Cleanup → Polish.** First a per-task sweep for dead code, then a pass across the whole wave to tidy the joins between tasks. Both undo themselves if they break the checks.
 - **Integrate.** Verified tasks are committed to the branch in dependency order, integration tests run, and the wave gets a `SHIP` / `NO-SHIP` decision.
 
 </details>
@@ -49,15 +49,15 @@ Brackets mark conditional phases: Reality Audit runs only when a task declares e
 <details>
 <summary>What a "wave" is, and how iteration is bounded</summary>
 
-A **wave** is a batch of sub-tasks with no dependencies on each other — the planner finds them by analysing the dependency graph, exactly as a build system schedules independent targets together. Tasks within a wave can be built and verified in parallel; a task that depends on another waits for the wave that produces it.
+A **wave** is a batch of sub-tasks that don't depend on each other — the planner spots them by looking at what depends on what, the same way a build tool runs independent targets together. Tasks in a wave can be built and checked in parallel; a task that needs another waits for the wave that produces it.
 
-When a task fails verification it enters an **iteration loop**: fix, re-verify, repeat — but not forever. The loop runs on a budget, and two stop conditions guard it. If a task's verdict keeps flipping (`PASS` → `FAIL` → `PASS`), or if the plan grows past its heuristic ceiling, the framework stops and asks you what to do rather than churning. A loop that can't converge is a signal the plan is wrong, not that it needs another lap.
+When a task fails its check it enters an **iteration loop**: fix, re-check, repeat — but not forever. The loop runs on a budget, and two stop conditions guard it. If a task's verdict keeps flip-flopping (`PASS` → `FAIL` → `PASS`), or the plan keeps growing past a sensible size limit, the framework stops and asks you what to do instead of spinning. A loop that won't settle usually means the plan is wrong, not that it needs one more lap.
 
 </details>
 
 ### How much ceremony
 
-Every task goes through the pipeline, scaled to its size — a one-line fix gets a minimal wave; a multi-day feature gets the full treatment with a design-review gate. The framework does not skip verification, but it does right-size the number of agents.
+Every task goes through the pipeline, sized to the job — a one-line fix gets a tiny wave; a multi-day feature gets the full treatment, including a design-review gate. The framework never skips the check, but it does match the number of agents to the work.
 
 ### Other entry points
 

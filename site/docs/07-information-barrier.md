@@ -16,7 +16,7 @@ The single most important rule: **the verifier never sees the builder's reasonin
 
 ### Why
 
-If the reviewer reads the author's framing first, the reviewer anchors on it. Known weaknesses get re-labelled as acceptable; verification quietly becomes rubber-stamping. Keeping the reviewer blind to the author's reasoning is what makes the check independent — the same reason scientific peer review and independent V&V separate the author from the checker.
+If the reviewer reads the author's framing first, they anchor on it. Known weaknesses get re-labelled as acceptable, and verification quietly turns into rubber-stamping. Keeping the reviewer blind to the author's reasoning is what makes the check independent — the same reason scientific peer review keeps the reviewer separate from the author.
 
 ### How it is enforced
 

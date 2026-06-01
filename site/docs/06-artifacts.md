@@ -62,13 +62,13 @@ The path is computed by `lib/rnd-dir.sh`. The layout:
 |---|---|
 | `id` | `M<milestone>.T<NN>.<slug>` — the join key across every artifact. `slug` and `uuid` exist for readability and collision-proof manifest filenames. |
 | `dependsOn` | Task ids that must finish first; this is what schedules execution waves (T02 waits for T01). |
-| `assertionIds` | Headings in `validation-contract.md` this task is accountable for; the verifier slices its checks by these. |
-| `criticality` | `LOW` / `NORMAL` / `HIGH` — drives the model and effort the orchestrator dispatches. |
+| `assertionIds` | Which assertions in `validation-contract.md` this task is responsible for; the verifier groups its checks by these. |
+| `criticality` | `LOW` / `NORMAL` / `HIGH` — decides which model and effort the orchestrator uses. |
 | `status` | Progresses from `pending` through `completed`. |
 
 ### Inside audit.jsonl
 
-`audit.jsonl` is the session's append-only event log — one JSON object per line, written by the hooks (file-write auditing, subagent lifecycle, the quality gates) and the lib emitters. Nothing edits it after the fact; it is the raw substrate the `rnd-stats` and calibration views query. A few representative lines:
+`audit.jsonl` is the session's append-only event log — one JSON object per line, written by the hooks (file-write auditing, subagent lifecycle, the quality gates) and the lib emitters. Nothing edits it after the fact; it's the raw data the `rnd-stats` and calibration views read. A few representative lines:
 
 ```json
 {"ts":"2026-01-01T10:00:00Z","tool":"Write","file":".../builds/M1-T01-af995933-manifest.md"}

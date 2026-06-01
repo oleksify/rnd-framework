@@ -7,10 +7,10 @@ All commands are namespaced `/rnd-framework:*`.
 | Command | Purpose |
 |---|---|
 | `rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
-| `rnd-plan <task>` | Planning only — decompose into task specs |
+| `rnd-plan <task>` | Planning only — split into task specs |
 | `rnd-build <T3\|wave-2\|next>` | Build a task or wave |
 | `rnd-verify <T3\|wave-2\|all>` | Independent verification |
-| `rnd-integrate <wave-2\|final>` | Merge outputs, run integration tests |
+| `rnd-integrate <wave-2\|final>` | Combine outputs, run integration tests |
 | `rnd-debug <bug>` | Reproduce, diagnose, fix, verify |
 
 ### Navigating a run
@@ -30,7 +30,7 @@ All commands are namespaced `/rnd-framework:*`.
 | `rnd-audit` | Full codebase audit |
 | `rnd-brainstorm` | Funnel a vague idea into a focused plan |
 | `rnd-narrative` | Prose narrative of a session |
-| `rnd-stats` | Per-shape non-PASS rate, drift, and gaps |
+| `rnd-stats` | Failure rates by task kind, plus drift and gaps |
 | `rnd-remeasure` | Compare current metrics against the baseline |
 | `rnd-scan` | Scan the project, build a facts sheet |
 

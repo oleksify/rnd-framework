@@ -29,7 +29,7 @@ Determine the RND artifacts directory and create its structure:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
 
-Write a minimal plan skeleton to `$RND_DIR/plan.md`. Use `TaskCreate` to create a single task.
+Write a minimal plan skeleton to `$RND_DIR/protocol.md`. Use `TaskCreate` to create a single task.
 
 Tell the user: "Starting debug pipeline for: [bug description]"
 
@@ -69,7 +69,7 @@ Check the escalation recommendation:
 
 ## Step 2: Build the Fix
 
-Write the full pre-registration to `$RND_DIR/plan.md`, informed by the diagnosis report. Success criteria must include:
+Write the full pre-registration to `$RND_DIR/protocol.md`, informed by the diagnosis report. Success criteria must include:
 - Bug is no longer reproducible using the original reproduction steps
 - Fix targets the root cause (not a symptom patch)
 - 1-2 criteria specific to the root cause
@@ -85,7 +85,7 @@ prompt: |
 
   RND_DIR: [value of $RND_DIR]
 
-  Pre-registration: [paste the pre-registration from $RND_DIR/plan.md]
+  Pre-registration: [paste the pre-registration from $RND_DIR/protocol.md]
 
   Diagnosis report: [paste $RND_DIR/diagnosis/T1-diagnosis.md]
 
@@ -111,7 +111,7 @@ prompt: |
 
   RND_DIR: [value of $RND_DIR]
 
-  Pre-registration: [paste the pre-registration from $RND_DIR/plan.md]
+  Pre-registration: [paste the pre-registration from $RND_DIR/protocol.md]
 
   Builder artifacts:
   - Build manifest: $RND_DIR/builds/T1-manifest.md

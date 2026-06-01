@@ -68,7 +68,7 @@ assert_eq "no session → sessionTitle field omitted" "false" "$has_title_idle"
 rm -rf "$tmp_idle"
 
 # ---------------------------------------------------------------------------
-# Planning phase: plan.md present (debug pipeline)
+# Planning phase: plan.md present (legacy / pre-v5 fallback)
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- session-title: planning phase ---'
 

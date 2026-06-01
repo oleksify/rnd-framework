@@ -83,7 +83,7 @@ text_idle="$(printf '%s' "$HOOK_STDOUT" | jq -r '.text // ""' 2>/dev/null || tru
 assert_contains "statusline shows Idle phase when no session" "Idle" "$text_idle"
 rm -rf "$tmp_no_session"
 
-# Planning phase: session has plan.md but no builds
+# Planning phase: session has plan.md but no builds (legacy / pre-v5 fallback)
 tmp_planning="$(mktemp -d)"
 base_planning="$(CLAUDE_CONFIG_DIR="$tmp_planning" "$RND_DIR_SH" --base 2>/dev/null || true)"
 if [[ -n "$base_planning" ]]; then

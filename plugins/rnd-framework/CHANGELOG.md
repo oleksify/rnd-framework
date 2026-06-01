@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.279 — 2026-06-01
+
+### Rename the debug pipeline's pre-registration artifact from plan.md to protocol.md
+
 ## 0.15.278 — 2026-05-31
 
 - Builder self-assessments now record their explicit status (done / done-with-concerns / needs-context / blocked) instead of guessing pass/fail from the report's shape.

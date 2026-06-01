@@ -268,7 +268,7 @@ printf '' > "${_PPD_DIR}/protocol.md"
 assert_eq "detect_pipeline_phase: protocol.md only → Planning" "Planning" "$(detect_pipeline_phase "$_PPD_DIR")"
 rm -f "${_PPD_DIR}/protocol.md"
 
-# Planning when plan.md exists (debug pipeline)
+# Planning when plan.md exists (legacy / pre-v5 fallback)
 printf '' > "${_PPD_DIR}/plan.md"
 assert_eq "detect_pipeline_phase: plan.md only → Planning" "Planning" "$(detect_pipeline_phase "$_PPD_DIR")"
 

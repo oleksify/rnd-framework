@@ -1,31 +1,31 @@
 ## Skills
 
-A **skill** is a focused instruction document the framework loads into an agent at the right moment — methodology for a phase, language-specific rules, or guidance for a particular kind of work. Skills are how the pipeline carries its discipline into each agent without bloating every prompt.
+A **skill** is a short instruction sheet the framework hands to an agent at the moment it's needed — how to run a phase, the rules for a particular language, or guidance for a kind of work. It's how the pipeline gives each agent just the discipline it needs, without stuffing every prompt with everything.
 
 ### Phase methodology
 
 | Skill | Purpose |
 |---|---|
-| `rnd-orchestration` | Pipeline overview, agent roles, gate criteria |
-| `rnd-decomposition` | Hierarchical decomposition and pre-registration |
-| `rnd-building` | Builder methodology with test-first discipline |
-| `rnd-verification` | Wave-batched independent verification |
-| `rnd-integration` | Merge and system validation |
-| `rnd-iteration` | Build-verify feedback loops and budgets |
-| `rnd-scheduling` | Dependency-based wave scheduling |
-| `rnd-scaling` | How much ceremony a task needs |
-| `rnd-completion` | Post-ship branch management and PRs |
+| `rnd-orchestration` | How the pipeline fits together — roles and checkpoints |
+| `rnd-decomposition` | Splitting work into pieces and writing the checks up front |
+| `rnd-building` | How to build, test-first |
+| `rnd-verification` | Independent checking, one pass per wave |
+| `rnd-integration` | Combine the pieces and confirm they work together |
+| `rnd-iteration` | Handling failed checks, and when to stop retrying |
+| `rnd-scheduling` | Grouping independent work into waves |
+| `rnd-scaling` | How much process a task actually needs |
+| `rnd-completion` | Wrapping up — branches and pull requests after shipping |
 
 ### Reasoning aids
 
 | Skill | Purpose |
 |---|---|
-| `premortem` | Pre-planning failure imagination |
-| `outside-view` | Injects historical failure rates as a calibration anchor |
-| `rnd-design` | Architectural exploration before planning |
-| `rnd-failure-modes` | Catalogue of verification anti-patterns |
-| `rnd-calibration` | Tracks verdict accuracy over time |
-| `rnd-reality-auditing` | Adversarial external-contract verification |
+| `premortem` | Imagining ways the work could fail, before planning |
+| `outside-view` | Checks the plan against how often this kind of work has failed before |
+| `rnd-design` | Weighing design options before planning |
+| `rnd-failure-modes` | A checklist of the ways reviews go wrong |
+| `rnd-calibration` | Tracks how often its own verdicts turn out wrong |
+| `rnd-reality-auditing` | Double-checks the outside things the code relies on really exist |
 
 ### Craft
 
@@ -44,39 +44,39 @@ A handful more cover working on the plugin itself (`hook-authoring`, `lib-sh-pat
 ### In depth
 
 <details>
-<summary>How a skill reaches an agent — session-local injection</summary>
+<summary>How a skill reaches an agent — per-run guidance</summary>
 
-When the orchestrator spawns an agent, it reads the session's `AGENTS.md` and any `SKILL.md` files dropped into the session's `skills/` directory, and injects their content into the spawn prompt under `## Session Context` and `## Session Skills`. Each injection is logged as a `skill_injected` audit event.
+When the framework starts an agent, it reads the run's `AGENTS.md` and any `SKILL.md` files dropped into the run's `skills/` directory, and pastes their content into the agent's prompt under `## Session Context` and `## Session Skills`. Each one is noted in the log as a `skill_injected` event.
 
-The effect: a single run can carry its own custom guidance — project-specific patterns, a domain glossary, a one-off agent — without anyone editing the global plugin files. Personal skills in your own `.claude/skills/` shadow the framework's unless you prefix the name with `rnd-framework:`.
+The effect: a single run can carry its own custom guidance — project-specific patterns, a domain glossary, a one-off agent — without anyone touching the global plugin files. Skills in your own `.claude/skills/` take priority over the framework's unless you prefix the name with `rnd-framework:`.
 
 </details>
 
 <details>
 <summary><code>premortem</code> — imagine the failure before it happens</summary>
 
-Before the planner writes anything, the orchestrator fans out several lightweight agents in parallel. Each is handed **one** failure framing — a wrong assumption about an external service, a data-model mismatch, a performance cliff — and writes a short narrative of how that failure would unfold. The results are aggregated into `premortem.md`, one entry per imagined failure mode.
+Before the planner writes anything, the framework spins up a handful of small agents at once. Each gets **one** way the work could go wrong — a wrong guess about an outside service, a data model that doesn't fit, a part that turns out too slow — and writes a short story of how that failure would play out. The results collect into `premortem.md`, one entry per imagined failure.
 
-The planner then has to **address or dismiss each one** in `protocol.md`. It is cheaper to imagine a failure than to debug it, and forcing the imagination *before* the plan exists keeps it from being rationalised away afterward.
+The planner then has to **answer each one** in its plan: either guard against it or explain why it won't happen. Imagining a failure up front is far cheaper than debugging it later, and doing it *before* the plan exists stops it from being quietly explained away once there's a plan to defend.
 
 </details>
 
 <details>
 <summary><code>outside-view</code> — anchoring the plan in past failure rates</summary>
 
-Right after the premortem and just before the planner spawns, the framework injects a *reference-class* block into the planner's context: for each shape of assertion, how often work of that shape has historically failed verification, drawn from this project's own session log.
+Just after the premortem and just before the planner starts, the framework hands the planner a quick look at this project's own track record: for each kind of work, how often it has failed review in the past.
 
-It's a deliberate counterweight to the *inside view* — the natural optimism of "this particular task will go fine". If contract-style assertions have failed 30% of the time before, the planner sees that number while it decomposes. When the corpus is too thin to be meaningful (fewer than five comparable sessions), the block says so rather than inventing a rate.
+It's there to balance the usual optimism of "this particular task will be fine." If changes of this kind have failed, say, 30% of the time before, the planner sees that number while it's deciding how to split the work. And when there isn't enough history to mean anything yet — fewer than five comparable runs — it says so instead of making up a rate.
 
 </details>
 
 <details>
 <summary>Calibration and the earned fast path</summary>
 
-The framework keeps a running ledger of how often its own verdicts turn out wrong — a `PASS` that a later review or a reality audit contradicts is recorded as a false pass. That history drives two behaviours.
+The framework keeps a running ledger of how often its own verdicts turn out wrong — a `PASS` that a later review or reality-check contradicts is recorded as a false pass. That history drives two behaviours.
 
-**Auto-escalation:** when a kind of task accumulates false passes, the framework promotes it to heavier scrutiny.
+**Auto-escalation:** when a kind of task starts racking up false passes, the framework gives it heavier scrutiny.
 
-**The earned fast path:** the mirror image. After the final ship, a post-ship review runs and its findings (and clean bills of health) are recorded per assertion-shape. Once a shape has a streak of consecutive clean reviews, it's treated as *expert* — and tasks of that shape, at `LOW` or `NORMAL` criticality, run a lighter profile. The speed is *earned*, never assumed: verification still always runs, `HIGH` criticality never qualifies, and a single new post-ship finding drops the shape back to novice automatically. It follows Kahneman and Klein's rule that fast intuition is only trustworthy in a regular environment with real feedback.
+**The earned fast path:** the mirror image. After the final ship, a review runs and its results — problems found, or a clean bill of health — are recorded per kind of work. Once a kind has a run of clean reviews in a row, it's treated as well-understood, and tasks of that kind (at `LOW` or `NORMAL` importance) take a lighter, faster route. The speed is *earned*, never assumed: a check always runs, the most important tasks never skip it, and a single new problem found after shipping drops that kind straight back to full scrutiny. Shortcuts are only safe once there's a real track record to back them up.
 
 </details>

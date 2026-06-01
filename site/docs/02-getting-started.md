@@ -28,7 +28,7 @@ The orchestrator runs the phases below, dispatching each to a specialised agent 
      │
      ▼
    Integrate
-         merge verified work · run integration tests · SHIP / NO-SHIP
+         commit verified work · run integration tests · SHIP / NO-SHIP
 ```
 
 Brackets mark conditional phases: Reality Audit runs only when a task declares external dependencies; Iterate runs only when verification did not pass.
@@ -42,7 +42,7 @@ Brackets mark conditional phases: Reality Audit runs only when a task declares e
 - **Verify.** A separate verifier, which cannot see the builder's reasoning, checks the work against the contract and writes a per-assertion verdict with cited evidence.
 - **Iterate.** *(conditional)* On any non-pass verdict, the feedback goes back to a builder or debugger, the fix is made, and the task is re-verified.
 - **Cleanup → Polish.** Per-task dead-code removal, then a wave-level pass over the seams between tasks. Both roll back if they break re-verification.
-- **Integrate.** Verified work is merged, integration tests run, and the wave gets a `SHIP` / `NO-SHIP` decision.
+- **Integrate.** Verified tasks are committed to the branch in dependency order, integration tests run, and the wave gets a `SHIP` / `NO-SHIP` decision.
 
 </details>
 

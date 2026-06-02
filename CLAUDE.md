@@ -214,6 +214,19 @@ Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`,
 - **File creation** — always use `Write`/`Edit`, never bash heredocs (`cat > file << 'EOF'`).
 - **Report surfacing** — the three output styles each carry a "Report Surfacing Protocol" requiring the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verdict maps, reality reports, diagnoses, integration reports, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log.
 
+## Publishing
+
+`origin` (`git@tangled.org:oleksify.me/rnd-framework`) is the primary repository. `github` (`git@github.com:oleksify/rnd-framework.git`) is a read-only mirror.
+
+Whenever you push `main` to `origin`, also push it to the mirror:
+
+```
+git push origin main
+git push github main
+```
+
+Push tags to both remotes the same way (`git push origin --tags` then `git push github --tags`). Keep the mirror in sync — never let it fall behind `origin`.
+
 ## Working on This Codebase
 
 Skills and commands are Markdown processed by Claude Code's plugin system. Changes take effect in new sessions.

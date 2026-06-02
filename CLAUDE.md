@@ -227,6 +227,20 @@ git push github main
 
 Push tags to both remotes the same way (`git push origin --tags` then `git push github --tags`). Keep the mirror in sync — never let it fall behind `origin`.
 
+### GitHub releases
+
+The github mirror also carries GitHub Releases (tangled has no equivalent). After pushing a new version tag, cut a release on the mirror from that tag, using the matching `## <version> — <date>` section of `plugins/rnd-framework/CHANGELOG.md` as the notes. Tags are `v<version>`; CHANGELOG headings drop the `v`. Authenticated via the `gh` CLI (account `oleksify`).
+
+```
+VERSION=0.15.279   # the version just bumped, without the leading v
+gh release create "v$VERSION" \
+  --repo oleksify/rnd-framework \
+  --title "v$VERSION" \
+  --notes "$(awk "/^## $VERSION /{f=1;next} /^## /{f=0} f" plugins/rnd-framework/CHANGELOG.md)"
+```
+
+Only the github remote gets releases — never attempt one against `origin`. Releases are not auto-created; cut one only when explicitly asked, after the tag is on the mirror.
+
 ## Working on This Codebase
 
 Skills and commands are Markdown processed by Claude Code's plugin system. Changes take effect in new sessions.

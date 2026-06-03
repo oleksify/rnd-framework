@@ -27,6 +27,8 @@ A **skill** is a short instruction sheet the framework hands to an agent at the 
 | `rnd-calibration` | Tracks how often its own verdicts turn out wrong |
 | `rnd-reality-auditing` | Double-checks the outside things the code relies on really exist |
 
+A related decorrelation step, the **assertion paraphraser**, re-words each requirement before the reviewer reads it — see [the wording channel](#the-wording-channel) under Information barrier.
+
 ### Craft
 
 | Skill | Purpose |

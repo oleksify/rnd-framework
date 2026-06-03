@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # remeasurement.sh — Re-measurement harness for dogfood corpus gating.
 #
-# Subcommands:
-#   corpus_count <commit_sha>   Print integer count of dogfood session dirs
-#                               whose timestamp is after the commit's epoch.
-#   gate_met <commit_sha>       Exit 0 when corpus_count >= 10, exit 1 otherwise.
-#   memo <output_path> <sha>    Write a re-measurement memo to the given path.
-#                               Pending stub when gate unmet; full memo otherwise.
+# The corpus boundary (the M5 ship moment) is a fixed epoch baked in below — NOT
+# a commit SHA. A SHA needs a live git repo to resolve and is dropped by history
+# rewrites; the boundary is conceptually a moment in time, so we store the time.
+#
+# Subcommands (boundary arg is optional; omit it for the M5 default):
+#   corpus_count [boundary_epoch]   Print integer count of dogfood session dirs
+#                                   whose timestamp is after the boundary epoch.
+#   gate_met [boundary_epoch]       Exit 0 when corpus_count >= 10, else exit 1.
+#   memo <output_path> [boundary]   Write a re-measurement memo to the given path.
+#                                   Pending stub when gate unmet; full memo otherwise.
+#
+# The optional boundary arg accepts ONLY a positive epoch integer (used by tests);
+# anything else (e.g. a commit SHA) is rejected loudly rather than silently
+# degrading the count — see _resolve_boundary_epoch.
 #
 # Environment:
 #   CLAUDE_CONFIG_DIR   Override resolved config dir (default: $HOME/.claude)
@@ -31,6 +39,12 @@ readonly M3_ITER_NOTE="pending — no data (iteration-depth view requires calibr
 readonly M3_SESSION="20260527-181326-c1137013"
 readonly CORPUS_THRESHOLD=10
 
+# M5 ship boundary. The post-M5 corpus is sessions created after M5 (v5.6.0)
+# shipped. Stored as a fixed epoch, not a commit SHA: the boundary is a moment
+# in time, and a SHA both needs a live git repo to resolve and is dropped by
+# history rewrites. Source: v5.6.0 commit 62311e9, 2026-05-28T12:17:47+02:00.
+readonly M5_EPOCH=1779963467
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -52,9 +66,28 @@ _resolve_config_dir() {
   printf '%s' "$HOME/.claude"
 }
 
-_commit_epoch() {
-  local sha="$1"
-  git -C "${CLAUDE_PLUGIN_ROOT:-.}" show -s --format=%ct "$sha"
+# Resolve the corpus-boundary epoch from an optional argument:
+#   (empty)          -> the M5 default epoch
+#   positive integer -> used verbatim (epoch override; used by tests)
+#   anything else    -> FAIL LOUD (return 1, message on stderr). A measurement
+#                       tool must never silently fall back and count everything,
+#                       which is exactly what the old git/SHA path did when the
+#                       SHA failed to resolve to an empty epoch.
+_resolve_boundary_epoch() {
+  local arg="${1:-}"
+
+  if [[ -z "$arg" ]]; then
+    printf '%s' "$M5_EPOCH"
+    return 0
+  fi
+
+  if [[ "$arg" =~ ^[0-9]+$ ]] && [[ "$arg" -gt 0 ]]; then
+    printf '%s' "$arg"
+    return 0
+  fi
+
+  printf 'remeasurement: cannot resolve corpus boundary from %q — pass an empty argument for the M5 default or a positive epoch integer (a commit SHA is no longer accepted)\n' "$arg" >&2
+  return 1
 }
 
 _parse_session_epoch() {
@@ -78,51 +111,52 @@ _is_dogfood_slug() {
 }
 
 _count_sessions_in_slug() {
-  local slug_dir="$1" commit_epoch="$2"
+  local slug_dir="$1" boundary_epoch="$2"
   local n=0
   local session_dir session_epoch
 
   for session_dir in "${slug_dir}branches/"/*/sessions/*/; do
     [[ -d "$session_dir" ]] || continue
     session_epoch="$(_parse_session_epoch "$(basename "$session_dir")")"
-    [[ "$session_epoch" -gt "$commit_epoch" ]] && n=$((n + 1))
+    [[ "$session_epoch" -gt "$boundary_epoch" ]] && n=$((n + 1))
   done
 
   printf '%d' "$n"
 }
 
 # ---------------------------------------------------------------------------
-# corpus_count <commit_sha>
-# Prints the integer count of post-commit dogfood session directories.
-# Pure: reads filesystem + git; writes only to stdout.
+# corpus_count [boundary_epoch]
+# Prints the integer count of post-boundary dogfood session directories.
+# Fails loud (return 1, no stdout) if the boundary arg cannot be resolved.
+# Pure: reads filesystem; writes only to stdout.
 # ---------------------------------------------------------------------------
 
 corpus_count() {
-  local sha="$1"
-  local commit_epoch rnd_root count=0 slug_dir
+  local boundary_epoch rnd_root count=0 slug_dir
 
-  commit_epoch="$(_commit_epoch "$sha")"
+  boundary_epoch="$(_resolve_boundary_epoch "${1:-}")" || return 1
+
   rnd_root="$(_resolve_config_dir)/.rnd"
 
   for slug_dir in "${rnd_root}/"/*/; do
     [[ -d "$slug_dir" ]] || continue
     _is_dogfood_slug "$(basename "$slug_dir")" || continue
-    count=$((count + $(_count_sessions_in_slug "$slug_dir" "$commit_epoch")))
+    count=$((count + $(_count_sessions_in_slug "$slug_dir" "$boundary_epoch")))
   done
 
   printf '%d\n' "$count"
 }
 
 # ---------------------------------------------------------------------------
-# gate_met <commit_sha>
-# Exit 0 when corpus_count >= 10, exit 1 otherwise.
+# gate_met [boundary_epoch]
+# Exit 0 when corpus_count >= 10, exit 1 otherwise. Propagates a non-zero exit
+# (without claiming a gate verdict) when the boundary cannot be resolved.
 # Pure: delegates to corpus_count.
 # ---------------------------------------------------------------------------
 
 gate_met() {
-  local sha="$1"
   local n
-  n="$(corpus_count "$sha")"
+  n="$(corpus_count "${1:-}")" || return 1
 
   [[ "$n" -ge "$CORPUS_THRESHOLD" ]]
 }
@@ -158,8 +192,9 @@ render_memo() {
   local fail_rate_rows="$2"
   local gap_rows="$3"
   local iter_rows="$4"
-  local today
+  local today slugs
   today="$(date '+%Y-%m-%d')"
+  slugs="${RND_DOGFOOD_SLUGS:-claude-130cb64f}"
 
   # Build per-shape FAIL rate table (dogfood segment only)
   local fail_table=""
@@ -241,6 +276,9 @@ render_memo() {
 
 Date: ${today}
 Corpus: N=${n} post-M5 dogfood sessions (threshold: ${CORPUS_THRESHOLD})
+Scope: framework dogfood corpus only — slug(s): ${slugs}. Re-measurement is a
+framework self-measurement: it always reports on the framework's own development
+sessions, independent of the project directory it was invoked from.
 
 ## M3 baseline recall
 
@@ -324,10 +362,10 @@ $(printf '%b' "$followup_lines")
 
 memo() {
   local output_path="$1"
-  local sha="$2"
+  local boundary="${2:-}"
 
   local n
-  n="$(corpus_count "$sha")"
+  n="$(corpus_count "$boundary")" || return 1
 
   if [[ "$n" -lt "$CORPUS_THRESHOLD" ]]; then
     printf 'pending — N=%d (threshold: %d; re-run once %d post-M5 sessions have accrued)\n' \

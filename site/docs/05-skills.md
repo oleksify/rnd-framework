@@ -80,3 +80,14 @@ The framework keeps a running ledger of how often its own verdicts turn out wron
 **The earned fast path:** the mirror image. After the final ship, a review runs and its results — problems found, or a clean bill of health — are recorded per kind of work. Once a kind has a run of clean reviews in a row, it's treated as well-understood, and tasks of that kind (at `LOW` or `NORMAL` importance) take a lighter, faster route. The speed is *earned*, never assumed: a check always runs, the most important tasks never skip it, and a single new problem found after shipping drops that kind straight back to full scrutiny. Shortcuts are only safe once there's a real track record to back them up.
 
 </details>
+
+<details>
+<summary>Re-measurement — has the framework drifted?</summary>
+
+Outside-view and calibration both lean on the project's own history. Re-measurement asks a sharper question about that history: is the framework itself getting *better or worse over time*?
+
+Run `/rnd-framework:rnd-remeasure`. It takes a baseline recorded at an earlier point and compares today's numbers against it — how often each kind of work fails review, how often the builder's own doubts line up with the final verdict, and how many build-check rounds tasks take. The result is a short memo: the baseline, the current snapshot, the difference, and an honest note about what *else* changed in between that could be muddying the comparison.
+
+It won't read tea leaves from a handful of runs. Below ten comparable runs since the baseline it writes a "not enough yet (N=…)" stub instead of a noisy delta. And it only ever reads existing logs — it changes nothing.
+
+</details>

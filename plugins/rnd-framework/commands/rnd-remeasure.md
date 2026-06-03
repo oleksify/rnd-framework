@@ -18,19 +18,25 @@ if ! command -v duckdb > /dev/null 2>&1; then
 fi
 ```
 
-## 2. Resolve the session dir and the M5 ship commit
+## 2. Resolve the session dir
 
-The memo is written to the active session's `$RND_DIR`. `M5_SHA` marks the
-corpus boundary — sessions after this commit are "post-M5" and count toward
-the N≥10 gate. Both may be pre-set by the caller (e.g. during testing); fall
-back to canonical resolution otherwise.
+The memo is written to `$RND_DIR`. When a pipeline session is active, that is the
+session dir; otherwise it is the branch base dir (and the block below says so).
+
+The corpus boundary (the M5 ship moment) is a fixed epoch baked into the harness —
+no git lookup and no commit SHA, so it cannot drift when history is rewritten. The
+harness also reports on the framework's own dogfood corpus regardless of the project
+you run it from; this is a framework self-measurement, not a per-project report.
 
 ```bash
 if [[ -z "${RND_DIR:-}" ]]; then
   RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"
 fi
 
-M5_SHA="${M5_SHA:-941cea0}"
+case "$RND_DIR" in
+  */sessions/*) : ;;  # active pipeline session
+  *) echo "rnd-remeasure: no active pipeline session — writing the memo to the branch base dir ($RND_DIR). Start from within an rnd-start session to nest it under that session." ;;
+esac
 ```
 
 ## 3. Invoke the harness and write the memo
@@ -42,7 +48,7 @@ The harness (`lib/remeasurement.sh`) handles the corpus gate:
 ```bash
 MEMO_PATH="${RND_DIR}/remeasurement-memo.md"
 
-bash "${CLAUDE_PLUGIN_ROOT}/lib/remeasurement.sh" memo "$MEMO_PATH" "$M5_SHA"
+bash "${CLAUDE_PLUGIN_ROOT}/lib/remeasurement.sh" memo "$MEMO_PATH"
 ```
 
 ## 4. Surface the memo

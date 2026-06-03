@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.281 — 2026-06-03
+
+### Cross-link the assertion paraphraser from the Skills page
+
+Add a one-line pointer from the docs Skills page to the wording-channel explanation of the assertion paraphraser on the Information barrier page, so the decorrelation step is discoverable from the reasoning-aids list.
+
 ## 0.15.280 — 2026-06-03
 
 ### Fix rnd-remeasure corpus boundary and fail loud on unresolvable boundaries

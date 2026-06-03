@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.280 — 2026-06-03
+
+### Fix rnd-remeasure corpus boundary and fail loud on unresolvable boundaries
+
+Replace the git-resolved M5 commit SHA with a baked epoch constant so the post-M5 corpus filter no longer silently counts the whole corpus when the SHA is unresolvable; fail loud on an unresolvable boundary; add a dogfood-scope signal to the memo and a no-active-session note to the command; document the assertion paraphraser and re-measurement on the site; and relax the outside-view wiring test to assert facts against the protocol.md fixture rather than the plain-language CHANGELOG.
+
 ## 0.15.279 — 2026-06-01
 
 ### Rename the debug pipeline's pre-registration artifact from plan.md to protocol.md

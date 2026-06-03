@@ -165,13 +165,17 @@ assert_eq \
   "$changelog_header_count"
 
 # Extract the scoped section (lines between ## 5.5.0 and the next ## N.N.N).
+# The CHANGELOG is deliberately plain-language for a general audience, so we
+# assert only that the entry NAMES the feature in plain terms — not that it
+# carries implementation jargon (that lives in protocol.md / the skill doc,
+# asserted below). The wiring itself is covered by the assertions above and the
+# full-pipeline test at the end.
 release_section="$(awk '/^## 5\.5\.0/{found=1; next} found && /^## [0-9]+\.[0-9]/{exit} found{print}' "$CHANGELOG" || true)"
-headline_count="$(printf '%s' "$release_section" | grep -cE '^### .*[Oo]utside.?[Vv]iew.*[Pp]lanner|^### .*[Pp]lanner.*[Oo]utside.?[Vv]iew' || true)"
 
 assert_eq \
-  "section headline names outside-view and Planner together" \
-  "1" \
-  "$headline_count"
+  "5.5.0 entry names the outside-view feature in plain terms" \
+  "pass" \
+  "$(printf '%s' "$release_section" | grep -qiE 'fail rate|calibration anchor' && printf pass || printf fail)"
 
 # ---------------------------------------------------------------------------
 # The top entry body contains the four mandatory phrases, each of which also
@@ -185,18 +189,19 @@ PROTOCOL_FIXTURE="${SCRIPT_DIR}/fixtures/protocol.md"
 # Extract text of top CHANGELOG entry: lines strictly between ## 5.5.0 and the next ## N.N.N entry.
 top_entry="$(awk '/^## 5\.5\.0/{found=1; next} found && /^## [0-9]+\.[0-9]/{exit} found{print}' "$CHANGELOG" || true)"
 
-# (a) thin-corpus threshold — n_total < 5 or n < 5
-assert_eq \
-  "CHANGELOG entry mentions n_total < 5 threshold" \
-  "pass" \
-  "$(printf '%s' "$top_entry" | grep -q 'n_total < 5\|n < 5' && printf pass || printf fail)"
+# The four load-bearing facts (thin-corpus threshold, calibration-anchor framing,
+# the audit-event name, the Phase-1 wiring location) are asserted against the
+# technical artifacts — protocol.md fixture, where implementation jargon belongs —
+# NOT against the deliberately plain-language CHANGELOG.
 
+# (a) thin-corpus threshold — n_total < 5 or n < 5
 assert_eq \
   "protocol.md contains n_total < 5 threshold" \
   "pass" \
   "$(grep -q 'n_total < 5\|n < 5' "$PROTOCOL_FIXTURE" && printf pass || printf fail)"
 
-# (b) framing constraint — calibration anchor AND (not a license OR not license)
+# (b) framing constraint — the plain CHANGELOG keeps the calibration-anchor /
+# not-a-license framing; protocol.md carries the same.
 assert_eq \
   "CHANGELOG entry mentions calibration anchor" \
   "pass" \
@@ -214,21 +219,11 @@ assert_eq \
 
 # (c) audit event name
 assert_eq \
-  "CHANGELOG entry mentions outside_view_injected event" \
-  "pass" \
-  "$(printf '%s' "$top_entry" | grep -q 'outside_view_injected' && printf pass || printf fail)"
-
-assert_eq \
   "protocol.md mentions outside_view_injected event" \
   "pass" \
   "$(grep -q 'outside_view_injected' "$PROTOCOL_FIXTURE" && printf pass || printf fail)"
 
 # (d) wiring location — Phase 1 or rnd-start.md
-assert_eq \
-  "CHANGELOG entry mentions Phase 1 or rnd-start.md" \
-  "pass" \
-  "$(printf '%s' "$top_entry" | grep -q 'Phase 1\|rnd-start\.md' && printf pass || printf fail)"
-
 assert_eq \
   "protocol.md mentions Phase 1 or rnd-start.md" \
   "pass" \

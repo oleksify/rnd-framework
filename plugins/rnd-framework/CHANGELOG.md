@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.282 — 2026-06-05
+
+### Disambiguate the Phase 7 "code review" menu option so it runs the RND review, not native /code-review
+
+The end-of-pipeline next-steps menu offered an unqualified "Run code review first" option with no handler, so the orchestrator resolved it to Claude Code's native /code-review skill. Qualify the label to "Run RND code review first" and add an explicit handler routing it to rnd-framework:code-review (or /rnd-framework:rnd-review), forbidding the native command.
+
 ## 0.15.281 — 2026-06-03
 
 ### Cross-link the assertion paraphraser from the Skills page

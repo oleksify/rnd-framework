@@ -643,7 +643,7 @@ Summarize: what was built, verification results, iterations, integration status,
 Use `AskUserQuestion` for next steps (Tier 1 — 4 options):
 - "Commit changes (Recommended)"
 - "Create PR"
-- "Run code review first"
+- "Run RND code review first"
 - "More options…"
 
 When the user picks "More options…", follow up with a second `AskUserQuestion` (Tier 2):
@@ -657,6 +657,14 @@ When the user picks "More options…", follow up with a second `AskUserQuestion`
 When the user selects "Show development narrative," generate a prose story of the pipeline run. If context was compressed, re-read `$RND_DIR/protocol.md`, `$RND_DIR/validation-contract.md`, `$RND_DIR/features.json`, build manifests, verification reports, and `$RND_DIR/iteration-log.md` first. Cover: what was built and why, key decisions, obstacles and iterations, insights gained, and what's left. Write 3-5 paragraphs in first-person plural ("we"), not bullet points.
 
 After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchanged.
+
+### RND Code Review
+
+When the user selects "Run RND code review first," run the **framework's own** seven-category review — the same flow as Phase 8: invoke `rnd-framework:code-review` to load the categories, severity levels, verdict taxonomy, and report template, review the pipeline diff, and write `$RND_DIR/review/post-ship-review.md` (surface it per the Report Surfacing Protocol). Equivalently, you may run `/rnd-framework:rnd-review`.
+
+**Do NOT invoke Claude Code's native `/code-review` (or `/review`, `/security-review`) command here.** "Run RND code review first" means the framework's review, not the native diff-scan skill. If Phase 8 already produced `$RND_DIR/review/post-ship-review.md` this session, surface that report instead of re-running.
+
+After the review, re-present the Tier 1 `AskUserQuestion` menu unchanged.
 
 ## Phase 8: Post-SHIP Code Review
 

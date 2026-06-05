@@ -141,7 +141,7 @@ validate_cross_refs() {
     done
   fi
 
-  local urfm="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
+  local urfm="${PLUGIN_ROOT}/skills/rnd-using-rnd-framework/SKILL.md"
   check_urfm_skill_refs "$urfm"
 
   if [[ -d "$agents_dir" ]]; then

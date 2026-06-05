@@ -1,5 +1,5 @@
 ---
-name: lib-sh-patterns
+name: rnd-lib-sh-patterns
 description: "Use when writing hooks or lib scripts — covers lib.sh shared utilities, path predicates, response functions, stdin parsing, and the active_session_dir caching pattern"
 effort: low
 ---
@@ -170,6 +170,6 @@ ts="$(iso_timestamp)"  # "2026-03-28T14:30:00Z"
 
 ## Related Skills
 
-- `rnd-framework:hook-authoring` — hook structure that uses these functions
-- `rnd-framework:bash-hook-testing` — how to test these functions
-- `rnd-framework:fp-practices` — general FP principles these primitives embody
+- `rnd-framework:rnd-hook-authoring` — hook structure that uses these functions
+- `rnd-framework:rnd-bash-hook-testing` — how to test these functions
+- `rnd-framework:rnd-fp-practices` — general FP principles these primitives embody

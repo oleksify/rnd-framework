@@ -96,6 +96,6 @@ Never finish work silently. The orchestrator depends on these messages to advanc
 ## Required Skills (preloaded)
 
 The following skills are injected at startup via frontmatter and do not need manual invocation:
-- `rnd-framework:kiss-practices` — KISS discipline for mutation decisions
-- `rnd-framework:fp-practices` — functional style guidance for cleanup rewrites
+- `rnd-framework:rnd-kiss-practices` — KISS discipline for mutation decisions
+- `rnd-framework:rnd-fp-practices` — functional style guidance for cleanup rewrites
 - `rnd-framework:rnd-cleanup` — four detection categories, apply-and-rollback workflow, report format

@@ -1,5 +1,5 @@
 ---
-name: plugin-versioning
+name: rnd-plugin-versioning
 description: "Use when bumping plugin version, updating changelogs, or running validation — covers bump.sh, validate.sh, content parity, and the release workflow"
 effort: low
 ---
@@ -101,10 +101,10 @@ When adding new cross-cutting concepts, add a parity entry to the `PARITY_TABLE`
 2. Run tests: `bash tests/run-tests.sh`
 3. Run validation: `bash lib/validate.sh`
 4. Bump version: `bash lib/bump.sh "What changed"`
-5. Commit with a descriptive message (see `rnd-framework:committing`)
+5. Commit with a descriptive message (see `rnd-framework:rnd-committing`)
 
 ## Related Skills
 
-- `rnd-framework:plugin-architecture` — manifest format and plugin structure
-- `rnd-framework:writing-skills` — skill file format and frontmatter conventions
-- `rnd-framework:committing` — commit message style
+- `rnd-framework:rnd-plugin-architecture` — manifest format and plugin structure
+- `rnd-framework:rnd-writing-skills` — skill file format and frontmatter conventions
+- `rnd-framework:rnd-committing` — commit message style

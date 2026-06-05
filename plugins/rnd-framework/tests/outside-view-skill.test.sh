@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/outside-view-skill.test.sh — Content tests for skills/outside-view/SKILL.md
+# tests/outside-view-skill.test.sh — Content tests for skills/rnd-outside-view/SKILL.md
 # Usage: bash tests/outside-view-skill.test.sh
 # Exits 0 if all tests pass, 1 if any fail.
 set -euo pipefail
@@ -10,7 +10,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=./test-helpers.sh
 source "${SCRIPT_DIR}/test-helpers.sh"
 
-SKILL="${PLUGIN_ROOT}/skills/outside-view/SKILL.md"
+SKILL="${PLUGIN_ROOT}/skills/rnd-outside-view/SKILL.md"
 content="$(cat "$SKILL")"
 
 # ---------------------------------------------------------------------------
@@ -19,10 +19,10 @@ content="$(cat "$SKILL")"
 printf '\n--- outside-view skill: frontmatter ---\n'
 
 assert_contains "file exists (readable)" \
-  "name: outside-view" "$content"
+  "name: rnd-outside-view" "$content"
 
-assert_contains "frontmatter has name: outside-view" \
-  "name: outside-view" "$content"
+assert_contains "frontmatter has name: rnd-outside-view" \
+  "name: rnd-outside-view" "$content"
 
 assert_contains "frontmatter has effort: low" \
   "effort: low" "$content"

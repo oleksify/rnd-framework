@@ -13,7 +13,7 @@ PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Constants
 # ---------------------------------------------------------------------------
 
-readonly SKILL_PATH="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
+readonly SKILL_PATH="${PLUGIN_ROOT}/skills/rnd-using-rnd-framework/SKILL.md"
 readonly CACHED_PLUGIN="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
 
 # Headers at which to trim the skill for token efficiency (first match wins)
@@ -44,7 +44,7 @@ if [[ -f "$SKILL_PATH" ]]; then
     awk 'NF{found=1} found{print}' | \
     awk '{lines[NR]=$0} NF{last=NR} END{for(i=1;i<=last;i++) print lines[i]}')"
 else
-  skill_content="Error reading using-rnd-framework skill"
+  skill_content="Error reading rnd-using-rnd-framework skill"
 fi
 
 # ---------------------------------------------------------------------------
@@ -156,13 +156,13 @@ if [[ -n "$active_dir" && -d "$active_dir" ]]; then
   ctx="$(printf '%s' "<EXTREMELY_IMPORTANT>
 You have rnd-framework.
 
-**Below is the summary of your 'rnd-framework:using-rnd-framework' skill. For all other skills, use the 'Skill' tool:**
+**Below is the summary of your 'rnd-framework:rnd-using-rnd-framework' skill. For all other skills, use the 'Skill' tool:**
 
 ${skill_content}${rnd_line}${version_warning}${cc_version_warning}
 
 </EXTREMELY_IMPORTANT>")"
 else
-  ctx="$(printf '%s' "<system-reminder>rnd-framework is active. Use /rnd-framework:rnd-start to begin a pipeline. The using-rnd-framework skill is available via the Skill tool.${version_warning}${cc_version_warning}</system-reminder>")"
+  ctx="$(printf '%s' "<system-reminder>rnd-framework is active. Use /rnd-framework:rnd-start to begin a pipeline. The rnd-using-rnd-framework skill is available via the Skill tool.${version_warning}${cc_version_warning}</system-reminder>")"
 fi
 
 # ---------------------------------------------------------------------------

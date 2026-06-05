@@ -571,8 +571,8 @@ Inject session-local skills into every agent spawn — not selectively. An agent
 
 ## Related Skills
 
-- `rnd-framework:premortem` — Phase 1 failure-imagination fan-out before the Planner spawn
-- `rnd-framework:outside-view` — Phase 1 reference-class injection into the Planner prompt
+- `rnd-framework:rnd-premortem` — Phase 1 failure-imagination fan-out before the Planner spawn
+- `rnd-framework:rnd-outside-view` — Phase 1 reference-class injection into the Planner prompt
 - `rnd-framework:rnd-design` — Phase 0.5 architectural alternatives gate
 - `rnd-framework:rnd-decomposition` — Planner protocol for task breakdown
 - `rnd-framework:rnd-scheduling` — Wave scheduling from the dependency matrix

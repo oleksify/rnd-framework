@@ -25,8 +25,8 @@ If `$ARGUMENTS` is non-empty, treat it as a focus area hint (judges still examin
 
 ## Phase 1: Context Loading
 
-1. **Load KISS practices.** Invoke `rnd-framework:kiss-practices` for the detected tech stack.
-2. **Load review criteria.** Invoke `rnd-framework:code-review` to load categories, severity levels, verdict taxonomy, and report template.
+1. **Load KISS practices.** Invoke `rnd-framework:rnd-kiss-practices` for the detected tech stack.
+2. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load categories, severity levels, verdict taxonomy, and report template.
 
 ## Phase 2: Audit
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.0 — 2026-06-05
+
+### Prefix the 15 remaining unprefixed skills with rnd- so every skill follows the rnd-<name> convention
+
+Agents (13) and commands (12) were already fully rnd-prefixed; 15 skills were not: premortem, outside-view, kiss-practices, fp-practices, code-review, committing, prefer-system-tools, bash-hook-testing, bun-scripting, hook-authoring, lib-sh-patterns, plugin-architecture, plugin-versioning, writing-skills, and using-rnd-framework. Rename each skill directory and its name: frontmatter to the rnd-<name> form, and update every rnd-framework:<name> invocation and skills/<name>/ path reference across agents, commands, hooks, tests, fixtures, README, and CLAUDE.md. Non-skill files (lib/outside-view.sh, premortem.md/outside-view.md artifacts, *-emit.sh) and prose uses of common words are deliberately untouched. Skill invocations change from rnd-framework:<name> to rnd-framework:rnd-<name>; old names keep resolving only until the installed plugin cache is refreshed via /plugin update. Verified: validate.sh exit 0 (66 xrefs + 13 parity), full test suite exit 0.
+
 ## 0.15.282 — 2026-06-05
 
 ### Disambiguate the Phase 7 "code review" menu option so it runs the RND review, not native /code-review

@@ -1,5 +1,5 @@
 ---
-name: bun-scripting
+name: rnd-bun-scripting
 description: Use when writing helper scripts, utility tasks, or automation within the R&D pipeline — prefer Bun (TypeScript) over Python when available
 effort: low
 ---

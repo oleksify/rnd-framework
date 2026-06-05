@@ -1,5 +1,5 @@
 ---
-name: bash-hook-testing
+name: rnd-bash-hook-testing
 description: "Use when writing or modifying tests for rnd-framework hook scripts — covers the test-helpers.sh framework, run_hook pattern, assertions, environment mocking, and test organization"
 effort: low
 ---
@@ -171,5 +171,5 @@ bash tests/read-gate.test.sh
 
 ## Related Skills
 
-- `rnd-framework:hook-authoring` — how hooks work and how to write them
-- `rnd-framework:lib-sh-patterns` — the shared functions being tested
+- `rnd-framework:rnd-hook-authoring` — how hooks work and how to write them
+- `rnd-framework:rnd-lib-sh-patterns` — the shared functions being tested

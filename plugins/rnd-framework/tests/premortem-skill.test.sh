@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/premortem-skill.test.sh — Content-presence tests for skills/premortem/SKILL.md
+# tests/premortem-skill.test.sh — Content-presence tests for skills/rnd-premortem/SKILL.md
 # Usage: bash tests/premortem-skill.test.sh
 # Exits 0 if all tests pass, 1 if any fail.
 set -euo pipefail
@@ -10,7 +10,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=./test-helpers.sh
 source "${SCRIPT_DIR}/test-helpers.sh"
 
-SKILL="${PLUGIN_ROOT}/skills/premortem/SKILL.md"
+SKILL="${PLUGIN_ROOT}/skills/rnd-premortem/SKILL.md"
 content="$(cat "$SKILL")"
 
 # ---------------------------------------------------------------------------
@@ -18,8 +18,8 @@ content="$(cat "$SKILL")"
 # ---------------------------------------------------------------------------
 printf '\n--- premortem skill: frontmatter ---\n'
 
-assert_contains "frontmatter has name: premortem" \
-  "name: premortem" "$content"
+assert_contains "frontmatter has name: rnd-premortem" \
+  "name: rnd-premortem" "$content"
 
 assert_contains "frontmatter has description field" \
   "description:" "$content"

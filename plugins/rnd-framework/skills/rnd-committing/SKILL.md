@@ -1,5 +1,5 @@
 ---
-name: committing
+name: rnd-committing
 description: Use when creating git commits — enforces commit message style, length limits, and user confirmation before committing
 effort: low
 ---

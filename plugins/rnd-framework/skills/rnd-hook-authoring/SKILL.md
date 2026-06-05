@@ -1,5 +1,5 @@
 ---
-name: hook-authoring
+name: rnd-hook-authoring
 description: "Use when writing or modifying rnd-framework hook scripts — covers hook anatomy, exit code protocol, stdin parsing, fast-path patterns, and hooks.json registration"
 effort: low
 ---
@@ -155,6 +155,6 @@ Add new PostToolUse behaviors as additional `case` branches here.
 
 ## Related Skills
 
-- `rnd-framework:lib-sh-patterns` — shared utility functions used in hooks
-- `rnd-framework:bash-hook-testing` — how to test hook scripts
-- `rnd-framework:plugin-architecture` — plugin structure and hook system
+- `rnd-framework:rnd-lib-sh-patterns` — shared utility functions used in hooks
+- `rnd-framework:rnd-bash-hook-testing` — how to test hook scripts
+- `rnd-framework:rnd-plugin-architecture` — plugin structure and hook system

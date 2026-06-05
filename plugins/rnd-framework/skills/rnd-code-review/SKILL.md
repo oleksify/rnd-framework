@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: rnd-code-review
 description: "Use when reviewing code changes for quality, correctness, and security — defines review categories, severity levels, verdicts, and the structured report format"
 effort: low
 ---

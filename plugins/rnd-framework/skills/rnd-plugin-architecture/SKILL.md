@@ -1,5 +1,5 @@
 ---
-name: plugin-architecture
+name: rnd-plugin-architecture
 description: "Use when working with the plugin structure — covers config dir detection, path matching, hooks.json, and hook event availability"
 effort: low
 ---
@@ -105,6 +105,6 @@ If a user policy has a deny rule covering `.rnd/` paths, hook auto-allows are si
 
 ## Related Skills
 
-- `rnd-framework:hook-authoring` — writing and registering hooks
-- `rnd-framework:plugin-versioning` — keeping manifests in sync, version bumping
-- `rnd-framework:lib-sh-patterns` — shared utilities used in hooks and lib scripts
+- `rnd-framework:rnd-hook-authoring` — writing and registering hooks
+- `rnd-framework:rnd-plugin-versioning` — keeping manifests in sync, version bumping
+- `rnd-framework:rnd-lib-sh-patterns` — shared utilities used in hooks and lib scripts

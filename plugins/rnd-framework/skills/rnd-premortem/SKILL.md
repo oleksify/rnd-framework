@@ -1,5 +1,5 @@
 ---
-name: premortem
+name: rnd-premortem
 description: "Use when the orchestrator must run a premortem before writing protocol.md — spawns N Haiku agents in parallel, each imagining one failure framing, then aggregates results into premortem.md"
 effort: low
 user-invocable: false

@@ -111,11 +111,11 @@ Skills embed structured practices into each phase. Notable ones:
 
 | Skill | Purpose |
 |---|---|
-| `using-rnd-framework` | Session bootstrap — lists available skills and commands |
+| `rnd-using-rnd-framework` | Session bootstrap — lists available skills and commands |
 | `rnd-orchestration` | Pipeline overview, agent roles, gate criteria |
 | `rnd-decomposition` | Hierarchical decomposition and pre-registration |
-| `premortem` | Pre-planning failure imagination, aggregated into `premortem.md` |
-| `outside-view` | Injects historical per-shape FAIL rates as a calibration anchor |
+| `rnd-premortem` | Pre-planning failure imagination, aggregated into `premortem.md` |
+| `rnd-outside-view` | Injects historical per-shape FAIL rates as a calibration anchor |
 | `rnd-building` | Builder methodology with TDD discipline |
 | `rnd-verification` | Wave-batched independent verification, per-assertion verdict map |
 | `rnd-debugging` | Systematic root-cause analysis |
@@ -130,10 +130,10 @@ Skills embed structured practices into each phase. Notable ones:
 | `rnd-calibration` | Verdict-accuracy tracking |
 | `rnd-roadmapping` | Multi-session roadmap format and lifecycle |
 | `rnd-learning` | Capture pipeline gotchas to the Learning Library |
-| `code-review` | Review categories, severities, verdicts, report format |
-| `kiss-practices` / `fp-practices` | Language-specific simplicity and FP rules |
-| `prefer-system-tools` / `bun-scripting` / `committing` | Tooling and commit discipline |
-| `hook-authoring` / `lib-sh-patterns` / `plugin-architecture` / `plugin-versioning` / `bash-hook-testing` | Working on the plugin itself |
+| `rnd-code-review` | Review categories, severities, verdicts, report format |
+| `rnd-kiss-practices` / `rnd-fp-practices` | Language-specific simplicity and FP rules |
+| `rnd-prefer-system-tools` / `rnd-bun-scripting` / `rnd-committing` | Tooling and commit discipline |
+| `rnd-hook-authoring` / `rnd-lib-sh-patterns` / `rnd-plugin-architecture` / `rnd-plugin-versioning` / `rnd-bash-hook-testing` | Working on the plugin itself |
 
 ## Information barrier
 
@@ -203,7 +203,7 @@ rnd-framework/
 
 - **Agent models** — edit each agent's `model:` frontmatter, or rely on criticality-driven dispatch.
 - **Iteration budget** — edit the limit in `/rnd-framework:rnd-start` (default 3).
-- **New skills** — use the `writing-skills` skill.
+- **New skills** — use the `rnd-writing-skills` skill.
 
 ## Requirements & limits
 

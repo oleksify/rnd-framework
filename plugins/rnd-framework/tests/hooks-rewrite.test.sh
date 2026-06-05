@@ -92,7 +92,7 @@ else
 fi
 
 # Quality: skill path is stored in a named constant (not bare string literal)
-# The old code used: skill_file="${PLUGIN_ROOT}/skills/using-rnd-framework/SKILL.md"
+# The old code used: skill_file="${PLUGIN_ROOT}/skills/rnd-using-rnd-framework/SKILL.md"
 # The new code should use a readonly local constant
 if grep -qE 'readonly|local -r' "$SESSION_START" 2>/dev/null; then
   assert_eq "session-start skill path uses a named constant" "pass" "pass"
@@ -103,11 +103,11 @@ fi
 # Criterion: version mismatch warning is present when cached and source versions differ.
 # Build a fake plugin tree with mismatched versions.
 vm_dir="${state_dir}/versiontest"
-mkdir -p "${vm_dir}/.claude-plugin" "${vm_dir}/skills/using-rnd-framework" "${vm_dir}/hooks" "${vm_dir}/lib"
+mkdir -p "${vm_dir}/.claude-plugin" "${vm_dir}/skills/rnd-using-rnd-framework" "${vm_dir}/hooks" "${vm_dir}/lib"
 cp "${HOOKS_DIR}/lib.sh" "${vm_dir}/hooks/lib.sh"
 [[ -f "${SCRIPT_DIR}/../lib/rnd-dir.sh" ]] && cp "${SCRIPT_DIR}/../lib/rnd-dir.sh" "${vm_dir}/lib/rnd-dir.sh" && chmod +x "${vm_dir}/lib/rnd-dir.sh"
 printf '{"name":"rnd-framework","version":"0.0.1","description":"test"}\n' > "${vm_dir}/.claude-plugin/plugin.json"
-printf -- '---\nname: test-skill\ndescription: test\neffort: low\n---\n\nSkill body text.\n' > "${vm_dir}/skills/using-rnd-framework/SKILL.md"
+printf -- '---\nname: test-skill\ndescription: test\neffort: low\n---\n\nSkill body text.\n' > "${vm_dir}/skills/rnd-using-rnd-framework/SKILL.md"
 mkdir -p "${vm_dir}/gitroot/plugins/rnd-framework/.claude-plugin"
 printf '{"name":"rnd-framework","version":"9.9.9","description":"test"}\n' > "${vm_dir}/gitroot/plugins/rnd-framework/.claude-plugin/plugin.json"
 ( cd "${vm_dir}/gitroot" && git init -q && git commit --allow-empty -q -m "init" )

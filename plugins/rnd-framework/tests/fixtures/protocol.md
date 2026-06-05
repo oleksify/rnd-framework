@@ -26,7 +26,7 @@ Roadmap-locked: M4 is a Planner-side change (Branch C adapted from the roadmap),
 
 - **M4.T01.injector-script** — Write `lib/outside-view.sh`: runs DuckDB on `per_shape_fail_rate` view, validates rows, applies the `n_total < 5` thin-corpus gate, formats the rendered block (header + framing constraint section + per-shape rows or thin-corpus sentinel), writes to `$RND_DIR/outside-view.md` AND stdout. Includes graceful degradation when `duckdb` is absent or corpus is empty.
 - **M4.T02.emit-helper** — Write `lib/outside-view-emit.sh`: dedicated audit emitter for the `outside_view_injected` event. Payload `{event, mode, n_total, shapes, framing_constraint_emitted, timestamp}`. Modeled on `lib/premortem-emit.sh` with the same RND_DIR guard and `2>/dev/null || true` write tolerance.
-- **M4.T03.skill-doc** — Write `skills/outside-view/SKILL.md`: documents the mechanism (when it fires, what the block contains, the thin-corpus operational definition `n_total < 5`, the framing constraint that addresses FM6).
+- **M4.T03.skill-doc** — Write `skills/rnd-outside-view/SKILL.md`: documents the mechanism (when it fires, what the block contains, the thin-corpus operational definition `n_total < 5`, the framing constraint that addresses FM6).
 - **M4.T04.wire-and-planner** — Insert a new sub-section "### Phase 1 pre-step: Outside-view injection" into `commands/rnd-start.md` between the premortem section and the Planner spawn. Update the Planner spawn prompt to reference `${OUTSIDE_VIEW_BLOCK}`. Add a small additive paragraph to `agents/rnd-planner.md` instructing the Planner to use the block as a calibration anchor.
 - **M4.T05.ship-bump-and-e2e** — Minor version bump (5.4.4 → 5.5.0) via `lib/bump.sh --minor`. Write the CHANGELOG entry with the four mandatory content items (threshold, framing, audit event, wiring location). Run `validate.sh` + `validate-xrefs.sh`. Run the full test suite. Exercise the end-to-end flow once in a sandboxed session.
 
@@ -107,7 +107,7 @@ Roadmap-locked: M4 is a Planner-side change (Branch C adapted from the roadmap),
 
 - `n_total` = total verifier verdicts the corpus contains in the `dogfood` segment after view aggregation, regardless of shape distribution.
 - `5` is chosen as a conservative threshold: the M3-only corpus produces ~4 verdicts (one per task). The injector must NOT show per-shape `fail_rate=0%` numbers when n=1 sample dominates the corpus.
-- The threshold value `5` lives in exactly two places: `N_THIN_CORPUS=5` in `lib/outside-view.sh`, and the sentence `"n_total < 5"` in `skills/outside-view/SKILL.md` and `CHANGELOG.md` entry. The Verifier asserts these two referents match (content-against-SSOT verification, not bare keyword presence — per `feedback_doc_task_content_verification`).
+- The threshold value `5` lives in exactly two places: `N_THIN_CORPUS=5` in `lib/outside-view.sh`, and the sentence `"n_total < 5"` in `skills/rnd-outside-view/SKILL.md` and `CHANGELOG.md` entry. The Verifier asserts these two referents match (content-against-SSOT verification, not bare keyword presence — per `feedback_doc_task_content_verification`).
 - When thin-corpus mode fires, the rendered block contains the literal phrase `Mode: thin-corpus` and the per-shape rows are SUPPRESSED. The block still contains the `## Framing constraint` section.
 
 ## Framing constraint (the FM6 countermeasure)
@@ -256,8 +256,8 @@ fulfills: [M4.emit.helper-script-exists, M4.emit.payload-schema, M4.emit.no-rnd-
 ```
 Task ID: M4.T03.skill-doc
 Intent: Document the outside-view mechanism in a skill file the Planner reads at session-local injection time, including the load-bearing operational definitions for FM5 and FM6.
-Approach: Create `skills/outside-view/SKILL.md` with YAML frontmatter (`name: outside-view`, `description: <one sentence>`, `effort: low`, `user-invocable: false`). Body sections: "## Overview" (what fires when), "## Block format" (header + framing-constraint + rows), "## Thin-corpus operational definition" (the `n_total < 5` rule, expressed as a complete sentence not a bare keyword), "## Framing constraint" (the verbatim three-phrase rule that the script also renders), "## When the injector is invoked" (Phase 1 pre-step, AFTER premortem, BEFORE Planner), "## Audit event" (the payload shape).
-Expected outputs: `plugins/rnd-framework/skills/outside-view/SKILL.md`.
+Approach: Create `skills/rnd-outside-view/SKILL.md` with YAML frontmatter (`name: rnd-outside-view`, `description: <one sentence>`, `effort: low`, `user-invocable: false`). Body sections: "## Overview" (what fires when), "## Block format" (header + framing-constraint + rows), "## Thin-corpus operational definition" (the `n_total < 5` rule, expressed as a complete sentence not a bare keyword), "## Framing constraint" (the verbatim three-phrase rule that the script also renders), "## When the injector is invoked" (Phase 1 pre-step, AFTER premortem, BEFORE Planner), "## Audit event" (the payload shape).
+Expected outputs: `plugins/rnd-framework/skills/rnd-outside-view/SKILL.md`.
 Criticality: NORMAL
 Success criteria:
   Correctness:
@@ -270,12 +270,12 @@ Success criteria:
 Verification level: unit
 Dependencies: (none)
 Preconditions:
-  - `skills/premortem/SKILL.md` exists as a reference pattern.
+  - `skills/rnd-premortem/SKILL.md` exists as a reference pattern.
 External Dependencies:
   - None
 Assumptions:
   - Assumption: The Planner-agent injection of session-local skill bodies (`SESSION_SKILLS_FRAGMENT` mechanism in `commands/rnd-start.md`) is the path by which this skill reaches the Planner — separate from the runtime-rendered outside-view block.
-    Refuted by: Re-read `commands/rnd-start.md` lines 41-75 to confirm the SESSION_SKILLS_FRAGMENT assembly; this skill is global (lives under `plugins/rnd-framework/skills/`, not under `$RND_DIR/skills/`), so it reaches the Planner via the standard plugin-skill discovery, not via the session-local mechanism. Confirm by reading `skills/premortem/SKILL.md`'s location.
+    Refuted by: Re-read `commands/rnd-start.md` lines 41-75 to confirm the SESSION_SKILLS_FRAGMENT assembly; this skill is global (lives under `plugins/rnd-framework/skills/`, not under `$RND_DIR/skills/`), so it reaches the Planner via the standard plugin-skill discovery, not via the session-local mechanism. Confirm by reading `skills/rnd-premortem/SKILL.md`'s location.
 fulfills: [M4.skill.file-exists-with-frontmatter, M4.skill.documents-thin-corpus-threshold, M4.skill.documents-framing-constraint]
 ```
 

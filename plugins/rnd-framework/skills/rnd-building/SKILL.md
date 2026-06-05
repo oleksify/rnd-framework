@@ -262,8 +262,8 @@ RND_EVIDENCE_PACK=1 RND_DIR="$RND_DIR" RND_TASK_ID="<id>" \
 - `rnd-framework:rnd-debugging` — unexpected test failures
 - `rnd-framework:rnd-iteration` — when Verifier sends back feedback
 - `rnd-framework:rnd-data-science` — numerical analysis, financial calculations, data wiring, chart generation (Julia or DuckDB)
-- `rnd-framework:kiss-practices` — language-specific over-engineering guardrails (load by detected language)
-- `rnd-framework:fp-practices` — functional-style guardrails (load by detected language)
-- `rnd-framework:prefer-system-tools` — reach for native CLI before writing custom code
-- `rnd-framework:bun-scripting` — preferred runtime for helper scripts when Bun is available
-- `rnd-framework:committing` — commit-message discipline before staging build output
+- `rnd-framework:rnd-kiss-practices` — language-specific over-engineering guardrails (load by detected language)
+- `rnd-framework:rnd-fp-practices` — functional-style guardrails (load by detected language)
+- `rnd-framework:rnd-prefer-system-tools` — reach for native CLI before writing custom code
+- `rnd-framework:rnd-bun-scripting` — preferred runtime for helper scripts when Bun is available
+- `rnd-framework:rnd-committing` — commit-message discipline before staging build output

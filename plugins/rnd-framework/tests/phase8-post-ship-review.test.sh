@@ -38,8 +38,8 @@ else
 fi
 
 # Phase 8 body references the code-review skill, not a duplicated copy
-assert_contains "Phase 8 references rnd-framework:code-review (not duplicated)" "rnd-framework:code-review" \
-  "$(awk '/^## Phase 8/,0' "$RND_START" | grep "rnd-framework:code-review" | head -1)"
+assert_contains "Phase 8 references rnd-framework:rnd-code-review (not duplicated)" "rnd-framework:rnd-code-review" \
+  "$(awk '/^## Phase 8/,0' "$RND_START" | grep "rnd-framework:rnd-code-review" | head -1)"
 
 # Phase 8 mentions the pipeline runs it (not the user)
 assert_contains "Phase 8 says run by pipeline, not user" "not the user" \
@@ -109,8 +109,8 @@ assert_contains "Phase 8 mentions seven categories by reference" "seven" \
 # (architecture, security, correctness, testing, KISS, style, pipeline-context)
 # as a standalone list — it should reference the skill instead.
 # We check that the section body delegates via skill invocation.
-assert_contains "Phase 8 delegates to rnd-framework:code-review skill" "rnd-framework:code-review" \
-  "$(awk '/^## Phase 8/,0' "$RND_START" | grep "rnd-framework:code-review")"
+assert_contains "Phase 8 delegates to rnd-framework:rnd-code-review skill" "rnd-framework:rnd-code-review" \
+  "$(awk '/^## Phase 8/,0' "$RND_START" | grep "rnd-framework:rnd-code-review")"
 
 # ---------------------------------------------------------------------------
 report

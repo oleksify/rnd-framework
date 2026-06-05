@@ -1,5 +1,5 @@
 ---
-name: using-rnd-framework
+name: rnd-using-rnd-framework
 description: Use when starting any conversation - establishes how to find and use R&D framework skills, requiring Skill tool invocation before ANY response
 effort: low
 ---

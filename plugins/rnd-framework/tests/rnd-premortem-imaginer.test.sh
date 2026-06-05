@@ -10,7 +10,7 @@ source "${SCRIPT_DIR}/test-helpers.sh"
 
 AGENT_FILE="${PLUGIN_DIR}/agents/rnd-premortem-imaginer.md"
 RND_START="${PLUGIN_DIR}/commands/rnd-start.md"
-PREMORTEM_SKILL="${PLUGIN_DIR}/skills/premortem/SKILL.md"
+PREMORTEM_SKILL="${PLUGIN_DIR}/skills/rnd-premortem/SKILL.md"
 
 frontmatter_of() {
   awk '/^---$/{count++; if(count==2) exit} count==1{print}' "$1"

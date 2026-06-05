@@ -40,8 +40,8 @@ Collect the full diff output and the list of changed files. If the diff is empty
 ## Phase 1: Context Loading
 
 1. **Detect tech stack.** Scan changed file extensions to identify the project's languages and frameworks.
-2. **Load KISS practices.** Invoke `rnd-framework:kiss-practices` and read the language files matching the project's stack.
-3. **Load review criteria.** Invoke `rnd-framework:code-review` to load the six review categories, four severity levels, verdict taxonomy, and report template.
+2. **Load KISS practices.** Invoke `rnd-framework:rnd-kiss-practices` and read the language files matching the project's stack.
+3. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load the six review categories, four severity levels, verdict taxonomy, and report template.
 
 ## Phase 2: Review
 

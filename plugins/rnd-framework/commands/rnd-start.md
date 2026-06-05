@@ -96,7 +96,7 @@ Before planning, explore the codebase and gather requirements.
 
 2. **Discover local experts.** Invoke `rnd-framework:rnd-local-experts` to scan `.claude/agents/` and `.claude/skills/` for project-local agents and skills. If none exist, record `Local Experts Discovered: none` and continue.
 
-3. **Load coding practices.** Detect which languages/frameworks are present. Invoke `rnd-framework:kiss-practices` and `rnd-framework:fp-practices` in a single message (parallel).
+3. **Load coding practices.** Detect which languages/frameworks are present. Invoke `rnd-framework:rnd-kiss-practices` and `rnd-framework:rnd-fp-practices` in a single message (parallel).
 
 4. **Check roadmap scope.** Run `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --roadmap` to get the roadmap path. Check if the file exists.
 
@@ -158,9 +158,9 @@ Otherwise:
 
 Before spawning the Planner, run a premortem: spawn N parallel `rnd-premortem-imaginer` agents, each imagining one failure framing. Aggregate their narratives into `$RND_DIR/premortem.md`.
 
-**Determine framings.** Start with the 5 core framings from `rnd-framework:premortem`. Derive up to 2 task-specific framings from the task description. Bounds: `3 ≤ N ≤ 7`, default `N = 5`. See the `rnd-framework:premortem` skill for the framing labels, framing prompts, and per-agent prompt template.
+**Determine framings.** Start with the 5 core framings from `rnd-framework:rnd-premortem`. Derive up to 2 task-specific framings from the task description. Bounds: `3 ≤ N ≤ 7`, default `N = 5`. See the `rnd-framework:rnd-premortem` skill for the framing labels, framing prompts, and per-agent prompt template.
 
-**Spawn N agents in ONE message**, one per framing. Fill in `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` from the per-agent prompt template in the `rnd-framework:premortem` skill:
+**Spawn N agents in ONE message**, one per framing. Fill in `{FRAMING_LABEL}`, `{FRAMING_PROMPT}`, and `{TASK_DESCRIPTION}` from the per-agent prompt template in the `rnd-framework:rnd-premortem` skill:
 
 ```
 Agent({ subagent_type: "rnd-premortem-imaginer", prompt: "<framing 1 prompt from premortem skill>" })
@@ -170,7 +170,7 @@ Agent({ subagent_type: "rnd-premortem-imaginer", prompt: "<framing 2 prompt from
 
 Each agent returns a short failure narrative only — no file writes, no tool use.
 
-**Aggregate.** Collect narratives in framing-assignment order. Deduplicate near-identical failure modes (same root cause AND mechanism — keep the more specific one). Assign stable `FM<k>` IDs starting at FM1. Write `$RND_DIR/premortem.md` using the `## FM<k> — {framing-label}` format from the `rnd-framework:premortem` skill.
+**Aggregate.** Collect narratives in framing-assignment order. Deduplicate near-identical failure modes (same root cause AND mechanism — keep the more specific one). Assign stable `FM<k>` IDs starting at FM1. Write `$RND_DIR/premortem.md` using the `## FM<k> — {framing-label}` format from the `rnd-framework:rnd-premortem` skill.
 
 **Emit** the audit event after writing `premortem.md`:
 
@@ -660,7 +660,7 @@ After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchan
 
 ### RND Code Review
 
-When the user selects "Run RND code review first," run the **framework's own** seven-category review — the same flow as Phase 8: invoke `rnd-framework:code-review` to load the categories, severity levels, verdict taxonomy, and report template, review the pipeline diff, and write `$RND_DIR/review/post-ship-review.md` (surface it per the Report Surfacing Protocol). Equivalently, you may run `/rnd-framework:rnd-review`.
+When the user selects "Run RND code review first," run the **framework's own** seven-category review — the same flow as Phase 8: invoke `rnd-framework:rnd-code-review` to load the categories, severity levels, verdict taxonomy, and report template, review the pipeline diff, and write `$RND_DIR/review/post-ship-review.md` (surface it per the Report Surfacing Protocol). Equivalently, you may run `/rnd-framework:rnd-review`.
 
 **Do NOT invoke Claude Code's native `/code-review` (or `/review`, `/security-review`) command here.** "Run RND code review first" means the framework's review, not the native diff-scan skill. If Phase 8 already produced `$RND_DIR/review/post-ship-review.md` this session, surface that report instead of re-running.
 
@@ -685,11 +685,11 @@ After the review, re-present the Tier 1 `AskUserQuestion` menu unchanged.
 
 1. **Determine the scope.** The review covers all changes shipped in the pipeline. Resolve the commit range: compare the current `HEAD` against the git state at the start of the session (read `$RND_DIR/protocol.md` or use `git log` to find the first commit on this pipeline run). Use `git diff <base>..HEAD` as the scope, or default to `HEAD` against the session's starting SHA if available.
 
-2. **Load review criteria.** Invoke `rnd-framework:code-review` to load the seven review categories, severity levels, verdict taxonomy, and report template.
+2. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load the seven review categories, severity levels, verdict taxonomy, and report template.
 
 3. **Systematically review the diff** against the seven categories (architecture, security, correctness, testing, KISS compliance, style, pipeline-context hygiene). For each category, examine every changed file. Use Read/Grep to inspect surrounding context. Produce findings with severity levels (critical, major, minor, info).
 
-4. **Write the review report** to `$RND_DIR/review/post-ship-review.md` with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line. This reuses the same report format as `rnd-review.md` — do NOT duplicate the seven-category logic, load it via `rnd-framework:code-review`.
+4. **Write the review report** to `$RND_DIR/review/post-ship-review.md` with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line. This reuses the same report format as `rnd-review.md` — do NOT duplicate the seven-category logic, load it via `rnd-framework:rnd-code-review`.
 
 5. **For each finding**, call the post-review record writer (`lib/post-review-writer.sh`) to append one record to the slug-root `post-review.jsonl`:
 

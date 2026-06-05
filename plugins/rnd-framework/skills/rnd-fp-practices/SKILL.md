@@ -1,5 +1,5 @@
 ---
-name: fp-practices
+name: rnd-fp-practices
 description: "Use alongside KISS practices to guide agents toward functional programming patterns — pure functions, data transformations, composition, command-query separation, and immutability"
 effort: low
 ---
@@ -33,7 +33,7 @@ Concrete rules for writing code in a functional style. These complement KISS pra
 | `mix.exs` with `:postgrex` or `:ecto`, or `*.sql` files | `${CLAUDE_SKILL_DIR}/postgresql.md` |
 | DuckDB usage, `*.duckdb` files, or analytical/data tasks | `${CLAUDE_SKILL_DIR}/duckdb.md` |
 
-**Overriding:** Projects can ship their own `fp-practices` skill in `.claude/skills/fp-practices/SKILL.md` to override these defaults with project-specific rules.
+**Overriding:** Projects can ship their own `rnd-fp-practices` skill in `.claude/skills/rnd-fp-practices/SKILL.md` to override these defaults with project-specific rules.
 
 ## The Rules
 

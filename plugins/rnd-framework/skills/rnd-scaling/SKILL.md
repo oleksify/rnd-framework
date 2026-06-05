@@ -164,4 +164,4 @@ Key rules:
 ## Related Skills
 
 - `rnd-framework:rnd-orchestration` — Full pipeline overview
-- `rnd-framework:using-rnd-framework` — Available commands
+- `rnd-framework:rnd-using-rnd-framework` — Available commands

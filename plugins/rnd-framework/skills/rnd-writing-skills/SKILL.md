@@ -1,5 +1,5 @@
 ---
-name: writing-skills
+name: rnd-writing-skills
 description: Use when creating new skills for the rnd-framework plugin — skill file format, frontmatter conventions, and best practices
 effort: low
 ---
@@ -82,4 +82,4 @@ State which type your skill is in the body.
 
 ## Related Skills
 
-- `rnd-framework:using-rnd-framework` — Bootstrap skill that lists all available skills
+- `rnd-framework:rnd-using-rnd-framework` — Bootstrap skill that lists all available skills

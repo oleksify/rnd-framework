@@ -145,7 +145,7 @@ Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rn
 
 ### Session Bootstrap
 
-`SessionStart` fires on `startup|resume|clear|compact` → `hooks/session-start.sh` injects the full `using-rnd-framework` skill reminder (with the active `RND_DIR`) **only when a pipeline session is active** (`active_session_dir` non-empty AND the dir exists on disk — the on-disk check guards a stale `.current-session`); otherwise it emits a one-line `<system-reminder>` stub pointing at `/rnd-framework:rnd-start`, so idle sessions pay minimal context. It writes the `.session-git-root`/`.active-base-dir` caches via `resolve_rnd_dir --base` (no per-session `sessions/<id>` dir is created at SessionStart; the first `/rnd-framework:rnd-start` creates it, after which resume/compact restore the full block) and emits a version warning if below v2.1.139.
+`SessionStart` fires on `startup|resume|clear|compact` → `hooks/session-start.sh` injects the full `rnd-using-rnd-framework` skill reminder (with the active `RND_DIR`) **only when a pipeline session is active** (`active_session_dir` non-empty AND the dir exists on disk — the on-disk check guards a stale `.current-session`); otherwise it emits a one-line `<system-reminder>` stub pointing at `/rnd-framework:rnd-start`, so idle sessions pay minimal context. It writes the `.session-git-root`/`.active-base-dir` caches via `resolve_rnd_dir --base` (no per-session `sessions/<id>` dir is created at SessionStart; the first `/rnd-framework:rnd-start` creates it, after which resume/compact restore the full block) and emits a version warning if below v2.1.139.
 
 `SessionEnd` fires on close/switch (including `/resume`) → `hooks/session-end.sh` calls `rnd-dir.sh --finish` to clear `.current-session`.
 
@@ -210,7 +210,7 @@ Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`,
 - **Commands are Markdown files** in `commands/` — filename becomes the command name.
 - **Plugin manifest** at `.claude-plugin/plugin.json` — only `name`, `description`, `version`.
 - **Tests** — `tests/` contains bash tests for hooks and lib scripts; run with `tests/run-tests.sh` from `plugins/rnd-framework/`.
-- **Tooling hierarchy** — system CLI tools first (`prefer-system-tools` skill), then bash scripts, then Python as last resort.
+- **Tooling hierarchy** — system CLI tools first (`rnd-prefer-system-tools` skill), then bash scripts, then Python as last resort.
 - **File creation** — always use `Write`/`Edit`, never bash heredocs (`cat > file << 'EOF'`).
 - **Report surfacing** — the three output styles each carry a "Report Surfacing Protocol" requiring the orchestrator to print agent/skill report artifacts (plans, design specs, manifests, verdict maps, reality reports, diagnoses, integration reports, iteration log, audits, reviews, narratives, brainstorms) verbatim before any next-step prompt — same turn, including autonomous/loop mode. Excluded: self-assessments, found-issues ledgers, cleanup reports, project-facts, calibration, audit log.
 

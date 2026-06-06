@@ -33,7 +33,7 @@ If `$ARGUMENTS` is non-empty, treat it as a focus area hint (judges still examin
 Systematically examine the codebase against the seven review categories:
 - Architecture, Security, Correctness, Testing, KISS compliance, Style, Pipeline-context hygiene
 
-Use Read, Grep, Glob tools to explore all tracked files. Examine every area — this is a full audit, not a diff review. Produce findings with severity levels (critical, major, minor, info).
+Use Read, Grep, Glob tools to explore all tracked files. Examine every area — this is a full audit, not a diff review. When a broad codebase sweep warrants a subagent, spawn `rnd-framework:rnd-explorer` (narrow read-only grant, spawns reliably) — never the built-in `Explore` or `general-purpose` agents, which inherit the full MCP tool surface and fail to spawn with "Prompt is too long" in MCP-heavy sessions. Produce findings with severity levels (critical, major, minor, info).
 
 Save the audit report to `$RND_DIR/audit-report.md` with Scope set to "Full codebase audit" and an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line.
 

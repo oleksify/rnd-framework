@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.2 — 2026-06-06
+
+### Steer exploration in rnd-start, rnd-audit, rnd-review, and rnd-debug to rnd-explorer instead of the native Explore agent
+
+Extends the rnd-brainstorm fix across the other broad-exploration commands. rnd-start's Phase 0 note already warned against the native Explore (0 tool uses) but never offered rnd-explorer as the broad-sweep escalation; rnd-audit/rnd-review/rnd-debug had no local steering at all. Each now directs genuine codebase sweeps to the read-only rnd-explorer and away from the built-in Explore/general-purpose agents, which fail to spawn in MCP-heavy sessions. rnd-scan is excluded by design (fixed inline glob checklist).
+
 ## 0.16.1 — 2026-06-06
 
 ### Steer rnd-brainstorm codebase grounding to rnd-explorer instead of the native Explore agent

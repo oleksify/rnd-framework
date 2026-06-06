@@ -48,7 +48,7 @@ Collect the full diff output and the list of changed files. If the diff is empty
 Systematically examine the diff against the seven review categories:
 - Architecture, Security, Correctness, Testing, KISS compliance, Style, Pipeline-context hygiene
 
-For each category, check every changed file. Use Read/Grep to inspect surrounding context. Produce findings with severity levels (critical, major, minor, info).
+For each category, check every changed file. Use Read/Grep to inspect surrounding context. If a large diff warrants a broad codebase sweep, spawn `rnd-framework:rnd-explorer` (narrow read-only grant, spawns reliably) — never the built-in `Explore` or `general-purpose` agents, which inherit the full MCP tool surface and fail to spawn with "Prompt is too long" in MCP-heavy sessions. Produce findings with severity levels (critical, major, minor, info).
 
 Save the review report to `$RND_DIR/review-report.md` with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line.
 

@@ -45,7 +45,7 @@ Invoke `rnd-framework:rnd-debug-pipeline` and `rnd-framework:rnd-debugging` to l
 
 ### Phase 2: Root Cause Analysis
 
-1. **Trace data flow.** Follow the failure backward through the call stack. Use Read, Grep/Glob to identify where the bad value originates.
+1. **Trace data flow.** Follow the failure backward through the call stack. Use Read, Grep/Glob to identify where the bad value originates. If the trace needs a broad codebase sweep, spawn `rnd-framework:rnd-explorer` (narrow read-only grant, spawns reliably) — never the built-in `Explore` or `general-purpose` agents, which fail to spawn with "Prompt is too long" in MCP-heavy sessions.
 2. **Form a single hypothesis.** "The root cause is X because Y (evidence Z)."
 3. **Validate the hypothesis.** Write a minimal command that confirms. If it does not confirm, form a new hypothesis and repeat.
 4. **Check scope.** If 3+ files are implicated or the root cause is a design flaw, consider escalation.

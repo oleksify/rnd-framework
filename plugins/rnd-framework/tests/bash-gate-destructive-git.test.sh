@@ -163,6 +163,32 @@ assert_exit_code "git worktree remove (no --force) is allowed (exit 0)" 0
 run_hook "$BASH_GATE" "$(_make_json 'git stash list')"
 assert_exit_code "git stash list is allowed (exit 0)" 0
 
+printf '\n--- bash-gate: global git options do not bypass destructive blocks ---\n'
+
+# A global option (-C <path>, -c k=v, --git-dir=...) placed before the subcommand
+# must not let a destructive op slip past the denylist.
+run_hook "$BASH_GATE" "$(_make_json 'git -C /repo reset --hard HEAD')"
+assert_exit_code "git -C <path> reset --hard is blocked (exit 2)" 2
+assert_contains "git -C reset --hard stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+run_hook "$BASH_GATE" "$(_make_json 'git -c core.pager=cat clean -fd')"
+assert_exit_code "git -c k=v clean -fd is blocked (exit 2)" 2
+assert_contains "git -c clean -fd stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+run_hook "$BASH_GATE" "$(_make_json 'git --git-dir=/repo/.git branch -D feature')"
+assert_exit_code "git --git-dir=... branch -D is blocked (exit 2)" 2
+assert_contains "git --git-dir branch -D stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+run_hook "$BASH_GATE" "$(_make_json 'git --no-pager checkout .')"
+assert_exit_code "git --no-pager checkout . is blocked (exit 2)" 2
+
+# Control: a global option on a SAFE git op must still pass through.
+run_hook "$BASH_GATE" "$(_make_json 'git -C /repo status')"
+assert_exit_code "git -C <path> status is allowed (exit 0)" 0
+
+run_hook "$BASH_GATE" "$(_make_json 'git -C /repo log --oneline -5')"
+assert_exit_code "git -C <path> log is allowed (exit 0)" 0
+
 printf '\n--- bash-gate: audit event emission on block ---\n'
 
 # Verify that blocking a destructive git op writes a gate_fired entry to audit.jsonl.

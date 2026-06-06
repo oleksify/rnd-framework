@@ -52,6 +52,19 @@ assert_not_in_files() {
   fi
 }
 
+# Passes when the extended regex does NOT match any line in the file.
+assert_not_match() {
+  local desc="$1" regex="$2" path="$3"
+  TESTS_TOTAL=$((TESTS_TOTAL + 1))
+  if grep -qE "$regex" "$path"; then
+    printf '  FAIL  %s (regex=%s)\n' "$desc" "$regex"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+  else
+    printf '  PASS  %s\n' "$desc"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  fi
+}
+
 printf '\n--- rnd-premortem-imaginer agent: existence and frontmatter ---\n'
 
 assert_file_nonempty \
@@ -70,10 +83,21 @@ assert_frontmatter_line \
 
 printf '\n--- premortem fan-out wiring ---\n'
 
+# The fan-out wiring lives in premortem/SKILL.md — no 'general-purpose' may leak
+# there. rnd-start.md is intentionally NOT covered by this blanket check: it names
+# 'general-purpose' in a prohibition ("Do NOT spawn the built-in Explore or
+# general-purpose subagents"), which is correct guidance, not wiring residue.
 assert_not_in_files \
-  "'general-purpose' residue absent from rnd-start.md and premortem/SKILL.md" \
+  "'general-purpose' residue absent from premortem/SKILL.md" \
   'general-purpose' \
-  "$RND_START" "$PREMORTEM_SKILL"
+  "$PREMORTEM_SKILL"
+
+# rnd-start.md must never wire 'general-purpose' as a spawn target — the substring
+# is allowed only in prose, never as a subagent_type/spawn argument.
+assert_not_match \
+  "rnd-start.md does not wire 'general-purpose' as a spawn target" \
+  'subagent_type[^[:alnum:]]*general-purpose' \
+  "$RND_START"
 
 assert_contains \
   "rnd-start.md references 'rnd-premortem-imaginer'" \

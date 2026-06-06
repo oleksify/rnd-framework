@@ -74,10 +74,47 @@ strip_env_prefix() {
   printf '%s' "$seg"
 }
 
+# Strips git global options (e.g. -C <path>, -c k=v, --git-dir=…, --no-pager)
+# that may appear between the `git` token and the subcommand, then re-emits a
+# normalized `git <subcommand> …`. Without this, a destructive op smuggled
+# behind a global option — `git -C /repo reset --hard` — bypasses every
+# subcommand pattern in check_segment, which all anchor on `^git[[:space:]]+<sub>`.
+# Non-git segments are returned unchanged.
+strip_git_global_opts() {
+  local seg="$1"
+  [[ "$seg" =~ ^git[[:space:]] ]] || { printf '%s' "$seg"; return 0; }
+
+  local rest="${seg#git}"
+  rest="${rest#"${rest%%[! ]*}"}"
+
+  local prev
+  while true; do
+    prev="$rest"
+    case "$rest" in
+      -C[[:space:]]*|-c[[:space:]]*)
+        # Flag with a separate-word argument: drop both the flag and its value.
+        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
+        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
+        ;;
+      --git-dir=*|--work-tree=*|--namespace=*|--exec-path=*|\
+      --no-pager*|--paginate*|--bare*|--no-replace-objects*|--literal-pathspecs*)
+        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
+        ;;
+      *)
+        break
+        ;;
+    esac
+    [[ "$rest" == "$prev" ]] && break
+  done
+
+  printf 'git %s' "$rest"
+}
+
 check_segment() {
   local seg
   seg="$(strip_cd_prefix "$1")"
   seg="$(strip_env_prefix "$seg")"
+  seg="$(strip_git_global_opts "$seg")"
   if [[ "$seg" == blocked:* ]]; then
     printf '%s' "$seg"
     return 0
@@ -232,8 +269,11 @@ if [[ "$cmd_lower" == *"mix ecto.reset"* ]] || [[ "$cmd_lower" == *"mix ecto.dro
   fi
 fi
 
-# Direct database file deletion
-if [[ "$cmd_lower" =~ rm[[:space:]] ]]; then
+# Direct database file deletion.
+# `rm` is anchored as a command word (start of string or after a shell separator)
+# so words ending in "rm " — perform, confirm, transform — do not false-trigger
+# the guard. Mirrors the dropdb anchor below.
+if [[ "$cmd_lower" =~ (^|[[:space:];&|])rm[[:space:]] ]]; then
   if [[ "$cmd_lower" =~ \.(db|sqlite|sqlite3)([[:space:]]|$) ]]; then
     block_msg "BLOCKED: Refusing to delete database file. Database files (.db, .sqlite, .sqlite3) are protected."
   fi

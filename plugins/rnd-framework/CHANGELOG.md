@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.16.3 — 2026-06-06
+
+### Harden bash-gate db-file and destructive-git guards and fix stale premortem test
+
+Surfaced by a full-codebase audit. Three fixes:
+
+- **DB-file guard false-positive.** The database-deletion guard matched `rm` as an unanchored substring, so a benign command carrying a word that ends in `rm ` (perform, confirm, transform) alongside a database-file token was hard-blocked even with no `rm` command present. The guard now anchors `rm` as a command word — start of line or after a shell separator — mirroring the `dropdb` guard.
+- **Destructive-git bypass.** Every destructive-git block anchored on `^git <subcommand>`, so a global option placed before the subcommand defeated all of them (`git -C /repo reset --hard` slipped through). `check_segment` now strips leading git global options (`-C <path>`, `-c k=v`, `--git-dir=…`, `--work-tree=…`, `--no-pager`, …) before matching the denylist; safe ops behind a global option still pass.
+- **Stale premortem test.** The blunt whole-file `general-purpose` ban in the rnd-premortem-imaginer test collided with legitimate prohibition prose added to rnd-start.md and reddened the suite. Split into a substring check scoped to the premortem skill plus a spawn-target wiring check on rnd-start.md.
+
+Adds `tests/bash-gate-db-guard.test.sh` and global-option bypass cases to the destructive-git suite.
+
 ## 0.16.2 — 2026-06-06
 
 ### Steer exploration in rnd-start, rnd-audit, rnd-review, and rnd-debug to rnd-explorer instead of the native Explore agent

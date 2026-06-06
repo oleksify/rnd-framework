@@ -6,7 +6,7 @@ effort: medium
 
 # R&D Framework: Brainstorm
 
-A conversational pipeline for idea exploration. No agents, no building — just structured questioning that funnels a vague idea into a focused design plan ready for `/rnd-framework:rnd-start`.
+A conversational pipeline for idea exploration. No build or verify pipeline agents, no code — just structured questioning that funnels a vague idea into a focused design plan ready for `/rnd-framework:rnd-start`. (Grounding the conversation in the codebase is fine; when it needs a broad sweep, use the read-only `rnd-framework:rnd-explorer` — see Guidelines.)
 
 ## Setup
 
@@ -151,6 +151,7 @@ If the user chooses "Save for later," also offer to save to a project-local loca
 
 - **No pipeline phases.** This is a conversation between you and the user. Do not run Build, Verify, Plan, or any other pipeline phase.
 - **No code.** Do not write or modify any project files during brainstorming. The output is a plan, not code.
+- **Grounding & exploration.** "No agents" above means no *build/verify pipeline* agents — it does **not** forbid reading the codebase to ground the conversation. When grounding needs a broad codebase sweep (mapping an architecture, finding where something lives across many files), spawn `rnd-framework:rnd-explorer` — **never** the built-in `Explore` or `general-purpose` agents. Those inherit the full MCP tool surface and fail at spawn with "Prompt is too long" in MCP-heavy sessions; `rnd-explorer` carries a narrow read-only grant and spawns reliably. For a single known-location lookup, read inline instead of spawning.
 - **Use AskUserQuestion for every question.** Never ask questions as plain text. Every question must be structured with options.
 - **Cap options at 4 per question.** `AskUserQuestion` enforces a hard limit of ≤4 options per question and will error on any call that exceeds it. Every `AskUserQuestion` call in this command must produce at most 4 options.
 - **Never end with a plain-text message.** Every phase that requires a user decision — including the final Phase 6 output — MUST use `AskUserQuestion`. Writing "Plan saved to X. Run /rnd-framework:rnd-start ..." as the terminal response is a defect. The user must always receive selectable options, not a suggestion to run a command themselves.

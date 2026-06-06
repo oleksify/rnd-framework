@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.1 — 2026-06-06
+
+### Steer rnd-brainstorm codebase grounding to rnd-explorer instead of the native Explore agent
+
+The brainstorm command had no local exploration guidance and opened with a blanket "No agents" framing, so when it needed to ground the conversation in the codebase the model inconsistently reached for the built-in Explore (or general-purpose) agent — which fails to spawn in MCP-heavy sessions. Scoped the "No agents" line to build/verify pipeline agents and added an explicit Guidelines bullet directing broad codebase sweeps to the read-only rnd-explorer.
+
 ## 0.16.0 — 2026-06-05
 
 ### Prefix the 15 remaining unprefixed skills with rnd- so every skill follows the rnd-<name> convention

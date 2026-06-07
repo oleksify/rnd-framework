@@ -218,6 +218,48 @@ _ov_framing="$(grep -q '^## Framing constraint' "$RND_DIR/outside-view.md" && pr
 
 ---
 
+### Phase 1 pre-step: Scope-Lock
+
+Before the Planner decomposes anything, freeze the deliverable list. The Scoper translates the raw task into a small set of user-visible, acceptance-level deliverables with stable `D<n>` IDs. The frozen `scope.json` is then handed to the Planner as immutable input, so the plan can only map tasks onto deliverables — it cannot invent or drop scope.
+
+**Spawn the Scoper agent.** Pass the task, the Phase 0 discovery context, and the premortem (failure modes inform what must be explicitly in/out of scope).
+
+```
+Agent({
+  description: "Lock deliverable scope",
+  subagent_type: "rnd-framework:rnd-scoper",
+  mode: "acceptEdits",
+  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md\n${SESSION_SKILLS_FRAGMENT}"
+})
+```
+
+The Scoper writes `$RND_DIR/scope.json` (machine-readable deliverable manifest with frozen `D<n>` IDs) and `$RND_DIR/scope.md` (in/out boundary narrative).
+
+**Ratification gate (mandatory).** Render `$RND_DIR/scope.md` to the user and present exactly ONE `AskUserQuestion` with three options:
+- "Approve scope" — freeze the deliverable list and proceed to planning.
+- "Edit scope" — capture free-text corrections and re-scope.
+- "Reject scope" — the deliverable list is wrong at the root; halt or re-scope.
+
+This ratification gate is a **scope gate, not a happy-path gate**. It fires **even when auto-continue mode is ON**. Auto-continue skips only happy-path confirmation gates (the build/verify boundaries in Phases 2, 3, and 5); it does NOT skip the scope ratification gate. The user must explicitly approve the frozen scope before any task is planned, regardless of auto-continue.
+
+Handle the selection:
+
+- **On "Edit scope":** capture the user's free-text edits verbatim and re-spawn the Scoper for a revision pass, forwarding the edits as additional context. Then re-render `scope.md` and re-present the same ratification `AskUserQuestion`. Loop until the user approves or rejects.
+
+- **On "Approve scope":** the scope is frozen. Record the lock event, passing the comma-separated deliverable IDs and their count:
+
+  ```bash
+  "${CLAUDE_PLUGIN_ROOT}/lib/scope-emit.sh" "<D1,D2,...csv>" "<n_deliverables>"
+  ```
+
+  where `<D1,D2,...csv>` is read from `scope.json` (`jq -r '[.deliverables[].id] | join(",")' "$RND_DIR/scope.json"`) and `<n_deliverables>` is the count (`jq '.deliverables | length' "$RND_DIR/scope.json"`).
+
+- **On "Reject scope":** the deliverable list is fundamentally wrong. Halt the pipeline or re-scope from the task description per orchestrator judgment (re-spawn the Scoper with the rejection rationale, or escalate to the user for a clarified task).
+
+Only after the user approves the frozen scope do you proceed to the Planner spawn below.
+
+---
+
 **Spawn a Planner agent** to decompose the task.
 
 ```
@@ -225,7 +267,7 @@ Agent({
   description: "Plan task decomposition",
   subagent_type: "rnd-framework:rnd-planner",
   mode: "acceptEdits",
-  prompt: "Task: <task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md (address/dismiss each FM<k> in protocol.md's ## Premortem Responses)\n${OUTSIDE_VIEW_BLOCK}\n${SESSION_SKILLS_FRAGMENT}"
+  prompt: "Task: <task description>\nRND_DIR: <path>\nFrozen scope: $RND_DIR/scope.json (immutable deliverable list — map each task to deliverableIds, do NOT add or drop deliverables)\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md (address/dismiss each FM<k> in protocol.md's ## Premortem Responses)\n${OUTSIDE_VIEW_BLOCK}\n${SESSION_SKILLS_FRAGMENT}"
 })
 ```
 
@@ -533,6 +575,21 @@ In either case, do NOT inline the prior `validation-contract.md` or `protocol.md
    ARCHIVE_PATH="$("${CLAUDE_PLUGIN_ROOT}/lib/replan-archive.sh" "$RND_DIR")"
    ```
 
+   `replan-archive.sh` **moves** the four canonical plan artifacts into the archive but **copies** the frozen `scope.json` and `scope.md`, leaving the originals at the session root. The scope is frozen for the whole pipeline run; the archived copies exist only so the scope-diff step below can compare the locked scope against any proposed change.
+
+1.5. **Scope-diff step (scope stays frozen unless a change is accepted).** A re-plan re-decomposes the *tasks*, but the deliverable scope locked in Phase 1 is NOT automatically re-opened. Re-spawn the Scoper in proposal mode against the original task plus the failing-task signal; it proposes any scope changes (added, dropped, or reworded deliverables) without overwriting the frozen `scope.json`.
+
+   ```
+   Agent({
+     description: "Propose scope delta",
+     subagent_type: "rnd-framework:rnd-scoper",
+     mode: "acceptEdits",
+     prompt: "Task: <original task description>\nRND_DIR: <path>\nFrozen scope: $ARCHIVE_PATH/scope.json (the currently-locked deliverable list — do NOT overwrite $RND_DIR/scope.json; propose changes only)\nDiscovery context: <Phase 0 findings>\n${REPLAN_HINT_BLOCK}\nThis is a re-plan. Propose a scope DELTA only: which deliverables (if any) should be added, dropped, or reworded given the failing-task signal. Write the proposal to $RND_DIR/scope-proposed.json + $RND_DIR/scope-proposed.md.\n${SESSION_SKILLS_FRAGMENT}"
+   })
+   ```
+
+   Render the proposed delta and present ONE `AskUserQuestion`: "Accept scope change" / "Keep scope frozen". The default is **frozen**: unless the user explicitly accepts a change, the locked `$RND_DIR/scope.json` is untouched and the re-plan proceeds against the original deliverable list. Only if the user accepts the delta do you promote `scope-proposed.json` to `scope.json` (and `scope-proposed.md` to `scope.md`) and re-emit the lock event via `lib/scope-emit.sh` with the updated deliverable IDs and count.
+
 2. **Touch the marker file.** This enables the `is_replan_artifact_violation` barrier in `hooks/lib.sh`, which blocks the fresh Planner from reading the four canonical session-root plan paths (`$RND_DIR/{protocol.md,validation-contract.md,features.json,AGENTS.md}`). The archived copies under `$RND_DIR/prior-plans/` remain readable for the differ.
 
    ```bash
@@ -565,7 +622,7 @@ In either case, do NOT inline the prior `validation-contract.md` or `protocol.md
      description: "Re-plan failing tasks",
      subagent_type: "rnd-framework:rnd-planner",
      mode: "acceptEdits",
-     prompt: "Task: <original task description>\nRND_DIR: <path>\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md\n${OUTSIDE_VIEW_BLOCK}\n${REPLAN_HINT_BLOCK}\n\nIMPORTANT: This is a re-plan after a prior plan's failure. The prior plan's protocol.md, validation-contract.md, features.json, and AGENTS.md have been archived under $RND_DIR/prior-plans/. You MUST NOT read or inline any prior plan artifact content. The barrier hook will block such reads. Treat the failing task IDs and assertion IDs in ${REPLAN_HINT_BLOCK} as the only signal about what went wrong; re-decompose the task from scratch.\n${SESSION_SKILLS_FRAGMENT}"
+     prompt: "Task: <original task description>\nRND_DIR: <path>\nFrozen scope: $RND_DIR/scope.json (immutable deliverable list — map each task to deliverableIds, do NOT add or drop deliverables unless the scope-diff step accepted a change)\nDiscovery context: <Phase 0 findings>\nPremortem: $RND_DIR/premortem.md\n${OUTSIDE_VIEW_BLOCK}\n${REPLAN_HINT_BLOCK}\n\nIMPORTANT: This is a re-plan after a prior plan's failure. The prior plan's protocol.md, validation-contract.md, features.json, and AGENTS.md have been archived under $RND_DIR/prior-plans/. You MUST NOT read or inline any prior plan artifact content. The barrier hook will block such reads. Treat the failing task IDs and assertion IDs in ${REPLAN_HINT_BLOCK} as the only signal about what went wrong; re-decompose the task from scratch.\n${SESSION_SKILLS_FRAGMENT}"
    })
    ```
 

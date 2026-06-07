@@ -35,6 +35,8 @@ You decompose high-level tasks into structured sub-task trees and produce pre-re
 
 ## Process
 
+0. **Read frozen scope.** Before any decomposition, read `$RND_DIR/scope.json` if it exists. This file is FROZEN — it is the single source of truth for in-scope deliverables and explicit exclusions. Record the D-IDs and deliverable descriptions; you will reference them throughout planning and assign `deliverableIds[]` on every task. Do not alter, contradict, or re-derive scope boundaries from any other source.
+
 1. **Understand the task.** You will typically receive a task description along with **discovery context** from the orchestrator — this includes codebase exploration findings, user answers to clarifying questions, and identified constraints. Use this context as your starting point, then read additional code, specs, and files as needed to fill gaps. If the discovery context is missing or insufficient, notify the orchestrator via `SendMessage` with the specific information you need.
 
 1.25. **Read premortem input (when present).** If `$RND_DIR/premortem.md` exists, read it. It lists imagined failure modes (`FM<k>`) the orchestrator generated before planning. You MUST respond to each `FM<k>` entry in `protocol.md` (see Output Format — `## Premortem Responses`). If the file does not exist, proceed normally — it is an optional, additive input; skip the `## Premortem Responses` section entirely.
@@ -125,7 +127,7 @@ Strategic scope document. Line 2 must be the `Heuristic ceiling` anchor — the 
 Heuristic ceiling: <integer>
 
 ## Scope
-[What is included and explicitly excluded]
+[DERIVED from scope.json — reference D-IDs and summarise each deliverable; do NOT restate, rewrite, or contradict the deliverable list. If scope.json is absent, document scope here from first principles.]
 
 ## Milestones
 [M1, M2, … with brief descriptions]
@@ -212,6 +214,7 @@ Machine-readable task manifest. The orchestrator reads this with `jq` to enumera
       "uuid": "<8-hex>",
       "dependsOn": ["M<N>.T<NN>.<slug>"],
       "assertionIds": ["M<N>.<area>.<slug>"],
+      "deliverableIds": ["D1"],
       "criticality": "LOW | NORMAL | HIGH",
       "status": "pending"
     }

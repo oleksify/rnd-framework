@@ -14,6 +14,14 @@
 #   features.json
 #   AGENTS.md
 #
+# Scope artifacts copied (NOT moved):
+#   scope.json
+#   scope.md
+#
+# The frozen scope stays at the session root for the whole pipeline run, so it
+# is copied (never moved) into the archive dir to give the differ an old-vs-
+# proposed pair. Each copy is guarded so a pre-scope session is a clean no-op.
+#
 # Output:
 #   Prints the created archive directory path on stdout.
 #
@@ -59,6 +67,16 @@ for artifact in protocol.md validation-contract.md features.json AGENTS.md; do
   src="${rnd_dir}/${artifact}"
   if [[ -f "$src" ]]; then
     mv "$src" "${archive_dir}/${artifact}"
+  fi
+done
+
+# Scope artifacts are frozen at the session root and must outlive a re-plan, so
+# they are COPIED into the archive rather than moved. The differ reads these
+# copies to diff the old scope against any proposed change.
+for scope_artifact in scope.json scope.md; do
+  src="${rnd_dir}/${scope_artifact}"
+  if [[ -f "$src" ]]; then
+    cp "$src" "${archive_dir}/${scope_artifact}"
   fi
 done
 

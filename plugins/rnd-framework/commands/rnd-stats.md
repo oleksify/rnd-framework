@@ -298,3 +298,28 @@ else
              ORDER BY segment"
 fi
 ```
+
+### Section 10 — Scope-coverage gate events
+
+Scope-creep and scope-miss counts from the scope_coverage_gate, split by
+segment. Each gate_fired row carries `assertion_id = 'scope_creep'` or
+`'scope_miss'`; this view aggregates those into a per-(segment, kind) event
+count. A rising creep count means builders are regularly adding work outside
+the pre-registered scope; a rising miss count means they are regularly omitting
+declared criteria.
+
+The `*/**/audit.jsonl` glob hard-errors on a zero-file match — guard its
+existence before invoking the view, mirroring the Section 7 audit guard.
+
+```bash
+echo ""
+echo "=== Scope-coverage gate events ==="
+has_audit_sc=$(duckdb -noheader -list -c "SELECT count(*) FROM glob('*/**/audit.jsonl')" 2>/dev/null)
+
+if [[ "${has_audit_sc:-0}" -eq 0 ]]; then
+  echo "pending — no audit data yet."
+else
+  duckdb -c ".read ${stats_dir}/scope_coverage.sql" \
+         -c "SELECT segment, kind, event_count FROM scope_coverage ORDER BY segment, kind"
+fi
+```

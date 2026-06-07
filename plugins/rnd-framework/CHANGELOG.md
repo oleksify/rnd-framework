@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.17.0 — 2026-06-07
+
+### Add Scope-Lock phase with rnd-scoper, scope-coverage-gate, and rnd-stats scope-coverage section
+
+A dedicated scoping phase now runs before decomposition. The rnd-scoper agent produces a frozen scope.json and a human-readable scope.md; the user ratifies the deliverable boundary before the planner touches anything. Once ratified, scope.json is the single source of truth the planner reads.
+
+The scope-coverage-gate enforces bidirectional coverage: every planned task must map to a ratified deliverable (otherwise it is flagged as scope creep), and every ratified deliverable must have at least one task (otherwise it is flagged as a scope miss). The gate runs as a SubagentStop check on the planner, so scope drift is caught before verification begins.
+
+Re-plan runs now include a scope diff alongside the task and assertion diffs, making it easy to see whether scope boundaries shifted across plan iterations.
+
+rnd-stats gains a scope-coverage section that tracks creep and miss rates over time.
+
 ## 0.16.3 — 2026-06-06
 
 ### Harden bash-gate db-file and destructive-git guards and fix stale premortem test

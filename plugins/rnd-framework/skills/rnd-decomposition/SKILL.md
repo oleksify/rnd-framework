@@ -250,7 +250,7 @@ Compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` (use `-c` to cre
 
 **`validation-contract.md`** — one `### M<N>.<area>.<slug>` heading per assertion. The heading is the assertion ID; the orchestrator slices by heading to extract assertion text. Contains: `Claim` and `Verified-by` fields per assertion.
 
-**`features.json`** — machine-readable task manifest consumed by the orchestrator with `jq`. Each task entry includes `id` (`M<N>.T<NN>.<slug>`), `slug`, `milestone`, `dependsOn` (array of task IDs), `assertionIds` (array of assertion IDs from `validation-contract.md`), `criticality`, and `status`.
+**`features.json`** — machine-readable task manifest consumed by the orchestrator with `jq`. Each task entry includes `id` (`M<N>.T<NN>.<slug>`), `slug`, `milestone`, `dependsOn` (array of task IDs), `assertionIds` (array of assertion IDs from `validation-contract.md`), `deliverableIds` (array of D-IDs from `scope.json`, e.g. `["D1", "D2"]` — links each task to the frozen deliverable(s) it contributes to), `criticality`, and `status`.
 
 **`AGENTS.md`** — session-local agent guidance authored from scratch. Not a copy of global agent prompts; contains only session-scoped context, domain constraints, and cross-task conventions for builders and verifiers on this decomposition.
 

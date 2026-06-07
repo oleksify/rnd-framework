@@ -89,11 +89,12 @@ Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each 
 
 ## Agents
 
-13 agents — 9 pipeline-phase plus 4 helpers. All preload skills, carry persistent memory, and use narrow tool grants. The orchestrator overrides the model per task based on its `Criticality` field; the models below are the defaults.
+14 agents — 10 pipeline-phase plus 4 helpers. All preload skills, carry persistent memory, and use narrow tool grants. The orchestrator overrides the model per task based on its `Criticality` field; the models below are the defaults.
 
 | Agent | Model | Role |
 |---|---|---|
-| `rnd-planner` | opus / high | Decomposes tasks; emits the four plan artifacts |
+| `rnd-scoper` | opus / high | Produces the frozen, user-ratified `scope.json` + `scope.md` boundary before planning |
+| `rnd-planner` | opus / high | Decomposes the frozen scope; emits the four plan artifacts |
 | `rnd-builder` | sonnet / high | Implements one task with TDD; writes a manifest + self-assessment |
 | `rnd-reality-auditor` | sonnet / low | Audits declared external references (URLs, APIs, schemas, env vars) |
 | `rnd-verifier` | sonnet / high | Independent verification behind the information barrier |
@@ -190,7 +191,7 @@ All three carry the **Report Surfacing Protocol**: the orchestrator prints repor
 ```
 rnd-framework/
 ├── .claude-plugin/plugin.json   # Manifest
-├── agents/                      # 13 agents (9 pipeline + 4 helpers)
+├── agents/                      # 14 agents (10 pipeline + 4 helpers)
 ├── commands/                    # Pipeline commands
 ├── skills/                      # rnd-* skills
 ├── hooks/                       # hooks.json + gate/lifecycle scripts

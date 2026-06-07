@@ -125,7 +125,7 @@ Strategic scope document. Line 2 must be the `Heuristic ceiling` anchor — the 
 Heuristic ceiling: <integer>
 
 ## Scope
-[What is included and explicitly excluded]
+[DERIVED from scope.json — reference D-IDs and summarise each deliverable; do NOT restate, rewrite, or contradict the deliverable list. If scope.json is absent, document scope here from first principles.]
 
 ## Milestones
 [M1, M2, … with brief descriptions]

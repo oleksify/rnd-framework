@@ -204,6 +204,12 @@ check_segment() {
   printf 'allowed'
 }
 
+# Splits on shell operators by literal substitution — a deliberate heuristic, not
+# a shell parser. Operators inside quotes or heredocs are NOT respected, so a
+# token like `echo "git reset --hard"` would mis-segment. This is acceptable
+# because the gate is a defensive *advisory* over a non-adversarial agent, not a
+# security boundary; over-segmentation can only over-block, never under-block a
+# real destructive op. A full shell-AST parse is not warranted here.
 split_and_check() {
   local command="$1"
   local _result

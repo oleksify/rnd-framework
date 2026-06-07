@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.1 — 2026-06-07
+
+### Harden rnd-undo against task_id path traversal and clarify the bash-gate split heuristic and rnd-undo containment-guard docstrings
+
+Validate the rnd-undo task_id against a strict charset before it selects the manifest path, closing a directory-traversal gap; correct the parse_files_written docstring cross-reference and document split_and_check as a deliberate advisory heuristic.
+
 ## 0.17.0 — 2026-06-07
 
 ### Add Scope-Lock phase with rnd-scoper, scope-coverage-gate, and rnd-stats scope-coverage section

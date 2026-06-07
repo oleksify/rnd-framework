@@ -39,8 +39,9 @@ die() {
 # Stops at the next "## " heading or EOF.
 # Rejects paths starting with `/` (absolute) or containing `..` (traversal):
 # the revert path is repo-relative, and a stray absolute / parent-relative path
-# would direct `git checkout` / `rm` at locations outside the repo. See the
-# repo-containment guard in revert_file.
+# would direct `git checkout` / `rm` at locations outside the repo. The
+# absolute/`..` rejection below IS the repo-containment guard; revert_file
+# trusts that its input has already passed through here.
 parse_files_written() {
   local manifest="$1"
   local in_section=0
@@ -128,6 +129,13 @@ emit_audit_event() {
 
 task_id="$1"
 dry_run="0"
+
+# Sanitize task_id before it selects the manifest path: a `/` or `..` would let
+# the manifest read escape builds/. The canonical ID shape is M<N>.T<NN>.<slug>;
+# this charset rejects any separator while admitting every legitimate id.
+if [[ ! "$task_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  die "invalid task_id '${task_id}': expected characters [A-Za-z0-9._-] only"
+fi
 
 if [[ $# -ge 2 && "$2" == "--dry-run" ]]; then
   dry_run="1"

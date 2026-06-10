@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0 — 2026-06-10
+
+### Promote the most demanding judgment agents to Fable 5
+
+The planner and scoper now run on Fable 5 at every criticality tier — decomposition quality and the frozen scope boundary gate everything downstream, so they get the strongest model unconditionally. The HIGH-criticality dispatch tier also moves to Fable 5: the verifier escalates to fable/xhigh, and the builder and debugger to fable/high. NORMAL and LOW tiers are unchanged (verifier stays opus at NORMAL, builder/debugger stay sonnet), and the polisher stays pinned at opus since it runs every wave on bounded seam-fixing work.
+
+The rnd-brainstorm model advisory now recommends a Fable 5 session instead of Opus 4.7.
+
 ## 0.17.1 — 2026-06-07
 
 ### Harden rnd-undo against task_id path traversal and clarify the bash-gate split heuristic and rnd-undo containment-guard docstrings

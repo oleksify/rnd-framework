@@ -14,7 +14,7 @@ A conversational pipeline for idea exploration. No build or verify pipeline agen
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
 
-> **Model advisory:** Brainstorming benefits from maximum reasoning depth. Run this command with an Opus 4.7 session and set effort to `high` or above for best results — shallow reasoning during the ideation phase tends to surface obvious options and miss the tricky constraints that matter most. If the session is already running a lighter model, the structured phases below will still work, but expect to iterate more on Phase 4 scope decisions.
+> **Model advisory:** Brainstorming benefits from maximum reasoning depth. Run this command with a Fable 5 session and set effort to `high` or above for best results — shallow reasoning during the ideation phase tends to surface obvious options and miss the tricky constraints that matter most. If the session is already running a lighter model, the structured phases below will still work, but expect to iterate more on Phase 4 scope decisions.
 
 ## Phase 1: Seed
 

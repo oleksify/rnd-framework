@@ -411,7 +411,7 @@ Statuses: `VALIDATED_ALL`, `VALIDATED_PARTIAL`, `INVALID_FOUND`, `SKIPPED`. If `
 
 Valid verdict values per assertion entry: `PASS`, `PASS_QUALITY_NEEDS_ITERATION`, `NEEDS_ITERATION`, `FAIL`. The `feedback` field is required and non-empty for any non-PASS verdict; empty string for PASS.
 
-**Spawn a single Verifier agent per wave.** HIGH criticality is handled via the per-agent dispatch policy (model boost to opus/xhigh) — there is no parallel-judge mode.
+**Spawn a single Verifier agent per wave.** HIGH criticality is handled via the per-agent dispatch policy (model boost to fable/xhigh) — there is no parallel-judge mode.
 
 **Inline the paraphrased framing (additive).** When constructing the Verifier prompt, slice the same `### <assertion-id>` blocks from `$RND_DIR/verifications/paraphrased-assertions.md` (the Phase 1 post-step wrote one per assertion) for the assertions in this wave, and append them AFTER the exact assertions under a clear label. The exact assertions come first and remain authoritative; the paraphrased framing is decorrelated wording for the same claims, read IN ADDITION TO — never INSTEAD OF — the exact assertions, and never overrides them. Use the `${PARAPHRASED_BLOCK}` slot below for that labelled section.
 

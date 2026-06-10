@@ -147,10 +147,10 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 
 | Agent | LOW | NORMAL | HIGH | Adaptive? |
 |---|---|---|---|---|
-| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
-| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
-| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
-| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-planner` | fable/high | fable/high | fable/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | fable/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | fable/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | fable/high | yes |
 | `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
 > **Note on non-adaptive agents:** `rnd-polisher` always runs at its listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
@@ -162,11 +162,11 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 **Dispatch example:**
 
 ```
-// Task T7 has `Criticality: HIGH` in features.json → spawn Builder with model="opus"
+// Task T7 has `Criticality: HIGH` in features.json → spawn Builder with model="fable"
 Agent({
   description: "Build task T7",
   subagent_type: "rnd-framework:rnd-builder",
-  model: "opus",
+  model: "fable",
   mode: "acceptEdits",
   prompt: "Task: T7\nRND_DIR: ...\n..."
 })
@@ -176,7 +176,7 @@ Agent({
 
 | Agent | Default model | Effort | Adaptive? |
 |---|---|---|---|
-| `rnd-planner` | opus | high | yes |
+| `rnd-planner` | fable | high | yes |
 | `rnd-builder` | sonnet | high | yes |
 | `rnd-verifier` | sonnet | high | yes |
 | `rnd-debugger` | sonnet | high | yes |

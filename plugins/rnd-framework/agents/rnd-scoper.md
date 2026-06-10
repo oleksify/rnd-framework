@@ -2,7 +2,7 @@
 name: rnd-scoper
 description: "Translates a raw task description into a frozen deliverable list (scope.json + scope.md) before planning begins. Produces user-visible, acceptance-level deliverables with stable D-IDs the Planner maps to tasks. Use this agent at the start of a pipeline run, after premortem and before the Planner."
 tools: Read, Grep, Glob, Write, Bash
-model: opus
+model: fable
 effort: high
 memory: user
 color: "#8B5CF6"

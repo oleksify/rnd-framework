@@ -324,7 +324,7 @@ validate_one_agent() {
   fi
 
   if [[ -n "$model_val" ]]; then
-    if [[ "$model_val" == "opus" || "$model_val" == "sonnet" || "$model_val" == "haiku" ]]; then
+    if [[ "$model_val" == "fable" || "$model_val" == "opus" || "$model_val" == "sonnet" || "$model_val" == "haiku" ]]; then
       record_pass "agent '${agent_name}' model is valid: ${model_val}"
     else
       record_fail "agent '${agent_name}' has unknown model '${model_val}'"
@@ -443,7 +443,7 @@ validate_commands() {
 
     model_val="$(frontmatter_val "$file" "model")"
     if [[ -n "$model_val" ]]; then
-      if [[ "$model_val" == "opus" || "$model_val" == "sonnet" || "$model_val" == "haiku" ]]; then
+      if [[ "$model_val" == "fable" || "$model_val" == "opus" || "$model_val" == "sonnet" || "$model_val" == "haiku" ]]; then
         record_pass "command '${cmd_name}' model is valid: ${model_val}"
       else
         record_fail "command '${cmd_name}' has invalid model '${model_val}'"

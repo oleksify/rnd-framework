@@ -93,8 +93,8 @@ Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each 
 
 | Agent | Model | Role |
 |---|---|---|
-| `rnd-scoper` | opus / high | Produces the frozen, user-ratified `scope.json` + `scope.md` boundary before planning |
-| `rnd-planner` | opus / high | Decomposes the frozen scope; emits the four plan artifacts |
+| `rnd-scoper` | fable / high | Produces the frozen, user-ratified `scope.json` + `scope.md` boundary before planning |
+| `rnd-planner` | fable / high | Decomposes the frozen scope; emits the four plan artifacts |
 | `rnd-builder` | sonnet / high | Implements one task with TDD; writes a manifest + self-assessment |
 | `rnd-reality-auditor` | sonnet / low | Audits declared external references (URLs, APIs, schemas, env vars) |
 | `rnd-verifier` | sonnet / high | Independent verification behind the information barrier |

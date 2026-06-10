@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.1 — 2026-06-10
+
+### Fix 11 major findings from the codebase audit
+
+Close the evidence-locking gate's Edit-path bypass (validate the reconstructed document, fail closed on uninspectable payloads); widen the three build-manifest consumers (builder-dismissal gate, pre-compact, rnd-resume) to match both current M<NN>-T<NN>-<uuid> and legacy T<id> names; give the pass-receipt contract its producer in the Verifier agent spec; emit gate_fired from all six SubagentStop gates via the derived session_dir so blocks land in audit.jsonl; accept canonical dotted task IDs in run-tool.sh; add a GNU date fallback and legacy session-layout scan to remeasurement.sh; re-green the two planner-model tests.
+
 ## 0.18.0 — 2026-06-10
 
 ### Promote the most demanding judgment agents to Fable 5

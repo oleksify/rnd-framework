@@ -96,9 +96,9 @@ done
 plan_summary="$(jq -r '.plan_summary' "$state_file" 2>/dev/null || true)"
 assert_contains "plan_summary contains protocol.md content" "Task Plan" "$plan_summary"
 
-# current_task_id should be T1 (from T1-manifest.md)
+# current_task_id should be T1 (from T1-manifest.md — legacy form)
 current_task="$(jq -r '.current_task_id // ""' "$state_file" 2>/dev/null || true)"
-assert_eq "current_task_id matches manifest basename" "T1" "$current_task"
+assert_eq "current_task_id matches manifest basename (legacy form)" "T1" "$current_task"
 
 # iteration_count should be 3 (3 lines in iteration-log.md)
 iter_count="$(jq -r '.iteration_count' "$state_file" 2>/dev/null || true)"
@@ -113,6 +113,37 @@ else
 fi
 
 rm -rf "$tmp_config"
+
+# ---------------------------------------------------------------------------
+# current-format manifest name M<NN>-T<NN>-<8hex>-manifest.md → correct task id
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- pre-compact: current-format manifest name recognized ---'
+
+tmp_config_cf="$(mktemp -d)"
+base_dir_cf="$(CLAUDE_CONFIG_DIR="$tmp_config_cf" "$RND_DIR_SH" --base 2>/dev/null || true)"
+
+if [[ -n "$base_dir_cf" ]]; then
+  session_id_cf="20260101-120000-abcd"
+  session_dir_cf="${base_dir_cf}/sessions/${session_id_cf}"
+  mkdir -p "${session_dir_cf}/builds"
+  printf '%s' "$session_id_cf" > "${base_dir_cf}/.current-session"
+  printf 'Task Plan\n' > "${session_dir_cf}/protocol.md"
+  touch "${session_dir_cf}/builds/M02-T03-f6d3915b-manifest.md"
+
+  HOOK_EXIT=0
+  env "CLAUDE_CONFIG_DIR=${tmp_config_cf}" "$HOOK" > /dev/null 2>&1 || HOOK_EXIT=$?
+  assert_eq "pre-compact exits 0 with current-format manifest" "0" "$HOOK_EXIT"
+
+  state_cf="${session_dir_cf}/compact-state.json"
+  if [[ -f "$state_cf" ]]; then
+    task_cf="$(jq -r '.current_task_id // ""' "$state_cf" 2>/dev/null || true)"
+    assert_eq "current_task_id for current-format manifest" "M02-T03-f6d3915b" "$task_cf"
+  else
+    assert_eq "compact-state.json created for current-format manifest" "0" "1"
+  fi
+fi
+
+rm -rf "$tmp_config_cf"
 
 # ---------------------------------------------------------------------------
 # protocol.md absent → falls back to plan.md

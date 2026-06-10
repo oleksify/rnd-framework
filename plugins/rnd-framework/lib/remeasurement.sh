@@ -94,7 +94,17 @@ _parse_session_epoch() {
   local session_basename="$1"
   local ts_prefix="${session_basename:0:15}"  # "YYYYMMDD-HHMMSS"
 
-  date -j -f '%Y%m%d-%H%M%S' "$ts_prefix" '+%s' 2>/dev/null || echo 0
+  # BSD date (macOS): -j prevents setting the clock; -f parses the input format.
+  date -j -f '%Y%m%d-%H%M%S' "$ts_prefix" '+%s' 2>/dev/null && return
+
+  # GNU date (Linux): no -j flag; accepts free-form strings via -d.
+  # Reformat YYYYMMDD-HHMMSS into "YYYY-MM-DD HH:MM:SS" using substring slices —
+  # bash 3.2-safe, no external tools needed.
+  local gnu_dt="${ts_prefix:0:4}-${ts_prefix:4:2}-${ts_prefix:6:2} ${ts_prefix:9:2}:${ts_prefix:11:2}:${ts_prefix:13:2}"
+  date -d "$gnu_dt" '+%s' 2>/dev/null && return
+
+  # Both branches failed — basename is malformed or date is unavailable.
+  echo 0
 }
 
 _is_dogfood_slug() {
@@ -115,7 +125,16 @@ _count_sessions_in_slug() {
   local n=0
   local session_dir session_epoch
 
+  # Current layout: <slug>/branches/<branch>/sessions/<ts>/
   for session_dir in "${slug_dir}branches/"/*/sessions/*/; do
+    [[ -d "$session_dir" ]] || continue
+    session_epoch="$(_parse_session_epoch "$(basename "$session_dir")")"
+    [[ "$session_epoch" -gt "$boundary_epoch" ]] && n=$((n + 1))
+  done
+
+  # Legacy layout: <slug>/sessions/<ts>/ (no branches/ tier)
+  # The two glob roots are disjoint — no deduplication needed.
+  for session_dir in "${slug_dir}sessions/"/*/; do
     [[ -d "$session_dir" ]] || continue
     session_epoch="$(_parse_session_epoch "$(basename "$session_dir")")"
     [[ "$session_epoch" -gt "$boundary_epoch" ]] && n=$((n + 1))

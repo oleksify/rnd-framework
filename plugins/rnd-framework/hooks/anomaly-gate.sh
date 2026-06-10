@@ -87,8 +87,8 @@ if [[ "$check_a_passed" -eq 1 ]] || [[ "$check_b_passed" -eq 1 ]]; then
 fi
 
 # Emit gate_fired audit event before blocking
-if [[ -n "${RND_DIR:-}" ]]; then
-  bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+if [[ -n "$session_dir" ]]; then
+  RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
     "gate_fired" "$task_id" "anomaly_gate" 2>/dev/null || true
 fi
 

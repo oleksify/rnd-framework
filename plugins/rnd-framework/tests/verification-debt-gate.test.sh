@@ -39,7 +39,6 @@ run_with_session() {
   printf '%s' "$stdin_json" \
     | env -i PATH="$PATH" HOME="$HOME" \
         CLAUDE_CONFIG_DIR="$TMP_CONFIG" \
-        RND_DIR="$TMP_SESSION" \
         "$HOOK" >"$stdout_file" 2>"$stderr_file" || HOOK_EXIT=$?
 
   HOOK_STDOUT="$(cat "$stdout_file")"
@@ -93,9 +92,14 @@ printf '%s' \
 No issues.
 ' > "$REPORT_A"
 
+rm -f "${TMP_SESSION}/audit.jsonl"
 run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
 assert_exit_code "bare PASS + debt section → exit 2" 2
 assert_contains "stderr contains verification-debt-gate" "verification-debt-gate" "$HOOK_STDERR"
+
+AUDIT_LINE="$(grep 'verification_debt_gate' "${TMP_SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "audit.jsonl has gate_fired for verification_debt_gate" "gate_fired" "$AUDIT_LINE"
+assert_contains "audit.jsonl names verification_debt_gate tool" "verification_debt_gate" "$AUDIT_LINE"
 
 rm -f "$REPORT_A"
 

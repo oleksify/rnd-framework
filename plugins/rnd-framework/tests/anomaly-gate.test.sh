@@ -46,25 +46,6 @@ run_with_session() {
   rm -f "$stdout_file" "$stderr_file"
 }
 
-# Helper: run the hook with RND_DIR set (for audit event tests).
-run_with_session_and_rnd() {
-  local stdin_json="$1"
-  local rnd_dir="$2"
-  local stdout_file stderr_file
-  stdout_file="$(mktemp)"
-  stderr_file="$(mktemp)"
-
-  HOOK_EXIT=0
-  printf '%s' "$stdin_json" \
-    | env -i PATH="$PATH" HOME="$HOME" \
-        CLAUDE_CONFIG_DIR="$TMP_CONFIG" \
-        RND_DIR="$rnd_dir" \
-        "$HOOK" >"$stdout_file" 2>"$stderr_file" || HOOK_EXIT=$?
-
-  HOOK_STDOUT="$(cat "$stdout_file")"
-  HOOK_STDERR="$(cat "$stderr_file")"
-  rm -f "$stdout_file" "$stderr_file"
-}
 
 # ---------------------------------------------------------------------------
 # Test 1: non-auditor agent → fast-path exit 0
@@ -198,33 +179,15 @@ REPORT_H="${TMP_SESSION}/reality/T1-reality-report.md"
 printf '# Reality Report: T1\n\n## Summary\n- VALID: 8\n\n## Overall Verdict: VALIDATED_ALL\n' \
   > "$REPORT_H"
 
-AUDIT_TMP="$(mktemp -d)"
-mkdir -p "$AUDIT_TMP"
+rm -f "${TMP_SESSION}/audit.jsonl"
+run_with_session '{"agent_type":"rnd-reality-auditor","stop_reason":"end_turn"}'
+assert_exit_code "blocking path → exit 2" 2
 
-run_with_session_and_rnd \
-  '{"agent_type":"rnd-reality-auditor","stop_reason":"end_turn"}' \
-  "$AUDIT_TMP"
-
-assert_exit_code "block with RND_DIR → exit 2" 2
-
-if [[ -f "${AUDIT_TMP}/audit.jsonl" ]]; then
-  AUDIT_LINE="$(grep '"tool":"anomaly_gate"' "${AUDIT_TMP}/audit.jsonl" || true)"
-  if [[ -n "$AUDIT_LINE" ]]; then
-    printf '  PASS  audit.jsonl contains tool:"anomaly_gate"\n'
-    TESTS_PASSED=$((TESTS_PASSED + 1))
-  else
-    printf '  FAIL  audit.jsonl exists but no tool:"anomaly_gate" line\n'
-    printf '        audit.jsonl content: %s\n' "$(< "${AUDIT_TMP}/audit.jsonl")"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-  fi
-else
-  printf '  FAIL  audit.jsonl was not created\n'
-  TESTS_FAILED=$((TESTS_FAILED + 1))
-fi
-TESTS_TOTAL=$((TESTS_TOTAL + 1))
+AUDIT_LINE="$(grep 'anomaly_gate' "${TMP_SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "audit.jsonl has gate_fired for anomaly_gate" "gate_fired" "$AUDIT_LINE"
+assert_contains "audit.jsonl names anomaly_gate tool" "anomaly_gate" "$AUDIT_LINE"
 
 rm -f "$REPORT_H"
-rm -rf "$AUDIT_TMP"
 
 # ---------------------------------------------------------------------------
 # Test 9: no active session → exit 0

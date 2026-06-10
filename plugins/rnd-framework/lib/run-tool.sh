@@ -44,8 +44,8 @@ cmd_args=()
 _validate_task_id() {
   local id="$1"
 
-  if [[ ! "$id" =~ ^[A-Za-z0-9_-]+$ ]]; then
-    printf 'run-tool.sh: invalid --task-id %q (must match [A-Za-z0-9_-]+)\n' "$id" >&2
+  if [[ ! "$id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    printf 'run-tool.sh: invalid --task-id %q (must match [A-Za-z0-9._-]+)\n' "$id" >&2
     exit 1
   fi
 }

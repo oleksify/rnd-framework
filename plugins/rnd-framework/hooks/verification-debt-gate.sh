@@ -74,8 +74,8 @@ fi
 
 # Both conditions met: non-trivial debt section AND bare PASS verdict.
 # Emit gate_fired audit event then block.
-if [[ -n "${RND_DIR:-}" ]]; then
-  bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+if [[ -n "$session_dir" ]]; then
+  RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
     "gate_fired" "$task_id" "verification_debt_gate" 2>/dev/null || true
 fi
 

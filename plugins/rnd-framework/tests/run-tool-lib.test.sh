@@ -418,7 +418,7 @@ AE_LINES2="$(wc -l < "${AE_DIR}/audit.jsonl" | tr -d ' ')"
 assert_eq "audit-event.sh appends (line count = 2)" "2" "$AE_LINES2"
 
 # ---------------------------------------------------------------------------
-# task-id sanitization (m2 fix)
+# task-id sanitization
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- task-id sanitization ---'
 
@@ -436,6 +436,20 @@ assert_eq "task-id with / is rejected (exit 1)" "1" "$SLASH_EXIT"
 VALID_EXIT=0
 bash "$RUN_TOOL" --task-id 'T1_test-42' -- printf '' >/dev/null 2>&1 || VALID_EXIT=$?
 assert_eq "task-id with [A-Za-z0-9_-]+ is accepted" "0" "$VALID_EXIT"
+
+# Dotted canonical id (M<N>.T<NN>.<slug>) → accepted, must flow byte-identical to evidence path
+DOTTED_EXIT=0
+dotted_rnd="${WORK_DIR}/dotted-rnd"
+mkdir -p "$dotted_rnd"
+RND_EVIDENCE_PACK=1 RND_DIR="$dotted_rnd" \
+  bash "$RUN_TOOL" --task-id 'M1.T01.add-thing' -- printf '' >/dev/null 2>&1 || DOTTED_EXIT=$?
+assert_eq "dotted id M1.T01.add-thing is accepted (exit 0)" "0" "$DOTTED_EXIT"
+assert_eq "dotted id: evidence dir created with exact id" "true" \
+  "$([[ -d "${dotted_rnd}/evidence/M1.T01.add-thing" ]] && echo true || echo false)"
+
+# Verify the audit task_id is byte-identical (no normalisation)
+DOTTED_AUDIT_ID="$(jq -r '.task_id' "${dotted_rnd}/audit.jsonl" 2>/dev/null || true)"
+assert_eq "dotted id flows byte-identical to audit task_id" "M1.T01.add-thing" "$DOTTED_AUDIT_ID"
 
 # ---------------------------------------------------------------------------
 # inputs_json accumulation: single jq call after the loop, not inside it

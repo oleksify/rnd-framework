@@ -260,6 +260,22 @@ rm -f "$MANIFEST_I"
 rm -rf "$EVIDENCE_DIR_I"
 
 # ---------------------------------------------------------------------------
+# Test MF1: current-format manifest name M02-T03-f6d3915b-manifest.md is found
+# as the most recent manifest and the gate evaluates it normally.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- builder-dismissal-gate: current-format manifest name recognized ---'
+
+MANIFEST_CF="${TMP_SESSION}/builds/M02-T03-f6d3915b-manifest.md"
+printf '# Build Manifest\n\nStatus: DONE\n\nAll criteria addressed cleanly.\n' \
+  > "$MANIFEST_CF"
+rm -rf "${TMP_SESSION}/verifications/M02-T03-f6d3915b-evidence"
+
+run_with_session '{"agent_type":"rnd-builder","stop_reason":"end_turn"}'
+assert_exit_code "current-format manifest → gate finds it and exits 0" 0
+
+rm -f "$MANIFEST_CF"
+
+# ---------------------------------------------------------------------------
 # Test D6: Check D — DONE + evidence dir with only a 0-byte VAL file → exit 2
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- builder-dismissal-gate: Check D — DONE + 0-byte VAL file → exit 2 ---'

@@ -80,10 +80,15 @@ REPORT_A="${TMP_SESSION}/verifications/T1-verification.md"
 printf '# Verification Report: T1\n## Per-Criterion Results\n### Correctness Tier\n- [PASS] criterion one — evidence\n## Overall Verdict: PASS\n## Case for FAIL\nThe trivial-content check uses whole-line anchoring to avoid false positives.\n## Coverage Gaps\n- Checked: all assertions\n- Couldn'"'"'t check: live invocation\n## Feedback\nNo issues.\n' \
   > "$REPORT_A"
 
+rm -f "${TMP_SESSION}/audit.jsonl"
 run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
 assert_exit_code "missing Case for PASS → exit 2" 2
 assert_contains "stderr contains VERIFIER CASE GATE" "VERIFIER CASE GATE" "$HOOK_STDERR"
 assert_contains "stderr mentions Case for PASS" "Case for PASS" "$HOOK_STDERR"
+
+AUDIT_LINE="$(grep 'verifier_case_symmetry' "${TMP_SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "audit.jsonl has gate_fired for verifier_case_symmetry" "gate_fired" "$AUDIT_LINE"
+assert_contains "audit.jsonl names verifier_case_symmetry tool" "verifier_case_symmetry" "$AUDIT_LINE"
 
 rm -f "$REPORT_A"
 

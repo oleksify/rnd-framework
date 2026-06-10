@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: opus
 effort: high
 color: "#EF4444"
-skills: kiss-practices, fp-practices
+skills: rnd-kiss-practices, rnd-fp-practices
 maxTurns: 150
 ---
 

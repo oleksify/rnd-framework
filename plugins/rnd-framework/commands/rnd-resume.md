@@ -51,9 +51,14 @@ Read `$RND_DIR/features.json` with `jq` and `$RND_DIR/protocol.md` to extract:
 
 ## Step 3: Scan Build Artifacts
 
-Scan `$RND_DIR/builds/` for files matching the pattern `T*-manifest.md`. For each file found, extract the task ID from the filename (e.g., `T1-manifest.md` → task T1). These are the **built tasks**.
+Scan `$RND_DIR/builds/` for files matching the pattern `*-manifest.md`. Two filename forms are produced:
 
-Do NOT read `T*-self-assessment.md` files. The information barrier applies here.
+- **Current form:** `M<NN>-T<NN>-<uuid>-manifest.md` (e.g., `M02-T03-f6d3915b-manifest.md`). Strip the `-manifest.md` suffix to get the stem `M02-T03-f6d3915b`, then resolve the 8-hex uuid against `features.json .tasks[].uuid` to recover the canonical task id (e.g., `M2.T03.some-slug`).
+- **Legacy form:** `T<id>-manifest.md` (e.g., `T1-manifest.md`). Strip the `-manifest.md` suffix; the remainder is the task ref (e.g., `T1`).
+
+These are the **built tasks**.
+
+Do NOT read `*-self-assessment.md` files. The information barrier applies here.
 
 ## Step 4: Scan Verification Artifacts
 

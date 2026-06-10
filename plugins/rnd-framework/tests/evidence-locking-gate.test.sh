@@ -445,6 +445,142 @@ assert_stderr_contains "case (q-absent): path:line absent → SUBSTANCE FAILURE"
 assert_stderr_contains "case (q-absent): path:line absent → stderr names stripped path (no :42)" "${SUBST_TAG}/missing-file.ts"
 
 # ---------------------------------------------------------------------------
+# Edit-path cases: the gate must validate the RECONSTRUCTED resulting document
+# (on-disk map + literal old_string -> new_string substitution), never a raw
+# fragment, and must fail closed when the result cannot be reconstructed.
+# ---------------------------------------------------------------------------
+
+make_edit_input() {
+  local path="$1"
+  local old="$2"
+  local new="$3"
+  local agent="${4-rnd-verifier}"
+  local replace_all="${5-false}"
+  jq -nc \
+    --arg path "$path" \
+    --arg old "$old" \
+    --arg new "$new" \
+    --arg agent "$agent" \
+    --argjson ra "$replace_all" \
+    '{tool_name: "Edit", tool_input: {file_path: $path, old_string: $old, new_string: $new, replace_all: $ra}, agent_type: $agent}'
+}
+
+GOOD_EVIDENCE="schema sourced from plugins/rnd-framework/lib/verdict-map-schema.json confirmed present"
+ALT_GOOD_EVIDENCE="guard confirmed at plugins/rnd-framework/lib/verdict-map-schema.json:5 during the run"
+
+# A valid single-entry map persisted to disk as the Edit reconstruction base.
+disk_map_valid="$(make_substance_map "M9.edit.target" "$GOOD_EVIDENCE")"
+
+# ---------------------------------------------------------------------------
+# Case (r): Edit whose new_string downgrades evidence to a trivial token → exit 2
+
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "$GOOD_EVIDENCE" "ok")"
+assert_exit "case (r): Edit injecting trivial evidence → exit 2" 2
+assert_stderr_contains "case (r): Edit trivial → stderr names offender ID" "M9.edit.target"
+assert_stderr_contains "case (r): Edit trivial → violation type is trivial" "trivial"
+
+# ---------------------------------------------------------------------------
+# Case (s): Edit fragment that is NOT standalone-parseable JSON cannot bypass —
+# validation runs on the reconstructed document, which IS parseable and trivial.
+
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+frag_old="\"evidence\":[\"${GOOD_EVIDENCE}\"]"
+frag_new='"evidence":["ok"]'
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "$frag_old" "$frag_new")"
+assert_exit "case (s): non-parseable Edit fragment with trivial evidence → exit 2" 2
+assert_stderr_contains "case (s): fragment Edit → stderr names offender ID" "M9.edit.target"
+assert_stderr_contains "case (s): fragment Edit → violation type is trivial" "trivial"
+
+# ---------------------------------------------------------------------------
+# Case (t): Edit producing a fully valid resulting document → exit 0
+
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "$GOOD_EVIDENCE" "$ALT_GOOD_EVIDENCE")"
+assert_exit "case (t): Edit producing valid document → exit 0" 0
+assert_stderr_empty "case (t): Edit producing valid document → no stderr"
+
+# ---------------------------------------------------------------------------
+# Case (u): replace_all=true repairs BOTH trivial entries → exit 0.
+# A single (non-global) substitution would leave the second entry trivial and
+# exit 2, so a green result proves global substitution is honored.
+
+two_trivial='{"M9.edit.first":{"verdict":"PASS","evidence":["ok"],"feedback":"","task_id":"T01"},"M9.edit.second":{"verdict":"PASS","evidence":["ok"],"feedback":"","task_id":"T02"}}'
+printf '%s' "$two_trivial" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" '"evidence":["ok"]' "\"evidence\":[\"${GOOD_EVIDENCE}\"]" rnd-verifier true)"
+assert_exit "case (u): replace_all Edit repairing all entries → exit 0" 0
+assert_stderr_empty "case (u): replace_all Edit → no stderr"
+
+# ---------------------------------------------------------------------------
+# Case (v): Write with empty content on a matched verifier path → fail-closed exit 2
+
+run_hook "$(make_write_input "$VERDICT_MAP_PATH" "")"
+assert_exit "case (v): empty-content Write → exit 2 (fail-closed)" 2
+assert_stderr_contains "case (v): empty-content Write → stderr explains fail-closed" "FAIL-CLOSED"
+assert_stderr_contains "case (v): empty-content Write → stderr names empty extraction" "empty_extraction"
+
+# ---------------------------------------------------------------------------
+# Case (w): unreconstructable Edits on a matched verifier path → fail-closed exit 2
+
+# (w1) old_string absent from the on-disk map.
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "this string does not occur anywhere in the map" "ok")"
+assert_exit "case (w1): old_string not found → exit 2 (fail-closed)" 2
+assert_stderr_contains "case (w1): old_string not found → stderr names reason" "edit_old_string_not_found"
+
+# (w2) on-disk target file missing.
+MISSING_MAP_PATH="${FAKE_VERIF_DIR}/wave-2-verdict-map.json"
+rm -f "$MISSING_MAP_PATH"
+
+run_hook "$(make_edit_input "$MISSING_MAP_PATH" "anything" "ok")"
+assert_exit "case (w2): missing target file → exit 2 (fail-closed)" 2
+assert_stderr_contains "case (w2): missing target file → stderr names reason" "edit_target_unreadable"
+
+# (w3) empty old_string.
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "" "ok")"
+assert_exit "case (w3): empty old_string → exit 2 (fail-closed)" 2
+assert_stderr_contains "case (w3): empty old_string → stderr names reason" "edit_empty_old_string"
+
+# ---------------------------------------------------------------------------
+# Case (x): non-verifier Edit and non-matched-path Edit stay untouched → exit 0
+
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "$GOOD_EVIDENCE" "ok" "rnd-integrator")"
+assert_exit "case (x): non-verifier Edit with trivial evidence → exit 0 (pass-through)" 0
+assert_stderr_empty "case (x): non-verifier Edit → no stderr"
+
+run_hook "$(make_edit_input "${FAKE_SESSION}/notes.json" "a" "b")"
+assert_exit "case (x): non-matched-path Edit → exit 0 (pass-through)" 0
+assert_stderr_empty "case (x): non-matched-path Edit → no stderr"
+
+# ---------------------------------------------------------------------------
+# Case (y): fail-closed block emits exactly one gate_fired audit event
+
+printf '' > "$FAKE_AUDIT"
+printf '%s' "$disk_map_valid" > "$VERDICT_MAP_PATH"
+
+run_hook "$(make_edit_input "$VERDICT_MAP_PATH" "this string does not occur anywhere in the map" "ok")"
+assert_exit "case (y): fail-closed block → exit 2" 2
+
+fc_event_count=0
+if [[ -f "$FAKE_AUDIT" ]]; then
+  fc_event_count="$(grep -c '"gate_fired"' "$FAKE_AUDIT" 2>/dev/null || true)"
+fi
+
+if [[ "$fc_event_count" -eq 1 ]]; then
+  pass "case (y): fail-closed block → exactly one gate_fired event"
+else
+  fail "case (y): fail-closed block → expected 1 gate_fired event, found $fc_event_count"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 

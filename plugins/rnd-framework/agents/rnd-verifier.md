@@ -86,6 +86,18 @@ Example valid evidence array with mixed shapes:
 
 The orchestrator aggregates per-task results at Gate 3 by grouping entries by `task_id`. If you are verifying a single task (not a wave), still emit the assertion-keyed verdict map. For every verdict, write a `T<id>-verification.md` full prose report enumerating each assertion with its verdict and evidence.
 
+### Pass-Receipt Output
+
+For every task whose aggregated Gate-3 verdict is **PASS**, write a minimal `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` using the same `T<id>` stem as the task's `T<id>-verification.md`:
+
+```json
+{"status": "PASS", "source": "verifier", "timestamp": "<ISO 8601>"}
+```
+
+**PASS_QUALITY_NEEDS_ITERATION** tasks get both artifacts: the `T<id>-verification.md` full prose report (required for all verdicts) and the `T<id>-pass-receipt.json` receipt (because the task qualifies as passing at Gate 3 and rnd-start proceeds to the next wave).
+
+Do NOT write a pass-receipt for NEEDS_ITERATION or FAIL verdicts.
+
 See `rnd-framework:rnd-verification` for the full verification protocol (information barrier rules, two-stage evaluation table, process steps 1–6, tool discipline).
 
 ## Startup Self-Check

@@ -99,8 +99,8 @@ done <<< "$(parse_contract_assertions "$contract_content")"
 if [[ -n "$offenders" ]]; then
   first_id="${offenders%% *}"
 
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$first_id" "planner_emit_gate" 2>/dev/null || true
   fi
 

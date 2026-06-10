@@ -3,7 +3,7 @@
 # Saves pipeline state to $RND_DIR/compact-state.json before context compaction.
 #
 # Fire-and-forget: exits 0 always, produces no stdout.
-# Reads: protocol.md (fallback plan.md), builds/T*-manifest.md, iteration-log.md
+# Reads: protocol.md (fallback plan.md), builds/*-manifest.md, iteration-log.md
 # shellcheck source=./lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -14,7 +14,9 @@ session_dir="$(active_session_dir 2>/dev/null || true)"
 # Constants
 # ---------------------------------------------------------------------------
 
-readonly MANIFEST_REGEX='^T[0-9]+-manifest\.md$'
+# Matches both current builder convention (M<NN>-T<NN>-<uuid>-manifest.md,
+# uuid an 8-hex string) and the legacy form (T<id>-manifest.md).
+readonly MANIFEST_REGEX='^(T[0-9]+|M[0-9]+-T[0-9]+-[0-9a-f]{8})-manifest\.md$'
 readonly PLAN_HEAD_LINES=5
 
 # ---------------------------------------------------------------------------
@@ -37,7 +39,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# currentTaskId: basename of most recently modified T*-manifest.md, or null
+# currentTaskId: basename of most recently modified *-manifest.md, or null
 # ---------------------------------------------------------------------------
 
 builds_dir="${session_dir}/builds"

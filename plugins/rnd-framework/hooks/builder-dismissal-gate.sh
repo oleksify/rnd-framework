@@ -26,11 +26,12 @@ if [[ -z "$session_dir" ]]; then
 fi
 
 # Locate the most recent build manifest in builds/
+# Matches both current M<NN>-T<NN>-<uuid>-manifest.md and legacy T<id>-manifest.md forms.
 manifests=()
-if compgen -G "${session_dir}/builds/T*-manifest.md" > /dev/null 2>&1; then
+if compgen -G "${session_dir}/builds/*-manifest.md" > /dev/null 2>&1; then
   while IFS= read -r f; do
     manifests+=("$f")
-  done < <(ls -t "${session_dir}/builds/"T*-manifest.md 2>/dev/null)
+  done < <(ls -t "${session_dir}/builds/"*-manifest.md 2>/dev/null)
 fi
 
 if [[ "${#manifests[@]}" -eq 0 ]]; then
@@ -39,7 +40,7 @@ fi
 
 manifest_path="${manifests[0]}"
 
-# Extract task ID from filename: T1-manifest.md → T1
+# Extract task ID from filename (both forms): T1-manifest.md → T1; M02-T03-f6d3915b-manifest.md → M02-T03-f6d3915b
 manifest_base="${manifest_path##*/}"
 task_id="${manifest_base%-manifest.md}"
 

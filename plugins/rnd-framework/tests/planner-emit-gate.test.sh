@@ -30,8 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Helper: run the hook with CLAUDE_CONFIG_DIR + RND_DIR pointed at the fixture.
-# RND_DIR is set so audit-event.sh writes to the fixture session's audit.jsonl.
+# Helper: run the hook with CLAUDE_CONFIG_DIR pointed at the fixture.
 run_with_session() {
   local stdin_json="$1"
   local stdout_file stderr_file
@@ -42,7 +41,6 @@ run_with_session() {
   printf '%s' "$stdin_json" \
     | env -i PATH="$PATH" HOME="$HOME" \
         CLAUDE_CONFIG_DIR="$TMP_CONFIG" \
-        RND_DIR="$TMP_SESSION" \
         "$HOOK" >"$stdout_file" 2>"$stderr_file" || HOOK_EXIT=$?
 
   HOOK_STDOUT="$(cat "$stdout_file")"

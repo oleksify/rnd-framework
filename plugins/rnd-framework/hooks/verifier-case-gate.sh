@@ -58,8 +58,8 @@ report_content="$(< "$report_path")"
 # ---------------------------------------------------------------------------
 
 _emit_event() {
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$task_id" "verifier_case_symmetry" 2>/dev/null || true
   fi
 }

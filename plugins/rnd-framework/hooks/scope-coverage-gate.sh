@@ -136,8 +136,8 @@ done <<< "$scope_ids"
 if [[ -n "$creep_offenders" ]]; then
   first_id="${creep_offenders%% *}"
 
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$first_id" "scope_coverage_gate" "scope_creep" 2>/dev/null || true
   fi
 
@@ -154,8 +154,8 @@ fi
 if [[ -n "$miss_offenders" ]]; then
   first_id="${miss_offenders%% *}"
 
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$first_id" "scope_coverage_gate" "scope_miss" 2>/dev/null || true
   fi
 

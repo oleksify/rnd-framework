@@ -54,8 +54,8 @@ report_content="$(< "$report_path")"
 
 if ! printf '%s' "$report_content" | grep -q "^## Coverage Gaps"; then
   # Emit gate_fired audit event before blocking
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$task_id" "coverage_gaps_gate" 2>/dev/null || true
   fi
 
@@ -80,8 +80,8 @@ section_content="$(extract_section "Coverage Gaps" "$report_content")"
 
 if is_trivial_section "$section_content" "nothing" "none" "n/a" "all checks ran" "no gaps"; then
   # Emit gate_fired audit event before blocking
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$task_id" "coverage_gaps_gate" 2>/dev/null || true
   fi
 

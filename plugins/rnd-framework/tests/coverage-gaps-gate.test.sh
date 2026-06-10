@@ -81,10 +81,15 @@ REPORT_A="${TMP_SESSION}/verifications/T1-verification.md"
 printf '# Verification Report: T1\n## Per-Criterion Results\n### Correctness Tier\n- [PASS] criterion one — evidence\n## Overall Verdict: PASS\n## Feedback\nNo issues.\n' \
   > "$REPORT_A"
 
+rm -f "${TMP_SESSION}/audit.jsonl"
 run_with_session '{"agent_type":"rnd-verifier","stop_reason":"end_turn"}'
 assert_exit_code "missing section → exit 2" 2
 assert_contains "stderr contains coverage-gaps-gate" "coverage-gaps-gate" "$HOOK_STDERR"
 assert_contains "stderr mentions Coverage Gaps" "Coverage Gaps" "$HOOK_STDERR"
+
+AUDIT_LINE="$(grep 'coverage_gaps_gate' "${TMP_SESSION}/audit.jsonl" 2>/dev/null || true)"
+assert_contains "audit.jsonl has gate_fired for coverage_gaps_gate" "gate_fired" "$AUDIT_LINE"
+assert_contains "audit.jsonl names coverage_gaps_gate tool" "coverage_gaps_gate" "$AUDIT_LINE"
 
 rm -f "$REPORT_A"
 

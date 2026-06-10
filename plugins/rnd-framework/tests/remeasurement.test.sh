@@ -301,4 +301,91 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Test group: GNU date fallback — shim forces -j to fail, GNU branch must fire
+#
+# The shim date script exits non-zero on -j (simulating GNU coreutils) and
+# translates -d "YYYY-MM-DD HH:MM:SS" to the BSD call so the assertion can
+# compare shim-path epoch against native-path epoch within the same process env.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- _parse_session_epoch: GNU date fallback via -j shim ---'
+
+SHIM_DIR="${TMP_DIR}/date-shim"
+mkdir -p "$SHIM_DIR"
+
+# Write the shim: fail on -j (GNU has no -j); translate -d to BSD equivalent.
+# BSD date is the platform binary at /bin/date — never use PATH to find it here,
+# because this shim IS on PATH and would cause infinite recursion.
+cat > "${SHIM_DIR}/date" << 'SHIM_EOF'
+#!/usr/bin/env bash
+for arg in "$@"; do
+  [[ "$arg" == "-j" ]] && exit 1
+done
+if [[ "$1" == "-d" ]]; then
+  exec /bin/date -j -f '%Y-%m-%d %H:%M:%S' "$2" "${@:3}"
+fi
+exec /bin/date "$@"
+SHIM_EOF
+chmod +x "${SHIM_DIR}/date"
+
+# Compute the expected epoch using native BSD date (no shim on PATH here)
+VALID_TS="20260529-100000"
+EXPECTED_EPOCH="$(/bin/date -j -f '%Y%m%d-%H%M%S' "$VALID_TS" '+%s')"
+
+RND_SHIM="${TMP_DIR}/gnu-shim"
+make_session "$RND_SHIM" "claude-130cb64f" "main" "$VALID_TS"
+
+# Run corpus_count with shim on PATH (boundary=1 includes all post-epoch-1 sessions)
+SHIM_EPOCH=$(PATH="${SHIM_DIR}:${PATH}" CLAUDE_CONFIG_DIR="$RND_SHIM" bash "$HARNESS" corpus_count 1)
+assert_eq "shim-path: nonzero epoch counted (GNU branch fired)" "1" "$SHIM_EPOCH"
+
+# Source the harness functions (awk stops at dispatch to avoid re-entrant dispatch)
+# and invoke _parse_session_epoch directly under the shim PATH.
+assert_eq "shim-path: epoch equals native-BSD epoch" "$EXPECTED_EPOCH" \
+  "$(PATH="${SHIM_DIR}:${PATH}" bash -c "
+      source <(awk '/^subcommand=/{ exit } { print }' '${HARNESS}')
+      _parse_session_epoch '${VALID_TS}-abcd1234'
+    " 2>/dev/null)"
+
+# ---------------------------------------------------------------------------
+# Test group: malformed basename → 0 under shim (both BSD and GNU branches fail)
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- _parse_session_epoch: malformed basename → 0 (shim active) ---'
+
+RND_MALFORMED="${TMP_DIR}/malformed"
+# Create a session dir whose name does not match YYYYMMDD-HHMMSS-XXXX
+mkdir -p "${RND_MALFORMED}/.rnd/claude-130cb64f/branches/main/sessions/bad-name-00000000"
+
+# With shim: -j fails (GNU path), then -d with "bad-name-" prefix also fails → 0
+MALFORMED_COUNT=$(PATH="${SHIM_DIR}:${PATH}" CLAUDE_CONFIG_DIR="$RND_MALFORMED" bash "$HARNESS" corpus_count 1)
+assert_eq "malformed basename yields 0 count (shim active)" "0" "$MALFORMED_COUNT"
+
+# Without shim: BSD date also fails on malformed → 0
+MALFORMED_COUNT_NATIVE=$(CLAUDE_CONFIG_DIR="$RND_MALFORMED" bash "$HARNESS" corpus_count 1)
+assert_eq "malformed basename yields 0 count (native)" "0" "$MALFORMED_COUNT_NATIVE"
+
+# ---------------------------------------------------------------------------
+# Test group: legacy sessions layout — sessions/ sibling to branches/
+# A slug dir may contain both branches/*/sessions/*/ (current layout) and
+# sessions/*/ (legacy flat layout). Both must be counted.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- corpus_count: legacy sessions/ layout counted alongside branches/ ---'
+
+RND_LEGACY="${TMP_DIR}/legacy"
+
+# One session in the current branches layout
+make_session "$RND_LEGACY" "claude-130cb64f" "main" "20260529-100000"
+
+# One session in the legacy flat layout (sessions/ directly under slug dir)
+mkdir -p "${RND_LEGACY}/.rnd/claude-130cb64f/sessions/20260529-110000-abcd1234"
+
+# Both sessions are post-epoch-1; expect count = 2
+LEGACY_COUNT=$(CLAUDE_CONFIG_DIR="$RND_LEGACY" bash "$HARNESS" corpus_count 1)
+assert_eq "branches + legacy sessions both counted (total 2)" "2" "$LEGACY_COUNT"
+
+# Confirm M5 boundary still excludes pre-M5 legacy sessions
+mkdir -p "${RND_LEGACY}/.rnd/claude-130cb64f/sessions/20260511-100000-abcd1234"
+LEGACY_COUNT_M5=$(CLAUDE_CONFIG_DIR="$RND_LEGACY" bash "$HARNESS" corpus_count "$M5_BOUNDARY")
+assert_eq "legacy pre-M5 session excluded by boundary" "2" "$LEGACY_COUNT_M5"
+
+# ---------------------------------------------------------------------------
 report

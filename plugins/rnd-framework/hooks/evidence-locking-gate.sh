@@ -204,11 +204,81 @@ agent_lower="$(_lower "${AGENT_TYPE}")"
 _is_verdict_map_path "$file_path" || exit 0
 [[ "$agent_lower" == *"verifier"* ]] || exit 0
 
-# Extract the content being written from the tool input.
-new_content="$(printf '%s' "$TOOL_INPUT" | jq -r '.new_file // .content // ""' 2>/dev/null || true)"
+# ---------------------------------------------------------------------------
+# Content acquisition (per-tool) — FAIL-CLOSED on a matched verifier path.
+#
+# Write : the document is .content (legacy .new_file kept for older callers).
+# Edit  : .new_string is only a FRAGMENT of the document. A fragment must
+#         never be evaluated raw — the form-pass jq tolerates parse failure
+#         (`|| true`), so a standalone-unparseable fragment would silently
+#         pass. Instead the RESULTING document is reconstructed: read the
+#         on-disk verdict map and apply the literal substitution
+#         old_string -> new_string (quoted bash pattern = literal match;
+#         replace_all honored via global substitution).
+#
+# Policy: once the path matched and the agent is the verifier, an empty
+# extraction or an unreconstructable Edit (target file missing/unreadable,
+# empty old_string, old_string not found on disk) BLOCKS with exit 2 and one
+# gate_fired audit event — never a silent allow. A document the gate cannot
+# inspect is treated as unverified evidence.
+# ---------------------------------------------------------------------------
+
+_fail_closed() {
+  local reason_tag="$1"
+  local detail="$2"
+
+  local session_dir
+  session_dir="$(active_session_dir 2>/dev/null || true)"
+
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "${HOOK_DIR}/../lib/audit-event.sh" \
+      "gate_fired" "$reason_tag" "evidence_locking_gate" 2>/dev/null || true
+  fi
+
+  block_msg "evidence-locking-gate: FAIL-CLOSED — verdict-map ${TOOL_NAME:-Write} blocked.
+
+Reason : ${reason_tag}
+Detail : ${detail}
+
+The gate could not inspect the resulting verdict-map document, so the
+operation is blocked rather than silently allowed. Re-issue the change so
+the full document can be reconstructed and validated."
+}
+
+if [[ "$TOOL_NAME" == "Edit" ]]; then
+  old_string="$(printf '%s' "$TOOL_INPUT" | jq -r '.old_string // ""' 2>/dev/null || true)"
+  new_string="$(printf '%s' "$TOOL_INPUT" | jq -r '.new_string // ""' 2>/dev/null || true)"
+  replace_all="$(printf '%s' "$TOOL_INPUT" | jq -r '.replace_all // false' 2>/dev/null || true)"
+
+  if [[ -z "$old_string" ]]; then
+    _fail_closed "edit_empty_old_string" \
+      "the Edit carries an empty old_string; the resulting document cannot be reconstructed."
+  fi
+
+  if [[ ! -f "$file_path" || ! -r "$file_path" ]]; then
+    _fail_closed "edit_target_unreadable" \
+      "on-disk verdict map '${file_path}' is missing or unreadable; the Edit result cannot be reconstructed."
+  fi
+
+  current="$(cat "$file_path" 2>/dev/null || true)"
+
+  if [[ "$current" != *"$old_string"* ]]; then
+    _fail_closed "edit_old_string_not_found" \
+      "old_string does not occur in '${file_path}'; the Edit result cannot be reconstructed."
+  fi
+
+  if [[ "$replace_all" == "true" ]]; then
+    new_content="${current//"$old_string"/"$new_string"}"
+  else
+    new_content="${current/"$old_string"/"$new_string"}"
+  fi
+else
+  new_content="$(printf '%s' "$TOOL_INPUT" | jq -r '.new_file // .content // ""' 2>/dev/null || true)"
+fi
 
 if [[ -z "$new_content" ]]; then
-  exit 0
+  _fail_closed "empty_extraction" \
+    "no document content could be extracted from the ${TOOL_NAME:-Write} payload."
 fi
 
 # ---------------------------------------------------------------------------

@@ -86,14 +86,11 @@ assert_stderr_contains() {
 }
 
 # ---------------------------------------------------------------------------
-# Fixture helpers — write temp manifest files under a fake .rnd/ dir
+# Fixture helpers — write temp manifest files under the configured .rnd/ dir
 # ---------------------------------------------------------------------------
 
-# Fake .rnd base dir anchored under a temp directory that satisfies is_plugin_artifact_path.
 RND_BASE="$(mktemp -d)"
-# is_plugin_artifact_path requires the path to match \.claude[^/]*/.*\.rnd/
-# Use a dotted path segment to satisfy the regex without touching the real system.
-FAKE_CONFIG="${RND_BASE}/.claude-test"
+FAKE_CONFIG="${CLAUDE_CONFIG_DIR}"
 FAKE_RND="${FAKE_CONFIG}/.rnd"
 
 write_manifest() {

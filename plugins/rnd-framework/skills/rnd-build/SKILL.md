@@ -54,7 +54,7 @@ Route each result:
 | `NEEDS_CONTEXT` | Pause. Use `AskUserQuestion` to collect missing context. Re-spawn Builder with answer. |
 | `BLOCKED` | Pause. `AskUserQuestion`: "Provide missing dependency manually", "Re-plan this task", "Skip this task". |
 
-Gate 2: Verify `$RND_DIR/builds/T<id>-manifest.md` exists and is non-empty. Use `TaskUpdate` to mark each successfully built task as `completed`.
+Gate 2: Verify the canonical build manifest `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` exists and is non-empty. Resolve the path from the task's `uuid` in `features.json`, then use `TaskUpdate` to mark each successfully built task as `completed`.
 
 Summarize build results. Then use `AskUserQuestion` with options:
 - "Proceed to verification (Recommended)" — run `/rnd-framework:rnd-verify` for this wave

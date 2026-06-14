@@ -6,6 +6,14 @@ export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export HOME="$(mktemp -d)"
 unset RND_DIR
 
+ACTIVE_BASE_DIR="${CLAUDE_CONFIG_DIR}/.rnd/test-slug/branches/main"
+ACTIVE_SESSION_ID="20260613-160331-abcd"
+ACTIVE_RND_DIR="${ACTIVE_BASE_DIR}/sessions/${ACTIVE_SESSION_ID}"
+
+mkdir -p "${CLAUDE_CONFIG_DIR}/.rnd" "${ACTIVE_RND_DIR}/builds"
+printf '%s' "${ACTIVE_BASE_DIR}" > "${CLAUDE_CONFIG_DIR}/.rnd/.active-base-dir"
+printf '%s' "${ACTIVE_SESSION_ID}" > "${ACTIVE_BASE_DIR}/.current-session"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/write-gate.sh"
 
@@ -45,22 +53,28 @@ assert_stdout_empty() {
 }
 
 # ---------------------------------------------------------------------------
-# .rnd/ path → auto-allow
+# real artifact-root path → auto-allow
 # ---------------------------------------------------------------------------
 
-run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/.claude-personal/.rnd/slug/sessions/123/brainstorm.md","content":"test"}}'
-assert_exit "Write .rnd/ path → exit 0" 0
-assert_stdout_contains "Write .rnd/ path → allow JSON" '"permissionDecision":"allow"'
+run_hook "$(jq -nc --arg path "${ACTIVE_RND_DIR}/builds/report.md" '{tool_name:"Write", tool_input:{file_path:$path, content:"test"}}')"
+assert_exit "Write active artifact path → exit 0" 0
+assert_stdout_contains "Write active artifact path → allow JSON" '"permissionDecision":"allow"'
 
-run_hook '{"tool_name":"Edit","tool_input":{"file_path":"/Users/alice/.claude/.rnd/slug/sessions/123/plan.md","old_string":"a","new_string":"b"}}'
-assert_exit "Edit .rnd/ path → exit 0" 0
-assert_stdout_contains "Edit .rnd/ path → allow JSON" '"permissionDecision":"allow"'
+run_hook "$(jq -nc --arg path "${ACTIVE_RND_DIR}/builds/plan.md" '{tool_name:"Edit", tool_input:{file_path:$path, old_string:"a", new_string:"b"}}')"
+assert_exit "Edit active artifact path → exit 0" 0
+assert_stdout_contains "Edit active artifact path → allow JSON" '"permissionDecision":"allow"'
 
-# .rnd/ base-level file (roadmap.md)
+# fake .claude*/.rnd/ bypass path → no opinion
 
-run_hook '{"tool_name":"Write","tool_input":{"file_path":"/Users/alice/.claude-personal/.rnd/slug/roadmap.md","content":"test"}}'
-assert_exit "Write base-level .rnd/ path → exit 0" 0
-assert_stdout_contains "Write base-level .rnd/ path → allow JSON" '"permissionDecision":"allow"'
+run_hook '{"tool_name":"Write","tool_input":{"file_path":"/tmp/project/.claude-evil/x/.rnd/secret.txt","content":"test"}}'
+assert_exit "Write fake artifact-root bypass path → exit 0" 0
+assert_stdout_empty "Write fake artifact-root bypass path → empty stdout (no auto-allow)"
+
+# .rnd/ base-level file under configured root (roadmap.md)
+
+run_hook "$(jq -nc --arg path "${CLAUDE_CONFIG_DIR}/.rnd/test-slug/roadmap.md" '{tool_name:"Write", tool_input:{file_path:$path, content:"test"}}')"
+assert_exit "Write configured artifact-root file → exit 0" 0
+assert_stdout_contains "Write configured artifact-root file → allow JSON" '"permissionDecision":"allow"'
 
 # ---------------------------------------------------------------------------
 # regular path → no opinion

@@ -98,7 +98,7 @@ For each: identify the referenced entity and what the code or data assumes about
 
 ## Reading Builder's Manifest
 
-Before scanning code, read `$RND_DIR/builds/T<id>-manifest.md` and extract the `## External References` section if present. This section lists external dependencies the Builder declared explicitly.
+Before scanning code, read `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` and extract the `## External References` section if present. This section lists external dependencies the Builder declared explicitly.
 
 Use declared references as your starting hypothesis list. Do not trust them — treat each declared reference as a claim that must survive adversarial testing. The Builder may have declared correct references or may have missed some.
 

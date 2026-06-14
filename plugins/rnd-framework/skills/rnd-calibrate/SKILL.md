@@ -24,14 +24,15 @@ If any of `session-id`, `task-id`, or `true-verdict` are missing, use `AskUserQu
 
 ## Step 2: Read the Original Verdict
 
-Get the project base directory and locate the verification report:
+Get the branch-scoped base directory and locate the verification report:
 
 ```bash
 BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)
 VERDICT_FILE="${BASE_DIR}/sessions/<session-id>/verifications/<task-id>-verification.md"
+# Equivalent expanded form: .../branches/<branch>/sessions/<session-id>/verifications/<task-id>-verification.md
 ```
 
-Note: `--base` returns the branch-scoped base dir. Sessions are always located inside the branch-scoped dir.
+Note: `--base` returns the branch-scoped base dir under `.../branches/<branch>/`, so sessions are always resolved inside that partition.
 
 Read `$VERDICT_FILE`. If it does not exist, display an error:
 

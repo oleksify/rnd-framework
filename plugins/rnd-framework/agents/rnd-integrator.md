@@ -32,7 +32,7 @@ After all tasks in an execution wave pass their quality gates (Verifier PASS), y
 
 1. **Confirm all tasks in the wave are verified.** Check `$RND_DIR/verifications/` for PASS verdicts on every task in the current wave.
 
-2. **Apply each verified task's changes to main.** Read each task's build manifest (`$RND_DIR/builds/T<id>-manifest.md`) to collect the files it created or modified. Stage those files with `git add` and commit them in pre-registration dependency order. For each task `T<id>` whose final Verifier verdict is PASS:
+2. **Apply each verified task's changes to main.** Read each task's build manifest (`$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md`) to collect the files it created or modified. Resolve the manifest from the task's `uuid` in `features.json`, then stage those files with `git add` and commit them in pre-registration dependency order. For each task `T<id>` whose final Verifier verdict is PASS:
 
    ```bash
    git add <files from T<id> manifest>

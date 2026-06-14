@@ -12,6 +12,9 @@ export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export HOME="$(mktemp -d)"
 unset RND_DIR
 
+ARTIFACT_ROOT="${CLAUDE_CONFIG_DIR}/.rnd"
+ARTIFACT_SESSION_DIR="${ARTIFACT_ROOT}/test-slug/branches/main/sessions/20260101-120000-abcd"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/bash-gate.sh"
 
@@ -147,11 +150,11 @@ assert_exit   "echo > /dev/null → exit 0" 0
 run_hook "$(payload 'echo foo > /dev/stderr')"
 assert_exit   "echo > /dev/stderr → exit 0" 0
 
-run_hook "$(payload_with_agent 'echo DONE > /home/user/.claude/.rnd/builds/T1-self-assessment.md' 'rnd-builder')"
+run_hook "$(payload_with_agent "echo DONE > ${ARTIFACT_SESSION_DIR}/builds/T1-self-assessment.md" 'rnd-builder')"
 assert_exit   "echo > .rnd/ → exit 0" 0
 assert_stdout_contains "echo > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload "printf 'DONE' > /home/user/.claude/.rnd/builds/T1-manifest.md")"
+run_hook "$(payload "printf 'DONE' > ${ARTIFACT_SESSION_DIR}/builds/T1-manifest.md")"
 assert_exit   "printf > .rnd/ → exit 0" 0
 assert_stdout_contains "printf > .rnd/ → allow JSON" '"permissionDecision":"allow"'
 
@@ -241,11 +244,11 @@ assert_stdout_empty "cd && cd && ls → empty stdout (no opinion)"
 # Auto-allows commands containing .rnd/ or rnd-dir.sh
 # ---------------------------------------------------------------------------
 
-run_hook "$(payload 'ls /Users/alice/.claude/.rnd/builds')"
+run_hook "$(payload "ls ${ARTIFACT_SESSION_DIR}/builds")"
 assert_exit   ".rnd/ in command → exit 0" 0
 assert_stdout_contains ".rnd/ in command → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'bun run /Users/alice/.claude/.rnd/builds/check.ts')"
+run_hook "$(payload "bun run ${ARTIFACT_SESSION_DIR}/builds/check.ts")"
 assert_exit   ".rnd/ in non-ls command → exit 0" 0
 assert_stdout_contains ".rnd/ in non-ls command → allow JSON" '"permissionDecision":"allow"'
 
@@ -253,12 +256,12 @@ run_hook "$(payload 'RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"')"
 assert_exit   "rnd-dir.sh in command → exit 0" 0
 assert_stdout_contains "rnd-dir.sh → allow JSON" '"permissionDecision":"allow"'
 
-run_hook "$(payload 'npm install && bun run /Users/alice/.claude/.rnd/check.ts')"
+run_hook "$(payload "npm install && bun run ${ARTIFACT_ROOT}/check.ts")"
 assert_exit   ".rnd/ after && → exit 0 allow" 0
 assert_stdout_contains ".rnd/ after && → allow JSON" '"permissionDecision":"allow"'
 
 # cat on .rnd/ is auto-allowed
-run_hook "$(payload 'cat /Users/alice/.claude/.rnd/builds/manifest.md')"
+run_hook "$(payload "cat ${ARTIFACT_SESSION_DIR}/builds/manifest.md")"
 assert_exit   "cat .rnd/ → exit 0 (auto-allow)" 0
 assert_stdout_contains "cat .rnd/ → allow JSON" '"permissionDecision":"allow"'
 

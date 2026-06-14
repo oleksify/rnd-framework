@@ -8,24 +8,30 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./test-helpers.sh
 source "${SCRIPT_DIR}/test-helpers.sh"
 
+export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export HOME="$(mktemp -d)"
+ARTIFACT_ROOT="${CLAUDE_CONFIG_DIR}/.rnd"
+ARTIFACT_SESSION_DIR="${ARTIFACT_ROOT}/test-slug/branches/main/sessions/20260101-120000-abcd"
+LOOKALIKE_ARTIFACT_PATH="/tmp/project/.claude-evil/x/.rnd/secret.txt"
+
 LIB="${SCRIPT_DIR}/../hooks/lib.sh"
 # shellcheck source=../hooks/lib.sh
 source "$LIB"
 
 printf '%s\n' '--- is_rnd_path ---'
 
-# Matches .claude/.rnd/ pattern
-if is_rnd_path "/Users/alice/.claude/.rnd/sessions/20260101/plan.md"; then
-  assert_eq "is_rnd_path: .claude/.rnd/ path returns 0" "0" "0"
+# Matches the configured artifact root
+if is_rnd_path "${ARTIFACT_SESSION_DIR}/plan.md"; then
+  assert_eq "is_rnd_path: configured .rnd/ path returns 0" "0" "0"
 else
-  assert_eq "is_rnd_path: .claude/.rnd/ path returns 0" "0" "1"
+  assert_eq "is_rnd_path: configured .rnd/ path returns 0" "0" "1"
 fi
 
-# Matches .claude-personal/.rnd/ pattern
-if is_rnd_path "/Users/alice/.claude-personal/.rnd/builds/T1.md"; then
-  assert_eq "is_rnd_path: .claude-personal/.rnd/ path returns 0" "0" "0"
+# Rejects a lookalike .claude*/.rnd/ path outside the configured root
+if is_rnd_path "$LOOKALIKE_ARTIFACT_PATH"; then
+  assert_eq "is_rnd_path: lookalike .claude*/.rnd/ path returns 1" "1" "0"
 else
-  assert_eq "is_rnd_path: .claude-personal/.rnd/ path returns 0" "0" "1"
+  assert_eq "is_rnd_path: lookalike .claude*/.rnd/ path returns 1" "1" "1"
 fi
 
 # Does NOT match plain .rnd/ without .claude prefix
@@ -51,11 +57,18 @@ fi
 
 printf '\n%s\n' '--- is_plugin_artifact_path ---'
 
-# Matches .claude/.rnd/ pattern
-if is_plugin_artifact_path "/Users/alice/.claude/.rnd/sessions/20260101/plan.md"; then
-  assert_eq "is_plugin_artifact_path: .claude/.rnd/ returns 0" "0" "0"
+# Matches the configured .rnd/ root
+if is_plugin_artifact_path "${ARTIFACT_SESSION_DIR}/plan.md"; then
+  assert_eq "is_plugin_artifact_path: configured .rnd/ returns 0" "0" "0"
 else
-  assert_eq "is_plugin_artifact_path: .claude/.rnd/ returns 0" "0" "1"
+  assert_eq "is_plugin_artifact_path: configured .rnd/ returns 0" "0" "1"
+fi
+
+# Rejects a lookalike .claude*/.rnd/ path outside the configured root
+if is_plugin_artifact_path "$LOOKALIKE_ARTIFACT_PATH"; then
+  assert_eq "is_plugin_artifact_path: lookalike .claude*/.rnd/ returns 1" "1" "0"
+else
+  assert_eq "is_plugin_artifact_path: lookalike .claude*/.rnd/ returns 1" "1" "1"
 fi
 
 # Does NOT match regular path

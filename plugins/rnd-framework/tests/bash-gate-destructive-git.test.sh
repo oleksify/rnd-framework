@@ -13,8 +13,8 @@ BASH_GATE="${SCRIPT_DIR}/../hooks/bash-gate.sh"
 
 _make_json() {
   local cmd="$1"
-  printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"agent_type":"rnd-builder"}' \
-    "$(printf '%s' "$cmd" | jq -Rr @json | tr -d '"')"
+
+  jq -nc --arg command "$cmd" '{tool_name:"Bash", tool_input:{command:$command}, agent_type:"rnd-builder"}'
 }
 
 printf '\n--- bash-gate: destructive git denylist (blocked patterns) ---\n'
@@ -181,6 +181,18 @@ assert_contains "git --git-dir branch -D stderr contains BLOCKED" "BLOCKED" "$HO
 
 run_hook "$BASH_GATE" "$(_make_json 'git --no-pager checkout .')"
 assert_exit_code "git --no-pager checkout . is blocked (exit 2)" 2
+
+run_hook "$BASH_GATE" "$(_make_json 'FOO="a b" git reset --hard HEAD')"
+assert_exit_code "quoted env-assignment bypass on git reset --hard is blocked (exit 2)" 2
+assert_contains "quoted env-assignment bypass on git reset --hard stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+run_hook "$BASH_GATE" "$(_make_json 'git --git-dir /repo/.git reset --hard HEAD')"
+assert_exit_code "separate-argument --git-dir bypass on git reset --hard is blocked (exit 2)" 2
+assert_contains "separate-argument --git-dir bypass stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
+
+run_hook "$BASH_GATE" "$(_make_json 'git --work-tree /repo checkout .')"
+assert_exit_code "separate-argument --work-tree bypass on git checkout dot is blocked (exit 2)" 2
+assert_contains "separate-argument --work-tree bypass stderr contains BLOCKED" "BLOCKED" "$HOOK_STDERR"
 
 # Control: a global option on a SAFE git op must still pass through.
 run_hook "$BASH_GATE" "$(_make_json 'git -C /repo status')"

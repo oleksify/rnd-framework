@@ -130,7 +130,7 @@ The `fulfills` field creates bidirectional traceability between tasks and Valida
 |---|---|---|
 | `LOW` | Trivial config, doc edits, renaming | none — Verifier runs at sonnet/high |
 | `NORMAL` | Standard feature/refactor work | Verifier runs at opus/high |
-| `HIGH` | Security-relevant, data-integrity, or architectural changes | Verifier runs at fable/xhigh |
+| `HIGH` | Security-relevant, data-integrity, or architectural changes | Verifier runs at opus/xhigh |
 
 ## Properties (optional)
 

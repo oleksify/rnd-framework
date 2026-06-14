@@ -267,7 +267,7 @@ done < "${PROBE_JSONL}"
 assert_eq "schema: all records pass new_verdict+no-flipped check" "0" "$bad_count"
 
 # ---------------------------------------------------------------------------
-# 9. resolve_commit_for_session (FM6 risk surface): selection + HEAD fallback
+# 9. resolve_commit_for_session: selection + HEAD fallback
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- resolve_commit_for_session: selection and HEAD fallback ---'
 
@@ -300,7 +300,52 @@ rc_old="$(resolve_commit_for_session "$RC_MAP" "$RC_REPO")"
 assert_eq "resolve: old mtime selects the earliest commit after it (root)" "$RC_ROOT_COMMIT" "$rc_old"
 
 # ---------------------------------------------------------------------------
-# 10. INGEST: rationale field passthrough
+# 10. PREPARE: HEAD fallback stays labeled head_fallback
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- prepare: HEAD fallback basis stays head_fallback ---'
+
+HF_REPO="${TMP_DIR}/hf-repo"
+mkdir -p "$HF_REPO/lib"
+git -C "$HF_REPO" init -q
+
+git -C "$HF_REPO" config user.email "t@t.t"
+git -C "$HF_REPO" config user.name "t"
+
+printf 'echo ok\n' > "${HF_REPO}/lib/example.sh"
+git -C "$HF_REPO" add lib/example.sh
+GIT_AUTHOR_DATE="2020-01-01T00:00:00Z" GIT_COMMITTER_DATE="2020-01-01T00:00:00Z" \
+  git -C "$HF_REPO" commit -q -m c1
+
+HF_SLUG_ROOT="${TMP_DIR}/hf-slug"
+HF_SESSION="${HF_SLUG_ROOT}/branches/main/sessions/20990101-000000-fallback01"
+mkdir -p "${HF_SESSION}/verifications"
+
+make_verdict_map "${HF_SESSION}/verifications/wave-1-verdict-map.json" '{
+  "M1.fix.head-fallback": {
+    "verdict": "PASS",
+    "evidence": ["grep found lib/example.sh in fixture repo"],
+    "feedback": "PASS"
+  }
+}'
+
+make_validation_contract "$HF_SESSION" "M1.fix.head-fallback" \
+  "The fixture should reconstruct lib/example.sh via HEAD fallback."
+
+touch -t 209901010000 "${HF_SESSION}/verifications/wave-1-verdict-map.json"
+
+HF_PREPARE_DIR="${TMP_DIR}/hf-prepared"
+bash "$HARNESS" prepare \
+  --slug-root "$HF_SLUG_ROOT" \
+  --repo-root "$HF_REPO" \
+  --output-dir "$HF_PREPARE_DIR" \
+  2>/dev/null
+
+hf_input="$(ls "${HF_PREPARE_DIR}"/*.json | head -1)"
+hf_basis="$(jq -r '.artifact_basis' "$hf_input")"
+assert_eq "prepare: HEAD fallback artifact keeps head_fallback basis" "head_fallback" "$hf_basis"
+
+# ---------------------------------------------------------------------------
+# 11. INGEST: rationale field passthrough
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- ingest: rationale field passthrough ---'
 

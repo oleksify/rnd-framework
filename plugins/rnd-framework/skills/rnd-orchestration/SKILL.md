@@ -22,7 +22,9 @@ This is a scientific process. Treat every claim — including your own — with 
 
 ## Framework Overview
 
-This framework applies the scientific method to structured coding:
+This framework applies the scientific method to structured coding.
+
+Current pipeline: **Scope → Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate → [Post-Review]**.
 
 | Scientific Method | Principle | Role |
 |---|---|---|
@@ -82,7 +84,7 @@ Assumptions:
   - None  ← use exactly this placeholder when no assumptions exist (omission is not permitted)
 Properties:  # optional — omit when no invariants are expressible
   - prop_name: forall input matching X, output satisfies Y
-fulfills: [VAL-AREA-NNN, ...]
+fulfills: [M<N>.<area>.<slug>, ...]
 ```
 
 **The `Assumptions` section is REQUIRED in every pre-registration.** When no assumptions exist, the section must contain the literal placeholder `- None`. Omitting the section entirely is not permitted — it signals the Planner did not consider whether the task rests on unverified beliefs about the environment.
@@ -147,10 +149,10 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 
 | Agent | LOW | NORMAL | HIGH | Adaptive? |
 |---|---|---|---|---|
-| `rnd-planner` | fable/high | fable/high | fable/xhigh | yes |
-| `rnd-verifier` | sonnet/high | opus/high | fable/xhigh | yes |
-| `rnd-builder` | sonnet/high | sonnet/high | fable/high | yes |
-| `rnd-debugger` | sonnet/high | sonnet/high | fable/high | yes |
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
 | `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
 > **Note on non-adaptive agents:** `rnd-polisher` always runs at its listed model and effort — the criticality column shows the same value in every tier to make this explicit. Auxiliary agents not in this table (integrator, cleanup, reality-auditor, data-scientist) are also non-adaptive and always use their frontmatter `model:`.
@@ -162,11 +164,11 @@ Four agents support **per-spawn model override** based on the per-task `Critical
 **Dispatch example:**
 
 ```
-// Task T7 has `Criticality: HIGH` in features.json → spawn Builder with model="fable"
+// Task T7 has `Criticality: HIGH` in features.json → spawn Builder with model="opus"
 Agent({
   description: "Build task T7",
   subagent_type: "rnd-framework:rnd-builder",
-  model: "fable",
+  model: "opus",
   mode: "acceptEdits",
   prompt: "Task: T7\nRND_DIR: ...\n..."
 })
@@ -176,7 +178,7 @@ Agent({
 
 | Agent | Default model | Effort | Adaptive? |
 |---|---|---|---|
-| `rnd-planner` | fable | high | yes |
+| `rnd-planner` | opus | high | yes |
 | `rnd-builder` | sonnet | high | yes |
 | `rnd-verifier` | sonnet | high | yes |
 | `rnd-debugger` | sonnet | high | yes |
@@ -186,7 +188,7 @@ Agent({
 | `rnd-integrator` | haiku | low | no |
 | `rnd-data-scientist` | sonnet | medium | no |
 
-> **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute path like `~/.claude/.rnd/<dirname>-<hash>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
+> **Note on RND_DIR:** Compute the artifact directory via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"`. This outputs an absolute branch-partitioned session path like `~/.claude/.rnd/<basename>-<hash>/branches/<branch>/sessions/<YYYYMMDD-HHMMSS-XXXX>/`. Use `-c` flag to create directory structure.
 
 ### task_type Inference Policy
 
@@ -366,23 +368,25 @@ During rnd phases (Phase 0 discovery, Phase 1 planning, Phase 5 re-plan), the `E
 
 ## Execution Phases
 
-1. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the task, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (numbered VAL-AREA-NNN assertions with exact evidence commands). Produce the four plan artifacts: `protocol.md` (Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets), `validation-contract.md` (the Validation Contract assertions), `features.json` (machine-readable task manifest), and `AGENTS.md` (per-agent guidance). Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
-2. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
-3. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
-3.5. **Reality Audit** (blocking, conditional) — Run only when:
+1. **Scope** — Freeze the deliverable boundary before planning. Ratify `scope.json` and `scope.md`, then block scope creep and scope misses with bidirectional coverage checks before decomposition continues.
+2. **Plan** — Run environment discovery (structured checklist scan for package manager, test framework, CI, external services, env vars, secrets). Decompose the ratified scope, write pre-registrations with `fulfills` traceability, build dependency matrix. Generate Validation Contract (`M<N>.<area>.<slug>` assertions with exact evidence commands). Produce the four plan artifacts: `protocol.md` (Task Tree, Environment Setup, Infrastructure, Testing Strategy, Worker Guidelines, Pre-Registration Documents, Dependency Matrix, Execution Schedule, Iteration Budgets), `validation-contract.md` (the Validation Contract assertions), `features.json` (machine-readable task manifest), and `AGENTS.md` (per-agent guidance). Write exploration cache to `$RND_DIR/exploration/`. In multi-agent mode, the Planner agent handles this phase.
+3. **Schedule** — Create execution waves from dependency matrix. In multi-agent mode, the Orchestrator session handles scheduling directly.
+4. **Build** — Work tasks in parallel within waves. Produce code + tests + self-assessment. Builder agents are spawned per task.
+4.5. **Reality Audit** (blocking, conditional) — Run only when:
    - Task has `External dependencies` declared in pre-registration AND
    - User has not disabled via `--skip-reality-checks`
    Adversarially verifies declared external references. INVALID_FOUND routes back to build.
    If no external dependencies declared → auto-SKIPPED.
-4. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
-4. **Cleanup** (per task, after PASS) — Spawn a Cleanup agent for each task that passed verification. The agent detects and removes: dead functions/variables, orphan files, duplicate implementations, and stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. A `cleanup: rolled_back` result is not a pipeline failure.
-4.5. **Polish** (wave-level, after all per-task cleanup) — Spawn ONE Polisher agent for the entire wave. The agent detects and fixes cross-task seam issues: cross-task duplication, naming and API drift across the wave, helpers that should be lifted to a shared location, and structural inconsistencies. Applies mutations in-place and rolls back if re-verification breaks. Reports written to `$RND_DIR/polish/wave-<N>-polish-report.md`. A `polish: skipped` result is not a pipeline failure.
-5. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Iteration budget is wave-scoped and tier-keyed (LOW=2, NORMAL=3, HIGH=5, by highest-criticality task in the wave); see `rnd-framework:rnd-iteration` for the table. Budget exhausted → escalate.
-6. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
+5. **Verify** — Check each task against pre-registered criteria. PASS/FAIL/ITERATE. In multi-agent mode, Verifier agents are spawned independently.
+5.5. **Cleanup** (per task, after PASS) — Spawn a Cleanup agent for each task that passed verification. The agent detects and removes: dead functions/variables, orphan files, duplicate implementations, and stale comments. Applies mutations in-place and rolls back automatically if re-verification breaks. Reports written to `$RND_DIR/cleanup/T<id>-cleanup-report.md`. A `cleanup: rolled_back` result is not a pipeline failure.
+5.75. **Polish** (wave-level, after all per-task cleanup) — Spawn ONE Polisher agent for the entire wave. The agent detects and fixes cross-task seam issues: cross-task duplication, naming and API drift across the wave, helpers that should be lifted to a shared location, and structural inconsistencies. Applies mutations in-place and rolls back if re-verification breaks. Reports written to `$RND_DIR/polish/wave-<N>-polish-report.md`. A `polish: skipped` result is not a pipeline failure.
+6. **Iterate** — On FAIL, build phase gets feedback only (not fixes). Iteration budget is wave-scoped and tier-keyed (LOW=2, NORMAL=3, HIGH=5, by highest-criticality task in the wave); see `rnd-framework:rnd-iteration` for the table. Budget exhausted → escalate.
+7. **Integrate** — Merge verified outputs, run integration tests, system validation. In multi-agent mode, the Integrator agent handles this phase.
+8. **Post-Review** — After SHIP, run the post-SHIP review and write findings to the slug-root ledger unless the user explicitly skips it.
 
 ## Gate Criteria
 
-**Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria, `fulfills` field linking to VAL assertions, and all Validation Contract assertions are covered.
+**Gate 1 (post-plan):** Every task has complete pre-registration with testable criteria, `fulfills` field linking to validation-contract assertions, and all Validation Contract assertions are covered.
 **Gate 2 (post-build):** Code + tests + artifacts submitted. Tests pass locally.
 **Gate 2.5 (post-reality-audit):** Reality Audit complete for every task in the wave. Any INVALID verdict blocks pipeline progression for that task — it must return to build before proceeding to verification.
 **Gate 3 (post-verify):** Verification PASS on all criteria with evidence.

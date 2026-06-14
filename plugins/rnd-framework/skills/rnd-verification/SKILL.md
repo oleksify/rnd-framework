@@ -59,7 +59,7 @@ The `## Coverage Gaps`, `## Case for PASS`, and `## Case for FAIL` sections rema
 ## Process
 
 ### 1. Read the Pre-Registration and Validation Contract
-Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding VAL-AREA-NNN assertions in `validation-contract.md`. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
+Understand intent, approach, and success criteria — your ONLY reference for "correct". Note each criterion separately before proceeding. If the task has a `fulfills` field, locate the corresponding `M<N>.<area>.<slug>` assertions in `validation-contract.md`. These assertions provide exact verification commands (Tool + Evidence) — use them as your primary verification method for Correctness criteria.
 
 If the pre-registration contains an `Assumptions` section, list each assumption and its declared `Refuted by` action. You will verify Builder compliance with these in the Assumption Checks step below.
 
@@ -67,7 +67,7 @@ If the pre-registration contains an `Assumptions` section, list each assumption 
 
 For each assumption declared in the pre-registration's `Assumptions` section:
 
-1. Read the Builder's manifest (`$RND_DIR/builds/T<id>-manifest.md`). Locate evidence that the declared `Refuted by` action was executed — look in the "Evidence Gathered" section or anywhere the manifest describes exploration steps taken before writing code.
+1. Read the Builder's manifest (`$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md`). Locate evidence that the declared `Refuted by` action was executed — look in the "Evidence Gathered" section or anywhere the manifest describes exploration steps taken before writing code.
 
 2. If the manifest cites execution of the `Refuted by` action (or equivalent evidence that the assumption was verified): mark the assumption **checked**.
 
@@ -111,7 +111,7 @@ When a pre-registration names a specific quality gate (linter, test runner, chec
 Before reading Builder code or tests, write one experiment test per assertion ID using `rnd-framework:rnd-experiments`. Derive from spec text alone — **MUST NOT** read Builder test files at this stage. Write to `$RND_DIR/verifications/T<id>-experiments/`, named `exp-<assertion-id>.test.<ext>` (e.g., `exp-M1.verifier.verdict-map-shape.test.ts`).
 
 ### 3. Run Experiments and Validation Contract Evidence Commands
-Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original. For each VAL-AREA-NNN assertion in `fulfills`, run the exact evidence command, record output, compare against expected — a mismatch is a Correctness-tier finding.
+Run experiments against the implementation. Record raw output verbatim — do not paraphrase. Each failing experiment is a Correctness-tier finding. If an experiment was wrong, fix it, note the correction, keep the original. For each assertion ID in `fulfills`, run the exact evidence command, record output, compare against expected — a mismatch is a Correctness-tier finding.
 
 #### Evidence Pack Audit (when `RND_EVIDENCE_AUDIT=1`)
 
@@ -269,10 +269,10 @@ Write a full prose `T<id>-verification.md` for every verdict — PASS, FAIL, NEE
 Every prose verification report MUST include both `## Case for PASS` and `## Case for FAIL` sections regardless of the final verdict, with non-trivial content in each. The verifier-case-gate.sh hook blocks completion otherwise.
 
 **Coverage Gaps guidance:** This section is REQUIRED in every prose report — PASS, FAIL, NEEDS_ITERATION, PASS_QUALITY_NEEDS_ITERATION. Do NOT write boilerplate like "nothing was uncovered" or "no gaps". Instead always be specific:
-- `Checked:` lists every VAL assertion command you ran, every code path you traced, every test you executed independently.
+- `Checked:` lists every validation-contract assertion command you ran, every code path you traced, every test you executed independently.
 - `Couldn't check:` names specific items you could not verify and the concrete reason (no live endpoint, no fixture data, requires deployed environment, assertion requires runtime state not present in the session).
 
-If everything was checked, write: `Couldn't check: none — all VAL assertions and experiment tests ran successfully against the implementation.` — never just "nothing" or "none" alone as the entire content of the section.
+If everything was checked, write: `Couldn't check: none — all validation-contract assertions and experiment tests ran successfully against the implementation.` — never just "nothing" or "none" alone as the entire content of the section.
 
 ### 6.5. Save Evidence Files (conditional)
 
@@ -280,15 +280,15 @@ Evidence files exist to support re-verification after iteration — **only write
 
 **Write evidence files only when:**
 - Overall verdict is `FAIL` or `NEEDS_ITERATION` (the next Builder/Verifier cycle will consult the raw output), OR
-- Overall verdict is `PASS_QUALITY_NEEDS_ITERATION` AND a Correctness-tier VAL assertion produced output the Builder would need for the quality iteration
+- Overall verdict is `PASS_QUALITY_NEEDS_ITERATION` AND a Correctness-tier validation-contract assertion produced output the Builder would need for the quality iteration
 
 **Skip evidence files when:**
 - Overall verdict is plain `PASS` (the prose report's inline per-criterion evidence is sufficient; nobody re-reads the raw dumps)
 - No `fulfills` field exists on the task
 
-When you do write them, for each VAL-AREA-NNN assertion in the `fulfills` field, write `$RND_DIR/verifications/T<id>-evidence/VAL-AREA-NNN.txt`:
+When you do write them, for each assertion ID in the `fulfills` field, write `$RND_DIR/verifications/T<id>-evidence/<assertion-id>.txt`:
 ```
-Assertion: VAL-AREA-NNN — [title]
+Assertion: <assertion-id> — [title]
 Command: [exact command run]
 Output:
 [raw output verbatim — do not paraphrase or truncate]
@@ -299,7 +299,7 @@ A criterion is binary. **When in doubt between NEEDS_ITERATION and FAIL, choose 
 
 ## Evidence Standards
 
-**Necessary:** Test output you ran yourself; code inspection with line references; VAL assertion command output. **Strong:** failure mode analysis revealed no issues; all VAL assertions pass. **Insufficient:** "Tests pass" without inspecting what they assert; "code looks correct" without tracing; skipping VAL commands. If your evidence is "it looks right" — run it, break it, trace it.
+**Necessary:** Test output you ran yourself; code inspection with line references; validation-contract assertion command output. **Strong:** failure mode analysis revealed no issues; all validation-contract assertions pass. **Insufficient:** "Tests pass" without inspecting what they assert; "code looks correct" without tracing; skipping validation-contract commands. If your evidence is "it looks right" — run it, break it, trace it.
 
 ## Clean Code Checklist (shell: mandatory; others: advisory)
 

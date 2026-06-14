@@ -30,7 +30,7 @@ RND_DIR="$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")"
 
 ### 1. Read Your Assignment
 
-Find your task in `$RND_DIR/protocol.md`. Read its pre-registration — especially success criteria, approach, and the `fulfills` field (which links to specific VAL-AREA-NNN assertions in the Validation Contract). Also read:
+Find your task in `$RND_DIR/protocol.md`. Read its pre-registration — especially success criteria, approach, and the `fulfills` field (which links to specific `M<N>.<area>.<slug>` assertions in the Validation Contract). Also read:
 - **Environment Setup** — runtime, package manager, dependencies, install commands
 - **Testing Strategy** — test framework, baseline count, exact run commands for unit/integration/live tests
 - **Worker Guidelines** — project boundaries (USE/OFF-LIMITS), coding conventions, architecture notes
@@ -236,8 +236,8 @@ When receiving NEEDS ITERATION, address **every** failed criterion in a single p
 
 **Completion message format:**
 ```
-T<id> build complete — status: DONE — manifest at $RND_DIR/builds/T<id>-manifest.md
-T<id> build complete — status: DONE_WITH_CONCERNS: [brief summary] — manifest at $RND_DIR/builds/T<id>-manifest.md
+T<id> build complete — status: DONE — manifest at $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md
+T<id> build complete — status: DONE_WITH_CONCERNS: [brief summary] — manifest at $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md
 ```
 
 ## Evidence Pack (when RND_EVIDENCE_PACK=1)

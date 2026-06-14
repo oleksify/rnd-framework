@@ -53,7 +53,7 @@ Reports go to `$RND_DIR/polish/wave-<N>-polish-report.md`. Append exactly one li
 
 ## Workflow
 
-1. **Collect the wave diff.** Run `git diff HEAD -- <all files from all task build manifests in the wave>`. Read each task's build manifest (`$RND_DIR/builds/T<id>-manifest.md`) to collect the file list for every task in the wave.
+1. **Collect the wave diff.** Run `git diff HEAD -- <all files from all task build manifests in the wave>`. Read each task's build manifest (`$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md`) to collect the file list for every task in the wave.
 2. **Propose a candidate-mutation list.** Scan the combined diff for all four detection categories. If the list is empty, log `wave-<N>: polish: skipped (no findings)` and stop.
 3. **Apply mutations** using Edit/Bash; record every file touched.
 4. **Re-verify** by running the project's test suite (see Testing Strategy in `$RND_DIR/protocol.md` for the canonical command — e.g., `bash tests/run-tests.sh`, `bun test`, `python -m pytest`). If tests pass, write a minimal `wave-<N>-polish-pass-receipt.json` to `$RND_DIR/verifications/` with status PASS, source `polish-reverify`, and ISO 8601 timestamp.

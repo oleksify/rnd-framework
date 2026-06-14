@@ -50,10 +50,15 @@ session_id_from_path() {
 
 # Resolve the commit SHA for a session: find the nearest subsequent commit
 # after the verdict-map file's mtime.
-# Prints the SHA, or falls back to HEAD if unresolvable.
-resolve_commit_for_session() {
+# Prints: <sha><space><artifact_basis>, where artifact_basis is pinned_commit
+# when the session timing resolved to a historical commit and head_fallback when
+# resolution fell back to HEAD.
+resolve_commit_with_basis_for_session() {
   local map_file="$1"
   local repo_root="$2"
+
+  local head_sha
+  head_sha="$(git -C "$repo_root" rev-parse HEAD)"
 
   local map_mtime
   # macOS stat vs GNU stat — try both forms.
@@ -62,7 +67,7 @@ resolve_commit_for_session() {
     || echo "0")"
 
   if [[ "$map_mtime" == "0" ]]; then
-    git -C "$repo_root" rev-parse HEAD
+    printf '%s %s' "$head_sha" "head_fallback"
     return
   fi
 
@@ -75,11 +80,17 @@ resolve_commit_for_session() {
     | awk -v t="$map_mtime" '$2 >= t {sha=$1} END {print sha}')"
 
   if [[ -z "$sha" ]]; then
-    git -C "$repo_root" rev-parse HEAD
+    printf '%s %s' "$head_sha" "head_fallback"
     return
   fi
 
-  printf '%s' "$sha"
+  printf '%s %s' "$sha" "pinned_commit"
+}
+
+resolve_commit_for_session() {
+  local resolved
+  resolved="$(resolve_commit_with_basis_for_session "$1" "$2")"
+  printf '%s' "${resolved%% *}"
 }
 
 # Reconstruct artifact content via git show.
@@ -187,13 +198,16 @@ cmd_prepare() {
     local contract_file="${session_dir}/validation-contract.md"
 
     # Resolve commit once per session (cache by session_id).
-    local commit_sha
+    local commit_sha commit_basis resolved_commit
     if [[ -n "${commit_cache[$session_id]+_}" ]]; then
-      commit_sha="${commit_cache[$session_id]}"
+      resolved_commit="${commit_cache[$session_id]}"
     else
-      commit_sha="$(resolve_commit_for_session "$map_file" "$repo_root")"
-      commit_cache["$session_id"]="$commit_sha"
+      resolved_commit="$(resolve_commit_with_basis_for_session "$map_file" "$repo_root")"
+      commit_cache["$session_id"]="$resolved_commit"
     fi
+
+    commit_sha="${resolved_commit%% *}"
+    commit_basis="${resolved_commit#* }"
 
     # Process PASS entries.
     local pass_entries
@@ -215,17 +229,16 @@ cmd_prepare() {
       candidate_paths="$(extract_paths_from_evidence "$evidence_json")"
 
       # Try to reconstruct each candidate path; use the first that succeeds.
-      local artifact="" artifact_basis="head_fallback" found_path=0
+      local artifact="" artifact_basis="$commit_basis" found_path=0
 
       while IFS= read -r candidate; do
         [[ -z "$candidate" ]] && continue
         local content
         content="$(git_show_file "$commit_sha" "$candidate" "$repo_root")" || true
         # Require non-empty content: a path that is absent (git non-zero) OR
-        # exists-but-empty at the commit must NOT become a blank pinned artifact.
+        # exists-but-empty at the commit must NOT become a blank artifact.
         if [[ -n "$content" ]]; then
           artifact="$content"
-          artifact_basis="pinned_commit"
           found_path=1
           break
         fi

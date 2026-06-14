@@ -11,7 +11,8 @@
 -- Verdicts come from per-slug calibration.jsonl files; the segment is derived
 -- DIRECTLY from the calibration filename's slug (first path component) — no
 -- session join is needed because calibration is per-slug. The shape dimension
--- comes from the audit (session, assertion) facts, joined on taskId.
+-- comes from the audit (session, assertion) facts, joined on both session_id
+-- and task_id so repeated task ids across sessions cannot cross-count shapes.
 -- Correction records (correction field, no verdict) are excluded.
 --
 -- Both audit.jsonl and calibration.jsonl are read as RAW physical lines (one
@@ -48,8 +49,13 @@ WITH
   -- disabled) tolerates malformed lines that would abort a read_json_auto scan.
   audit_events AS (
     SELECT
-      TRY(json_extract_string(j, '$.task_id')) AS task_id,
-      TRY(json_extract_string(j, '$.shape'))   AS shape
+      COALESCE(
+        TRY(json_extract_string(j, '$.session_id')),
+        TRY(json_extract_string(j, '$.sessionId')),
+        regexp_extract(filename, '.*/sessions/([^/]+)/audit\\.jsonl$', 1)
+      )                                                                                                   AS session_id,
+      COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId')))       AS task_id,
+      TRY(json_extract_string(j, '$.shape'))                                                              AS shape
     FROM read_csv(
       '*/**/audit.jsonl',
       columns = {'j': 'VARCHAR'},
@@ -65,9 +71,9 @@ WITH
 
   -- The shape a task was classified as (planner-emitted fact).
   task_shape AS (
-    SELECT DISTINCT task_id, shape
+    SELECT DISTINCT session_id, task_id, shape
     FROM audit_events
-    WHERE task_id IS NOT NULL AND shape IS NOT NULL
+    WHERE session_id IS NOT NULL AND task_id IS NOT NULL AND shape IS NOT NULL
   ),
 
   -- Per-slug calibration: the slug is the first path component of the
@@ -77,9 +83,10 @@ WITH
   -- existing pattern exactly.
   verdicts AS (
     SELECT
-      regexp_extract(filename, '^\.?/?([^/]+)/', 1) AS slug,
-      COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId'))) AS task_id,
-      TRY(json_extract_string(j, '$.verdict'))      AS verdict
+      regexp_extract(filename, '^\.?/?([^/]+)/', 1)                                                         AS slug,
+      COALESCE(TRY(json_extract_string(j, '$.session_id')), TRY(json_extract_string(j, '$.sessionId'))) AS session_id,
+      COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId')))       AS task_id,
+      TRY(json_extract_string(j, '$.verdict'))                                                            AS verdict
     FROM read_csv(
       '*/calibration.jsonl',
       columns = {'j': 'VARCHAR'},
@@ -93,7 +100,7 @@ WITH
     WHERE json_valid(j)
       AND TRY(json_extract_string(j, '$.verdict')) IS NOT NULL  -- drop correction records (they carry no verdict)
     QUALIFY row_number() OVER (
-      PARTITION BY TRY(json_extract_string(j, '$.session_id')),
+      PARTITION BY COALESCE(TRY(json_extract_string(j, '$.session_id')), TRY(json_extract_string(j, '$.sessionId'))),
                    COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId')))
       ORDER BY TRY(json_extract_string(j, '$.timestamp')) DESC
     ) = 1
@@ -106,7 +113,9 @@ WITH
       t.shape,
       v.verdict
     FROM verdicts v
-    JOIN task_shape t ON v.task_id = t.task_id
+    JOIN task_shape t
+      ON v.session_id = t.session_id
+     AND v.task_id    = t.task_id
   )
 
 SELECT

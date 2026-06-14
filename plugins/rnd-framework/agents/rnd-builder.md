@@ -52,7 +52,7 @@ You receive ONE task with its pre-registration document. You implement it, write
 
 5. **Write an honest self-assessment** and save to `$RND_DIR/builds/<id>-self-assessment.md`, where `<id>` is the task's canonical `features.json` id `M<N>.T<NN>.<slug>` copied verbatim (e.g. `M1.T01.add-authentication-flow-self-assessment.md`) — NOT a bare `T<NN>`. The stem becomes the audit `task_id`, so it must carry the `M<N>.T<NN>` prefix to join the verdict map. See rnd-building skill for the format (minimal one-line form for plain DONE; full template otherwise).
 
-6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/T<id>-manifest.md`. Write in full narrative prose. Every manifest **must** include a `## Files written` section listing each modified or created file at one path per line (no bullets, no backticks) — this section is machine-parsed by the surgical-revert helper.
+6. **Save build outputs.** Place all files in their proper locations and record what you produced in `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md`. Write in full narrative prose. Every manifest **must** include a `## Files written` section listing each modified or created file at one path per line (no bullets, no backticks) — this section is machine-parsed by the surgical-revert helper.
 
 ## Rules
 
@@ -68,8 +68,8 @@ You receive ONE task with its pre-registration document. You implement it, write
 - Do NOT leak pipeline-internal context into project code — inline comments, docstrings, test names, or variable names. "Pipeline-internal context" covers three forms:
   - **Task / wave identifiers** — `T1`, `T01`, `T14`, `M2`, `wave-3`, etc.
   - **Planner phase or disposition labels** — `Q4 disposition`, `compatibility audit`, "decided during planning", "chosen in the build phase".
-  - **Session artifact paths and meta-references** — `research/jido_compat.md`, `protocol.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline", "see the session's research notes".
-  These references rot the moment the pipeline session ends. If the *why* behind a decision matters to a future reader, write it as a self-contained explanation grounded in the project's own concepts (code, data, domain) — never in pipeline labels or artifact paths. If it doesn't matter to a future reader, don't write the comment. **Carve-out:** this prohibition applies only to project code. RND artifact files themselves ($RND_DIR paths such as `T<id>-manifest.md`, `T<id>-self-assessment.md`, `protocol.md`) may freely reference task IDs and other pipeline labels.
+  - **Session artifact paths and meta-references** — `research/jido_compat.md`, `protocol.md`, `M<NN>-T<NN>-<uuid>-manifest.md`, "the R&D session", "the pipeline", "see the session's research notes".
+  These references rot the moment the pipeline session ends. If the *why* behind a decision matters to a future reader, write it as a self-contained explanation grounded in the project's own concepts (code, data, domain) — never in pipeline labels or artifact paths. If it doesn't matter to a future reader, don't write the comment. **Carve-out:** this prohibition applies only to project code. RND artifact files themselves ($RND_DIR paths such as `M<NN>-T<NN>-<uuid>-manifest.md`, `<M<N>.T<NN>.slug>-self-assessment.md`, `protocol.md`) may freely reference task IDs and other pipeline labels.
 
 ## Memory
 
@@ -83,10 +83,10 @@ Do NOT store task-specific implementation details or build decisions from indivi
 Notify the orchestrator via `SendMessage` at key points:
 
 1. **On start:** `SendMessage` with: "Building T<id>: [task name]"
-2. **On completion:** `SendMessage` with: "T<id> build complete — manifest at $RND_DIR/builds/T<id>-manifest.md — status: DONE"
+2. **On completion:** `SendMessage` with: "T<id> build complete — manifest at $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md — status: DONE"
    - Replace `DONE` with the appropriate status code (see rnd-building skill for the table).
    - For `DONE_WITH_CONCERNS`, append: `— concerns: [brief summary of what to scrutinize]`
-   - Example: "T7 build complete — manifest at $RND_DIR/builds/T7-manifest.md — status: DONE_WITH_CONCERNS — concerns: assumed POST /submit returns 201; could not verify against live API"
+   - Example: "T7 build complete — manifest at $RND_DIR/builds/M01-T07-a1b2c3d4-manifest.md — status: DONE_WITH_CONCERNS — concerns: assumed POST /submit returns 201; could not verify against live API"
 3. **On approach disagreement:** `SendMessage` with: "STOP: T<id> approach is wrong — [brief reason]. Awaiting guidance."
 4. **On blockers:** `SendMessage` with: "BLOCKED on T<id>: [what's missing or broken]"
 

@@ -52,8 +52,9 @@ Agent({
 
 Do NOT verify tasks yourself. The Verifier agent independently writes experiment tests, runs them, inspects code, and produces a per-task verdict map. Its failure-mode sweep includes External contract conformance — the Verifier queries the real external systems (APIs, schemas, services) to confirm the Builder's claims rather than trusting the manifest.
 
-On PASS: the Verifier writes `T<id>-pass-receipt.json` to `$RND_DIR/verifications/` — no prose report is produced.
-On FAIL/NEEDS_ITERATION/PASS_QUALITY_NEEDS_ITERATION: the Verifier produces a `T<id>-verification.md` prose report.
+For every verdict class (PASS, PASS_QUALITY_NEEDS_ITERATION, NEEDS_ITERATION, and FAIL), the Verifier writes `T<id>-verification.md` to `$RND_DIR/verifications/`.
+
+For accepted passing tasks, `T<id>-pass-receipt.json` is additive acceptance metadata. It is written for PASS and PASS_QUALITY_NEEDS_ITERATION tasks and does not replace `T<id>-verification.md`.
 
 ## After Verification
 

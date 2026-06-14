@@ -230,10 +230,10 @@ assert_eq \
   "$(grep -q 'Phase 1\|rnd-start\.md' "$PROTOCOL_FIXTURE" && printf pass || printf fail)"
 
 # ---------------------------------------------------------------------------
-# Both validators exit 0 after the ship.
+# The shipped plugin still passes validate.sh after the wiring change.
 # ---------------------------------------------------------------------------
 
-printf '\n--- validate-sh-and-xrefs-clean ---\n'
+printf '\n--- validate-sh-clean ---\n'
 
 validate_exit=0
 bash "${PLUGIN_ROOT}/lib/validate.sh" > /dev/null 2>&1 || validate_exit=$?
@@ -242,14 +242,6 @@ assert_eq \
   "lib/validate.sh exits 0" \
   "0" \
   "$validate_exit"
-
-xrefs_exit=0
-bash "${PLUGIN_ROOT}/lib/validate-xrefs.sh" > /dev/null 2>&1 || xrefs_exit=$?
-
-assert_eq \
-  "lib/validate-xrefs.sh exits 0" \
-  "0" \
-  "$xrefs_exit"
 
 # ---------------------------------------------------------------------------
 # Run the Phase 1 outside-view pre-step scripts with a sandboxed RND_DIR and

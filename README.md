@@ -28,7 +28,7 @@ Update with `/plugin update rnd-framework@oleksify-plugins`.
 /rnd-framework:rnd-start <task description>
 ```
 
-This runs the pipeline: **Plan → Build → Verify → Integrate**. Specialized agents handle each phase in isolated context windows, so the verifier can't see the builder's reasoning.
+This runs the pipeline: **Scope → Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate → [Post-Review]**. Specialized agents handle each phase in isolated context windows, so the verifier can't see the builder's reasoning.
 
 ## Disable per project
 

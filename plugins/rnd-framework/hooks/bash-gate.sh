@@ -55,59 +55,117 @@ strip_cd_prefix() {
   printf '%s' "$seg"
 }
 
+# Reads the first shell word from <text> without treating quoted spaces as
+# separators. Prints two tab-separated fields: <word> and <remaining-text>.
+# This stays heuristic — it is only meant to normalize obvious command prefixes
+# before the denylist checks, not to be a full shell parser.
+read_shell_word() {
+  local text="$1"
+  local len="${#text}"
+  local i=0
+  local char=""
+  local state="normal"
+
+  text="${text#"${text%%[! ]*}"}"
+  len="${#text}"
+
+  if [[ "$len" -eq 0 ]]; then
+    printf '\t'
+    return 0
+  fi
+
+  while [[ "$i" -lt "$len" ]]; do
+    char="${text:$i:1}"
+
+    case "$state" in
+      normal)
+        if [[ "$char" == "'" ]]; then
+          state="single"
+        elif [[ "$char" == '"' ]]; then
+          state="double"
+        elif [[ "$char" == '\\' ]]; then
+          i=$((i + 1))
+        elif [[ "$char" == ' ' || "$char" == $'\t' ]]; then
+          break
+        fi
+        ;;
+      single)
+        [[ "$char" == "'" ]] && state="normal"
+        ;;
+      double)
+        if [[ "$char" == '"' ]]; then
+          state="normal"
+        elif [[ "$char" == '\\' ]]; then
+          i=$((i + 1))
+        fi
+        ;;
+    esac
+
+    i=$((i + 1))
+  done
+
+  printf '%s\t%s' "${text:0:i}" "${text:i}"
+}
+
 # Strips leading environment variable assignments (e.g., FOO=bar BAZ=quux)
-# from a command segment. Env-var prefixes match [A-Za-z_][A-Za-z_0-9]*=<value>.
-# The value may be quoted or unquoted.
+# from a command segment. Quoted values remain a single shell word.
 strip_env_prefix() {
   local seg="$1"
-  local _ENV_VAR_PATTERN='^[A-Za-z_][A-Za-z_0-9]*='
-  while [[ "$seg" =~ $_ENV_VAR_PATTERN ]]; do
-    local first_word="${seg%% *}"
-    # If the entire segment is a single env assignment, no command follows
-    if [[ "$first_word" == "$seg" ]]; then
-      printf '%s' "$seg"
-      return 0
-    fi
-    seg="${seg#"$first_word"}"
-    seg="${seg#"${seg%%[! ]*}"}"
+  local word rest parsed
+
+  while true; do
+    parsed="$(read_shell_word "$seg")"
+    IFS=$'\t' read -r word rest <<< "$parsed"
+
+    [[ -n "$word" ]] || break
+    [[ "$word" =~ ^[A-Za-z_][A-Za-z_0-9]*= ]] || break
+
+    seg="${rest#"${rest%%[! ]*}"}"
   done
+
   printf '%s' "$seg"
 }
 
-# Strips git global options (e.g. -C <path>, -c k=v, --git-dir=…, --no-pager)
+# Strips git global options (e.g. -C <path>, -c k=v, --git-dir …, --no-pager)
 # that may appear between the `git` token and the subcommand, then re-emits a
-# normalized `git <subcommand> …`. Without this, a destructive op smuggled
-# behind a global option — `git -C /repo reset --hard` — bypasses every
-# subcommand pattern in check_segment, which all anchor on `^git[[:space:]]+<sub>`.
-# Non-git segments are returned unchanged.
+# normalized `git <subcommand> …`.
 strip_git_global_opts() {
   local seg="$1"
   [[ "$seg" =~ ^git[[:space:]] ]] || { printf '%s' "$seg"; return 0; }
 
   local rest="${seg#git}"
+  local word next rest_after_word parsed next_parsed
+
   rest="${rest#"${rest%%[! ]*}"}"
 
-  local prev
   while true; do
-    prev="$rest"
-    case "$rest" in
-      -C[[:space:]]*|-c[[:space:]]*)
-        # Flag with a separate-word argument: drop both the flag and its value.
-        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
-        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
+    parsed="$(read_shell_word "$rest")"
+    IFS=$'\t' read -r word rest_after_word <<< "$parsed"
+
+    [[ -n "$word" ]] || break
+
+    case "$word" in
+      -C|-c|--git-dir|--work-tree|--namespace|--exec-path)
+        next_parsed="$(read_shell_word "$rest_after_word")"
+        IFS=$'\t' read -r next rest <<< "$next_parsed"
+        rest="${rest#"${rest%%[! ]*}"}"
         ;;
       --git-dir=*|--work-tree=*|--namespace=*|--exec-path=*|\
-      --no-pager*|--paginate*|--bare*|--no-replace-objects*|--literal-pathspecs*)
-        rest="${rest#* }"; rest="${rest#"${rest%%[! ]*}"}"
+      --no-pager|--paginate|--bare|--no-replace-objects|--literal-pathspecs)
+        rest="${rest_after_word#"${rest_after_word%%[! ]*}"}"
         ;;
       *)
         break
         ;;
     esac
-    [[ "$rest" == "$prev" ]] && break
   done
 
-  printf 'git %s' "$rest"
+  if [[ -n "$word" ]]; then
+    printf 'git %s%s' "$word" "$rest_after_word"
+    return 0
+  fi
+
+  printf 'git'
 }
 
 check_segment() {
@@ -348,7 +406,7 @@ fi
 # 4. Auto-allow plugin artifact paths and lib scripts
 # ---------------------------------------------------------------------------
 
-if [[ "$command" =~ \.claude[^/]*/.*\.rnd/ ]] || [[ "$command" =~ (^|/)rnd-dir\.sh($|[[:space:]\"\']) ]]; then
+if command_references_plugin_artifact_path "$command" || [[ "$command" =~ (^|/)rnd-dir\.sh($|[[:space:]\"\']) ]]; then
   allow_json
   exit 0
 fi

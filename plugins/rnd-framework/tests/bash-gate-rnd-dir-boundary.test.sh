@@ -14,8 +14,8 @@ BASH_GATE="${SCRIPT_DIR}/../hooks/bash-gate.sh"
 _make_json() {
   local cmd="$1"
   local agent="${2:-rnd-builder}"
-  printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"agent_type":"%s"}' \
-    "$(printf '%s' "$cmd" | jq -Rr @json | tr -d '"')" "$agent"
+
+  jq -nc --arg command "$cmd" --arg agent "$agent" '{tool_name:"Bash", tool_input:{command:$command}, agent_type:$agent}'
 }
 
 printf '\n--- bash-gate: rnd-dir.sh boundary regex ---\n'

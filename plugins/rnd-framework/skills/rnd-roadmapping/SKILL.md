@@ -72,13 +72,13 @@ When a Planner receives a multi-session goal, decompose it into milestones — n
 
 ## Milestone Execution and Verification
 
-Each milestone goes through the full pipeline independently: **Plan → Build → Verify → Integrate**. Verification is not optional, even for milestones that appear simple. The independent Verifier in Phase 3 is the framework's core quality guarantee — skipping it means unverified work ships.
+Each milestone goes through the full pipeline independently: **Scope → Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate → [Post-Review]**. Verification is not optional, even for milestones that appear simple. The independent Verifier is the framework's core quality guarantee — skipping it means unverified work ships.
 
 When executing a milestone:
 - The milestone description becomes the task for `/rnd-framework:rnd-start`
-- The pipeline runs all phases including independent Verifier verification
+- The pipeline runs all phases including independent Verifier verification, cleanup, polish, and post-review when applicable
 - A SHIP verdict from the Integrator marks the milestone as DONE
-- If already inside a `/rnd-framework:rnd-start` session (e.g., Phase 0 created the roadmap), the milestone description flows to Phase 1 (Plan) — do not recursively re-invoke start
+- If already inside a `/rnd-framework:rnd-start` session (for example, Phase 0 created the roadmap), the milestone description flows to Phase 1 (Scope) — do not recursively re-invoke start
 
 **Anti-pattern:** Completing milestone work inline without running the pipeline phases. Even small milestones (documentation, config changes) need verification per the scaling skill's criticality tiers.
 

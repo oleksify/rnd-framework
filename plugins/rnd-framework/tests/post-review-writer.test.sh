@@ -429,13 +429,13 @@ CLAUDE_PLUGIN_DATA="$F3A_SLUG" "$WRITER" \
 f3a_pass="$(jq -r '.verifier_said_PASS' "${F3A_SLUG}/post-review.jsonl")"
 assert_eq "F3: NEEDS_ITERATION owning task → false even when flag true" "false" "$f3a_pass"
 
-# --- 7b: owning task all-PASS → true (regardless of flag) ---
+# --- 7b: quality-debt verdict keeps verifier_said_PASS false ---
 F3B_DIR="${TMP_DIR}/f3b"
 F3B_SESSION="$(make_f3_fixture "$F3B_DIR")"
 cat > "${F3B_SESSION}/verifications/wave-1-verdict-map.json" <<'JSON'
 {
-  "M1.area.d1": { "verdict": "PASS",                          "evidence": ["x"], "feedback": "", "task_id": "M1.T07.derived-task" },
-  "M1.area.d2": { "verdict": "PASS_QUALITY_NEEDS_ITERATION",  "evidence": ["y"], "feedback": "", "task_id": "M1.T07.derived-task" }
+  "M1.area.d1": { "verdict": "PASS",                         "evidence": ["x"], "feedback": "", "task_id": "M1.T07.derived-task" },
+  "M1.area.d2": { "verdict": "PASS_QUALITY_NEEDS_ITERATION", "evidence": ["y"], "feedback": "", "task_id": "M1.T07.derived-task" }
 }
 JSON
 
@@ -446,11 +446,11 @@ CLAUDE_PLUGIN_DATA="$F3B_SLUG" "$WRITER" \
   --session-id  "20260530-086100-f3b00001" \
   --touched-file "lib/derived.sh" \
   --severity    "minor" \
-  --verifier-said-pass "false" \
+  --verifier-said-pass "true" \
   --review-found "true"
 
 f3b_pass="$(jq -r '.verifier_said_PASS' "${F3B_SLUG}/post-review.jsonl")"
-assert_eq "F3: all-PASS owning task → true even when flag false" "true" "$f3b_pass"
+assert_eq "F3: PASS_QUALITY_NEEDS_ITERATION owning task → false" "false" "$f3b_pass"
 
 # --- 7c: unattributable finding (no owning task, no map entry) → flag fallback ---
 F3C_DIR="${TMP_DIR}/f3c"

@@ -61,7 +61,7 @@ When an agent or skill produces a report artifact, you MUST print the report's f
 
 - `protocol.md` (Planner)
 - `design-spec.md` (Phase 0.5 architectural alternatives)
-- `T<id>-manifest.md` (Builder)
+- `M<NN>-T<NN>-<uuid>-manifest.md` (Builder)
 - `T<id>-verification.md` and `wave-<N>-verdict-map.json` (Verifier)
 - `T<id>-reality-report.md` (Reality Auditor)
 - `T<id>-diagnosis.md` (Debugger)

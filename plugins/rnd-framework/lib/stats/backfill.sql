@@ -47,7 +47,7 @@ WITH
     SELECT
       regexp_extract(filename, '^\.?/?([^/]+)/', 1)                    AS slug,
       COALESCE(TRY(json_extract_string(j, '$.task_id')), TRY(json_extract_string(j, '$.taskId'))) AS task_id,
-      TRY(json_extract_string(j, '$.sessionId'))                       AS session_id,
+      COALESCE(TRY(json_extract_string(j, '$.session_id')), TRY(json_extract_string(j, '$.sessionId'))) AS session_id,
       TRY(json_extract_string(j, '$.verdict'))                         AS verdict,
       CAST(TRY(json_extract_string(j, '$.iterationCount')) AS INTEGER) AS iteration_count,
       TRY(json_extract_string(j, '$.criticality'))                     AS criticality

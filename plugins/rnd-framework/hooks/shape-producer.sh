@@ -99,12 +99,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
     jq -nc \
       --arg event "assertion_shape" \
+      --arg session_id "$session_id" \
       --arg task_id "$task_id" \
       --arg assertion_id "$assertion_id" \
       --arg shape "$shape" \
       --arg confidence "$confidence" \
       --arg ts "$ts" \
-      '{event:$event, task_id:$task_id, assertion_id:$assertion_id, shape:$shape, confidence:$confidence, timestamp:$ts}' \
+      '{event:$event, session_id:$session_id, task_id:$task_id, assertion_id:$assertion_id, shape:$shape, confidence:$confidence, timestamp:$ts}' \
       >> "$audit_path" 2>/dev/null || true
 
   done <<< "$(parse_contract_assertions "$contract_content")"

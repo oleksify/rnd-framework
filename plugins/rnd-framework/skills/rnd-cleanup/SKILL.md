@@ -36,7 +36,7 @@ A finding: symbol defined in the diff with zero references from project entry po
 
 ### 2. Orphan Files
 
-1. Extract changed files from `$RND_DIR/builds/T<id>-manifest.md`.
+1. Extract changed files from `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md`.
 2. Grep for each new file's basename and exported identifiers across the project.
 3. A file is an orphan if no other file imports or references it AND it is not itself an entry point (`main`, `index`, `__main__`, CLI script in `package.json`/`pyproject.toml`).
 
@@ -55,7 +55,7 @@ LLM diff review only. Read the diff; identify whether an existing utility does t
   - **Test-comment trace tags:** `# M4.wiring.outside-view-section-exists` above a test block, `(M2.calib.verdict-record-lands-at-slug-roo)` parentheticals after a `# Test N:` line. These trace tests back to validation-contract assertion IDs from a specific session. Strip the tag; keep the natural-language description.
   - **Task / wave identifiers:** `T1`, `T01`, `T14`, `M2`, `wave-3`, `FM6`, `Phase 1` (when used as a session-phase pointer rather than a domain term).
   - **Planner phase or disposition labels:** `Q4 disposition`, "compatibility audit", "decided during planning".
-  - **Session artifact paths or meta-references:** `research/*.md`, `protocol.md`, `T<id>-manifest.md`, "the R&D session", "the pipeline".
+  - **Session artifact paths or meta-references:** `research/*.md`, `protocol.md`, `M<NN>-T<NN>-<uuid>-manifest.md`, "the R&D session", "the pipeline".
   - **Distinguish leakage from framework-own guidance.** ID FORMATS (`M<N>.<area>.<slug>`, `T<id>`, `wave-<N>`) documented in agent/skill specs are canonical schema, NOT leakage — leave them alone. Sample IDs inside test FIXTURE DATA (heredoc content creating validation-contract.md or features.json) are demonstrating the parser, NOT leakage — leave them alone. The leakage pattern is narrative session-tag prefixes and trace comments in surrounding prose.
   Rewrite the comment/heading to ground its rationale in the project's own concepts, or delete it if it doesn't help a future reader who never saw the pipeline run.
 

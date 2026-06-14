@@ -9,6 +9,14 @@ export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export HOME="$(mktemp -d)"
 unset RND_DIR
 
+ACTIVE_BASE_DIR="${CLAUDE_CONFIG_DIR}/.rnd/test-slug/branches/main"
+ACTIVE_SESSION_ID="20260613-160331-abcd"
+ACTIVE_RND_DIR="${ACTIVE_BASE_DIR}/sessions/${ACTIVE_SESSION_ID}"
+
+mkdir -p "${CLAUDE_CONFIG_DIR}/.rnd" "${ACTIVE_RND_DIR}/builds"
+printf '%s' "${ACTIVE_BASE_DIR}" > "${CLAUDE_CONFIG_DIR}/.rnd/.active-base-dir"
+printf '%s' "${ACTIVE_SESSION_ID}" > "${ACTIVE_BASE_DIR}/.current-session"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/read-gate.sh"
 
@@ -119,10 +127,15 @@ assert_exit   "SELF-ASSESSMENT uppercase + empty agent_type → exit 0 (orchestr
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/home/user/builds/T3-Self-Assessment.md"},"agent_type":"rnd-verifier"}'
 assert_exit   "Self-Assessment mixed case + verifier → exit 2" 2
 
-# .rnd/ path without self-assessment → allow JSON, exit 0
-run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude/.rnd/builds/T3-manifest.md"},"agent_type":""}'
-assert_exit   ".rnd/ path → exit 0" 0
-assert_stdout_contains ".rnd/ path → allow JSON" '"permissionDecision":"allow"'
+# real active artifact path without self-assessment → allow JSON, exit 0
+run_hook "$(jq -nc --arg path "${ACTIVE_RND_DIR}/builds/T3-manifest.md" '{tool_name:"Read", tool_input:{file_path:$path}, agent_type:""}')"
+assert_exit   "active artifact path → exit 0" 0
+assert_stdout_contains "active artifact path → allow JSON" '"permissionDecision":"allow"'
+
+# fake .claude*/.rnd/ bypass path → no auto-allow
+run_hook '{"tool_name":"Read","tool_input":{"file_path":"/tmp/project/.claude-evil/x/.rnd/secret.txt"},"agent_type":""}'
+assert_exit   "fake artifact-root bypass path → exit 0" 0
+assert_stdout_empty "fake artifact-root bypass path → empty stdout (no auto-allow)"
 
 # plugin cache path → allow JSON, exit 0
 run_hook '{"tool_name":"Read","tool_input":{"file_path":"/Users/someone/.claude-personal/plugins/cache/oleksify-plugins/rnd-framework/0.12.5/skills/rnd-building/SKILL.md"},"agent_type":""}'

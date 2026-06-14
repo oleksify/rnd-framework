@@ -89,8 +89,9 @@ prompt: |
 
   Diagnosis report: [paste $RND_DIR/diagnosis/T1-diagnosis.md]
 
-  Implement the fix using TDD. Save the build manifest to $RND_DIR/builds/T1-manifest.md
-  and the self-assessment to $RND_DIR/builds/T1-self-assessment.md.
+  Implement the fix using TDD. Save the build manifest to $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md
+  and the self-assessment to $RND_DIR/builds/<task-id>-self-assessment.md, where <task-id>
+  is the task's canonical `features.json` id `M<N>.T<NN>.<slug>`.
 
   ${SESSION_SKILLS_FRAGMENT}
 ```
@@ -114,9 +115,9 @@ prompt: |
   Pre-registration: [paste the pre-registration from $RND_DIR/protocol.md]
 
   Builder artifacts:
-  - Build manifest: $RND_DIR/builds/T1-manifest.md
+  - Build manifest: $RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md
 
-  Do NOT read $RND_DIR/builds/T1-self-assessment.md — information barrier.
+  Do NOT read $RND_DIR/builds/<task-id>-self-assessment.md — information barrier.
 
   Write independent experiment tests from the spec, run them, inspect the code,
   and save the verification report to $RND_DIR/verifications/T1-verification.md.
@@ -145,4 +146,4 @@ The agent completes and returns its verdict via `SendMessage`. Wait for it befor
 
 ## Output Discipline
 
-This command produces report artifacts (`T<id>-diagnosis.md`, `T<id>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`). Each MUST be surfaced per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE the next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing a verdict ("Verifier returned PASS — proceed?") without first printing the report verbatim is a defect.
+This command produces report artifacts (`T<id>-diagnosis.md`, `M<NN>-T<NN>-<uuid>-manifest.md`, `T<id>-verification.md`, `wave-<N>-verdict-map.json`). Each MUST be surfaced per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE the next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing a verdict ("Verifier returned PASS — proceed?") without first printing the report verbatim is a defect.

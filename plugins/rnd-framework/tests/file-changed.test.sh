@@ -8,6 +8,8 @@ export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export HOME="$(mktemp -d)"
 unset RND_DIR
 
+ARTIFACT_SESSION_DIR="${CLAUDE_CONFIG_DIR}/.rnd/test-slug/branches/main/sessions/20260325-120000-abcd"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/file-changed.sh"
 
@@ -46,11 +48,15 @@ assert_stdout_contains() {
   if [[ "$HOOK_STDOUT" == *"$needle"* ]]; then pass "$name"; else fail "$name" "expected stdout to contain '$needle', got: '$HOOK_STDOUT'"; fi
 }
 
+json_for_path() {
+  jq -nc --arg path "$1" '{file_path:$path}'
+}
+
 # ---------------------------------------------------------------------------
 # plan.md in .rnd/ → specific advisory
 # ---------------------------------------------------------------------------
 
-run_hook '{"file_path":"/Users/user/.claude/.rnd/sessions/20260325-120000-abcd/plan.md"}'
+run_hook "$(json_for_path "${ARTIFACT_SESSION_DIR}/plan.md")"
 assert_exit "plan.md in .rnd/ → exits 0" 0
 assert_stdout_contains "plan.md in .rnd/ → specific advisory with Re-read" "Re-read the plan"
 assert_stdout_contains "plan.md in .rnd/ → advisory contains file path" "plan.md"
@@ -66,7 +72,7 @@ fi
 # protocol.md in .rnd/ → same plan advisory as plan.md
 # ---------------------------------------------------------------------------
 
-run_hook '{"file_path":"/Users/user/.claude/.rnd/sessions/20260325-120000-abcd/protocol.md"}'
+run_hook "$(json_for_path "${ARTIFACT_SESSION_DIR}/protocol.md")"
 assert_exit "protocol.md in .rnd/ → exits 0" 0
 assert_stdout_contains "protocol.md in .rnd/ → specific advisory with Re-read" "Re-read the plan"
 assert_stdout_contains "protocol.md in .rnd/ → advisory contains file path" "protocol.md"
@@ -82,7 +88,7 @@ fi
 # iteration-log.md in .rnd/ → specific advisory
 # ---------------------------------------------------------------------------
 
-run_hook '{"file_path":"/Users/user/.claude/.rnd/sessions/20260325-120000-abcd/iteration-log.md"}'
+run_hook "$(json_for_path "${ARTIFACT_SESSION_DIR}/iteration-log.md")"
 assert_exit "iteration-log.md in .rnd/ → exits 0" 0
 assert_stdout_contains "iteration-log.md in .rnd/ → specific advisory with Check" "Check for new iteration"
 assert_stdout_contains "iteration-log.md in .rnd/ → advisory contains file name" "iteration-log.md"
@@ -91,7 +97,7 @@ assert_stdout_contains "iteration-log.md in .rnd/ → advisory contains file nam
 # Other .rnd/ file → generic advisory
 # ---------------------------------------------------------------------------
 
-run_hook '{"file_path":"/Users/user/.claude/.rnd/sessions/20260325-120000-abcd/builds/manifest.md"}'
+run_hook "$(json_for_path "${ARTIFACT_SESSION_DIR}/builds/manifest.md")"
 assert_exit "other .rnd/ file → exits 0" 0
 assert_stdout_contains "other .rnd/ file → generic advisory" "RND artifact modified externally"
 assert_stdout_contains "other .rnd/ file → advisory contains basename" "manifest.md"

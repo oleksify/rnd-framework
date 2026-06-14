@@ -186,4 +186,67 @@ crud_match="$(printf '%s\n' "$stdout_shim" | grep -cE 'Shape: crud' || true)"
 assert_eq "malformed row (crud) not in Shape listing" "0" "$crud_match"
 
 # ---------------------------------------------------------------------------
+# Test group: per_shape_fail_rate keeps session/task shape joins scoped
+# even when task ids repeat across sessions
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- outside-view-query: per_shape_fail_rate joins on session_id + task_id ---'
+
+rnd_join_root="$(make_rnd_root "shape-join")"
+slug_join="${rnd_join_root}/join-slug"
+mkdir -p "${slug_join}/branches/main/sessions/s1" "${slug_join}/branches/main/sessions/s2"
+
+printf '%s\n' \
+  '{"task_id":"M1.T01.same-task","session_id":"s1","verdict":"PASS","timestamp":"2026-05-01T10:00:00Z"}' \
+  '{"task_id":"M1.T01.same-task","session_id":"s2","verdict":"NEEDS_ITERATION","timestamp":"2026-05-01T10:01:00Z"}' \
+  > "${slug_join}/calibration.jsonl"
+
+printf '%s\n' \
+  '{"event":"assertion_shape","task_id":"M1.T01.same-task","session_id":"s1","shape":"wiring","timestamp":"2026-05-01T09:00:00Z"}' \
+  > "${slug_join}/branches/main/sessions/s1/audit.jsonl"
+
+printf '%s\n' \
+  '{"event":"assertion_shape","task_id":"M1.T01.same-task","session_id":"s2","shape":"data","timestamp":"2026-05-01T09:01:00Z"}' \
+  > "${slug_join}/branches/main/sessions/s2/audit.jsonl"
+
+join_query_output="$(
+  cd "$rnd_join_root"
+  duckdb -csv \
+    -c ".read ${SCRIPT_DIR}/../lib/stats/per_shape_fail_rate.sql" \
+    -c "SELECT segment, shape, task_count, fail_count, fail_rate FROM per_shape_fail_rate ORDER BY shape;"
+)"
+
+assert_contains "shape-join: data row keeps only session s2 verdict" "feature,data,1,1,1.0" "$join_query_output"
+assert_contains "shape-join: wiring row keeps only session s1 verdict" "feature,wiring,1,0,0.0" "$join_query_output"
+
+cross_count="$(printf '%s\n' "$join_query_output" | grep -c '^feature,.*,2,' || true)"
+assert_eq "shape-join: no shape row cross-counts both sessions" "0" "$cross_count"
+
+# ---------------------------------------------------------------------------
+# Test group: backfill preserves snake_case session_id with camelCase fallback
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- outside-view-query: backfill preserves snake_case session_id ---'
+
+rnd_backfill_root="$(make_rnd_root "backfill")"
+slug_backfill="${rnd_backfill_root}/backfill-slug"
+mkdir -p "$slug_backfill"
+
+printf '%s\n' \
+  '{"task_id":"M1.T01.current-shape","session_id":"snake-session","verdict":"PASS","iterationCount":0,"criticality":"HIGH","timestamp":"2026-05-01T10:00:00Z"}' \
+  '{"taskId":"M1.T02.legacy-shape","sessionId":"camel-session","verdict":"FAIL","iterationCount":1,"criticality":"LOW","timestamp":"2026-05-01T10:01:00Z"}' \
+  > "${slug_backfill}/calibration.jsonl"
+
+backfill_query_output="$(
+  cd "$rnd_backfill_root"
+  duckdb -csv \
+    -c ".read ${SCRIPT_DIR}/../lib/stats/backfill.sql" \
+    -c "SELECT task_id, session_id FROM backfill ORDER BY task_id;"
+)"
+
+assert_contains "backfill: snake_case session_id preserved" "M1.T01.current-shape,snake-session" "$backfill_query_output"
+assert_contains "backfill: camelCase sessionId still supported" "M1.T02.legacy-shape,camel-session" "$backfill_query_output"
+
+null_session_count="$(printf '%s\n' "$backfill_query_output" | grep -c ',$' || true)"
+assert_eq "backfill: no projected row has null session_id" "0" "$null_session_count"
+
+# ---------------------------------------------------------------------------
 report

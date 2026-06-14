@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.18.2 — 2026-06-14
+
+### Revert the demanding agents from Fable 5 back to Opus 4.8
+
+Fable 5 was disabled, so the planner, scoper, and the entire HIGH-criticality dispatch tier revert to Opus. The planner and scoper run opus/high at every tier again; the verifier escalates to opus/xhigh at HIGH, and the builder and debugger to opus/high. NORMAL and LOW tiers are unchanged. validate.sh drops fable from the accepted model allowlist, the rnd-brainstorm advisory recommends an Opus 4.8 session, and the planner frontmatter test plus its baseline fixture are updated to expect opus.
+
+### Remediate 11 findings from the second codebase audit and lock them with a regression harness
+
+Tighten the `.rnd/` auto-allow boundary in `hooks/lib.sh` so a `.claude-evil/x/.rnd/` lookalike path no longer matches (read/write gates gain negative coverage); close destructive-git bypass variants in `bash-gate.sh` (env-prefixed `git reset --hard`, `git --work-tree … checkout .`); give `post-review-writer.sh` its quality-debt path; fix the per-shape session join and add a session-id fallback in the stats SQL (`per_shape_fail_rate.sql`, `backfill.sql`); add a head-fallback to `sycophancy-probe.sh`; pin the verifier prose-report contract in `rnd-verify`; and resolve command/docs and pipeline-artifact-session-path drift across `README.md`, `CLAUDE.md`, `rnd-status.md`, and the orchestration skill. Adds negative-coverage suites (`validator-regressions`, `verifier-artifact-contract`, `docs-contract`, `audit-remediation-regression`) and a `lib/audit-remediation-coverage.sh` harness that asserts each remediation stays in place.
+
 ## 0.18.1 — 2026-06-10
 
 ### Fix 11 major findings from the codebase audit

@@ -68,8 +68,8 @@ Fourteen specialized agents (10 pipeline-phase + 4 helpers) handle pipeline work
 
 | Phase | Agent | Purpose |
 |---|---|---|
-| Scoping | `rnd-scoper` (fable/high) | Produces a frozen `scope.json` + `scope.md` before planning; the user ratifies the deliverable boundary; the planner consumes `scope.json` as its SSOT; `scope-coverage-gate.sh` enforces bidirectional coverage (orphan task = scope_creep, uncovered deliverable = scope_miss) |
-| Planning | `rnd-planner` (fable/high, adaptive) | Decomposes tasks and emits four artifacts: `protocol.md` (scope + goals; carries `Heuristic ceiling: <integer>` on line 2 for the plan-size stop condition), `validation-contract.md` (one `M<N>.<area>.<slug>` heading per testable assertion), `features.json` (task manifest with `M<N>.T<NN>.<slug>` IDs, `dependsOn[]`, `assertionIds[]`, `criticality`, `status`), and `AGENTS.md` (per-agent work assignments); capped at max 4 tasks/wave with min 1-hour scope and forced coalescing; pre-registrations include a required `## Assumptions` section (`Assumption: ... Refuted by: ...`, placeholder `- None` when none) — the Verifier downgrades a verdict by one tier and emits `gateFired: {gate: "assumption_unchecked"}` when an Assumption's Refuted-by action was declared but not executed |
+| Scoping | `rnd-scoper` (opus/high) | Produces a frozen `scope.json` + `scope.md` before planning; the user ratifies the deliverable boundary; the planner consumes `scope.json` as its SSOT; `scope-coverage-gate.sh` enforces bidirectional coverage (orphan task = scope_creep, uncovered deliverable = scope_miss) |
+| Planning | `rnd-planner` (opus/high, adaptive) | Decomposes tasks and emits four artifacts: `protocol.md` (scope + goals; carries `Heuristic ceiling: <integer>` on line 2 for the plan-size stop condition), `validation-contract.md` (one `M<N>.<area>.<slug>` heading per testable assertion), `features.json` (task manifest with `M<N>.T<NN>.<slug>` IDs, `dependsOn[]`, `assertionIds[]`, `criticality`, `status`), and `AGENTS.md` (per-agent work assignments); capped at max 4 tasks/wave with min 1-hour scope and forced coalescing; pre-registrations include a required `## Assumptions` section (`Assumption: ... Refuted by: ...`, placeholder `- None` when none) — the Verifier downgrades a verdict by one tier and emits `gateFired: {gate: "assumption_unchecked"}` when an Assumption's Refuted-by action was declared but not executed |
 | Building | `rnd-builder` (sonnet/high, adaptive) | Implements tasks using TDD; produces build manifest + self-assessment |
 | Reality Audit | `rnd-reality-auditor` (sonnet/low) | Per-task audit of declared external references (URLs, APIs, schemas, env vars, data); only runs when the task declares `External dependencies`; runs an "Existence Pre-Pass" Step 0 (mechanical probes — file-execution only, no `python -c`/`node -e`/`bun -e`) that verifies every imported module / third-party method call / RFC or error-code citation / env-var name actually exists in the form claimed, before adversarial experiments; MISSING short-circuits to `INVALID_FOUND` and emits a `FALSE_PASS_PROXY` calibration record if a prior Builder PASS exists for the task |
 | Verification | `rnd-verifier` (sonnet/high, adaptive) | Wave-batched: one spawn per wave reviews all task pre-regs and emits a **per-assertion verdict map** (`wave-<N>-verdict-map.json`) keyed by assertion ID, each entry carrying `{verdict, evidence[], feedback, task_id}`; Gate 3 aggregates per-task using the rule: any FAIL → NEEDS_ITERATION; any PASS_QUALITY_NEEDS_ITERATION without FAIL → PASS_QUALITY_NEEDS_ITERATION; all PASS → PASS; writes `T<id>-verification.md` full prose report for every verdict with a required `## Coverage Gaps` section (`Checked:` + `Couldn't check:` sub-bullets — enforced by `coverage-gaps-gate.sh`) and required `## Case for PASS` / `## Case for FAIL` sections (enforced by `verifier-case-gate.sh`); writes `T<id>-pass-receipt.json` (`{status, source, timestamp}`) for each PASS-aggregated task — the artifact `rnd-status`/`rnd-start` key the **verified** state on; information barrier enforced |
@@ -83,10 +83,10 @@ Fourteen specialized agents (10 pipeline-phase + 4 helpers) handle pipeline work
 
 | Agent | LOW | NORMAL | HIGH |
 |---|---|---|---|
-| `rnd-planner` | fable/high | fable/high | fable/xhigh |
-| `rnd-verifier` | sonnet/high | opus/high | fable/xhigh |
-| `rnd-builder` | sonnet/high | sonnet/high | fable/high |
-| `rnd-debugger` | sonnet/high | sonnet/high | fable/high |
+| `rnd-planner` | opus/high | opus/high | opus/xhigh |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high |
 | `rnd-polisher` (non-adaptive, per-wave) | opus/high | opus/high | opus/xhigh |
 
 If `Criticality` is absent (or no pre-reg exists), the orchestrator does NOT override and the agent's frontmatter `model:` is used. Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value. Non-adaptive agents always run at their listed model regardless of criticality. Full policy lives in the `rnd-framework:rnd-orchestration` skill.
@@ -206,7 +206,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `rnd-plan`, `rnd-build`, `rnd-verify`, `rnd-integrate`, `rnd-status`, `rnd-resume`, `rnd-history`, `rnd-validate`, `rnd-doctor`, `rnd-bump`, `rnd-review`, `rnd-audit`, `rnd-brainstorm`, `rnd-narrative`, `rnd-calibrate`, `rnd-debug`, `rnd-roadmap`, `rnd-scan`, `rnd-stats`, `rnd-remeasure`.
+Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`, `/rnd-framework:rnd-stats`, `/rnd-framework:rnd-remeasure`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`.
 
 ## Key Conventions
 

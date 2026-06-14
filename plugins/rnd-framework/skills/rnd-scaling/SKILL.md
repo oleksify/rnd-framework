@@ -146,14 +146,14 @@ Criticality drives both iteration budget (table above) and per-agent model selec
 
 | Agent | LOW | NORMAL | HIGH | Adaptive? |
 |---|---|---|---|---|
-| `rnd-planner` | fable/high | fable/high | fable/xhigh | yes |
-| `rnd-verifier` | sonnet/high | opus/high | fable/xhigh | yes |
-| `rnd-builder` | sonnet/high | sonnet/high | fable/high | yes |
-| `rnd-debugger` | sonnet/high | sonnet/high | fable/high | yes |
+| `rnd-planner` | opus/high | opus/high | opus/xhigh | yes |
+| `rnd-verifier` | sonnet/high | opus/high | opus/xhigh | yes |
+| `rnd-builder` | sonnet/high | sonnet/high | opus/high | yes |
+| `rnd-debugger` | sonnet/high | sonnet/high | opus/high | yes |
 | `rnd-polisher` | opus/high | opus/high | opus/xhigh | no (per-wave, fixed) |
 
 Key rules:
-- `rnd-planner` runs at fable in every tier; `rnd-verifier` escalates to opus at NORMAL and fable at HIGH; `rnd-builder` and `rnd-debugger` escalate to fable only at HIGH.
+- `rnd-planner` runs at opus in every tier; `rnd-verifier` escalates to opus at NORMAL and HIGH; `rnd-builder` and `rnd-debugger` escalate to opus only at HIGH.
 - `rnd-polisher` is non-adaptive — it always runs at opus regardless of task criticality.
 - Effort is NOT per-spawn overridable; it stays at the agent's frontmatter value.
 

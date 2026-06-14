@@ -15,12 +15,32 @@ _lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 # Path utilities
 # ---------------------------------------------------------------------------
 
-# Returns 0 if path is under the .rnd/ plugin artifact directory
-# within a .claude config directory.
+# Returns 0 when <path> is equal to <root> or nested under <root>/.
+path_is_within_root() {
+  local path="$1"
+  local root="$2"
+
+  [[ -n "$path" && -n "$root" ]] || return 1
+  [[ "$path" == "$root" || "$path" == "$root"/* ]]
+}
+
+# Prints the configured plugin artifact root.
+plugin_artifact_root() {
+  local config_dir
+  config_dir="$(_resolve_config_dir)"
+
+  printf '%s/.rnd' "$config_dir"
+}
+
+# Returns 0 if path is under the configured .rnd/ plugin artifact directory.
 is_plugin_artifact_path() {
   local path="$1"
   [[ "$path" == /* ]] || return 1
-  [[ "$path" =~ \.claude[^/]*/.*\.rnd/ ]]
+
+  local root
+  root="$(plugin_artifact_root)"
+
+  path_is_within_root "$path" "$root"
 }
 
 # Backward-compatible alias.
@@ -38,6 +58,25 @@ is_learnings_path() {
   local path="$1"
   [[ "$path" == /* ]] || return 1
   [[ "$path" =~ \.claude[^/]*/.*learnings/ ]]
+}
+
+# Returns 0 when a command string references the configured .rnd root.
+# Matching on the configured root avoids auto-allowing lookalike paths such as
+# /tmp/project/.claude-evil/x/.rnd/... while still allowing real artifact paths.
+command_references_plugin_artifact_path() {
+  local text="$1"
+  local root
+  root="$(plugin_artifact_root)"
+
+  [[ -n "$text" && -n "$root" ]] || return 1
+
+  case "$text" in
+    *"$root"|*"$root"/*|*"$root"\"*|*"$root"\'*|*"$root"\)*|*"$root"\;*|*"$root"\|*|*"$root"\&*|*"$root"\ *)
+      return 0
+      ;;
+  esac
+
+  return 1
 }
 
 # Returns 0 if the file has a recognised source-code extension.

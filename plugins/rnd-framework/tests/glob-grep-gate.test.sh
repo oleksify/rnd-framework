@@ -6,6 +6,8 @@ export CLAUDE_CONFIG_DIR="$(mktemp -d)"
 export HOME="$(mktemp -d)"
 unset RND_DIR
 
+ARTIFACT_SESSION_DIR="${CLAUDE_CONFIG_DIR}/.rnd/test-slug/branches/main/sessions/20260325-120000-abcd"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK="${SCRIPT_DIR}/../hooks/glob-grep-gate.sh"
 
@@ -49,6 +51,10 @@ assert_stderr_contains() {
   if [[ "$HOOK_STDERR" == *"$needle"* ]]; then pass "$name"; else fail "$name" "expected stderr to contain '$needle', got: '$HOOK_STDERR'"; fi
 }
 
+json_with_path_and_pattern() {
+  jq -nc --arg tool "$1" --arg path "$2" --arg pattern "$3" '{tool_name:$tool, tool_input:{path:$path, pattern:$pattern}}'
+}
+
 # ---------------------------------------------------------------------------
 # Information barrier — self-assessment
 # ---------------------------------------------------------------------------
@@ -84,7 +90,7 @@ run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.rnd/builds/T3-
 assert_exit "Grep SELF-ASSESSMENT uppercase + empty agent_type → exit 0 (orchestrator allowed)" 0
 
 # .rnd/ path WITHOUT self-assessment → auto-allow (barrier does not interfere)
-run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/builds/T3-manifest.md","pattern":"PASS"},"agent_type":""}'
+run_hook "$(jq -nc --arg path "${ARTIFACT_SESSION_DIR}/builds/T3-manifest.md" '{tool_name:"Grep", tool_input:{path:$path, pattern:"PASS"}, agent_type:""}')"
 assert_exit ".rnd/ path without self-assessment → exit 0" 0
 assert_stdout_contains ".rnd/ path without self-assessment → allow JSON" '"permissionDecision":"allow"'
 
@@ -101,13 +107,13 @@ assert_stdout_empty "regular path with agent_type → empty stdout"
 # .rnd/ path → auto-allow
 # ---------------------------------------------------------------------------
 
-run_hook '{"tool_name":"Glob","tool_input":{"path":"/Users/alice/.claude-personal/.rnd/slug/sessions/123/verifications","pattern":"*.test.ts"}}'
+run_hook "$(json_with_path_and_pattern "Glob" "${ARTIFACT_SESSION_DIR}/verifications" "*.test.ts")"
 assert_exit "Glob .rnd/ path → exit 0" 0
 assert_stdout_contains "Glob .rnd/ path → allow JSON" '"permissionDecision":"allow"'
 
 # Grep: .rnd/ path → auto-allow
 
-run_hook '{"tool_name":"Grep","tool_input":{"path":"/Users/alice/.claude/.rnd/slug/sessions/123/builds","pattern":"PASS"}}'
+run_hook "$(json_with_path_and_pattern "Grep" "${ARTIFACT_SESSION_DIR}/builds" "PASS")"
 assert_exit "Grep .rnd/ path → exit 0" 0
 assert_stdout_contains "Grep .rnd/ path → allow JSON" '"permissionDecision":"allow"'
 

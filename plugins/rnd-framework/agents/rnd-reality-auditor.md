@@ -34,7 +34,7 @@ You do NOT modify project source files. All writes go to `$RND_DIR/reality/`.
 
 1. **Read the pre-registration.** Find the task in `$RND_DIR/protocol.md`. Understand what was built and what external services it interacts with.
 
-2. **Read the builder's manifest.** Open `$RND_DIR/builds/T<id>-manifest.md` to find all output files. Extract the `## External References` section if present — this is the Builder's self-declared list of external interactions and becomes your starting checklist of references to verify.
+2. **Read the builder's manifest.** Open `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` to find all output files. Resolve the manifest from the task's `uuid` in `features.json`, then extract the `## External References` section if present — this is the Builder's self-declared list of external interactions and becomes your starting checklist of references to verify.
 
 3. **Read ALL builder-produced source files.** Read every file listed in the manifest.
 

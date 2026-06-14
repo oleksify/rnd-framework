@@ -56,20 +56,18 @@ Run `claude plugin details rnd-framework` for per-component token estimates.
 ## Pipeline
 
 ```
-Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate
+Scope → Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate → [Post-Review]
 ```
 
-Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each phase to an agent and aggregates results. Reality Audit runs only when a task declares external dependencies; Iterate runs only on a non-PASS verdict.
+Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each phase to an agent and aggregates results. Reality Audit runs only when a task declares external dependencies; Iterate runs only on a non-PASS verdict; Post-Review runs after SHIP unless explicitly skipped.
 
 ## Commands
 
+These are the active public slash commands tracked in `plugins/rnd-framework/commands/*.md`:
+
 | Command | Purpose |
 |---|---|
-| `/rnd-framework:rnd-start <task>` | Full pipeline: Plan → Build → Verify → Integrate |
-| `/rnd-framework:rnd-plan <task>` | Planning only — decompose into task specs |
-| `/rnd-framework:rnd-build <T3\|wave-2\|next>` | Build a task or wave |
-| `/rnd-framework:rnd-verify <T3\|wave-2\|all>` | Independent verification |
-| `/rnd-framework:rnd-integrate <wave-2\|final>` | Merge outputs, run integration tests |
+| `/rnd-framework:rnd-start <task>` | Scope, plan, schedule, build, verify, integrate, and post-review a task |
 | `/rnd-framework:rnd-status` | Pipeline status dashboard |
 | `/rnd-framework:rnd-resume` | Resume a partial pipeline |
 | `/rnd-framework:rnd-history` | Browse past sessions |
@@ -81,11 +79,6 @@ Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each 
 | `/rnd-framework:rnd-review` | Evidence-based review of recent changes |
 | `/rnd-framework:rnd-audit` | Full codebase audit |
 | `/rnd-framework:rnd-brainstorm` | Funnel a vague idea into a focused plan |
-| `/rnd-framework:rnd-narrative` | Development narrative for a session |
-| `/rnd-framework:rnd-calibrate` | Record a ground-truth verdict correction |
-| `/rnd-framework:rnd-validate` | Validate plugin structure |
-| `/rnd-framework:rnd-doctor` | Runtime environment diagnostics |
-| `/rnd-framework:rnd-bump` | Bump version, update CHANGELOG |
 
 ## Agents
 
@@ -93,8 +86,8 @@ Launch with `/rnd-framework:rnd-start <task>`. The orchestrator dispatches each 
 
 | Agent | Model | Role |
 |---|---|---|
-| `rnd-scoper` | fable / high | Produces the frozen, user-ratified `scope.json` + `scope.md` boundary before planning |
-| `rnd-planner` | fable / high | Decomposes the frozen scope; emits the four plan artifacts |
+| `rnd-scoper` | opus / high | Produces the frozen, user-ratified `scope.json` + `scope.md` boundary before planning |
+| `rnd-planner` | opus / high | Decomposes the frozen scope; emits the four plan artifacts |
 | `rnd-builder` | sonnet / high | Implements one task with TDD; writes a manifest + self-assessment |
 | `rnd-reality-auditor` | sonnet / low | Audits declared external references (URLs, APIs, schemas, env vars) |
 | `rnd-verifier` | sonnet / high | Independent verification behind the information barrier |

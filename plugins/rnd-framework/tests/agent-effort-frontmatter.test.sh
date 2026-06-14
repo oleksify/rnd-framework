@@ -111,7 +111,7 @@ assert_model_effort() {
 
 # --- Effort-only checks ------------------------------------------------------
 
-# fable/opus reasoning agents: planner uses fable; verifier/debugger use high effort.
+# opus reasoning agents: planner uses opus; verifier/debugger use high effort.
 assert_effort "$AGENTS_DIR/rnd-planner.md"         "high"
 assert_effort "$AGENTS_DIR/rnd-verifier.md"        "high"
 assert_effort "$AGENTS_DIR/rnd-debugger.md"        "high"
@@ -124,7 +124,7 @@ assert_effort "$AGENTS_DIR/rnd-reality-auditor.md" "low"
 
 # --- Explicit (model, effort) pair checks for adaptive-agent baselines ----------
 
-assert_model_effort "$AGENTS_DIR/rnd-planner.md"           "fable"  "high"
+assert_model_effort "$AGENTS_DIR/rnd-planner.md"           "opus"   "high"
 assert_model_effort "$AGENTS_DIR/rnd-verifier.md"          "opus"   "high"
 assert_model_effort "$AGENTS_DIR/rnd-polisher.md"          "opus"   "high"
 assert_model_effort "$AGENTS_DIR/rnd-builder.md"           "sonnet" "high"

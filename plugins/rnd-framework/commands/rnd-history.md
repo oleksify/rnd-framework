@@ -6,7 +6,7 @@ disallowed-tools: ["Edit", "Write"]
 
 # R&D Framework: History
 
-Get the project base directory:
+Get the branch-scoped base directory (`.../branches/<branch>/`) for this project:
 
 ```bash
 BASE_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" --base)

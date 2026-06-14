@@ -27,7 +27,7 @@ If no session directory is found, tell the user: "No pipeline sessions found for
 Read all available artifacts from the session directory. Not all may exist — some sessions produce fewer artifacts than full pipeline runs. Read what's there:
 
 - `$RND_DIR/protocol.md` — task tree, pre-registrations, dependencies, schedule
-- `$RND_DIR/builds/T*-manifest.md` — what each builder produced (use Glob: `$RND_DIR/builds/*-manifest.md`)
+- `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` — what each builder produced (use Glob: `$RND_DIR/builds/M*-T*-*-manifest.md`; compatibility fallback: older sessions may still surface legacy `*-manifest.md` files)
 - `$RND_DIR/verifications/T*-verification.md` — verifier verdicts and findings (use Glob: `$RND_DIR/verifications/*-verification.md`)
 - `$RND_DIR/iteration-log.md` — iteration cycles, if any
 - `$RND_DIR/integration/wave-*-report.md` — integration results (use Glob: `$RND_DIR/integration/*-report.md`)

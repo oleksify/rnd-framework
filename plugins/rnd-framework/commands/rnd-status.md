@@ -22,7 +22,8 @@ Derive task status by scanning artifact directories. Read `$RND_DIR/protocol.md`
 2. `$RND_DIR/verifications/T<id>-pass-receipt.json` — if exists → **verified**
 3. `$RND_DIR/verifications/T<id>-verification.md` — if exists, read verdict:
    - NEEDS_ITERATION → **iterating**
-4. `$RND_DIR/builds/T<id>-manifest.md` — if exists and non-empty → **built**
+4. `$RND_DIR/builds/M<NN>-T<NN>-<uuid>-manifest.md` — if any canonical manifest exists and is non-empty → **built**
+   - Compatibility fallback: legacy `T<id>-manifest.md` files still count when older sessions are resumed.
 5. Otherwise → **planned**
 
 Supplement with:

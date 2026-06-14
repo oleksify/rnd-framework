@@ -33,8 +33,8 @@
 # verifier_said_PASS is DERIVED from the owning task's aggregated verdict in
 # $session_dir/verifications/wave-*-verdict-map.json (keyed by assertion ID;
 # each entry {verdict, evidence[], feedback, task_id}). Aggregating the entries
-# whose task_id == owning_task: PASS iff none is FAIL or NEEDS_ITERATION. This
-# keeps the verdict and the shape derived from the SAME owning task. The
+# whose task_id == owning_task: PASS iff every entry is an exact PASS. This keeps
+# the verdict and the shape derived from the SAME owning task. The
 # --verifier-said-pass flag is an OPTIONAL override used only as a FALLBACK when
 # no verdict-map entry exists for the owning task (unattributable findings, or
 # no verdict maps present). Clean-row mode is unaffected (it hardcodes true).
@@ -333,9 +333,10 @@ fi
 #
 # The verdict maps ($session_dir/verifications/wave-*-verdict-map.json) are
 # keyed by assertion ID; each entry is {verdict, evidence[], feedback, task_id}.
-# Aggregate the entries whose task_id == owning_task: PASS iff NONE of them is
-# FAIL or NEEDS_ITERATION. This derives the verdict from the SAME owning task
-# that produced the shape, closing the prior caller↔writer coupling.
+# Aggregate the entries whose task_id == owning_task: PASS iff EVERY entry is an
+# exact PASS. PASS_QUALITY_NEEDS_ITERATION is still open quality debt, so it does
+# not count as a clean PASS here. This derives the verdict from the SAME owning
+# task that produced the shape, closing the prior caller↔writer coupling.
 #
 # The --verifier-said-pass flag is the FALLBACK, used only when no verdict-map
 # entry exists for the owning task (unattributable findings, or no maps present).
@@ -356,7 +357,7 @@ if [[ -n "${owning_task:-}" ]]; then
   verdict_glob=("${session_dir}"/verifications/wave-*-verdict-map.json)
 
   # `count` is the number of entries for this task across all maps; `bad` the
-  # number that are FAIL or NEEDS_ITERATION. Derive PASS iff count>0 and bad==0.
+  # number that are not exact PASS verdicts. Derive PASS iff count>0 and bad==0.
   task_count=0
   task_bad=0
 
@@ -365,7 +366,7 @@ if [[ -n "${owning_task:-}" ]]; then
 
     counts="$(jq -r --arg tid "$owning_task" '
       [ .[] | select(.task_id == $tid) ] as $entries
-      | "\($entries | length) \($entries | map(select(.verdict == "FAIL" or .verdict == "NEEDS_ITERATION")) | length)"
+      | "\($entries | length) \($entries | map(select(.verdict != "PASS")) | length)"
     ' "$vmap" 2>/dev/null || true)"
 
     [[ -n "$counts" ]] || continue

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.3 — 2026-06-23
+
+### Remediate audit findings across hooks, docs, and renderer
+
+Fix protected refs/heads advisory coverage, slash-nested remeasurement sessions, fmt-script formatter dispatch, canonical audit/review report paths, docs prose hygiene, safe docs-site rendering, and evidence-locking validator performance. Adds regression coverage for each audited fix.
+
 ## 0.18.2 — 2026-06-14
 
 ### Revert the demanding agents from Fable 5 back to Opus 4.8

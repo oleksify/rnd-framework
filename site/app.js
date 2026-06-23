@@ -3,6 +3,18 @@
 // long page, then build a table of contents from the headings. No build step.
 
 const MANIFEST = "docs/manifest.json";
+const BLOCKED_HTML_TAGS = ["script", "iframe", "object", "embed", "style", "link", "meta"];
+const BLOCKED_HTML_PAIR_RE = new RegExp(
+  `<\\s*(${BLOCKED_HTML_TAGS.join("|")})\\b[^>]*>[\\s\\S]*?<\\s*\\/\\s*\\1\\s*>`,
+  "gi"
+);
+const BLOCKED_HTML_SINGLE_RE = new RegExp(
+  `<\\s*(${BLOCKED_HTML_TAGS.join("|")})\\b[^>]*\\/?>`,
+  "gi"
+);
+const EVENT_HANDLER_ATTR_RE = /\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+const JAVASCRIPT_URL_ATTR_RE = /\s+(href|src|xlink:href)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi;
+const SRCDOC_ATTR_RE = /\s+srcdoc\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
 
 const slugify = (s) =>
   s.toLowerCase().trim()
@@ -15,6 +27,28 @@ async function fetchText(url) {
   return res.text();
 }
 
+function sanitizeRenderedHtml(html) {
+  return html
+    .replace(BLOCKED_HTML_PAIR_RE, "")
+    .replace(BLOCKED_HTML_SINGLE_RE, "")
+    .replace(EVENT_HANDLER_ATTR_RE, "")
+    .replace(JAVASCRIPT_URL_ATTR_RE, "")
+    .replace(SRCDOC_ATTR_RE, "");
+}
+
+function renderMarkdownSection(md) {
+  const section = document.createElement("section");
+  section.innerHTML = sanitizeRenderedHtml(marked.parse(md));
+  return section;
+}
+
+function showLoadError(content, message) {
+  const error = document.createElement("p");
+  error.className = "error";
+  error.textContent = message;
+  content.replaceChildren(error);
+}
+
 async function render() {
   const content = document.getElementById("content");
   const tocList = document.getElementById("toc-list");
@@ -23,7 +57,7 @@ async function render() {
   try {
     manifest = JSON.parse(await fetchText(MANIFEST));
   } catch (e) {
-    content.innerHTML = `<p class="error">Could not load docs manifest (${e.message}).</p>`;
+    showLoadError(content, `Could not load docs manifest (${e.message}).`);
     return;
   }
 
@@ -33,15 +67,13 @@ async function render() {
       manifest.map((entry) => fetchText("docs/" + entry.file))
     );
   } catch (e) {
-    content.innerHTML = `<p class="error">Could not load a docs section (${e.message}).</p>`;
+    showLoadError(content, `Could not load a docs section (${e.message}).`);
     return;
   }
 
-  const html = sources
-    .map((md) => `<section>${marked.parse(md)}</section>`)
-    .join("\n");
-
-  content.innerHTML = html;
+  const sections = sources.map((md) => renderMarkdownSection(md));
+  content.replaceChildren(...sections);
+  tocList.replaceChildren();
 
   // Assign ids to section headings and build the table of contents.
   const used = new Set();
@@ -123,4 +155,16 @@ function setupScrollSpy(headings, orderedIds, tocLinks) {
   if (orderedIds.length) setActive(orderedIds[0]);
 }
 
-render();
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    fetchText,
+    render,
+    renderMarkdownSection,
+    sanitizeRenderedHtml,
+    setupScrollSpy,
+    showLoadError,
+    slugify,
+  };
+} else {
+  render();
+}

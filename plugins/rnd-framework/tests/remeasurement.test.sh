@@ -77,6 +77,19 @@ actual_branch=$(CLAUDE_CONFIG_DIR="$RND_BRANCH" bash "$HARNESS" corpus_count "$M
 assert_eq "3 post-M5 sessions across 2 branches returns 3" "3" "$actual_branch"
 
 # ---------------------------------------------------------------------------
+# Test group: corpus_count — slash-nested branch sessions
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- corpus_count: slash-nested branch sessions ---'
+
+RND_SLASH_BRANCH="${TMP_DIR}/slash-branch"
+
+make_session "$RND_SLASH_BRANCH" "claude-130cb64f" "main" "20260529-100000"
+make_session "$RND_SLASH_BRANCH" "claude-130cb64f" "release/v2" "20260529-110000"
+
+actual_slash_branch=$(CLAUDE_CONFIG_DIR="$RND_SLASH_BRANCH" bash "$HARNESS" corpus_count "$M5_BOUNDARY")
+assert_eq "post-M5 sessions under main and release/v2 both count" "2" "$actual_slash_branch"
+
+# ---------------------------------------------------------------------------
 # Test group: corpus_count — 12 post-commit sessions
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- corpus_count: 12 post-commit sessions → 12 ---'

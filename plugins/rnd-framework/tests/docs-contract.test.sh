@@ -74,6 +74,12 @@ README_COMMANDS="$(readme_command_inventory)"
 CLAUDE_COMMANDS="$(claude_command_inventory)"
 CURRENT_PIPELINE='Scope → Plan → Schedule → Build → [Reality Audit] → Verify → [Iterate] → Cleanup → Polish → Integrate → [Post-Review]'
 CANONICAL_MANIFEST='M<NN>-T<NN>-<uuid>-manifest.md'
+AUDIT_COMMAND="$PLUGIN_ROOT/commands/rnd-audit.md"
+REVIEW_COMMAND="$PLUGIN_ROOT/commands/rnd-review.md"
+STATS_COMMAND="$PLUGIN_ROOT/commands/rnd-stats.md"
+HOOK_LIB="$PLUGIN_ROOT/hooks/lib.sh"
+POST_REVIEW_WRITER="$PLUGIN_ROOT/lib/post-review-writer.sh"
+SITE_INTRO="$REPO_ROOT/site/docs/00-intro.md"
 
 printf '\n--- command-inventory-parity ---\n'
 
@@ -250,5 +256,67 @@ assert_file_contains_text \
   'orchestration skill shows the branch-partitioned session path' \
   "$PLUGIN_ROOT/skills/rnd-orchestration/SKILL.md" \
   'branches/<branch>/sessions/<YYYYMMDD-HHMMSS-XXXX>/'
+
+printf '\n--- command-doc-and-prose-consistency ---\n'
+
+assert_file_contains_text \
+  'rnd-audit uses the canonical audit report path' \
+  "$AUDIT_COMMAND" \
+  '$RND_DIR/audit-report.md'
+
+assert_file_not_contains_text \
+  'rnd-audit no longer references the legacy audit report directory path' \
+  "$AUDIT_COMMAND" \
+  '$RND_DIR/audit/'
+
+assert_file_contains_text \
+  'rnd-review uses the canonical review report path' \
+  "$REVIEW_COMMAND" \
+  '$RND_DIR/review-report.md'
+
+assert_file_not_contains_text \
+  'rnd-review no longer references the legacy review report directory path' \
+  "$REVIEW_COMMAND" \
+  '$RND_DIR/review/'
+
+assert_file_contains_text \
+  'rnd-review describes seven review categories' \
+  "$REVIEW_COMMAND" \
+  'seven review categories'
+
+assert_file_not_contains_text \
+  'rnd-review no longer describes six review categories' \
+  "$REVIEW_COMMAND" \
+  'six review categories'
+
+assert_file_contains_text \
+  'site intro install fence is language-tagged' \
+  "$SITE_INTRO" \
+  '```bash'
+
+assert_file_not_contains_text \
+  'hooks lib no longer uses the audited FM1 label' \
+  "$HOOK_LIB" \
+  'FM1'
+
+assert_file_not_contains_text \
+  'post-review writer no longer uses milestone-specific example labels' \
+  "$POST_REVIEW_WRITER" \
+  'M1.T01 and M2.T01'
+
+assert_file_not_contains_text \
+  'post-review writer no longer uses the audited FM4 label' \
+  "$POST_REVIEW_WRITER" \
+  'FM4'
+
+assert_file_not_contains_text \
+  'rnd-stats no longer uses the audited M3 label' \
+  "$STATS_COMMAND" \
+  'M3'
+
+assert_file_not_contains_text \
+  'rnd-stats no longer uses the audited M12 label' \
+  "$STATS_COMMAND" \
+  'M12'
 
 report

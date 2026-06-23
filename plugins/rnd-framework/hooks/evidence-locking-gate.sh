@@ -45,6 +45,11 @@ fi
 [[ -n "$SUBSTANCE_EXCLUDE_DIRS_JSON" && "$SUBSTANCE_EXCLUDE_DIRS_JSON" != "null" ]] || \
   SUBSTANCE_EXCLUDE_DIRS_JSON='["verifications","builds","briefs","cleanup"]'
 
+declare -a SUBSTANCE_EXCLUDE_DIRS=()
+while IFS= read -r d; do
+  SUBSTANCE_EXCLUDE_DIRS+=("$d")
+done < <(printf '%s' "$SUBSTANCE_EXCLUDE_DIRS_JSON" | jq -r '.[]' 2>/dev/null || true)
+
 # ---------------------------------------------------------------------------
 # Substance pass helpers
 # ---------------------------------------------------------------------------
@@ -116,70 +121,106 @@ _extract_citable_token() {
   # No token found → prints nothing (item is exempt).
 }
 
-# Build the in-memory substance corpus.
-# Sets the global SUBSTANCE_CORPUS variable.
-# Sources: (1) session dir (from active_session_dir), excluding x-substance-exclude-dirs;
-#          (2) git-tracked project files from the repo root, excluding those same dirs.
-# On git-failure, corpus falls back to session-only (documented degradation, not a crash).
-_build_substance_corpus() {
-  # Convert JSON exclude-dirs array to bash array.
-  local exclude_dirs=()
-  while IFS= read -r d; do
-    exclude_dirs+=("$d")
-  done < <(printf '%s' "$SUBSTANCE_EXCLUDE_DIRS_JSON" | jq -r '.[]' 2>/dev/null || true)
+# Return 0 when the relative token path stays outside excluded dirs.
+_path_allowed_for_substance() {
+  local rel_path="$1"
+  local d
 
-  SUBSTANCE_CORPUS=""
+  rel_path="${rel_path#./}"
+  [[ "$rel_path" =~ (^|/)\.\.(/|$) ]] && return 1
 
-  # Session root.
-  local session_dir
-  session_dir="$(active_session_dir 2>/dev/null || true)"
+  for d in "${SUBSTANCE_EXCLUDE_DIRS[@]}"; do
+    [[ "$rel_path" == "$d" || "$rel_path" == "$d/"* ]] && return 1
+  done
 
-  if [[ -n "$session_dir" && -d "$session_dir" ]]; then
-    # Build prune arguments for find.
-    local prune_args=()
-    local d
-    for d in "${exclude_dirs[@]}"; do
-      prune_args+=(-path "${session_dir}/${d}" -prune -o)
-    done
+  return 0
+}
 
-    local file
-    while IFS= read -r -d '' file; do
-      [[ -f "$file" ]] || continue
-      # Include both the file path (so relative-path tokens match) and its contents.
-      SUBSTANCE_CORPUS+=" ${file} "
-      SUBSTANCE_CORPUS+="$(cat "$file" 2>/dev/null || true)"
-    done < <(find "$session_dir" "${prune_args[@]}" -type f -print0 2>/dev/null || true)
+_session_path_token_exists() {
+  local token="$1"
+  local session_dir="$2"
+  local rel_path candidate
+
+  [[ -n "$session_dir" && -d "$session_dir" ]] || return 1
+
+  if [[ "$token" == "$session_dir/"* ]]; then
+    rel_path="${token#"$session_dir"/}"
+    candidate="$token"
+  elif [[ "$token" == /* ]]; then
+    rel_path="${token#/}"
+    candidate="${session_dir}/${rel_path}"
+  else
+    rel_path="${token#./}"
+    candidate="${session_dir}/${rel_path}"
   fi
 
-  # Project repo root (git-tracked files only — bounded, no .git/node_modules).
-  local repo_root
-  repo_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)"
+  _path_allowed_for_substance "$rel_path" || return 1
+  [[ -f "$candidate" ]]
+}
 
-  if [[ -n "$repo_root" && -d "$repo_root" ]]; then
-    # Build path-prefix exclusion patterns for grep.
-    local exclude_pattern=""
-    local d
-    for d in "${exclude_dirs[@]}"; do
-      exclude_pattern="${exclude_pattern}${exclude_pattern:+|}^${d}/"
-    done
+_repo_path_token_exists() {
+  local token="$1"
+  local repo_root="$2"
+  local rel_path
 
-    local tracked_files
-    tracked_files="$(git -C "$repo_root" ls-files 2>/dev/null || true)"
+  [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
 
-    if [[ -n "$exclude_pattern" ]]; then
-      tracked_files="$(printf '%s\n' "$tracked_files" | grep -Ev "$exclude_pattern" 2>/dev/null || true)"
-    fi
-
-    local rel_path
-    while IFS= read -r rel_path; do
-      [[ -n "$rel_path" ]] || continue
-      local abs_path="${repo_root}/${rel_path}"
-      [[ -f "$abs_path" ]] || continue
-      # Include both the file path (so path-like tokens match) and its contents.
-      SUBSTANCE_CORPUS+=" ${abs_path} "
-      SUBSTANCE_CORPUS+="$(cat "$abs_path" 2>/dev/null || true)"
-    done <<< "$tracked_files"
+  if [[ "$token" == "$repo_root/"* ]]; then
+    rel_path="${token#"$repo_root"/}"
+  elif [[ "$token" == /* ]]; then
+    rel_path="${token#/}"
+  else
+    rel_path="${token#./}"
   fi
+
+  _path_allowed_for_substance "$rel_path" || return 1
+  git -C "$repo_root" ls-files --error-unmatch -- "$rel_path" >/dev/null 2>&1 || return 1
+  [[ -f "${repo_root}/${rel_path}" ]]
+}
+
+_session_content_contains_token() {
+  local token="$1"
+  local session_dir="$2"
+  local prune_args=()
+  local d
+
+  [[ -n "$session_dir" && -d "$session_dir" ]] || return 1
+
+  for d in "${SUBSTANCE_EXCLUDE_DIRS[@]}"; do
+    prune_args+=(-path "${session_dir}/${d}" -prune -o)
+  done
+
+  find "$session_dir" "${prune_args[@]}" -type f -exec grep -F -q -- "$token" {} + >/dev/null 2>&1
+}
+
+_repo_content_contains_token() {
+  local token="$1"
+  local repo_root="$2"
+  local pathspecs=(".")
+  local d
+
+  [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
+
+  for d in "${SUBSTANCE_EXCLUDE_DIRS[@]}"; do
+    pathspecs+=(":(exclude)${d}/**")
+  done
+
+  git -C "$repo_root" grep -F -q -e "$token" -- "${pathspecs[@]}" 2>/dev/null
+}
+
+_token_present_in_substance() {
+  local token="$1"
+  local session_dir="$2"
+  local repo_root="$3"
+
+  if [[ "$token" == *"/"* ]]; then
+    _session_path_token_exists "$token" "$session_dir" && return 0
+    _repo_path_token_exists "$token" "$repo_root" && return 0
+  fi
+
+  _session_content_contains_token "$token" "$session_dir" && return 0
+  _repo_content_contains_token "$token" "$repo_root" && return 0
+  return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -374,7 +415,8 @@ fi
 declare -A _token_present
 declare -A _token_checked
 
-_build_substance_corpus
+session_substance_dir="$(active_session_dir 2>/dev/null || true)"
+repo_substance_root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)"
 
 sub_offender_id=""
 sub_missing_token=""
@@ -397,7 +439,7 @@ while IFS=$'\t' read -r ass_id evidence_item; do
   fi
 
   _token_checked["$token"]=1
-  if [[ "$SUBSTANCE_CORPUS" == *"$token"* ]]; then
+  if _token_present_in_substance "$token" "$session_substance_dir" "$repo_substance_root"; then
     _token_present["$token"]="1"
   else
     _token_present["$token"]="0"

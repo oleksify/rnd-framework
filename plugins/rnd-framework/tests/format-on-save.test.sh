@@ -159,7 +159,69 @@ fi
 rm -f "${tmp_project}/biome.json"
 
 # ---------------------------------------------------------------------------
-# Test 10: malformed JSON input → exit 0
+# Test 10: package.json fmt script dispatch
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- format-on-save: package.json fmt script ---'
+
+rm -f "${session_dir}/.formatter-cache" "${tmp_project}/package.json" "${tmp_project}/bun.lock" "${tmp_project}/bun.lockb"
+runner_dir="$(mktemp -d)"
+runner_log="$(mktemp)"
+cat > "${runner_dir}/npm" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" > "$runner_log"
+exit 0
+EOF
+chmod +x "${runner_dir}/npm"
+
+cat > "${tmp_project}/package.json" <<'EOF'
+{
+  "scripts": {
+    "fmt": "echo fmt"
+  }
+}
+EOF
+touch "${tmp_project}/fmt-only.ts"
+run_fmt_hook '{"tool_input":{"file_path":"'"${tmp_project}/fmt-only.ts"'"}}' "CLAUDE_CONFIG_DIR=${tmp_config}" "PATH=${runner_dir}:$PATH"
+assert_exit_code "fmt script hook exits 0" 0
+cache_fmt="$(cat "${session_dir}/.formatter-cache")"
+assert_contains "fmt script cache uses npm run fmt --" '"command":"npm run fmt --"' "$cache_fmt"
+assert_eq "fmt script runner receives npm run fmt -- file" "run fmt -- ${tmp_project}/fmt-only.ts" "$(cat "$runner_log")"
+rm -rf "$runner_dir"
+rm -f "$runner_log" "${tmp_project}/package.json"
+
+# ---------------------------------------------------------------------------
+# Test 11: package.json format script still dispatches format
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- format-on-save: package.json format script ---'
+
+rm -f "${session_dir}/.formatter-cache" "${tmp_project}/package.json" "${tmp_project}/bun.lock" "${tmp_project}/bun.lockb"
+runner_dir="$(mktemp -d)"
+runner_log="$(mktemp)"
+cat > "${runner_dir}/npm" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" > "$runner_log"
+exit 0
+EOF
+chmod +x "${runner_dir}/npm"
+
+cat > "${tmp_project}/package.json" <<'EOF'
+{
+  "scripts": {
+    "format": "echo format"
+  }
+}
+EOF
+touch "${tmp_project}/format.ts"
+run_fmt_hook '{"tool_input":{"file_path":"'"${tmp_project}/format.ts"'"}}' "CLAUDE_CONFIG_DIR=${tmp_config}" "PATH=${runner_dir}:$PATH"
+assert_exit_code "format script hook exits 0" 0
+cache_format="$(cat "${session_dir}/.formatter-cache")"
+assert_contains "format script cache uses npm run format --" '"command":"npm run format --"' "$cache_format"
+assert_eq "format script runner receives npm run format -- file" "run format -- ${tmp_project}/format.ts" "$(cat "$runner_log")"
+rm -rf "$runner_dir"
+rm -f "$runner_log" "${tmp_project}/package.json"
+
+# ---------------------------------------------------------------------------
+# Test 12: malformed JSON input → exit 0
 # ---------------------------------------------------------------------------
 printf '\n%s\n' '--- format-on-save: malformed input ---'
 
@@ -169,7 +231,7 @@ assert_exit_code "malformed input → exit 0" 0
 assert_eq "malformed input → no stdout" "" "$HOOK_STDOUT"
 
 # ---------------------------------------------------------------------------
-# Test 11: command injection via file_path is not executed
+# Test 13: command injection via file_path is not executed
 # ---------------------------------------------------------------------------
 # Regression: formerly `eval "$formatter_cmd" "$file_path"` would expand $(...)
 # and backticks inside file_path. The array-split invocation must pass the path

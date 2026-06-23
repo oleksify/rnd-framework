@@ -16,8 +16,9 @@
 # The owning task is resolved by the manifest filename's uuid, NOT a substring
 # on the T<NN> slot. Manifests follow the canonical convention
 # M<NN>-T<NN>-<uuid>-manifest.md; the <uuid> is matched EXACTLY against
-# features.json .uuid, so M1.T01 and M2.T01 (which share the T01 slot) never
-# cross-contaminate. A manifest filename that does NOT match the convention
+# features.json .uuid, so tasks from different milestones can share the same
+# T<NN> slot without cross-contamination. A manifest filename that does NOT
+# match the convention
 # contributes NO attribution — it is skipped. Better an honest unattributable
 # than a substring-guessed wrong shape: there is no legacy substring fallback.
 #
@@ -45,7 +46,7 @@
 # order, so this is stable and deterministic.
 #
 # Unattributable findings (file in no manifest): emitted with shape:"unattributable".
-# No findings are ever dropped — FM4.
+# No findings are ever dropped.
 #
 # Clean-row mode: --clean-shape <shape> records a clean (session, shape) row for
 # an explicitly-given shape WITHOUT running file→task attribution and WITHOUT
@@ -309,7 +310,7 @@ if [[ -d "$builds_dir" ]] && [[ -f "$features_file" ]] && [[ -f "$audit_file" ]]
   if [[ -n "$best_uuid" ]]; then
     # Resolve the owning task from the winning manifest's uuid. Match EXACTLY
     # against features.json .uuid — never a substring on T<NN>, which repeats
-    # across milestones (M1.T01 and M2.T01 collide).
+    # across milestones and can legitimately collide.
     owning_task="$(jq -r --arg u "$best_uuid" '
       .tasks[]
       | select(.uuid == $u)

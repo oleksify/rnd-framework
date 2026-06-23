@@ -527,7 +527,7 @@ bash_cache_dir() {
 # Path-identity helpers — pure (input path → output string, no side effects)
 # ---------------------------------------------------------------------------
 
-# Normalizes an artifact file_path to absolute form (the FM1 guard).
+# Normalizes an artifact file_path to absolute form (the absolute-path guard).
 # An already-absolute path is returned unchanged. A relative path is resolved
 # via `realpath -e`; if resolution fails (path does not exist on disk), the
 # original relative path is returned so the caller can still fall back to it.

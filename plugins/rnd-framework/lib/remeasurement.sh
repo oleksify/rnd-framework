@@ -123,14 +123,19 @@ _is_dogfood_slug() {
 _count_sessions_in_slug() {
   local slug_dir="$1" boundary_epoch="$2"
   local n=0
-  local session_dir session_epoch
+  local session_dir session_epoch sessions_root
 
-  # Current layout: <slug>/branches/<branch>/sessions/<ts>/
-  for session_dir in "${slug_dir}branches/"/*/sessions/*/; do
-    [[ -d "$session_dir" ]] || continue
-    session_epoch="$(_parse_session_epoch "$(basename "$session_dir")")"
-    [[ "$session_epoch" -gt "$boundary_epoch" ]] && n=$((n + 1))
-  done
+  # Current layout: <slug>/branches/<branch>/sessions/<ts>/, with slash-containing
+  # branch names preserved as nested directories under branches/.
+  if [[ -d "${slug_dir}branches" ]]; then
+    while IFS= read -r -d '' sessions_root; do
+      for session_dir in "${sessions_root}/"*/; do
+        [[ -d "$session_dir" ]] || continue
+        session_epoch="$(_parse_session_epoch "$(basename "$session_dir")")"
+        [[ "$session_epoch" -gt "$boundary_epoch" ]] && n=$((n + 1))
+      done
+    done < <(find "${slug_dir}branches" -type d -path '*/sessions' -print0 2>/dev/null)
+  fi
 
   # Legacy layout: <slug>/sessions/<ts>/ (no branches/ tier)
   # The two glob roots are disjoint — no deduplication needed.

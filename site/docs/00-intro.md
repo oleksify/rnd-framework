@@ -15,7 +15,7 @@ The design borrows a few habits from how science and systems engineering keep wo
 
 ### Install
 
-```
+```bash
 /plugin marketplace add https://tangled.org/oleksify.me/rnd-framework.git
 /plugin install rnd-framework@oleksify-plugins
 ```

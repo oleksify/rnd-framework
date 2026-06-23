@@ -8,13 +8,14 @@ effort: high
 
 Review code changes using structured review criteria — single-pass, thorough inline analysis.
 
-**Distinct from Claude Code's native `/code-review`** (correctness + reuse/simplification cleanups at a chosen effort level, with an optional `--fix` to apply findings to the working tree). This pipeline-style review covers **seven categories** (architecture, security, correctness, testing, KISS, style, pipeline-context hygiene), writes a **persistent report** under `$RND_DIR/review/`, and offers `/rnd-framework:rnd-start` as the recommended next step so findings flow into the full plan → build → verify pipeline. Reach for native `/code-review` when you want a focused single-pass diff scan; reach for this when you want a broader audit that produces an artifact and integrates with the framework.
+**Distinct from Claude Code's native `/code-review`** (correctness + reuse/simplification cleanups at a chosen effort level, with an optional `--fix` to apply findings to the working tree). This pipeline-style review covers **seven categories** (architecture, security, correctness, testing, KISS, style, pipeline-context hygiene), writes a **persistent report** at `$RND_DIR/review-report.md`, and offers `/rnd-framework:rnd-start` as the recommended next step so findings flow into the full plan → build → verify pipeline. Reach for native `/code-review` when you want a focused single-pass diff scan; reach for this when you want a broader audit that produces an artifact and integrates with the framework.
 
 ## Setup
 
 ```bash
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
-mkdir -p "$RND_DIR/review"
+REVIEW_REPORT="$RND_DIR/review-report.md"
+mkdir -p "$(dirname "$REVIEW_REPORT")"
 ```
 
 ## Phase 0: Scope Detection
@@ -41,7 +42,7 @@ Collect the full diff output and the list of changed files. If the diff is empty
 
 1. **Detect tech stack.** Scan changed file extensions to identify the project's languages and frameworks.
 2. **Load KISS practices.** Invoke `rnd-framework:rnd-kiss-practices` and read the language files matching the project's stack.
-3. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load the six review categories, four severity levels, verdict taxonomy, and report template.
+3. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load the seven review categories, four severity levels, verdict taxonomy, and report template.
 
 ## Phase 2: Review
 
@@ -72,4 +73,4 @@ Present findings using `AskUserQuestion`:
 
 ## Output Discipline
 
-This command produces a report artifact under `$RND_DIR/review/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Review complete — see review.md") without printing it verbatim is a defect.
+This command produces a report artifact at `$RND_DIR/review-report.md`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Review complete — see review-report.md") without printing it verbatim is a defect.

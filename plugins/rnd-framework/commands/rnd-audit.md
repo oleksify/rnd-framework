@@ -12,7 +12,8 @@ Audit the entire codebase using structured review criteria — single-pass, thor
 
 ```bash
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
-mkdir -p "$RND_DIR/audit"
+AUDIT_REPORT="$RND_DIR/audit-report.md"
+mkdir -p "$(dirname "$AUDIT_REPORT")"
 ```
 
 ## Phase 0: Standards Discovery
@@ -57,4 +58,4 @@ Present findings using `AskUserQuestion`:
 
 ## Output Discipline
 
-This command produces a report artifact under `$RND_DIR/audit/`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Audit complete — see audit.md") without printing it verbatim is a defect.
+This command produces a report artifact at `$RND_DIR/audit-report.md`. Surface it per the **Report Surfacing Protocol** in your active output style: print the file path followed by the file's complete contents verbatim BEFORE any next-step prompt — in the same turn, including in autonomous/loop mode. Summarizing or merely referencing the file ("Audit complete — see audit-report.md") without printing it verbatim is a defect.

@@ -120,14 +120,14 @@ detect_formatter() {
 
   # package.json format/fmt script
   if [[ -f "${project_root}/package.json" ]]; then
-    local fmt_script
-    fmt_script="$(jq -r '.scripts.format // .scripts.fmt // empty' "${project_root}/package.json" 2>/dev/null || true)"
-    if [[ -n "$fmt_script" ]]; then
+    local script_key
+    script_key="$(jq -r 'if .scripts.format then "format" elif .scripts.fmt then "fmt" else empty end' "${project_root}/package.json" 2>/dev/null || true)"
+    if [[ -n "$script_key" ]]; then
       local runner="npm run"
       if [[ -f "${project_root}/bun.lockb" ]] || [[ -f "${project_root}/bun.lock" ]]; then
         runner="bun run"
       fi
-      printf '{"detected":true,"command":"%s format --","name":"package.json"}' "$runner"
+      printf '{"detected":true,"command":"%s %s --","name":"package.json"}' "$runner" "$script_key"
       return 0
     fi
   fi

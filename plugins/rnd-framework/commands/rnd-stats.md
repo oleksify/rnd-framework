@@ -267,7 +267,7 @@ fi
 Per-category finding counts and the theory-loss share: the fraction of
 categorized findings (excluding the 'uncategorized' bucket) whose category is
 'architecture' or 'kiss'. A high share is the signal that would justify building
-the theory-holder (M3); a low share argues to cancel it (per the M12 precedent).
+a dedicated theory-holder; a low share argues against doing that work.
 
 The `*/post-review.jsonl` glob hard-errors on a zero-file match — guard its
 existence first, mirroring the Section 8 probe guard.

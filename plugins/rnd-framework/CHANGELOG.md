@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.4 — 2026-07-03
+
+### Session-cache contamination fix, audit-event reliability, and review hardening
+
+Prevent the .active-base-dir fast-path cache from returning a foreign project's session (ownership check against .session-git-root). Emit destructive_git_blocked and rnd_undo_applied audit events reliably by passing RND_DIR explicitly. Round false_pass_rate with a locale-pinned awk instead of integer truncation. Fix the never-firing cleanup-bloat audit guard, jq field interpolation, git-clean flag word-splitting, a NULL leak in self_fail_vs_verdict_gap, non-numeric task_count rows in outside-view, duckdb .read path quoting, a glob-expansion exposure in evidence-locking-gate, the stale rnd-framework-plugins marketplace name, and the stale sonnet verifier default in docs.
+
 ## 0.18.3 — 2026-06-23
 
 ### Remediate audit findings across hooks, docs, and renderer

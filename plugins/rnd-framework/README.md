@@ -90,7 +90,7 @@ These are the active public slash commands tracked in `plugins/rnd-framework/com
 | `rnd-planner` | opus / high | Decomposes the frozen scope; emits the four plan artifacts |
 | `rnd-builder` | sonnet / high | Implements one task with TDD; writes a manifest + self-assessment |
 | `rnd-reality-auditor` | sonnet / low | Audits declared external references (URLs, APIs, schemas, env vars) |
-| `rnd-verifier` | sonnet / high | Independent verification behind the information barrier |
+| `rnd-verifier` | opus / high | Independent verification behind the information barrier |
 | `rnd-cleanup` | sonnet / medium | Per-task dead-code sweep after PASS; rolls back if it breaks re-verification |
 | `rnd-polisher` | opus / high | Wave-level cross-task seam fixer (duplication, naming drift) |
 | `rnd-integrator` | haiku / low | Merges verified outputs, runs integration tests, SHIP/NO-SHIP |

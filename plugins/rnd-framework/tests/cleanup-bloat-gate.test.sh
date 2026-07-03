@@ -218,4 +218,30 @@ assert_exit_code "no active session → exit 0" 0
 assert_eq "no active session → empty stderr" "" "$HOOK_STDERR"
 
 # ---------------------------------------------------------------------------
+# Test 9: RND_DIR UNSET in env (the real hook condition) — the audit event must
+# still fire, resolved via session_dir. Revert-proof: the old ${RND_DIR:-} guard
+# never fired the event because this hook never sets RND_DIR.
+# ---------------------------------------------------------------------------
+printf '\n%s\n' '--- cleanup-bloat-gate: RND_DIR unset → audit event still emitted ---'
+
+REPORT_F="${TMP_SESSION}/cleanup/T10-cleanup-report.md"
+printf '# Cleanup Report: T10\n\nDeletion ratio: 1 / 100\n\n## Outcome\ncleanup applied\n' \
+  > "$REPORT_F"
+
+reset_audit
+HOOK_EXIT=0
+stdout_file="$(mktemp)"; stderr_file="$(mktemp)"
+printf '%s' '{"agent_type":"rnd-cleanup","stop_reason":"end_turn"}' \
+  | env -i PATH="$PATH" HOME="$HOME" \
+      CLAUDE_CONFIG_DIR="$TMP_CONFIG" \
+      "$HOOK" >"$stdout_file" 2>"$stderr_file" || HOOK_EXIT=$?
+HOOK_STDERR="$(cat "$stderr_file")"; rm -f "$stdout_file" "$stderr_file"
+
+assert_exit_code "RND_DIR unset → exit 0" 0
+count="$(audit_event_count "bloat_aversion_underperform")"
+assert_eq "RND_DIR unset → audit event STILL emitted (via session_dir)" "1" "$count"
+
+rm -f "$REPORT_F"
+
+# ---------------------------------------------------------------------------
 report

@@ -149,8 +149,10 @@ fi
 # ---------------------------------------------------------------------------
 
 if [[ "$ratio_pct" -lt "$BLOAT_THRESHOLD" ]]; then
-  if [[ -n "${RND_DIR:-}" ]]; then
-    bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
+  # This hook never sets RND_DIR; the active session is in session_dir (line 24).
+  # audit-event.sh writes to $RND_DIR/audit.jsonl, so pass it explicitly.
+  if [[ -n "$session_dir" ]]; then
+    RND_DIR="$session_dir" bash "$(dirname "${BASH_SOURCE[0]}")/../lib/audit-event.sh" \
       "gate_fired" "$task_id" "bloat_aversion_underperform" 2>/dev/null || true
   fi
 

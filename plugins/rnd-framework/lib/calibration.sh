@@ -100,7 +100,7 @@ _window() {
 _false_pass_rate() {
   local tier="${1:?tier required}"
   local n="${2:-10}"
-  local records total count pct
+  local records total count
 
   records="$(_window "$tier" "$n")"
 
@@ -121,8 +121,10 @@ _false_pass_rate() {
     return 0
   fi
 
-  pct=$(( count * 100 / total ))
-  printf '%d.%02d\n' $(( pct / 100 )) $(( pct % 100 ))
+  # Round to 2 decimals (awk), not integer-truncate — the old %d.%02d path
+  # dropped the trailing digit (2/3 → 0.66 instead of 0.67). count/total are
+  # integers from jq length; passed via -v so nothing is interpolated.
+  awk -v c="$count" -v t="$total" 'BEGIN { printf "%.2f\n", c / t }'
 }
 
 _should_promote() {

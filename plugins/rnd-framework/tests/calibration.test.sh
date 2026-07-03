@@ -198,4 +198,21 @@ printf '%s\n' \
 snake_only_rate="$(CLAUDE_PLUGIN_DATA="$SNAKE_ONLY_DIR" "$CALIB" false_pass_rate NORMAL)"
 assert_eq "false_pass_rate with snake_case-only fixture = 0.30" "0.30" "$snake_only_rate"
 
+# ---------------------------------------------------------------------------
+# false_pass_rate rounds, not truncates. 2 FALSE_PASS of 3 → 0.6667.
+# Revert-proof: the old integer %d.%02d path truncated to 0.66.
+# ---------------------------------------------------------------------------
+printf '\n--- calibration: false_pass_rate rounds (not truncates) ---\n'
+
+ROUND_DIR="${TMP_DIR}/round-data"
+mkdir -p "$ROUND_DIR"
+cat > "${ROUND_DIR}/calibration.jsonl" <<'JSONL'
+{"criticality":"LOW","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}
+{"criticality":"LOW","verdict":"PASS","false_verdict_flag":"FALSE_PASS"}
+{"criticality":"LOW","verdict":"PASS","false_verdict_flag":null}
+JSONL
+
+round_rate="$(CLAUDE_PLUGIN_DATA="$ROUND_DIR" "$CALIB" false_pass_rate LOW)"
+assert_eq "false_pass_rate 2/3 rounds to 0.67 (not truncated 0.66)" "0.67" "$round_rate"
+
 report

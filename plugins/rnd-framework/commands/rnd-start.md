@@ -717,7 +717,7 @@ After showing the narrative, re-present the Tier 1 `AskUserQuestion` menu unchan
 
 ### RND Code Review
 
-When the user selects "Run RND code review first," run the **framework's own** seven-category review — the same flow as Phase 8: invoke `rnd-framework:rnd-code-review` to load the categories, severity levels, verdict taxonomy, and report template, review the pipeline diff, and write `$RND_DIR/review/post-ship-review.md` (surface it per the Report Surfacing Protocol). Equivalently, you may run `/rnd-framework:rnd-review`.
+When the user selects "Run RND code review first," run the **framework's own** seven-category review — the same flow as Phase 8: invoke `rnd-framework:rnd-code-review` to load the categories, severity levels, verdict taxonomy, and report template, review the pipeline diff, and write `$RND_DIR/review/post-ship-review.md` (surface it per the Report Surfacing Protocol). Note: `/rnd-framework:rnd-review` is a related standalone command but is **not** a drop-in equivalent here — it writes its report to `$RND_DIR/review-report.md`, a different path that the Phase 7/8 existence check below does not look for. Run the review inline as described rather than delegating to that command.
 
 **Do NOT invoke Claude Code's native `/code-review` (or `/review`, `/security-review`) command here.** "Run RND code review first" means the framework's review, not the native diff-scan skill. If Phase 8 already produced `$RND_DIR/review/post-ship-review.md` this session, surface that report instead of re-running.
 

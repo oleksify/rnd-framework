@@ -62,7 +62,7 @@ _validate_manifest() {
 
   local field
   for field in "${DISALLOWED_FIELDS[@]}"; do
-    if printf '%s' "$content" | jq -e "has(\"$field\")" >/dev/null 2>&1; then
+    if printf '%s' "$content" | jq -e --arg f "$field" 'has($f)' >/dev/null 2>&1; then
       printf '%s' "$field"
       return 1
     fi

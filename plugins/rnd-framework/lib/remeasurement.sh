@@ -197,7 +197,7 @@ _query_view() {
   (
     cd "$rnd_root"
     duckdb -noheader -list \
-      -c ".read ${stats_dir}/${sql_file}" \
+      -c ".read '${stats_dir}/${sql_file}'" \
       -c "$select_sql"
   )
 }

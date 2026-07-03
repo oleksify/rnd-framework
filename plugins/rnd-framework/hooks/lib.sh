@@ -198,11 +198,38 @@ resolve_rnd_dir() {
   [[ -n "$result" ]] && printf '%s' "$result" || return 1
 }
 
+# Returns 0 (trust the cache) UNLESS the cached <base_dir> can be PROVEN to
+# belong to a different project. The .active-base-dir cache is a SINGLE file
+# shared by every project under one config dir, so a concurrent or prior session
+# in a DIFFERENT project can leave a foreign base-dir there. session-start.sh
+# records the git root each base-dir was created for at <base_dir>/.session-git-root;
+# this compares it against the cwd's git toplevel and returns 1 ONLY when both
+# roots are known and differ. When either root is unknown we cannot prove a
+# mismatch, so we keep the legacy behavior of trusting the cache (back-compat for
+# non-git or pre-.session-git-root sessions). The cross-project contamination
+# case — two git projects sharing the global cache — IS caught, because
+# session-start.sh always records .session-git-root for a git project.
+_cache_base_owns_cwd() {
+  local base_dir="$1"
+  local recorded_root cwd_root
+  # NB: $(< file) must stand alone — adding `2>/dev/null` defeats bash's
+  # content-read fast path and yields an empty string, so guard with -f instead.
+  [[ -f "${base_dir}/.session-git-root" ]] || return 0
+  recorded_root="$(< "${base_dir}/.session-git-root")"
+  [[ -n "$recorded_root" ]] || return 0
+  cwd_root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
+  [[ -n "$cwd_root" ]] || return 0
+  [[ "$cwd_root" == "$recorded_root" ]]
+}
+
 # Returns the active session directory path when it exists and contains /sessions/.
 # Prints nothing and returns 1 otherwise.
 # Uses a process-level cache and a fast-path that reads a cached base-dir file
-# written by session-start.sh, avoiding the expensive git+shasum computation
-# (~15ms) on every hook invocation.
+# written by session-start.sh. The fast-path is trusted ONLY when the cached
+# base-dir belongs to the current project (_cache_base_owns_cwd); otherwise it
+# falls through to the slow path (git+shasum), which recomputes the correct
+# project-scoped dir from the cwd. The added git toplevel lookup is far cheaper
+# than the full slow path and prevents cross-project session contamination.
 _ACTIVE_SESSION_CACHE=""
 _ACTIVE_SESSION_RESOLVED=0
 active_session_dir() {
@@ -220,7 +247,8 @@ active_session_dir() {
   if [[ -f "$cache_file" ]]; then
     local base_dir
     base_dir="$(< "$cache_file")"
-    if [[ -n "$base_dir" && -f "${base_dir}/.current-session" ]]; then
+    if [[ -n "$base_dir" && -f "${base_dir}/.current-session" ]] \
+       && _cache_base_owns_cwd "$base_dir"; then
       local session_id
       session_id="$(< "${base_dir}/.current-session")"
       [[ "$session_id" =~ $SESSION_ID_RE ]] || return 1

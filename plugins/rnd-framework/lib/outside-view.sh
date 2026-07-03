@@ -86,6 +86,13 @@ parse_rows() {
       continue
     fi
 
+    # task_count feeds integer arithmetic below; a non-numeric value would
+    # silently evaluate to 0 under $((...)). Drop the row like an empty field.
+    if [[ ! "$task_count" =~ ^[0-9]+$ ]]; then
+      DROPPED_COUNT=$((DROPPED_COUNT + 1))
+      continue
+    fi
+
     if [[ "$segment" == "dogfood" ]]; then
       N_TOTAL=$((N_TOTAL + task_count))
     fi

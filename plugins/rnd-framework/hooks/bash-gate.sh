@@ -221,7 +221,13 @@ check_segment() {
       if [[ "$seg" =~ ^git[[:space:]]+clean[[:space:]]+ ]]; then
         local _clean_args="${seg#*clean }"
         local _clean_flags=""
-        for _a in $_clean_args; do
+        # Split on whitespace via an array read so a quoted/space-containing path
+        # arg can't word-split or glob-expand; only -flag tokens are accumulated
+        # for the f + d/x check below (semantics unchanged).
+        local -a _clean_tokens=()
+        read -ra _clean_tokens <<< "$_clean_args"
+        local _a
+        for _a in "${_clean_tokens[@]}"; do
           if [[ "$_a" == -* ]]; then _clean_flags+="$_a"; fi
         done
         local _has_f=0 _has_fdx=0

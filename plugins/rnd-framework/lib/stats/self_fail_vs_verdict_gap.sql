@@ -123,7 +123,8 @@ WITH
            THEN 'dogfood' ELSE 'feature' END AS segment,
       COALESCE(
         a.build_status IN ('NEEDS_CONTEXT', 'BLOCKED'),  -- new records
-        a.self_verdict = 'FAIL'                          -- legacy fallback
+        a.self_verdict = 'FAIL',                         -- legacy fallback
+        false                                            -- neither field present → not a self-fail (don't leak NULL into the <> filter)
       )                                      AS self_fail,
       (v.verdict <> 'PASS')                  AS verifier_fail
     FROM verdicts v

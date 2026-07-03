@@ -47,7 +47,9 @@ printf '#!/usr/bin/env bash\nprintf "%%s" "%s"\n' "$TMP_SESSION" > "${FAKE_LIB}/
 chmod +x "${FAKE_LIB}/rnd-dir.sh"
 
 AUDIT_LOG="${TMP_DIR}/audit-calls.log"
-printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" >> "%s"\n' "$AUDIT_LOG" > "${FAKE_LIB}/audit-event.sh"
+# The fake prepends RND_DIR=<value> so the test can assert rnd-undo.sh passes
+# it through — the real audit-event.sh bails when RND_DIR is missing from env.
+printf '#!/usr/bin/env bash\nprintf "RND_DIR=%%s %%s\\n" "${RND_DIR:-}" "$*" >> "%s"\n' "$AUDIT_LOG" > "${FAKE_LIB}/audit-event.sh"
 chmod +x "${FAKE_LIB}/audit-event.sh"
 
 # Override CLAUDE_PLUGIN_ROOT so rnd-undo.sh picks up fake lib scripts
@@ -206,6 +208,12 @@ else
   printf '  FAIL  apply emitted %s audit events (expected 2)\n' "$audit_count"
   TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
+
+# every audit call must carry a populated RND_DIR in its environment — the real
+# audit-event.sh refuses to write without it. Revert-proof: without the
+# RND_DIR= prefix at the emit_audit_event call site, the fake logs "RND_DIR= ".
+rnd_dir_missing="$(grep -c '^RND_DIR= ' "$AUDIT_LOG" 2>/dev/null || true)"
+assert_eq "every audit event received RND_DIR in env" "0" "$rnd_dir_missing"
 
 # ---------------------------------------------------------------------------
 report

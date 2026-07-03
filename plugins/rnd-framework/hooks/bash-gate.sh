@@ -193,9 +193,20 @@ check_segment() {
 
       # Emit one gate_fired audit event with the specific op name in the tool slot
       # so downstream analytics can discriminate which destructive op was blocked.
+      # PreToolUse hooks never receive RND_DIR in their environment, and
+      # audit-event.sh requires it — so honor an explicitly exported RND_DIR,
+      # else resolve the active session dir (mirrors the SubagentStop gates).
+      # Neither available → skip emission.
       _emit_destructive_git_block() {
         local _op_name="$1"
-        bash "$_audit_event_sh" "gate_fired" "" "destructive_git_blocked:${_op_name}" 2>/dev/null || true
+        local _session_dir="${RND_DIR:-}"
+
+        if [[ -z "$_session_dir" ]]; then
+          _session_dir="$(active_session_dir)" || return 0
+        fi
+
+        RND_DIR="$_session_dir" bash "$_audit_event_sh" \
+          "gate_fired" "" "destructive_git_blocked:${_op_name}" 2>/dev/null || true
       }
 
       if [[ "$seg" =~ ^git[[:space:]]+reset[[:space:]]+--hard($|[[:space:]]) ]]; then

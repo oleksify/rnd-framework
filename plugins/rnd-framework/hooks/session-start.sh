@@ -109,7 +109,7 @@ if [[ -n "$cached_version" ]]; then
       [[ "$src_name" == "rnd-framework" ]] || continue
       src_version="$(jq_extract "$(< "$candidate")" '.version')"
       if [[ -n "$src_version" && "$src_version" != "$cached_version" ]]; then
-        version_warning=$'\n\n'"⚠ **Plugin version mismatch:** cached v${cached_version}, source v${src_version}. Run \`/plugin update rnd-framework@rnd-framework-plugins\` to sync."
+        version_warning=$'\n\n'"⚠ **Plugin version mismatch:** cached v${cached_version}, source v${src_version}. Run \`/plugin update rnd-framework@oleksify-plugins\` to sync."
       fi
       break
     done

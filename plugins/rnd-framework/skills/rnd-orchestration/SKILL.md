@@ -180,7 +180,7 @@ Agent({
 |---|---|---|---|
 | `rnd-planner` | opus | high | yes |
 | `rnd-builder` | sonnet | high | yes |
-| `rnd-verifier` | sonnet | high | yes |
+| `rnd-verifier` | opus | high | yes |
 | `rnd-debugger` | sonnet | high | yes |
 | `rnd-reality-auditor` | sonnet | low | no |
 | `rnd-cleanup` | sonnet | medium | no |

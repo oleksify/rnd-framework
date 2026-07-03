@@ -94,7 +94,10 @@ _extract_citable_token() {
 
   # Longest contiguous run containing '/'.
   # Split on whitespace, keep runs that contain '/', pick the longest.
+  # set -f suspends globbing for the intentional word-split — evidence text is
+  # data, and a token like `src/*` must not expand against the cwd.
   local word longest=""
+  set -f
   for word in $s; do
     if [[ "$word" == *"/"* ]]; then
       if [[ "${#word}" -gt "${#longest}" ]]; then
@@ -102,6 +105,7 @@ _extract_citable_token() {
       fi
     fi
   done
+  set +f
 
   if [[ -n "$longest" ]]; then
     # Normalize a path-like token: drop a trailing line[:col] reference

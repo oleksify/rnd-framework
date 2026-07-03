@@ -41,7 +41,7 @@ query_duckdb() {
   (
     cd "$rnd_root"
     duckdb -csv -noheader \
-      -c ".read ${sql_path}" \
+      -c ".read '${sql_path}'" \
       -c "SELECT * FROM per_shape_fail_rate ORDER BY segment, shape" \
       2>/dev/null
   ) || true

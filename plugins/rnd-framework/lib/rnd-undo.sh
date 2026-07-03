@@ -116,8 +116,11 @@ emit_audit_event() {
 
   local audit_script="${CLAUDE_PLUGIN_ROOT}/lib/audit-event.sh"
 
+  # RND_DIR is resolved in main as an unexported shell variable, so the child
+  # process would not inherit it — pass it explicitly (same contract as
+  # run-tool.sh's audit-event.sh invocation).
   if [[ -x "$audit_script" ]]; then
-    "$audit_script" rnd_undo_applied "$task_id" "$path" || true
+    RND_DIR="$RND_DIR" "$audit_script" rnd_undo_applied "$task_id" "$path" || true
   fi
 }
 

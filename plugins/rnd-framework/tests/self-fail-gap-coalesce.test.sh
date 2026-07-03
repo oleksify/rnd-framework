@@ -46,7 +46,7 @@ printf '%s\n' \
 gap_count="$(
   cd "$RND_ROOT" \
     && RND_DOGFOOD_SLUGS="" duckdb -csv -noheader \
-         -c ".read ${SQL}" \
+         -c ".read '${SQL}'" \
          -c "SELECT gap_count FROM self_fail_vs_verdict_gap" 2>/dev/null
 )"
 

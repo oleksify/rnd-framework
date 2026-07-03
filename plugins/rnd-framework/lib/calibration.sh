@@ -124,7 +124,9 @@ _false_pass_rate() {
   # Round to 2 decimals (awk), not integer-truncate — the old %d.%02d path
   # dropped the trailing digit (2/3 → 0.66 instead of 0.67). count/total are
   # integers from jq length; passed via -v so nothing is interpolated.
-  awk -v c="$count" -v t="$total" 'BEGIN { printf "%.2f\n", c / t }'
+  # LC_ALL=C pins the decimal separator to '.' — under a comma-decimal
+  # LC_NUMERIC, %.2f would emit "0,67" and break downstream parsing.
+  LC_ALL=C awk -v c="$count" -v t="$total" 'BEGIN { printf "%.2f\n", c / t }'
 }
 
 _should_promote() {

@@ -238,4 +238,25 @@ assert_contains "audit.jsonl has all 6 gate_fired events" "6" "$_total_audit_cou
 
 rm -rf "$_tmp_rnd"
 
+printf '\n--- bash-gate: audit event emission with RND_DIR UNSET (real hook env) ---\n'
+
+# PreToolUse hooks never receive RND_DIR; the emitter must resolve the active
+# session itself. Revert-proof: with the active_session_dir fallback removed,
+# audit-event.sh bails on missing RND_DIR and no event is written.
+_session_id="20260101-120000-9a7e"
+_base_dir="${CLAUDE_CONFIG_DIR}/.rnd/gate-slug/branches/main"
+_session_dir="${_base_dir}/sessions/${_session_id}"
+mkdir -p "$_session_dir"
+printf '%s' "$_session_id" > "${_base_dir}/.current-session"
+printf '%s' "$_base_dir"   > "${CLAUDE_CONFIG_DIR}/.rnd/.active-base-dir"
+
+run_hook "$BASH_GATE" "$(_make_json 'git reset --hard HEAD')"
+assert_exit_code "git reset --hard is blocked with RND_DIR unset (exit 2)" 2
+
+_unset_audit_line="$(grep '"destructive_git_blocked:' "${_session_dir}/audit.jsonl" 2>/dev/null | tail -1)"
+assert_contains "RND_DIR unset → event still lands in active session audit.jsonl" \
+  '"destructive_git_blocked:reset_hard"' "$_unset_audit_line"
+
+rm -rf "${CLAUDE_CONFIG_DIR}/.rnd"
+
 report

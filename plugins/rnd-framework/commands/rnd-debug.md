@@ -35,7 +35,9 @@ Tell the user: "Starting debug pipeline for: [bug description]"
 
 ## Step 1: Diagnose
 
-Invoke `rnd-framework:rnd-debug-pipeline` and `rnd-framework:rnd-debugging` to load debugging discipline.
+Invoke `rnd-framework:rnd-debug-pipeline` and `rnd-framework:rnd-debugging` to load debugging discipline. If the bug involves a DSL, grammar, parser, interpreter, compiler, renderer, executor, or validator, also invoke `rnd-framework:rnd-language-design` before analyzing those paths.
+
+**Diagnosis-Only Boundary.** Diagnosis is read-only with respect to the project tree — the only permitted writes are `$RND_DIR` artifacts (`diagnosis/T1-diagnosis.md`, `protocol.md`). All project mutation belongs to the Builder in Step 2.
 
 ### Phase 1: Reproduce the Bug
 
@@ -137,9 +139,17 @@ The agent completes and returns its verdict via `SendMessage`. Wait for it befor
 
 - **PASS (quality: NEEDS ITERATION)** → Treat as PASS. Show quality feedback. Present same options.
 
-- **FAIL** → Keep task `in_progress`. Track iteration count. Re-implement and re-verify.
+- **FAIL** → Keep task `in_progress`. Track iteration count. Before re-iterating, check for a verdict flip:
 
-  If iteration budget (2) exhausted:
+  ```bash
+  RND_DIR="$RND_DIR" "${CLAUDE_PLUGIN_ROOT}/lib/audit-scan.sh" verdict_history T1
+  ```
+
+  If the output is `FLIP_DETECTED` (the verdict history oscillated, e.g. PASS → FAIL → PASS), the fix is churning rather than converging. Stop and use `AskUserQuestion`:
+  - "Escalate to full pipeline" — `/rnd-framework:rnd-start` with proper decomposition
+  - "Abandon task"
+
+  Otherwise re-implement and re-verify. If iteration budget (2) exhausted:
   - "Escalate to full pipeline"
   - "Iterate one more time"
   - "Abandon task"

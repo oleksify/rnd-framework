@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.0 — 2026-07-03
+
+### Port Droid rnd-audit hardening and add rnd-language-design skill
+
+Port the Factory Droid audit improvements: rnd-audit gains an Audit-Only Boundary (read-only; only write is audit-report.md), file-group partitioning, eleven audit-specific subchecks, and a mandatory Audit Coverage Ledger with explicit unavailable-check recording. New rnd-language-design skill (DSL/parser/compiler design packages with empirical specs), wired into rnd-audit, rnd-review, rnd-debug, rnd-brainstorm, and rnd-decomposition. audit-scan.sh verdict_history hardened: deterministic mtime+path ordering and flip detection widened to NEEDS_ITERATION and PASS_QUALITY_NEEDS_ITERATION. Analogous hardening for rnd-review (Review-Only Boundary + Review Coverage Ledger) and rnd-debug (Diagnosis-Only Boundary + verdict-flip stop condition before re-iterating). Adds contract tests for all three commands and the new skill.
+
 ## 0.18.4 — 2026-07-03
 
 ### Session-cache contamination fix, audit-event reliability, and review hardening

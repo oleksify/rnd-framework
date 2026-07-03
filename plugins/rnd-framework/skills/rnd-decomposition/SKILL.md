@@ -17,6 +17,7 @@ Decompose tasks into structured sub-task trees. Every sub-task gets a pre-regist
 
 - Planning phase of `/rnd-framework:rnd-start` or `/rnd-framework:rnd-plan`
 - Any non-trivial feature, refactor, or task with multiple moving parts or unclear success criteria
+- DSL or small-language work, after invoking `rnd-framework:rnd-language-design` so syntax, grammar, AST, semantics, diagnostics, and empirical fixtures are pre-registered explicitly
 
 ## The Iron Law
 
@@ -316,3 +317,4 @@ If the plan has >10 tasks or any HIGH criticality task, consider one additional 
 - `rnd-framework:rnd-scaling` — For choosing pipeline scale
 - `rnd-framework:rnd-orchestration` — For pipeline overview
 - `rnd-framework:rnd-data-science` — When a task involves analytical or numerical work
+- `rnd-framework:rnd-language-design` — Use for DSL and small-language planning before finalizing pre-registration details

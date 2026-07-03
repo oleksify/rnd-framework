@@ -16,6 +16,8 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 
 > **Model advisory:** Brainstorming benefits from maximum reasoning depth. Run this command with an Opus 4.8 session and set effort to `high` or above for best results — shallow reasoning during the ideation phase tends to surface obvious options and miss the tricky constraints that matter most. If the session is already running a lighter model, the structured phases below will still work, but expect to iterate more on Phase 4 scope decisions.
 
+If the idea involves a DSL, rules language, template language, query language, or other small language, invoke `rnd-framework:rnd-language-design` before Phase 3 so the conversation covers syntax, semantics, diagnostics, and empirical specification artifacts instead of only product framing.
+
 ## Phase 1: Seed
 
 Get the initial idea on the table.

@@ -18,6 +18,12 @@ REVIEW_REPORT="$RND_DIR/review-report.md"
 mkdir -p "$(dirname "$REVIEW_REPORT")"
 ```
 
+## Review-Only Boundary
+
+`rnd-review` is read-only with respect to the project tree. Do not modify, create, delete, format, stage, commit, push, tag, or otherwise mutate project files during the review. The only permitted write is `$RND_DIR/review-report.md`, plus creating `$RND_DIR` if it does not exist.
+
+If the user chooses the fix option, stop the review after recommending the separate `/rnd-framework:rnd-start` command. Do not fix findings inline from inside `rnd-review`.
+
 ## Phase 0: Scope Detection
 
 Parse `$ARGUMENTS` to determine what to review:
@@ -43,6 +49,7 @@ Collect the full diff output and the list of changed files. If the diff is empty
 1. **Detect tech stack.** Scan changed file extensions to identify the project's languages and frameworks.
 2. **Load KISS practices.** Invoke `rnd-framework:rnd-kiss-practices` and read the language files matching the project's stack.
 3. **Load review criteria.** Invoke `rnd-framework:rnd-code-review` to load the seven review categories, four severity levels, verdict taxonomy, and report template.
+4. **Load language-design guidance when relevant.** If the diff touches a DSL, grammar, parser, interpreter, compiler, renderer, executor, or validator, invoke `rnd-framework:rnd-language-design` before reviewing those changes.
 
 ## Phase 2: Review
 
@@ -52,6 +59,20 @@ Systematically examine the diff against the seven review categories:
 For each category, check every changed file. Use Read/Grep to inspect surrounding context. If a large diff warrants a broad codebase sweep, spawn `rnd-framework:rnd-explorer` (narrow read-only grant, spawns reliably) — never the built-in `Explore` or `general-purpose` agents, which inherit the full MCP tool surface and fail to spawn with "Prompt is too long" in MCP-heavy sessions. Produce findings with severity levels (critical, major, minor, info).
 
 Save the review report to `$RND_DIR/review-report.md` with an `## Overall Verdict: CLEAN | ISSUES_FOUND | CRITICAL_ISSUES` line.
+
+## Required Review Report Contents
+
+Write `$RND_DIR/review-report.md` using the report structure from `rnd-code-review`, without copying its full category table into this command.
+
+The report must include `## Review Coverage Ledger` with an evidence-bearing entry for every changed file, including files that were skipped. Each ledger entry must record:
+- the changed file examined
+- the review categories covered
+- commands or evidence used
+- whether the file was examined or skipped, and the reason when skipped
+- unavailable checks, if any, with reasons
+- resulting findings, or an explicit "no findings" note backed by file paths, line references, or equivalent reproducible evidence
+
+Do not imply coverage you did not achieve. If a file or check could not be examined, record that limit explicitly in the ledger. Record unavailable checks in the coverage ledger rather than treating them as clean.
 
 ## Phase 3: Report
 

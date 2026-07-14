@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.1 — 2026-07-14
+
+### Add deferred-tool ToolSearch preflight to pipeline templates
+
+In MCP-heavy sessions Claude Code defers non-core tools (their schemas unloaded), so orchestrator calls to TaskCreate/TaskUpdate/TaskList/SendMessage failed with 'Invalid tool parameters'. Added a canonical Preflight section to rnd-orchestration and a self-contained ToolSearch preflight at every main-loop direct-call site (rnd-start, rnd-debug, rnd-resume, rnd-status, and the rnd-build/verify/integrate/plan/iteration skills). Subagent SendMessage references are unaffected — narrow tool grants are not deferred.
+
 ## 0.19.0 — 2026-07-03
 
 ### Port Droid rnd-audit hardening and add rnd-language-design skill

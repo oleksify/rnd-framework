@@ -73,7 +73,7 @@ If a wave still has failures after max iterations:
    - The approach is fundamentally flawed
 4. **Orchestrator decision:** Re-plan failing tasks, skip them, or escalate to user
 
-**Progress visibility:** When entering a wave iteration cycle, update the wave's active tasks via `TaskUpdate` to include the iteration count — e.g., `"Iterating Wave <N> (2/3)"`. This shows progress in the user's task list spinner and prevents the "silent pipeline" problem.
+**Progress visibility:** When entering a wave iteration cycle, update the wave's active tasks via `TaskUpdate` to include the iteration count — e.g., `"Iterating Wave <N> (2/3)"`. This shows progress in the user's task list spinner and prevents the "silent pipeline" problem. (If `TaskUpdate` returns `Invalid tool parameters`, its schema is deferred — run `ToolSearch({query: "select:TaskUpdate"})` and retry; see `rnd-framework:rnd-orchestration` → Preflight.)
 
 Track wave iterations in `$RND_DIR/iteration-log.md` (compute `$RND_DIR` via `"${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh"` if not set; session is `${CLAUDE_SESSION_ID}`):
 

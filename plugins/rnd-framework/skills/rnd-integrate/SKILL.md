@@ -15,6 +15,8 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 
 Read the plan from `$RND_DIR/protocol.md`.
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions the `Task*` tools are deferred (schemas unloaded) and calling one fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before the calls below; retry after loading if a call still fails. See `rnd-framework:rnd-orchestration` → Preflight.
+
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-integrate` with no arguments):
 - Use `TaskList` to find the most recent wave where all tasks are `completed` (verified) and no integration report yet exists in `$RND_DIR/integration/`.
 - If found, proceed to integrate that wave.

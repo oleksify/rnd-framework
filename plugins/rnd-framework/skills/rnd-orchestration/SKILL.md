@@ -10,6 +10,18 @@ effort: medium
 ## When to activate
 Activate when the user invokes any `/rnd-framework:*` command, mentions "rnd framework", or when you detect a complex multi-step coding task that would benefit from structured decomposition and verification.
 
+## Preflight: Load Deferred Tool Schemas
+
+In MCP-heavy sessions Claude Code defers most non-core tools to protect the context window: their schemas are not loaded, and calling one directly fails with `Invalid tool parameters` (InputValidationError). The orchestrator drives the pipeline with several tools that are commonly deferred — `TaskCreate`, `TaskUpdate`, `TaskList`, `TaskGet`, and `SendMessage`.
+
+Load their schemas once, before the first `Task*` or `SendMessage` call:
+
+```
+ToolSearch({ query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet,SendMessage" })
+```
+
+The schemas persist for the rest of the session, so a single call suffices. A call that returns `Invalid tool parameters` is recoverable — it means the schema was not loaded, not that the plan is wrong: run `ToolSearch` for that tool and retry.
+
 ## Epistemic Foundation
 
 This is a scientific process. Treat every claim — including your own — with skepticism until proven by evidence.

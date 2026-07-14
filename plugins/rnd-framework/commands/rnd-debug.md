@@ -29,6 +29,8 @@ Determine the RND artifacts directory and create its structure:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 ```
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions `TaskCreate`/`TaskUpdate` are deferred (schemas unloaded) and calling one directly fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before the first such call; if a call still fails this way, load that tool via `ToolSearch` and retry.
+
 Write a minimal plan skeleton to `$RND_DIR/protocol.md`. Use `TaskCreate` to create a single task.
 
 Tell the user: "Starting debug pipeline for: [bug description]"

@@ -36,6 +36,8 @@ RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh" -c)
 
 Use `$RND_DIR` for all artifact paths below.
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions `TaskCreate`/`TaskUpdate`/`TaskList`/`SendMessage` are deferred (schemas unloaded) and calling one directly fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet,SendMessage"})` once, now, before any task-tracking or agent-messaging call below; if a call still fails this way, load that tool via `ToolSearch` and retry. See `rnd-framework:rnd-orchestration` → Preflight.
+
 ### Session-Local Skill Injection
 
 Before each agent spawn, assemble a `SESSION_SKILLS_FRAGMENT` from session-local artifacts found in `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md`. This fragment is appended to every spawn prompt so agents receive project-specific guidance authored by the Planner.

@@ -58,6 +58,8 @@ Run ONLY the planning phase for: $ARGUMENTS
    - `fulfills` field linking to VAL assertions
    - All VAL assertions covered by at least one task
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions `TaskCreate`/`TaskUpdate` are deferred (schemas unloaded) and calling one fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before step 9; retry after loading if a call still fails. See `rnd-framework:rnd-orchestration` → Preflight.
+
 9. **Create native tasks:** For each task in the plan, use `TaskCreate` with:
    - `subject`: Task name (e.g., "T1: Design API contracts")
    - `description`: The full pre-registration content for that task

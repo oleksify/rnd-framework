@@ -13,6 +13,8 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions the `Task*` tools are deferred (schemas unloaded) and calling one fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before the calls below; retry after loading if a call still fails. See `rnd-framework:rnd-orchestration` → Preflight.
+
 Read the plan from `$RND_DIR/protocol.md` (and the assertions from `$RND_DIR/validation-contract.md`). Check `TaskList` to confirm which tasks are built and ready for verification.
 
 ## CRITICAL: Information Barrier Enforcement

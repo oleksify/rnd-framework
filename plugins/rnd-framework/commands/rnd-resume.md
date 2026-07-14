@@ -103,6 +103,8 @@ Using the data gathered in Steps 2-6, assign a status to each task:
 
 ## Step 8: Recreate Task Entries
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions `TaskCreate`/`TaskUpdate` are deferred (schemas unloaded) and calling one directly fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before the loop below; if a call still fails this way, load that tool via `ToolSearch` and retry.
+
 Recreate the pipeline's task tracking state to mirror the reconstructed status:
 
 1. **Create tasks.** For each task found in `features.json`, issue a `TaskCreate` with:

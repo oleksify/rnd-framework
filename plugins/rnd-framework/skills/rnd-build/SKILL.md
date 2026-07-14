@@ -13,6 +13,8 @@ Determine the RND artifacts directory:
 RND_DIR=$("${CLAUDE_PLUGIN_ROOT}/lib/rnd-dir.sh")
 ```
 
+> **Preflight — deferred tool schemas.** In MCP-heavy sessions the `Task*` tools are deferred (schemas unloaded) and calling one fails with `Invalid tool parameters`. Run `ToolSearch({query: "select:TaskCreate,TaskUpdate,TaskList,TaskGet"})` once before the calls below; retry after loading if a call still fails. See `rnd-framework:rnd-orchestration` → Preflight.
+
 Read the plan from `$RND_DIR/protocol.md`. Check `TaskList` to identify current task states. When displaying blocked tasks or blocked-by references, always translate Claude Code internal IDs (`#<n>`) to pipeline IDs (`T<n>`) by matching against `metadata.pipelineId` or extracting the `T<n>` prefix from the blocking task's subject.
 
 If $ARGUMENTS is empty (user ran `/rnd-framework:rnd-build` with no arguments):

@@ -28,7 +28,7 @@ Derive task status by scanning artifact directories. Read `$RND_DIR/protocol.md`
 
 Supplement with:
 - `$RND_DIR/iteration-log.md` for iteration history and cycle counts
-- `TaskList` for blocked/in-progress metadata
+- `TaskList` for blocked/in-progress metadata — in MCP-heavy sessions this tool is deferred and calling it directly fails with `Invalid tool parameters`; run `ToolSearch({query: "select:TaskList"})` first (the artifact scan above is the source of truth, so a `TaskList` failure is non-fatal — skip the metadata supplement if it can't be loaded)
 
 ### Status icon mapping
 

@@ -810,9 +810,15 @@ After the review, re-present the Tier 1 `AskUserQuestion` menu unchanged.
    - If **CLEAN**: "Review complete — no issues found." Options:
      - "Finish session (Recommended)"
      - "Review report details"
+     - "Generate explanation for the shipped branch"
    - If **ISSUES_FOUND** or **CRITICAL_ISSUES**:
      - "Track as future work (Recommended)"
      - "Fix with /rnd-framework:rnd-start"
      - "Review report details"
+     - "Generate explanation for the shipped branch"
+
+### Generate Explanation
+
+When the user selects "Generate explanation for the shipped branch," invoke `/rnd-framework:rnd-explain` with no arguments — the default whole-branch diff against the merge-base — on the current (just-shipped) branch. After the command finishes, re-present the same next-steps menu unchanged.
 
 **Status/resume safety:** Phase 8 writes only to `$RND_DIR/review/` and the slug-root `post-review.jsonl`. Neither `commands/rnd-status.md` nor `commands/rnd-resume.md` scan these paths for phase-detection. Both commands classify pipeline completion by "All waves SHIP" via `integration/wave-*-report.md` — a Phase 8 artifact does not affect that determination. No edit is needed to either command.

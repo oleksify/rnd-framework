@@ -136,7 +136,7 @@ Skills are directories under `skills/` with a `SKILL.md` carrying YAML frontmatt
 
 **Session-local skill injection.** The orchestrator reads `$RND_DIR/AGENTS.md` and `$RND_DIR/skills/*/SKILL.md` at spawn time, injects their content under `## Session Context` and `## Session Skills` sections in every Agent() call, and records a `skill_injected` audit event per injected session-local skill. This lets a pipeline carry session-specific guidance — custom agents, domain context, project-specific patterns — without modifying global plugin files.
 
-Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rnd-learning` (auto-capture pipeline gotchas to `$CLAUDE_CONFIG_DIR/learnings/`), `rnd-formatting` (detect+run project formatter pre-commit), `rnd-language-design` (DSL/parser/compiler design packages with empirical specs — accepted/rejected examples, golden ASTs, diagnostics fixtures; conditionally loaded by rnd-audit/rnd-review/rnd-debug/rnd-brainstorm/rnd-decomposition when the work touches a DSL, grammar, parser, interpreter, compiler, renderer, executor, or validator).
+Notable skills: `rnd-roadmapping` (roadmap.md format + milestone lifecycle), `rnd-learning` (auto-capture pipeline gotchas to `$CLAUDE_CONFIG_DIR/learnings/`), `rnd-formatting` (detect+run project formatter pre-commit), `rnd-language-design` (DSL/parser/compiler design packages with empirical specs — accepted/rejected examples, golden ASTs, diagnostics fixtures; conditionally loaded by rnd-audit/rnd-review/rnd-debug/rnd-brainstorm/rnd-decomposition when the work touches a DSL, grammar, parser, interpreter, compiler, renderer, executor, or validator), `rnd-explain` (drives `/rnd-framework:rnd-explain`; generates a self-contained, interactive HTML explanation of a diff/branch/PR — Background/Intuition/Code/Quiz).
 
 **Property runner (`lib/run-properties.sh`):** the Verifier invokes this dispatcher when a pre-reg has a `## Properties` section. Three pre-reg shapes are supported: inline markdown bullets, a YAML block under `## Verification`, or a sibling file `T<id>-properties.{exs,ts}`. The runner exits 0 on `PROPERTY_PASS`, non-zero on `PROPERTY_COUNTER_EXAMPLE` (stderr: JSON with `property`/`input`/`shrunk_input`/`seed`), or 0 on `PROPERTY_SKIPPED` when the runtime is absent. Calibration records carry `verification_mode` ∈ `property | prose | schema | skipped`. On FAIL the shrunk reproducer is auto-pinned to `<project>/test/properties/T<id>-counterexample.<ext>` and a `property_pinned` audit event is emitted.
 
@@ -191,6 +191,7 @@ Artifacts live in a centralized directory outside the project tree, computed by 
         ├── integration/wave-*-report.md   # Integration results, SHIP/NO-SHIP
         ├── cleanup/T*-cleanup-report.md   # Cleanup reports (barrier-protected from Verifier)
         ├── polish/wave-*-polish-report.md # Polisher wave-level seam-fix reports
+        ├── explain/YYYY-MM-DD-<slug>.html # rnd-explain interactive HTML change explanations (on-demand via /rnd-framework:rnd-explain; excluded from Report Surfacing verbatim-print)
         ├── prior-plans/replan-<k>/        # Archived planner artifact snapshots (one dir per re-plan generation, written by lib/replan-archive.sh); differ Reads from here to produce replan-diff.md
         ├── replan-diff.md                 # rnd-replan-differ output; sections ## Task delta, ## Assertion delta, ## Summary
         ├── .replan-in-progress            # Marker file enabling hooks/lib.sh::is_replan_artifact_violation; orchestrator touches before fresh Planner spawn and removes after diff_emitted
@@ -206,7 +207,7 @@ Since `$RND_DIR` is outside the project, no `.gitignore` entry is needed.
 
 ## Commands
 
-Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`, `/rnd-framework:rnd-stats`, `/rnd-framework:rnd-remeasure`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`.
+Slash commands use the plugin namespace: `/rnd-framework:rnd-start`, `/rnd-framework:rnd-status`, `/rnd-framework:rnd-resume`, `/rnd-framework:rnd-history`, `/rnd-framework:rnd-debug`, `/rnd-framework:rnd-roadmap`, `/rnd-framework:rnd-scan`, `/rnd-framework:rnd-stats`, `/rnd-framework:rnd-remeasure`, `/rnd-framework:rnd-review`, `/rnd-framework:rnd-audit`, `/rnd-framework:rnd-brainstorm`, `/rnd-framework:rnd-explain`.
 
 ## Key Conventions
 

@@ -79,6 +79,7 @@ These are the active public slash commands tracked in `plugins/rnd-framework/com
 | `/rnd-framework:rnd-review` | Evidence-based review of recent changes |
 | `/rnd-framework:rnd-audit` | Full codebase audit |
 | `/rnd-framework:rnd-brainstorm` | Funnel a vague idea into a focused plan |
+| `/rnd-framework:rnd-explain [ref]` | Generate an interactive HTML explanation of a diff/branch/PR |
 
 ## Agents
 
@@ -128,6 +129,7 @@ Skills embed structured practices into each phase. Notable ones:
 | `rnd-kiss-practices` / `rnd-fp-practices` | Language-specific simplicity and FP rules |
 | `rnd-prefer-system-tools` / `rnd-bun-scripting` / `rnd-committing` | Tooling and commit discipline |
 | `rnd-hook-authoring` / `rnd-lib-sh-patterns` / `rnd-plugin-architecture` / `rnd-plugin-versioning` / `rnd-bash-hook-testing` | Working on the plugin itself |
+| `rnd-explain` | Self-contained interactive HTML change explainer (Background/Intuition/Code/Quiz) |
 
 ## Information barrier
 

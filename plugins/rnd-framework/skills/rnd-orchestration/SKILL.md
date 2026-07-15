@@ -439,7 +439,7 @@ Common decision points:
 - **Post-plan:** "Approve plan", "Revise criteria for T2", "Add more tasks"
 - **Post-build:** "Verify this wave", "Re-build T3", "Review findings first"
 - **Post-verify (mixed results):** "Fix P0 issues first (Recommended)", "Fix all issues", "Ship as-is with known issues"
-- **Post-integrate:** "Ship it", "Run another verification pass", "Fix integration failures"
+- **Post-integrate:** "Ship it", "Run another verification pass", "Fix integration failures", "Generate explanation for the shipped branch"
 
 ## Scaling Rules
 

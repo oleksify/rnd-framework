@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.0 — 2026-07-15
+
+### Add rnd-explain command+skill, an interactive HTML change explainer
+
+New `/rnd-framework:rnd-explain [ref]` command + `rnd-explain` skill, ported from Geoffrey Litt's explain-diff-html gist. Resolves a guarded diff target (three-dot merge-base default against the default branch, or an explicit `$ARGUMENTS` ref), refusing to write anything on an empty diff, detached HEAD, or when already on the default branch, and writes one self-contained, collision-safe `.html` file under `$RND_DIR/explain/`. The generated page always carries four sections in order — Background, Intuition, Code, and a Quiz of exactly five medium interactive multiple-choice questions with click-to-reveal feedback, present unconditionally with no confidence or evidence gating. The HTML is strictly self-contained: inline-only CSS/JS, zero external URLs, a single responsive page with a table of contents (no tabs), HTML-only diagrams, and a blocking pre-save scan that rejects external URLs or code blocks that would collapse whitespace. When a pipeline session exists, the Code section is enriched — additively, never destructively — with short inline excerpts from the verifier's Case for PASS and Coverage Gaps. Post-SHIP flows in `rnd-start.md` and `rnd-orchestration` now offer to generate this explanation for the shipped branch, and the explain `.html` glob is added to the report-surfacing exclusion list identically across all three output styles.
+
 ## 0.19.2 — 2026-07-15
 
 ### Harden docs-site third-party integrity and accessibility, fix bash-gate lint

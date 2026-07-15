@@ -71,7 +71,7 @@ When an agent or skill produces a report artifact, you MUST print the report's f
 - Narratives produced by rnd-narrative
 - `brainstorm.md` produced by rnd-brainstorm
 
-Excluded (NOT subject to this rule): `T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`, `T<id>-cleanup-report.md`, `project-facts.md`, `calibration.jsonl`, `audit.jsonl`.
+Excluded (NOT subject to this rule): `T<id>-self-assessment.md`, `T<id>-found-issues.jsonl`, `T<id>-cleanup-report.md`, `project-facts.md`, `calibration.jsonl`, `audit.jsonl`, `explain/*.html`.
 
 The rule applies in autonomous/loop mode too: print the full report verbatim even when AskUserQuestion is skipped. No length cap, no truncation, no executive-summary substitution.
 

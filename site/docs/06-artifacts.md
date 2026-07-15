@@ -14,6 +14,7 @@ The path is computed by `lib/rnd-dir.sh`. The layout:
     └── sessions/<YYYYMMDD-HHMMSS-XXXX>/   one per run  ($RND_DIR)
         ├── premortem.md                  imagined failure modes
         ├── outside-view.md               historical-failure calibration block
+        ├── scope.json  ·  scope.md       frozen, user-ratified deliverable boundary
         ├── protocol.md                   scope and goals
         ├── validation-contract.md        one assertion per heading
         ├── features.json                 task manifest (ids, deps, criticality)
@@ -22,6 +23,7 @@ The path is computed by `lib/rnd-dir.sh`. The layout:
         ├── verifications/                 verdict maps, reports, evidence
         ├── cleanup/  ·  polish/           cleanup and polish reports
         ├── integration/                   results, SHIP / NO-SHIP
+        ├── explain/                       on-demand interactive HTML change explainers
         ├── briefs/                        barrier-protected builder notes
         ├── audit.jsonl                    shared audit log
         └── iteration-log.md               build-verify cycle tracking

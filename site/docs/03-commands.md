@@ -33,6 +33,7 @@ All commands are namespaced `/rnd-framework:*`.
 | `rnd-stats` | Failure rates by task kind, plus drift and gaps |
 | `rnd-remeasure` | Compare current metrics against the baseline |
 | `rnd-scan` | Scan the project, build a facts sheet |
+| `rnd-explain [ref]` | Generate an interactive HTML explanation of a diff/branch/PR |
 
 ### Maintenance
 

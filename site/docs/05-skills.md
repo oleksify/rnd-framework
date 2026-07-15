@@ -40,8 +40,19 @@ A related decorrelation step, the **assertion paraphraser**, re-words each requi
 | `rnd-doc-polish` | Update docs and stale comments after ship |
 | `committing` | Commit message style and confirmation |
 | `prefer-system-tools` · `bun-scripting` | Tooling discipline |
+| `rnd-language-design` | Explicit syntax/semantics/diagnostics specs before building a DSL, parser, or compiler |
+| `rnd-explain` | Turns a shipped change into a self-contained interactive HTML explainer |
 
 A handful more cover working on the plugin itself (`hook-authoring`, `lib-sh-patterns`, `plugin-architecture`, `plugin-versioning`, `bash-hook-testing`).
+
+<details>
+<summary><code>rnd-explain</code> — an interactive walkthrough of a change</summary>
+
+Run `/rnd-framework:rnd-explain [ref]` and the framework writes one self-contained HTML file explaining a diff, branch, or PR to someone who wasn't there when it was written. Every page carries four sections in order — **Background**, **Intuition**, **Code**, and a five-question interactive **Quiz** with click-to-reveal feedback.
+
+It fills a fixed template — an inline CSS design system plus a data-driven quiz engine — rather than authoring the document from scratch each run, so the visual design is deterministic and the quiz wiring is never re-invented. The output is strictly self-contained: inline-only CSS and JS, zero external URLs, and a blocking pre-save scan that rejects external links, duplicate ids, or malformed quiz JSON. When a pipeline session exists, the Code section is enriched with short excerpts from the verifier's Case for PASS and Coverage Gaps.
+
+</details>
 
 ### In depth
 

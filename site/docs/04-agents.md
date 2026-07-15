@@ -2,16 +2,17 @@
 
 The pipeline runs as separate **agents**, each in its own context window. An agent is an isolated Claude instance with a narrow set of tools and a single job. Running them separately is what makes the [information barrier](#information-barrier) structural rather than a polite request — the verifier literally cannot see the builder's context.
 
-There are 13 agents: 9 that handle pipeline phases and 4 helpers.
+There are 14 agents: 10 that handle pipeline phases and 4 helpers.
 
 ### Pipeline agents
 
 | Agent | Default model | Role |
 |---|---|---|
-| `rnd-planner` | opus / high | Splits the task into pieces; writes the plan files |
+| `rnd-scoper` | opus / high | Freezes the deliverable boundary you ratify *before* planning |
+| `rnd-planner` | opus / high | Splits the frozen scope into pieces; writes the plan files |
 | `rnd-builder` | sonnet / high | Builds one task with tests; writes a manifest |
 | `rnd-reality-auditor` | sonnet / low | Checks that declared external references actually exist |
-| `rnd-verifier` | sonnet / high | Independent check, with no view of the build |
+| `rnd-verifier` | opus / high | Independent check, with no view of the build |
 | `rnd-cleanup` | sonnet / medium | Removes dead code after a pass; rolls back if it breaks |
 | `rnd-polisher` | opus / high | Fixes the joins between tasks (duplication, naming drift) |
 | `rnd-integrator` | haiku / low | Combines the results, runs integration tests, decides SHIP |
@@ -21,6 +22,15 @@ There are 13 agents: 9 that handle pipeline phases and 4 helpers.
 The model shown is the *default*. The orchestrator overrides it per task based on how critical the task is — a low-stakes config change runs on a lighter model than a security-sensitive migration.
 
 #### In depth
+
+<details>
+<summary><code>rnd-scoper</code> — freezes what "in scope" means, before planning</summary>
+
+The scoper runs first, before the planner. It turns your raw task description into a short list of user-visible, acceptance-level **deliverables**, each with a stable id, and presents them as `scope.md` for you to ratify. Once you approve, the boundary is frozen into `scope.json` and becomes the planner's single source of truth.
+
+That frozen boundary is enforced in both directions. A gate blocks the planner if it invents a task with no matching deliverable (**scope creep**) or leaves a ratified deliverable with no task (**scope miss**). The goalposts for *what gets built* are locked before decomposition starts — the same discipline pre-registration applies to *what "done" means*.
+
+</details>
 
 <details>
 <summary><code>rnd-planner</code> — turns a task into a contract</summary>

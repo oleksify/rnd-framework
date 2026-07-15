@@ -29,7 +29,9 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
 
 body {
   margin: 0 auto;
@@ -76,7 +78,7 @@ body {
   color: var(--muted);
 }
 .foot-meta a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-.foot-meta a:hover { color: var(--accent); }
+.foot-meta a:hover, .foot-meta a:focus-visible { color: var(--accent); }
 
 h1 {
   font-weight: 600;
@@ -130,7 +132,7 @@ h1 {
   padding: 0.28rem 0 0.28rem 0.7rem;
 }
 #toc li.lvl-3 a { padding-left: 1.6rem; font-size: 0.8rem; }
-#toc a:hover { color: var(--fg); }
+#toc a:hover, #toc a:focus-visible { color: var(--fg); }
 #toc a.active { color: var(--accent); border-left-color: var(--accent); }
 
 /* content */
@@ -239,7 +241,7 @@ details summary::before {
 }
 details[open] summary::before { content: "▾"; }
 details summary code { background: none; padding: 0; font-size: 1em; color: var(--fg); }
-details summary:hover { color: var(--fg); }
+details summary:hover, details summary:focus-visible { color: var(--fg); }
 details[open] summary {
   border-radius: 4px 4px 0 0;
   border-bottom: 1px solid var(--rule);

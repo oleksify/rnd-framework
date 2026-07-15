@@ -27,6 +27,12 @@ async function fetchText(url) {
   return res.text();
 }
 
+// Convenience filter, not a security boundary: this assumes the rendered
+// Markdown is trusted, author-controlled, same-origin content from
+// docs/*.md. The regex denylist below is bypassable in principle (regex
+// cannot fully parse HTML), so it must never be relied on for untrusted
+// input. If this site ever renders content from an untrusted source, use a
+// real sanitizer such as DOMPurify instead.
 function sanitizeRenderedHtml(html) {
   return html
     .replace(BLOCKED_HTML_PAIR_RE, "")

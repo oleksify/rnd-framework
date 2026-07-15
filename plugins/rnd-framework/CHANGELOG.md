@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.2 — 2026-07-15
+
+### Harden docs-site third-party integrity and accessibility, fix bash-gate lint
+
+Pin the docs-site marked loader to the exact 12.0.2 build with a Subresource Integrity hash and crossorigin, and correct its 'pinned' comment; document why SRI is intentionally omitted from the server-updated umami analytics script and the dynamically-generated Bunny Fonts stylesheet (no fabricated hashes). Add :focus-visible affordances mirroring every hover rule and gate scroll-behavior:smooth behind prefers-reduced-motion. Document in-code that the client-side regex sanitizer assumes trusted same-origin docs and is not a security boundary. Remove the unused next variable from bash-gate.sh so shellcheck is warning-clean tree-wide. Addresses the rnd-audit findings; site-only plus one hook lint line.
+
 ## 0.19.1 — 2026-07-14
 
 ### Add deferred-tool ToolSearch preflight to pipeline templates

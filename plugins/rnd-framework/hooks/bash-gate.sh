@@ -134,7 +134,7 @@ strip_git_global_opts() {
   [[ "$seg" =~ ^git[[:space:]] ]] || { printf '%s' "$seg"; return 0; }
 
   local rest="${seg#git}"
-  local word next rest_after_word parsed next_parsed
+  local word rest_after_word parsed next_parsed
 
   rest="${rest#"${rest%%[! ]*}"}"
 
@@ -147,7 +147,7 @@ strip_git_global_opts() {
     case "$word" in
       -C|-c|--git-dir|--work-tree|--namespace|--exec-path)
         next_parsed="$(read_shell_word "$rest_after_word")"
-        IFS=$'\t' read -r next rest <<< "$next_parsed"
+        IFS=$'\t' read -r _ rest <<< "$next_parsed"
         rest="${rest#"${rest%%[! ]*}"}"
         ;;
       --git-dir=*|--work-tree=*|--namespace=*|--exec-path=*|\

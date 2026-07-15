@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.2 — 2026-07-15
+
+### Fix rnd-explain quiz breakage and design drift with a canonical template
+
+rnd-explain now fills a fixed template.html (inline CSS design system + data-driven quiz engine) instead of authoring the whole document each run. Eliminates the duplicate id=quiz collision that mounted the quiz inside the section heading, makes the visual design deterministic, and hardens the pre-save scan (duplicate-id rejection, quiz-JSON validation, exactly-5-well-formed-questions, no leftover placeholders).
+
 ## 0.20.1 — 2026-07-15
 
 ### Make rnd-explain guard recovery and open-after-generate interactive

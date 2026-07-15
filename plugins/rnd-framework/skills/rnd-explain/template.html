@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!-- FILL:TITLE -->Explaining a change<!-- /FILL:TITLE --></title>
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --fg: #1c1c1a;
+    --muted: #6a6a63;
+    --rule: #e3e2dc;
+    --card: #ffffff;
+    --accent: #9a5b2c;
+    --accent-soft: #f4e9df;
+    --ok: #2f6f3e;
+    --ok-soft: #e6f2e8;
+    --bad: #a33232;
+    --bad-soft: #f6e7e6;
+    --code-bg: #f3f2ee;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --fg: #e9e8e3;
+      --muted: #9a9a92;
+      --rule: #33333b;
+      --card: #1e1e24;
+      --accent: #d9954f;
+      --accent-soft: #2e2419;
+      --ok: #7bd08c;
+      --ok-soft: #1b2a1e;
+      --bad: #e08a86;
+      --bad-soft: #2c1c1c;
+      --code-bg: #23232b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.62;
+    font-size: 17px;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 2.4rem 1.2rem 6rem; }
+  header.page { border-bottom: 1px solid var(--rule); padding-bottom: 1.4rem; margin-bottom: 1.6rem; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0.2rem 0 0.5rem; font-weight: 650; }
+  header.page p.sub { color: var(--muted); margin: 0; }
+  h2 { font-size: 1.5rem; margin: 2.8rem 0 0.9rem; padding-top: 0.4rem; border-top: 1px solid var(--rule); }
+  h2:first-of-type { border-top: none; }
+  h3 { font-size: 1.15rem; margin: 1.8rem 0 0.6rem; }
+  h4 { font-size: 1rem; margin: 1.3rem 0 0.4rem; color: var(--accent); font-family: var(--mono); }
+  p { margin: 0.7rem 0; }
+  a { color: var(--accent); }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; white-space: pre-wrap; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  ul, ol { padding-left: 1.4rem; }
+  li { margin: 0.3rem 0; }
+
+  nav.toc { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+  nav.toc strong { display: block; font-family: var(--mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.5rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover, nav.toc a:focus-visible { text-decoration: underline; }
+
+  aside.callout { border: 1px solid var(--rule); border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 0.8rem 1rem; margin: 1.1rem 0; }
+  aside.callout .tag { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); display: block; margin-bottom: 0.3rem; }
+
+  details.skip { border: 1px dashed var(--rule); border-radius: 8px; padding: 0.2rem 1rem; margin: 1rem 0; background: var(--card); }
+  details.skip summary { cursor: pointer; font-weight: 600; padding: 0.6rem 0; }
+  details.skip summary span.hint { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+
+  /* diagram families: system/data-flow and simplified UI mock */
+  .diagram { border: 1px solid var(--rule); border-radius: 10px; background: var(--card); padding: 1.1rem; margin: 1.3rem 0; }
+  .diagram .cap { font-size: 0.82rem; color: var(--muted); margin-top: 0.7rem; font-style: italic; }
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }
+  .node { flex: 1 1 130px; min-width: 120px; border: 1px solid var(--rule); border-radius: 8px; padding: 0.6rem 0.7rem; background: var(--bg); font-size: 0.85rem; }
+  .node .lbl { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); display: block; margin-bottom: 0.2rem; }
+  .node.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .node.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .arrow { align-self: center; color: var(--muted); font-weight: 700; padding: 0 0.1rem; }
+  .payload { font-family: var(--mono); font-size: 0.72rem; color: var(--accent); }
+
+  .mock { border: 2px solid var(--rule); border-radius: 10px; overflow: hidden; max-width: 340px; margin: 1rem auto; background: var(--bg); }
+  .mock .bar { background: var(--code-bg); border-bottom: 1px solid var(--rule); padding: 0.4rem 0.7rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+  .mock .row { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule); font-size: 0.85rem; }
+  .mock .row:last-child { border-bottom: none; }
+  .mock .row small { color: var(--muted); }
+
+  /* quiz */
+  .q { border: 1px solid var(--rule); border-radius: 10px; background: var(--card); padding: 1.1rem 1.2rem; margin: 1.2rem 0; }
+  .q .qnum { font-family: var(--mono); font-size: 0.74rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+  .q .qtext { font-weight: 600; margin: 0.3rem 0 0.8rem; }
+  .q button.opt { display: block; width: 100%; text-align: left; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.4rem 0; font: inherit; font-size: 0.92rem; cursor: pointer; transition: border-color 0.12s, background 0.12s; }
+  .q button.opt:hover:not(:disabled) { border-color: var(--accent); }
+  .q button.opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .q button.opt.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .q button.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .q button.opt:disabled { cursor: default; }
+  .q .fb { margin-top: 0.7rem; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.88rem; display: none; }
+  .q .fb.show { display: block; }
+  .q .fb.good { background: var(--ok-soft); border: 1px solid var(--ok); }
+  .q .fb.bad { background: var(--bad-soft); border: 1px solid var(--bad); }
+  .quiz-error { border: 1px solid var(--bad); background: var(--bad-soft); border-radius: 8px; padding: 0.9rem 1rem; font-family: var(--mono); font-size: 0.85rem; }
+  .score { font-family: var(--mono); font-size: 0.95rem; margin-top: 1.4rem; padding: 0.8rem 1rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1><!-- FILL:TITLE -->Explaining a change<!-- /FILL:TITLE --></h1>
+  <p class="sub"><!-- FILL:SUBTITLE -->One-sentence summary of what this change does and why.<!-- /FILL:SUBTITLE --></p>
+</header>
+
+<nav class="toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#background">Background</a></li>
+    <li><a href="#intuition">Intuition</a></li>
+    <li><a href="#code">Code walkthrough</a></li>
+    <li><a href="#quiz-section">Quiz</a></li>
+  </ol>
+</nav>
+
+<!-- ================= BACKGROUND ================= -->
+<h2 id="background">Background</h2>
+
+<details class="skip">
+  <summary>New to this? Start here <span class="hint">— skip if you already know the relevant concepts</span></summary>
+  <!-- FILL:BACKGROUND_DEEP -->
+  <p>Deep-beginner background goes here — the concepts a total newcomer needs before anything else makes sense.</p>
+  <!-- /FILL:BACKGROUND_DEEP -->
+</details>
+
+<!-- FILL:BACKGROUND_NARROW -->
+<p>Narrow, change-relevant background goes here — the specific context needed to understand this change and nothing more. This part is not skippable.</p>
+<!-- /FILL:BACKGROUND_NARROW -->
+
+<!-- ================= INTUITION ================= -->
+<h2 id="intuition">Intuition</h2>
+
+<!-- FILL:INTUITION -->
+<p>Convey the essence of the change with concrete toy-data examples and HTML/CSS diagrams (never ASCII art). Prefer the two diagram families already styled above: a <code>.diagram .flow</code> node chain for system/data-flow, and a <code>.mock</code> box for a simplified UI mock.</p>
+<!-- /FILL:INTUITION -->
+
+<!-- ================= CODE ================= -->
+<h2 id="code">Code walkthrough</h2>
+
+<!-- FILL:CODE -->
+<p>A high-level, grouped walkthrough of the actual diff goes here — group related edits by concern or file, not a line-by-line narration. When session verification reports are available, fold short excerpts from their Case-for-PASS and Coverage-Gaps sections in here, inline, attached to the part of the walkthrough they relate to.</p>
+<!-- /FILL:CODE -->
+
+<!-- ================= QUIZ ================= -->
+<h2 id="quiz-section">Quiz</h2>
+<p>Five questions to check your understanding. Click an answer to see whether it is right and why.</p>
+
+<!--
+  Quiz data contract (read by the fixed engine script below):
+  A JSON array of exactly 5 objects, each shaped as:
+    {
+      "q": "question text",
+      "opts": ["option A", "option B", ...],   // 2 or more strings
+      "correct": 0,                             // index into opts of the right answer
+      "fb": ["feedback for option A", ...]      // one feedback string per option, same length as opts
+    }
+  Replace the placeholder array below with real question data only — never edit the
+  engine script that follows it.
+-->
+<script type="application/json" id="quiz-data">
+[
+  {
+    "q": "FILL_ME: question 1 text",
+    "opts": ["FILL_ME: option A", "FILL_ME: option B"],
+    "correct": 0,
+    "fb": ["FILL_ME: feedback for option A", "FILL_ME: feedback for option B"]
+  }
+]
+</script>
+
+<div id="quiz-root"></div>
+<div class="score" id="quiz-score">Answered 0 / 0.</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.getElementById("quiz-root");
+  var scoreEl = document.getElementById("quiz-score");
+  var dataEl = document.getElementById("quiz-data");
+
+  function showError(message) {
+    var box = document.createElement("div");
+    box.className = "quiz-error";
+    box.textContent = "Quiz failed to load: " + message;
+    root.appendChild(box);
+  }
+
+  var questions;
+  try {
+    questions = JSON.parse(dataEl.textContent);
+  } catch (e) {
+    showError("the quiz data is not valid JSON (" + e.message + ").");
+    return;
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    showError("the quiz data is not a non-empty array of questions.");
+    return;
+  }
+
+  var answered = 0;
+  var correctCount = 0;
+  var total = questions.length;
+
+  function renderScore() {
+    scoreEl.textContent = "Answered " + answered + " / " + total + (answered > 0 ? "  ·  " + correctCount + " correct." : ".");
+  }
+
+  questions.forEach(function (item, qi) {
+    var card = document.createElement("div");
+    card.className = "q";
+
+    var num = document.createElement("div");
+    num.className = "qnum";
+    num.textContent = "Question " + (qi + 1) + " of " + total;
+    card.appendChild(num);
+
+    var qt = document.createElement("p");
+    qt.className = "qtext";
+    qt.textContent = item.q;
+    card.appendChild(qt);
+
+    var fb = document.createElement("div");
+    fb.className = "fb";
+
+    (item.opts || []).forEach(function (text, oi) {
+      var btn = document.createElement("button");
+      btn.className = "opt";
+      btn.type = "button";
+      btn.textContent = text;
+      btn.addEventListener("click", function () {
+        if (card.dataset.done === "1") return;
+        card.dataset.done = "1";
+
+        var isRight = oi === item.correct;
+        btn.classList.add(isRight ? "correct" : "wrong");
+
+        var buttons = card.querySelectorAll("button.opt");
+        for (var b = 0; b < buttons.length; b++) {
+          buttons[b].disabled = true;
+          if (b === item.correct) buttons[b].classList.add("correct");
+        }
+
+        fb.textContent = (item.fb && item.fb[oi]) || "";
+        fb.classList.add("show", isRight ? "good" : "bad");
+
+        answered += 1;
+        if (isRight) correctCount += 1;
+        renderScore();
+      });
+      card.appendChild(btn);
+    });
+
+    card.appendChild(fb);
+    root.appendChild(card);
+  });
+
+  renderScore();
+})();
+</script>
+</body>
+</html>

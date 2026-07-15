@@ -51,31 +51,64 @@ Exactly 5 multiple-choice questions, medium difficulty — hard enough that answ
 
 **The Quiz is unconditional.** It appears on every single run, regardless of how small the diff is, how little session evidence exists, or how confident the generation felt. There is no confidence threshold, no evidence-density threshold, no "skip if trivial" branch anywhere in this section. A one-line refactor with zero session artifacts still gets a fully populated, 5-question quiz — the same as a sprawling multi-file change. If you find yourself reasoning about whether the diff is "big enough" to warrant a quiz, that reasoning is wrong; write the quiz anyway.
 
-## Step 4: Self-Containment Rules
+## Step 4: Start From the Template — Never Author CSS or the Quiz Engine
 
-The output is a single HTML file that works when opened directly as a `file://` URL, with nothing else on the page but everything it needs.
+Read `${CLAUDE_SKILL_DIR}/template.html`. This is the canonical, fixed asset for every run: it already carries the full CSS design system, the four-section skeleton (Background, Intuition, Code, Quiz), the table of contents, the responsive viewport meta tag, the diagram/callout/code-block styles, and a complete, tested quiz engine. Your job in this step is to **fill it in**, never to write a new document from scratch, and never to touch its `<style>` block or its quiz engine `<script>` block.
 
-- **Inline-only CSS and JS.** All styles live in a `<style>` block in `<head>`; all scripts live in `<script>` blocks. No `<link>` to a stylesheet, no `<script src="...">`, no external font, no external image, no CDN of any kind. Zero external URL references, full stop.
-- **One long page, not tabs.** Structure the document as a single scrolling page with section headers (Background, Intuition, Code, Quiz) plus a table of contents near the top that anchor-links into each section. Do not build top-level tabs that hide sections behind a click — the reader should be able to scroll through everything.
-- **Basic responsive styling.** A simple viewport meta tag and CSS that keeps the layout usable on a phone-width screen — flexible widths, no fixed-pixel layouts that overflow small screens.
-- **HTML-only diagrams, never ASCII.** Every diagram is built from HTML elements and CSS (boxes, flex/grid layouts, borders, arrows drawn with CSS) — never a monospaced ASCII-art block. Prefer a small, reusable set of diagram families rather than inventing a new visual idiom per diagram:
-  - a simplified UI mock (boxes standing in for screens or components), and
-  - a system/data-flow diagram that includes example data flowing through it, not just unlabeled boxes and arrows.
+Fill exactly these placeholders, and nothing else:
+
+- `<!-- FILL:TITLE -->...<!-- /FILL:TITLE --></title>` and the matching one in `<h1>` — a short document title describing what changed.
+- `<!-- FILL:SUBTITLE -->...<!-- /FILL:SUBTITLE -->` — a one-sentence summary.
+- `<!-- FILL:BACKGROUND_DEEP -->...<!-- /FILL:BACKGROUND_DEEP -->` — the skippable deep-beginner background, already wrapped in the template's `<details class="skip">` disclosure. Leave that wrapping alone; only replace the content inside the markers.
+- `<!-- FILL:BACKGROUND_NARROW -->...<!-- /FILL:BACKGROUND_NARROW -->` — the non-skippable, change-relevant background.
+- `<!-- FILL:INTUITION -->...<!-- /FILL:INTUITION -->` — toy-data examples and HTML diagrams conveying the essence of the change. Reuse the template's existing diagram classes (`.diagram .flow .node` for a system/data-flow diagram with example data, `.mock` for a simplified UI mock) rather than inventing new markup.
+- `<!-- FILL:CODE -->...<!-- /FILL:CODE -->` — the grouped code walkthrough. If Step 2 found session enrichment, fold its short excerpts in here, inline, attached to the relevant part of the walkthrough — this is the same fold-in point described above, just located inside the template's Code placeholder instead of a section you author yourself.
+- The quiz-data placeholder JSON array inside `<script type="application/json" id="quiz-data">` — replace it with exactly 5 question objects (see the quiz data contract below). This is the **only** part of the quiz you touch; you supply question *data*, never quiz wiring, never a second quiz engine, never a second element sharing the mount id.
+
+Everything outside these markers — the `<style>` block, the `<nav class="toc">`, the section `<h2>` ids (`background`, `intuition`, `code`, `quiz-section`), the `<div id="quiz-root">` mount, the `<div id="quiz-score">` status line, and the fixed quiz engine `<script>` — ships byte-for-byte as it is in the template. Do not add a fifth section, do not reorder the four sections, do not rename or duplicate any id already present in the template.
+
+The template gives you self-containment (inline-only CSS/JS, no external references, responsive viewport) and the diagram/callout/code CSS for free — you never write any of that. What you still author by hand, inside the placeholders above, follows these rules:
+
 - **HTML lists for lists.** Any enumerable set of items is a proper `<ul>`/`<ol>`, not a hand-formatted paragraph or ASCII bullet.
-- **Callouts for key concepts, definitions, and edge cases.** Give these a visually distinct treatment (a bordered/tinted `<div>` or `<aside>`) so they stand out from ordinary prose.
+- **Callouts for key concepts, definitions, and edge cases.** Wrap these in the template's `<aside class="callout">` (with a `<span class="tag">` label), so they stand out from ordinary prose.
 - **Kleppmann-style prose.** Classic, clear, unshowy writing — smooth transitions between paragraphs and sections, no jargon left undefined, no abrupt topic jumps.
-- **Every code block is safe from newline collapse.** Any snippet of source code goes in a `<pre>` element, or — if a custom-styled `<div>` is used to hold code instead of `<pre>` — that element's CSS must explicitly set `white-space: pre-wrap` (or `pre`). Without one of these two, the browser collapses newlines and the snippet renders as an unreadable single line.
+- **Every code block is safe from newline collapse.** Any snippet of source code goes in a `<pre>` element (the template already styles `pre`), or — if you use a custom-styled `<div>` instead — that element's CSS must explicitly set `white-space: pre-wrap` (or `pre`). Without one of these two, the browser collapses newlines and the snippet renders as an unreadable single line.
+- **HTML-only diagrams, never ASCII.** Build every diagram from the template's existing diagram classes (`.diagram .flow .node` for a system/data-flow diagram carrying example data, `.mock` for a simplified UI mock) — never a monospaced ASCII-art block, and never a new diagram idiom invented from scratch.
+
+### Quiz data contract
+
+The quiz-data `<script type="application/json" id="quiz-data">` block holds a pure JSON array — no comments, no JS syntax, just data the fixed engine parses at load time. It must contain **exactly 5** objects, each shaped:
+
+```json
+{
+  "q": "question text",
+  "opts": ["option A", "option B", "..."],
+  "correct": 0,
+  "fb": ["feedback for option A", "feedback for option B", "..."]
+}
+```
+
+- `q` — a string, medium-difficulty question (see Step 3.5 for the difficulty bar).
+- `opts` — an array of 2 or more option strings.
+- `correct` — an integer index into `opts` identifying the right answer.
+- `fb` — an array of feedback strings, exactly parallel to `opts` (same length, one feedback string per option, explaining why that option is right or wrong).
+
+The template's fixed engine script reads this JSON, renders one card per question, and handles click-to-reveal, per-answer feedback, a running score, and a guard against double-answering. None of that wiring is something you write — it already works; you only ever supply the array above.
 
 ## Step 5: Blocking Pre-Save Scan
 
-Before writing the HTML file, scan the fully assembled HTML source as a **blocking self-check** — this runs before the Write, not after, and a failure here means you fix the document and re-scan, not that you write it anyway and note the problem.
+Before writing the HTML file, scan the fully assembled HTML source (the template with all placeholders filled) as a **blocking self-check** — this runs before the Write, not after, and a failure here means you fix the document and re-scan, not that you write it anyway and note the problem.
 
-The scan rejects the document if either of these is true:
+The scan rejects the document if any of these is true:
 
 1. **Any external URL reference exists** — search the assembled source for `http://`, `https://`, `//` protocol-relative references, or any `<link>`/`<script src>`/`<img src>` pointing outside the document itself. Any match fails the scan.
 2. **Any code block lacks a newline-preserving container** — for every block of source code in the document, confirm it is wrapped in `<pre>`, or, if it uses a custom `<div>`, confirm that div's style includes `white-space: pre-wrap` or `white-space: pre`. A code block satisfying neither condition fails the scan.
+3. **Any duplicate `id` attribute exists in the assembled document** — collect every `id="..."` in the source and confirm each value appears exactly once. A duplicate (the exact defect this template exists to prevent — see the note on the quiz mount id above) fails the scan.
+4. **The quiz-data JSON does not parse** — extract the text content of `<script type="application/json" id="quiz-data">` and confirm `JSON.parse` succeeds on it. A parse failure fails the scan.
+5. **The quiz data is not exactly 5 well-formed questions** — after parsing, confirm the array has exactly 5 entries, and that each entry has a string `q`, an `opts` array of at least 2 entries, a `correct` value that is a valid index into `opts` (`0 <= correct < opts.length`), and an `fb` array of feedback strings the same length as `opts`. Any entry failing any of these fails the scan.
+6. **A `FILL:` or `FILL_ME` marker remains in the assembled source** — search for the literal strings `FILL:` and `FILL_ME` anywhere in the document. A match means a placeholder was left unfilled, and fails the scan.
 
-On a scan failure, fix the offending block or reference and re-run the scan before proceeding to Write. Do not write a document that failed the scan and note the issue for later — there is no "later" for a document a reader may open in a browser immediately.
+On a scan failure, fix the offending block, reference, or data and re-run the full scan before proceeding to Write. Do not write a document that failed the scan and note the issue for later — there is no "later" for a document a reader may open in a browser immediately.
 
 ## Step 6: Write
 

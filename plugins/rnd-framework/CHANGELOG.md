@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.1 — 2026-07-15
+
+### Make rnd-explain guard recovery and open-after-generate interactive
+
+When /rnd-framework:rnd-explain hits a Step 1 stop condition (on the default branch, detached HEAD, empty diff, or no common ancestor), it now routes the recovery choices through an AskUserQuestion menu (last 3 commits / last commit / cancel, plus Other for a custom ref) instead of a prose suggestion. After the .html is written, a new Step 5 asks via AskUserQuestion whether to open it in the default browser, open the containing folder, or leave it, using platform-appropriate openers (open / xdg-open / start). No change to diff resolution, output paths, or the generation contract.
+
 ## 0.20.0 — 2026-07-15
 
 ### Add rnd-explain command+skill, an interactive HTML change explainer

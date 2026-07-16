@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.21.0 — 2026-07-16
+
+### Rebuild rnd-explain on an inlined runtime-rendered Markdoc report runtime
+
+The generated .html is now a single self-contained document built on an inlined Markdoc engine rendered in-browser at load. The model authors only one text/markdoc island (prose plus typed tag custom components: callout, chart bar/line/scatter/area, diagram graph/tree/sequence, stepper, formula MathML, kpi, mock, plus a 5-question quiz); fixed template code owns all rendering, hydration, and validation, so the model never authors markup. Determinism is enforced by a Markdoc schema and a blocking pre-save gate (fixed four-section arc Background/Intuition/Code/Quiz, exactly-5-well-formed quiz, no unfilled markers including nested-in-attribute, no external URL or runtime import/fetch, zero-error parse/validate, an UNSAFE_FORMULA guard against MathML script-smuggling with defense-in-depth stripping at render, and a QUIZ_LENGTH_BIAS guard that rejects a quiz whose correct answer is the longest option in more than half the questions — closing the LLM tell where the correct choice is systematically the wordiest). Typography is an iA-Writer-grade design system (Charter serif stack, ~66ch measure, warm non-black dark mode, sticky anchored TOC). Adds a headless-Chrome render-proof harness, a kitchen-sink smoke-check, and determinism fixtures; commands/rnd-explain.md is unchanged. Full plugin suite green (1955 assertions).
+
 ## 0.20.2 — 2026-07-15
 
 ### Fix rnd-explain quiz breakage and design drift with a canonical template

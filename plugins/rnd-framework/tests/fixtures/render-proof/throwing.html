@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>render-check throwing fixture</title>
+</head>
+<body>
+  <h1>Throwing fixture</h1>
+  <p>Inline script throws an uncaught exception -- proves the harness exits non-zero and names the failure.</p>
+  <script>
+    throw new Error('deliberate render-proof failure: thrown exception')
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>render-check console-error fixture</title>
+</head>
+<body>
+  <h1>Console-error fixture</h1>
+  <p>Inline script logs a console error without throwing -- proves the harness also captures consoleAPICalled(error).</p>
+  <script>
+    console.error('deliberate render-proof failure: console.error')
+  </script>
+</body>
+</html>

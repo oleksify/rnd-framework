@@ -129,7 +129,7 @@ Skills embed structured practices into each phase. Notable ones:
 | `rnd-kiss-practices` / `rnd-fp-practices` | Language-specific simplicity and FP rules |
 | `rnd-prefer-system-tools` / `rnd-bun-scripting` / `rnd-committing` | Tooling and commit discipline |
 | `rnd-hook-authoring` / `rnd-lib-sh-patterns` / `rnd-plugin-architecture` / `rnd-plugin-versioning` / `rnd-bash-hook-testing` | Working on the plugin itself |
-| `rnd-explain` | Self-contained interactive HTML change explainer (Background/Intuition/Code/Quiz) |
+| `rnd-explain` | Self-contained HTML change explainer built on an inlined, runtime-rendered Markdoc document — a single model-authored island of prose + typed custom tags, rendered in-browser at load (Background/Intuition/Code/Quiz) |
 
 ## Information barrier
 
